@@ -1,4 +1,38 @@
-﻿CREATE TABLE IF NOT EXISTS establishments (
+﻿-- Afrik Appart clean MySQL install script.
+-- Run this once against an empty MySQL database, then configure the application .env.
+-- This script creates schema and safe reference/draft data only; it does not import local reservations or credentials.
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    email_verified_at TIMESTAMP NULL DEFAULT NULL,
+    password VARCHAR(255) NOT NULL,
+    remember_token VARCHAR(100) NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'customer',
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
+    locale VARCHAR(5) NOT NULL DEFAULT 'fr',
+    email_booking_updates TINYINT(1) NOT NULL DEFAULT 1,
+    email_marketing TINYINT(1) NOT NULL DEFAULT 0,
+    email_newsletter TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (email VARCHAR(255) NOT NULL, token VARCHAR(255) NOT NULL, created_at TIMESTAMP NULL DEFAULT NULL, PRIMARY KEY (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS sessions (id VARCHAR(255) NOT NULL, user_id BIGINT UNSIGNED NULL, ip_address VARCHAR(45) NULL, user_agent TEXT NULL, payload LONGTEXT NOT NULL, last_activity INT NOT NULL, PRIMARY KEY (id), KEY idx_sessions_user_id (user_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS cache (`key` VARCHAR(255) NOT NULL, value MEDIUMTEXT NOT NULL, expiration INT NOT NULL, PRIMARY KEY (`key`), KEY idx_cache_expiration (expiration)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS cache_locks (`key` VARCHAR(255) NOT NULL, owner VARCHAR(255) NOT NULL, expiration INT NOT NULL, PRIMARY KEY (`key`), KEY idx_cache_locks_expiration (expiration)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS jobs (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, queue VARCHAR(255) NOT NULL, payload LONGTEXT NOT NULL, attempts TINYINT UNSIGNED NOT NULL, reserved_at INT UNSIGNED NULL, available_at INT UNSIGNED NOT NULL, created_at INT UNSIGNED NOT NULL, PRIMARY KEY (id), KEY idx_jobs_queue (queue)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS job_batches (id VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, total_jobs INT NOT NULL, pending_jobs INT NOT NULL, failed_jobs INT NOT NULL, failed_job_ids LONGTEXT NOT NULL, options MEDIUMTEXT NULL, cancelled_at INT NULL, created_at INT NOT NULL, finished_at INT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS failed_jobs (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, uuid VARCHAR(255) NOT NULL, connection TEXT NOT NULL, queue TEXT NOT NULL, payload LONGTEXT NOT NULL, exception LONGTEXT NOT NULL, failed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uk_failed_jobs_uuid (uuid)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS establishments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
@@ -281,11 +315,56 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+ALTER TABLE establishments
+    ADD COLUMN cover_image VARCHAR(255) NULL,
+    ADD COLUMN address VARCHAR(255) NULL,
+    ADD COLUMN latitude DECIMAL(10,7) NULL,
+    ADD COLUMN longitude DECIMAL(10,7) NULL,
+    ADD COLUMN google_maps_url VARCHAR(2048) NULL,
+    ADD COLUMN features JSON NULL,
+    ADD COLUMN payment_methods JSON NULL;
+
+ALTER TABLE properties
+    ADD COLUMN property_type VARCHAR(50) NOT NULL DEFAULT 'apartment',
+    ADD COLUMN calendar_export_token VARCHAR(64) NULL,
+    ADD UNIQUE KEY uk_properties_calendar_export_token (calendar_export_token);
+
+ALTER TABLE property_images ADD COLUMN room_tag VARCHAR(100) NULL;
+ALTER TABLE external_calendar_feeds ADD COLUMN last_sync_error VARCHAR(2048) NULL, ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'stale';
+
+CREATE TABLE IF NOT EXISTS property_features (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, property_id BIGINT UNSIGNED NOT NULL, name VARCHAR(255) NOT NULL, description TEXT NULL,
+    cost_xof DECIMAL(12,2) NOT NULL DEFAULT 0, is_active TINYINT(1) NOT NULL DEFAULT 1, created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), KEY idx_property_features_property (property_id),
+    CONSTRAINT fk_property_features_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS site_reviews (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, source VARCHAR(50) NOT NULL DEFAULT 'google', reviewer_name VARCHAR(255) NULL,
+    rating TINYINT NOT NULL DEFAULT 5, review_text TEXT NULL, source_url VARCHAR(2048) NULL, reviewed_at TIMESTAMP NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1, created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), KEY idx_site_reviews_active (is_active, reviewed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS property_translations (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, property_id BIGINT UNSIGNED NOT NULL, locale VARCHAR(5) NOT NULL,
+    name VARCHAR(255) NULL, summary TEXT NULL, description LONGTEXT NULL, created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uk_property_translation_locale (property_id, locale),
+    CONSTRAINT fk_property_translations_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS establishment_translations (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, establishment_id BIGINT UNSIGNED NOT NULL, locale VARCHAR(5) NOT NULL,
+    name VARCHAR(255) NULL, description TEXT NULL, features JSON NULL, created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), UNIQUE KEY uk_establishment_translation_locale (establishment_id, locale),
+    CONSTRAINT fk_establishment_translations_establishment FOREIGN KEY (establishment_id) REFERENCES establishments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 INSERT INTO amenities (name, slug, category) VALUES
-    ('Wiâ€‘Fi', 'wifi', 'internet'),
+    ('Wi-Fi', 'wifi', 'internet'),
     ('Parking', 'parking', 'parking'),
-    ('Cuisine Ã©quipÃ©e', 'kitchen', 'kitchen'),
+    ('Cuisine equipee', 'kitchen', 'kitchen'),
     ('Climatisation', 'air-conditioning', 'comfort'),
     ('Piscine', 'pool', 'recreation'),
     ('Terrasse', 'terrace', 'outdoor'),
@@ -314,13 +393,13 @@ INSERT INTO establishments (name, slug, country_code, city, currency, descriptio
     ('Afrik Appart Cotonou', 'afrik-appart-cotonou', 'BJ', 'Cotonou', 'XOF', 'Draft establishment placeholder awaiting owner validation.', '[TO BE PROVIDED]', '[TO BE PROVIDED]', JSON_OBJECT('draft', true, 'source', 'master_prompt'))
 ON DUPLICATE KEY UPDATE name = VALUES(name), city = VALUES(city), currency = VALUES(currency), description = VALUES(description);
 
-INSERT INTO properties (establishment_id, name, slug, status, is_published, currency, nightly_rate_xof, nightly_rate_eur, max_guests, bedrooms, bathrooms, beds, address, city, country, summary, description, cover_image, minimum_stay, metadata) 
+INSERT INTO properties (establishment_id, name, slug, status, is_published, currency, nightly_rate_xof, nightly_rate_eur, max_guests, bedrooms, bathrooms, beds, address, city, country, summary, description, cover_image, minimum_stay, metadata, calendar_export_token) 
 VALUES
-    (1, 'Appartement 401', 'appartement-401', 'draft', 1, 'XOF', 25000, 38.15, 2, 1, 1, 1, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-401/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 401', 'draft', true)),
-    (1, 'Appartement 402', 'appartement-402', 'draft', 1, 'XOF', 32000, 48.78, 4, 2, 2, 2, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-402/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 402', 'draft', true)),
-    (1, 'Appartement 403', 'appartement-403', 'draft', 1, 'XOF', 39000, 59.45, 4, 2, 2, 2, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-403/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 403', 'draft', true)),
-    (1, 'Appartement 404', 'appartement-404', 'draft', 1, 'XOF', 45000, 68.58, 5, 3, 2, 3, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-404/cover.jpg', 3, JSON_OBJECT('source_folder', 'appartement 404', 'draft', true))
-ON DUPLICATE KEY UPDATE name = VALUES(name), status = VALUES(status), nightly_rate_xof = VALUES(nightly_rate_xof), nightly_rate_eur = VALUES(nightly_rate_eur), city = VALUES(city);
+    (1, 'Appartement 401', 'appartement-401', 'draft', 1, 'XOF', 25000, 38.15, 2, 1, 1, 1, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-401/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 401', 'draft', true), REPLACE(UUID(), '-', '')),
+    (1, 'Appartement 402', 'appartement-402', 'draft', 1, 'XOF', 32000, 48.78, 4, 2, 2, 2, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-402/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 402', 'draft', true), REPLACE(UUID(), '-', '')),
+    (1, 'Appartement 403', 'appartement-403', 'draft', 1, 'XOF', 39000, 59.45, 4, 2, 2, 2, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-403/cover.jpg', 2, JSON_OBJECT('source_folder', 'appartement 403', 'draft', true), REPLACE(UUID(), '-', '')),
+    (1, 'Appartement 404', 'appartement-404', 'draft', 1, 'XOF', 45000, 68.58, 5, 3, 2, 3, 'Draft address to be confirmed', 'Cotonou', 'Benin', 'Draft property summary awaiting confirmation.', 'Draft description to be replaced with owner-supplied content.', 'uploads/properties/appartement-404/cover.jpg', 3, JSON_OBJECT('source_folder', 'appartement 404', 'draft', true), REPLACE(UUID(), '-', ''))
+ON DUPLICATE KEY UPDATE name = VALUES(name), status = VALUES(status), nightly_rate_xof = VALUES(nightly_rate_xof), nightly_rate_eur = VALUES(nightly_rate_eur), city = VALUES(city), calendar_export_token = VALUES(calendar_export_token);
 
 INSERT INTO property_images (property_id, file_path, file_name, mime_type, width, height, sort_order, is_cover, metadata) VALUES
     (1, 'uploads/properties/appartement-401/cover.jpg', 'cover.jpg', 'image/jpeg', 1600, 1200, 1, 1, JSON_OBJECT('source', 'appartement 401')),
@@ -328,4 +407,6 @@ INSERT INTO property_images (property_id, file_path, file_name, mime_type, width
     (3, 'uploads/properties/appartement-403/cover.jpg', 'cover.jpg', 'image/jpeg', 1600, 1200, 1, 1, JSON_OBJECT('source', 'appartement 403')),
     (4, 'uploads/properties/appartement-404/cover.jpg', 'cover.jpg', 'image/jpeg', 1600, 1200, 1, 1, JSON_OBJECT('source', 'appartement 404'))
 ON DUPLICATE KEY UPDATE file_name = VALUES(file_name), mime_type = VALUES(mime_type), is_cover = VALUES(is_cover);
+
+SET FOREIGN_KEY_CHECKS = 1;
 
