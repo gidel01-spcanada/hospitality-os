@@ -1,0 +1,29 @@
+@extends('layouts.app')
+
+@section('title', __('messages.common.contact'))
+@section('seo_description', __('messages.seo.contact_description'))
+
+@section('content')
+<section class="page-hero compact-hero">
+    <div class="container narrow">
+        <span class="badge badge-emerald">Support</span>
+        <h1>{{ __('messages.contact.title') }}</h1>
+        <p>{{ __('messages.contact.subtitle') }}</p>
+    </div>
+</section>
+
+<section class="container dashboard-grid">
+    <div class="summary-card">
+        <h2>{{ __('messages.contact.email') }}</h2>
+        <p>bonjour@afrikappart.com</p>
+    </div>
+    <div class="summary-card">
+        <h2>{{ __('messages.contact.phone') }}</h2>
+        <p>+229 97 00 00 00</p>
+    </div>
+    <div class="summary-card full-width">
+        <h2>{{ __('messages.contact.hours') }}</h2>
+        <p>{{ __('messages.contact.hours_value') }}</p>
+    </div>
+</section>
+@endsection

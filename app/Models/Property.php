@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Builder;
+
+class Property extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'establishment_id',
+        'name',
+        'property_type',
+        'slug',
+        'status',
+        'is_published',
+        'currency',
+        'nightly_rate_xof',
+        'nightly_rate_eur',
+        'max_guests',
+        'bedrooms',
+        'bathrooms',
+        'beds',
+        'address',
+        'city',
+        'country',
+        'latitude',
+        'longitude',
+        'summary',
+        'description',
+        'cover_image',
+        'minimum_stay',
+        'metadata',
+        'calendar_export_token',
+    ];
+
+    protected $casts = [
+        'metadata' => 'array',
+        'is_published' => 'boolean',
+        'nightly_rate_xof' => 'decimal:2',
+        'nightly_rate_eur' => 'decimal:2',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Property $property): void {
+            $property->calendar_export_token ??= bin2hex(random_bytes(24));
+        });
+    }
+
+    public function establishment(): BelongsTo
+    {
+        return $this->belongsTo(Establishment::class);
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', 'published');
+    }
+
+    public function translations(): HasMany
+    {
+        return $this->hasMany(PropertyTranslation::class);
+    }
+
+    public function localized(string $field, ?string $locale = null): mixed
+    {
+        $locale ??= app()->getLocale();
+        $translation = $this->translations->firstWhere('locale', $locale);
+
+        return $translation?->{$field} ?: $this->{$field};
+    }
+
+    public function amenities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Amenity::class, 'property_amenities');
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(PropertyImage::class);
+    }
+
+    public function rateRules(): HasMany
+    {
+        return $this->hasMany(RateRule::class);
+    }
+
+    public function availabilityBlocks(): HasMany
+    {
+        return $this->hasMany(AdminAvailabilityBlock::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function calendarFeeds(): HasMany
+    {
+        return $this->hasMany(ExternalCalendarFeed::class);
+    }
+
+    public function features(): HasMany
+    {
+        return $this->hasMany(PropertyFeature::class);
+    }
+}

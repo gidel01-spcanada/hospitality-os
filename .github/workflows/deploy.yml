@@ -1,0 +1,60 @@
+name: Deploy to Bluehost
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, zip, intl
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: repository/package-lock.json
+
+      - name: Build release bundle
+        shell: bash
+        run: |
+          chmod +x scripts/build-release.sh
+          ./scripts/build-release.sh
+
+      - name: Upload app bundle to SFTP
+        uses: appleboy/scp-action@v0.1.16
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_PRIVATE_KEY }}
+          port: ${{ secrets.SFTP_PORT || 22 }}
+          source: 'release/app/*'
+          target: ${{ secrets.APP_REMOTE_PATH }}
+          strip_components: 1
+
+      - name: Upload public bundle to SFTP
+        uses: appleboy/scp-action@v0.1.16
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_PRIVATE_KEY }}
+          port: ${{ secrets.SFTP_PORT || 22 }}
+          source: 'release/public/*'
+          target: ${{ secrets.PUBLIC_REMOTE_PATH }}
+          strip_components: 1

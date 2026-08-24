@@ -1,0 +1,274 @@
+@extends('layouts.app')
+
+@section('title', $property->localized('name') . ' | Afrik Appart')
+@section('seo_description', $property->localized('description') ?: $property->localized('summary'))
+
+@push('head')
+    @php
+        $shareTitle = $property->localized('name');
+        $shareDescription = $property->localized('description') ?: $property->localized('summary');
+        $shareImage = $property->images->firstWhere('is_cover', true) ?? $property->images->first();
+        $shareImageUrl = $shareImage ? asset($shareImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
+    @endphp
+    <meta name="description" content="{{ $shareDescription }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $shareTitle }}">
+    <meta property="og:description" content="{{ $shareDescription }}">
+    <meta property="og:image" content="{{ $shareImageUrl }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $shareTitle }}">
+    <meta name="twitter:description" content="{{ $shareDescription }}">
+    <meta name="twitter:image" content="{{ $shareImageUrl }}">
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'LodgingBusiness',
+            'name' => $shareTitle,
+            'description' => $shareDescription,
+            'url' => url()->current(),
+            'image' => [$shareImageUrl],
+            'address' => array_filter([
+                '@type' => 'PostalAddress',
+                'streetAddress' => $property->address ?: $property->establishment?->address,
+                'addressLocality' => $property->city ?: $property->establishment?->city,
+                'addressCountry' => $property->country ?: $property->establishment?->country_code,
+            ]),
+            'geo' => $property->establishment?->latitude && $property->establishment?->longitude ? [
+                '@type' => 'GeoCoordinates',
+                'latitude' => (float) $property->establishment->latitude,
+                'longitude' => (float) $property->establishment->longitude,
+            ] : null,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+@endpush
+
+@section('content')
+    <section class="property-show-header">
+        <div class="container">
+            <div class="property-show-topline">
+                <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
+                <a href="{{ route('properties.index') }}" class="inline-link">← {{ __('messages.properties.back_to_list') }}</a>
+            </div>
+            @php
+                $shareUrl = url()->current();
+                $encodedShareUrl = urlencode($shareUrl);
+                $encodedShareTitle = urlencode($shareTitle);
+            @endphp
+            <div class="share-panel" aria-label="{{ __('messages.properties.share') }}">
+                <strong>{{ __('messages.properties.share') }}</strong>
+                <div class="share-links">
+                    <a href="https://wa.me/?text={{ $encodedShareTitle }}%20{{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_whatsapp') }}</a>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_facebook') }}</a>
+                    <a href="https://twitter.com/intent/tweet?text={{ $encodedShareTitle }}&url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_x') }}</a>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_linkedin') }}</a>
+                </div>
+            </div>
+            <div class="property-show-layout">
+                <div class="gallery-panel">
+                    @php
+                        $images = $property->images;
+                        $galleryImages = $images->map(fn ($image) => ['url' => asset($image->file_path), 'tag' => $image->room_tag])->values();
+                        $coverImage = $images->firstWhere('is_cover', true) ?? $images->first();
+                        $cover = $coverImage ? asset($coverImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
+                        $coverIndex = $coverImage ? $images->search(fn ($image) => $image->id === $coverImage->id) : 0;
+                    @endphp
+                    <div class="gallery-viewer" data-gallery='@json($galleryImages)' data-gallery-start="{{ $coverIndex === false ? 0 : $coverIndex }}">
+                        @if ($galleryImages->count() > 1)
+                            <button type="button" class="gallery-control gallery-prev" data-gallery-prev aria-label="{{ __('messages.properties.previous_photo') }}">&#8592;</button>
+                        @endif
+                        <img src="{{ $cover }}" alt="{{ $property->name }}" class="main-image" data-gallery-image>
+                        @if ($coverImage?->room_tag)
+                            <span class="gallery-tag" data-gallery-tag>{{ $coverImage->room_tag }}</span>
+                        @endif
+                        @if ($galleryImages->count() > 1)
+                            <button type="button" class="gallery-control gallery-next" data-gallery-next aria-label="{{ __('messages.properties.next_photo') }}">&#8594;</button>
+                        @endif
+                        <span class="gallery-counter" data-gallery-counter>1 / {{ max(1, $galleryImages->count()) }}</span>
+                    </div>
+                    <div class="gallery-grid">
+                        @foreach ($images as $image)
+                            @php $src = $image->file_path ? asset($image->file_path) : $cover; @endphp
+                            <button type="button" class="gallery-thumb" data-gallery-thumb="{{ $loop->index }}" aria-label="{{ __('messages.properties.view_photo', ['number' => $loop->iteration]) }}">
+                                <img src="{{ $src }}" alt="{{ $property->name }} photo" class="thumb-image">
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <aside class="booking-panel">
+                    <div class="booking-card">
+                        <div class="price-row">
+                            <span>{{ __('messages.properties.from') }}</span>
+                            <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' ')]) }}</strong>
+                        </div>
+                        <div class="price-row muted-row">
+                            <span>≈</span>
+                            <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
+                        </div>
+
+                        @if (session('status'))
+                            <div class="reservation-success">
+                                {{ session('status') }}
+                            </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}">
+                            @csrf
+                            <div class="input-group">
+                                <label for="full_name">{{ __('messages.properties.full_name') }}</label>
+                                <input id="full_name" name="full_name" type="text" value="{{ old('full_name') }}" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="email">{{ __('messages.common.email') }}</label>
+                                <input id="email" name="email" type="email" value="{{ old('email') }}" required>
+                            </div>
+                            <div class="grid-two compact-grid">
+                                <div class="input-group">
+                                    <label for="check_in">{{ __('messages.properties.check_in') }}</label>
+                                    <input id="check_in" name="check_in" type="date" value="{{ old('check_in', now()->toDateString()) }}" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="check_out">{{ __('messages.properties.check_out') }}</label>
+                                    <input id="check_out" name="check_out" type="date" value="{{ old('check_out', now()->addDay()->toDateString()) }}" required>
+                                </div>
+                            </div>
+                            <div class="grid-two compact-grid">
+                                <div class="input-group">
+                                    <label for="adults">{{ __('messages.properties.adults') }}</label>
+                                    <select id="adults" name="adults">
+                                        @for ($i = 1; $i <= min(6, (int) $property->max_guests); $i++)
+                                            <option value="{{ $i }}" @selected(old('adults', 2) == $i)>{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="country">{{ __('messages.properties.country') }}</label>
+                                    <input id="country" name="country" type="text" value="{{ old('country', 'Bénin') }}">
+                                </div>
+                            </div>
+                            <div class="grid-two compact-grid">
+                                <div class="input-group">
+                                    <label for="children">{{ __('messages.properties.children') }}</label>
+                                    <input id="children" name="children" type="number" min="0" max="4" value="{{ old('children', 0) }}">
+                                </div>
+                                <div class="input-group">
+                                    <label for="infants">{{ __('messages.properties.infants') }}</label>
+                                    <input id="infants" name="infants" type="number" min="0" max="2" value="{{ old('infants', 0) }}">
+                                </div>
+                            </div>
+                            <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="{{ __('messages.properties.phone_optional') }}">
+
+                            @if ($property->features->isNotEmpty())
+                                <div class="feature-choice-box">
+                                    <h3>{{ __('messages.properties.extra_options') }}</h3>
+                                    @foreach ($property->features as $feature)
+                                        <label class="feature-choice-item">
+                                            <input type="checkbox" name="selected_features[]" value="{{ $feature->id }}" {{ in_array((string) $feature->id, (array) old('selected_features', []), true) ? 'checked' : '' }}>
+                                            <div class="feature-choice-copy">
+                                                <strong>{{ $feature->name }}</strong>
+                                                @if ($feature->description)
+                                                    <span>{{ $feature->description }}</span>
+                                                @endif
+                                            </div>
+                                            <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} XOF</em>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if($errors->any())
+                                <div class="form-error-box">
+                                    <ul>
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
+                                <p class="form-help" data-availability-result role="status" aria-live="polite"></p>
+                                <button type="submit" class="btn btn-primary btn-full">{{ __('messages.properties.request_reservation') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <section class="section detail-section">
+        <div class="container property-details-grid">
+            <div class="content-column">
+                <div class="detail-card">
+                                <h2>{{ __('messages.properties.about') }}</h2>
+                            <p>{{ $property->localized('description') ?: $property->localized('summary') }}</p>
+                </div>
+
+                <div class="detail-card">
+                    <h2>{{ __('messages.properties.characteristics') }}</h2>
+                    <div class="stat-list">
+                        <div class="stat-item"><span>{{ __('messages.home.travelers') }}</span><strong>{{ $property->max_guests }}</strong></div>
+                        <div class="stat-item"><span>{{ __('messages.properties.bedrooms') }}</span><strong>{{ $property->bedrooms }}</strong></div>
+                        <div class="stat-item"><span>{{ __('messages.properties.bathrooms') }}</span><strong>{{ $property->bathrooms }}</strong></div>
+                        <div class="stat-item"><span>{{ __('messages.properties.beds') }}</span><strong>{{ $property->beds }}</strong></div>
+                    </div>
+                </div>
+
+                @if ($property->amenities->isNotEmpty())
+                    <div class="detail-card">
+                        <h2>{{ __('messages.properties.included_services') }}</h2>
+                        <ul class="amenity-list">
+                            @foreach($property->amenities as $amenity)
+                                <li>{{ $amenity->name }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="detail-card">
+                    <h2>{{ __('messages.properties.reviews') }}</h2>
+                    @if ($reviews->isNotEmpty())
+                        <div class="review-grid property-review-grid">
+                            @foreach ($reviews as $review)
+                                <article class="review-card">
+                                    <div class="review-topline"><strong>{{ $review->reviewer_name }}</strong><span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span></div>
+                                    @if ($review->review_text)<p class="review-quote">{{ $review->review_text }}</p>@endif
+                                    <small>{{ $review->source }}</small>
+                                </article>
+                            @endforeach
+                        </div>
+                    @else
+                        <p>{{ __('messages.properties.no_reviews') }}</p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="content-column">
+            <div class="detail-card sticky-card">
+                <h2>{{ __('messages.properties.stay_sheet') }}</h2>
+                <div class="info-row"><span>{{ __('messages.properties.city') }}</span><strong>{{ $property->city }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.address') }}</span><strong>{{ $property->address }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.minimum_stay') }}</span><strong>{{ __('messages.properties.nights', ['count' => $property->minimum_stay]) }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.currency') }}</span><strong>{{ $property->currency }}</strong></div>
+            </div>
+            @if ($property->establishment && ($property->establishment->latitude || $property->establishment->longitude || $property->establishment->google_maps_url))
+                <div class="detail-card">
+                    <h2>{{ __('messages.properties.location') }}</h2>
+                    @if ($property->establishment->address || $property->establishment->city)
+                        <p>{{ $property->establishment->address ?: $property->establishment->city }}</p>
+                    @endif
+                    @if ($property->establishment->latitude && $property->establishment->longitude)
+                        <iframe class="location-map" title="{{ __('messages.properties.location') }}" src="https://www.google.com/maps?q={{ $property->establishment->latitude }},{{ $property->establishment->longitude }}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    @endif
+                    @if ($property->establishment->google_maps_url)
+                        <a class="inline-link" href="{{ $property->establishment->google_maps_url }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.view_map') }} →</a>
+                    @endif
+                </div>
+            @endif
+            </div>
+        </div>
+    </section>
+@endsection

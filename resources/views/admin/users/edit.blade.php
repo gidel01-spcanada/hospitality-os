@@ -1,0 +1,31 @@
+@extends('layouts.app')
+
+@section('title', $managedUser->exists ? __('messages.admin.edit_user') : __('messages.admin.add_user'))
+
+@section('content')
+    <section class="page-hero compact-hero"><div class="container"><span class="badge badge-gold">{{ __('messages.admin.title') }}</span><h1>{{ $managedUser->exists ? $managedUser->name : __('messages.admin.add_user') }}</h1><p>{{ $managedUser->exists ? __('messages.admin.user_editor_description') : __('messages.admin.create_user_description') }}</p></div></section>
+    <section class="container dashboard-grid">
+        <div class="summary-card full-width">
+            @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
+            <form method="POST" action="{{ $managedUser->exists ? route('admin.users.update', $managedUser) : route('admin.users.store') }}">
+                @csrf @if($managedUser->exists) @method('PUT') @endif
+                <div class="form-grid">
+                    <div><label for="name">{{ __('messages.admin.name') }}</label><input id="name" name="name" value="{{ old('name', $managedUser->name) }}" required></div>
+                    <div><label for="email">{{ __('messages.common.email') }}</label><input id="email" type="email" name="email" value="{{ old('email', $managedUser->email) }}" required></div>
+                    <div><label for="role">{{ __('messages.admin.role') }}</label><select id="role" name="role"><option value="customer" @selected(old('role', $managedUser->role) === 'customer')>{{ __('messages.admin.customer') }}</option><option value="concierge" @selected(old('role', $managedUser->role) === 'concierge')>{{ __('messages.admin.concierge') }}</option><option value="admin" @selected(old('role', $managedUser->role) === 'admin')>{{ __('messages.admin.administrator') }}</option></select></div>
+                    <div><label for="locale">{{ __('messages.admin.language') }}</label><select id="locale" name="locale"><option value="fr" @selected(old('locale', $managedUser->locale) === 'fr')>Français</option><option value="en" @selected(old('locale', $managedUser->locale) === 'en')>English</option></select></div>
+                    @if (! $managedUser->exists)
+                        <div><label for="password">{{ __('messages.admin.initial_password') }}</label><input id="password" type="password" name="password" required></div>
+                        <div><label for="password_confirmation">{{ __('messages.common.confirm_password') }}</label><input id="password_confirmation" type="password" name="password_confirmation" required></div>
+                    @endif
+                    <label class="checkbox-field"><input type="checkbox" name="email_verified" value="1" @checked(old('email_verified', (bool) $managedUser->email_verified_at))><span>{{ __('messages.admin.email_verified') }}</span></label>
+                    <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $managedUser->exists ? $managedUser->is_active : true))><span>{{ __('messages.admin.account_active') }}</span></label>
+                    <label class="checkbox-field"><input type="checkbox" name="email_booking_updates" value="1" @checked(old('email_booking_updates', $managedUser->email_booking_updates))><span>{{ __('messages.admin.reservation_updates') }}</span></label>
+                    <label class="checkbox-field"><input type="checkbox" name="email_marketing" value="1" @checked(old('email_marketing', $managedUser->email_marketing))><span>{{ __('messages.admin.marketing_offers') }}</span></label>
+                    <label class="checkbox-field"><input type="checkbox" name="email_newsletter" value="1" @checked(old('email_newsletter', $managedUser->email_newsletter))><span>{{ __('messages.admin.newsletter') }}</span></label>
+                </div>
+                <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_user') }}</button><a class="btn btn-ghost" href="{{ route('admin.users.index') }}">{{ __('messages.admin.back') }}</a></div>
+            </form>
+        </div>
+    </section>
+@endsection

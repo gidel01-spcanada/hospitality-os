@@ -1,0 +1,97 @@
+@extends('layouts.app')
+
+@section('title', $reservation->reservation_ref . ' | Réservation')
+
+@section('content')
+    <section class="page-hero compact-hero">
+        <div class="container">
+            <span class="badge badge-gold">{{ __('messages.admin.reservation') }}</span>
+            <h1>{{ $reservation->reservation_ref }}</h1>
+            <p>{{ $reservation->property?->name ?? __('messages.admin.property') }}</p>
+        </div>
+    </section>
+
+    <section class="container admin-form-shell">
+
+        @if (session('status'))
+            <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        <div class="admin-two-column">
+            <div class="admin-panel">
+                <dl class="admin-form-grid compact">
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.property') }}</dt>
+                        <dd class="mt-1 font-medium">{{ $reservation->property?->name ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.guest') }}</dt>
+                        <dd class="mt-1 font-medium">{{ $reservation->guest?->full_name ?? $reservation->email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.common.email') }}</dt>
+                        <dd class="mt-1">{{ $reservation->email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.phone') }}</dt>
+                        <dd class="mt-1">{{ $reservation->guest?->phone ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.arrival') }}</dt>
+                        <dd class="mt-1">{{ $reservation->check_in?->format('d/m/Y') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.departure') }}</dt>
+                        <dd class="mt-1">{{ $reservation->check_out?->format('d/m/Y') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.travelers') }}</dt>
+                        <dd class="mt-1">{{ $reservation->adults }} adulte(s), {{ $reservation->children }} enfant(s), {{ $reservation->infants }} bébé(s)</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.total') }}</dt>
+                        <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} XOF</dd>
+                    </div>
+                </dl>
+
+                <div class="summary-card" style="margin-top: 1.5rem;">
+                    <h2>{{ __('messages.admin.financial_details') }}</h2>
+                    <ul>
+                        @foreach($reservation->priceLines as $line)
+                            <li>
+                                <span>{{ $line->label }}</span>
+                                <span>{{ number_format((float) $line->amount, 0, ',', ' ') }} XOF</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+
+            <aside class="admin-panel">
+                <h2>{{ __('messages.admin.update_status') }}</h2>
+                <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form">
+                    @csrf
+                    @method('PATCH')
+
+                    <div>
+                        <label for="status">{{ __('messages.admin.status') }}</label>
+                        <select id="status" name="status">
+                            @foreach(['pending', 'pending_payment', 'confirmed', 'checked_in', 'completed', 'cancelled'] as $status)
+                                <option value="{{ $status }}" {{ $reservation->status === $status ? 'selected' : '' }}>{{ __('messages.admin.status_' . $status) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="notes">{{ __('messages.admin.internal_note') }}</label>
+                        <textarea id="notes" name="notes" rows="4" placeholder="{{ __('messages.admin.add_management_note') }}"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">{{ __('messages.admin.save_status') }}</button>
+                </form>
+            </aside>
+        </div>
+    </section>
+@endsection
