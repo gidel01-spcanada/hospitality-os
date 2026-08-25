@@ -220,34 +220,76 @@ document.querySelectorAll('[data-property-tabs]').forEach((editor) => {
 });
 
 document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
+	const form = list.closest('form');
+	const status = form?.querySelector('[data-photo-order-status]');
 	let draggedRow = null;
 
+	const rows = () => Array.from(list.querySelectorAll('[data-photo-id]'));
+	const currentOrder = () => rows().map((row) => row.dataset.photoId).join(',');
+	const initialOrder = currentOrder();
+
+	const clearDropTargets = () => {
+		rows().forEach((row) => row.classList.remove('is-drop-before', 'is-drop-after'));
+	};
+
+	const dropsAfter = (row, event) => {
+		const bounds = row.getBoundingClientRect();
+		return event.clientY > bounds.top + bounds.height / 2;
+	};
+
 	const updatePhotoOrder = () => {
-		list.querySelectorAll('[data-photo-id]').forEach((row, index) => {
+		rows().forEach((row, index) => {
 			const order = row.querySelector('[data-photo-order]');
 			if (order) {
 				order.value = index + 1;
 			}
 		});
+
+		if (status) {
+			status.hidden = currentOrder() === initialOrder;
+		}
 	};
 
-	list.querySelectorAll('[data-photo-id]').forEach((row) => {
-		row.addEventListener('dragstart', () => {
+	rows().forEach((row) => {
+		row.addEventListener('dragstart', (event) => {
 			draggedRow = row;
 			row.classList.add('is-dragging');
+			event.dataTransfer.effectAllowed = 'move';
+			// Firefox refuses to start a drag unless data is attached.
+			event.dataTransfer.setData('text/plain', row.dataset.photoId ?? '');
 		});
+
 		row.addEventListener('dragend', () => {
 			row.classList.remove('is-dragging');
+			clearDropTargets();
 			draggedRow = null;
 			updatePhotoOrder();
 		});
+
 		row.addEventListener('dragover', (event) => {
-			event.preventDefault();
-			if (draggedRow && draggedRow !== row) {
-				const bounds = row.getBoundingClientRect();
-				const insertAfter = event.clientY > bounds.top + bounds.height / 2;
-				row.parentNode.insertBefore(draggedRow, insertAfter ? row.nextSibling : row);
+			if (!draggedRow || draggedRow === row) {
+				return;
 			}
+
+			event.preventDefault();
+			event.dataTransfer.dropEffect = 'move';
+			clearDropTargets();
+			row.classList.add(dropsAfter(row, event) ? 'is-drop-after' : 'is-drop-before');
+		});
+
+		row.addEventListener('dragleave', () => {
+			row.classList.remove('is-drop-before', 'is-drop-after');
+		});
+
+		row.addEventListener('drop', (event) => {
+			if (!draggedRow || draggedRow === row) {
+				return;
+			}
+
+			event.preventDefault();
+			list.insertBefore(draggedRow, dropsAfter(row, event) ? row.nextSibling : row);
+			clearDropTargets();
+			updatePhotoOrder();
 		});
 	});
 

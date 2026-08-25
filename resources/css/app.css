@@ -1856,6 +1856,62 @@ main #home-location {
     border-color: var(--afrik-emerald);
 }
 
+/* Shows which side of the hovered row the dragged photo will land on. */
+.admin-photo-row.is-drop-before,
+.admin-photo-row.is-drop-after {
+    position: relative;
+}
+
+.admin-photo-row.is-drop-before::before,
+.admin-photo-row.is-drop-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--afrik-emerald);
+}
+
+.admin-photo-row.is-drop-before::before {
+    top: -5px;
+}
+
+.admin-photo-row.is-drop-after::after {
+    bottom: -5px;
+}
+
+.admin-photo-row[draggable='true']:active {
+    cursor: grabbing;
+}
+
+.photo-order-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.9rem 0 0;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid rgba(200, 155, 60, 0.35);
+    border-radius: 12px;
+    background: rgba(200, 155, 60, 0.12);
+    color: #7d5c14;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.photo-order-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.photo-order-status[hidden] {
+    display: none;
+}
+
 .photo-remove-button {
     border: 0;
     border-radius: 9px;

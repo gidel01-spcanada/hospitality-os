@@ -20,6 +20,7 @@ return [
         'admin.editor_description' => 'Gérez les informations, les photos, les tarifs, les fonctionnalités, la disponibilité et les calendriers.',
         'admin.save_general' => 'Enregistrer les informations générales',
         'admin.save_photos' => 'Enregistrer les paramètres des photos',
+        'admin.photo_order_pending' => 'Ordre des photos modifié. Enregistrez les paramètres pour l’appliquer.',
         'admin.upload_photos' => 'Téléverser des photos',
         'admin.upload_photo_help' => 'JPG, PNG ou WebP, jusqu’à 10 Mo par image.',
         'admin.upload' => 'Téléverser les photos',

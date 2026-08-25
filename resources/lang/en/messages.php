@@ -20,6 +20,7 @@ return [
         'admin.editor_description' => 'Manage information, photos, pricing, features, availability, and calendars.',
         'admin.save_general' => 'Save general information',
         'admin.save_photos' => 'Save photo settings',
+        'admin.photo_order_pending' => 'Photo order changed. Save photo settings to apply it.',
         'admin.upload_photos' => 'Upload photos',
         'admin.upload_photo_help' => 'JPG, PNG, or WebP, up to 10 MB per image.',
         'admin.upload' => 'Upload photos',
