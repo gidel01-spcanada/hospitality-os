@@ -1841,7 +1841,7 @@ main #home-location {
 
 .admin-photo-row {
     display: grid;
-    grid-template-columns: 72px minmax(90px, 0.45fr) minmax(150px, 1fr) auto;
+    grid-template-columns: var(--photo-row-columns);
     align-items: center;
     gap: 0.75rem;
     padding: 0.7rem;
@@ -1849,6 +1849,87 @@ main #home-location {
     border-radius: 14px;
     background: rgba(246, 243, 236, 0.55);
     cursor: grab;
+}
+
+/* Shared so the header labels stay aligned with the row content. */
+.photo-order-form {
+    --photo-row-columns: 18px 112px minmax(140px, 1fr) 40px 40px;
+}
+
+.admin-photo-list-head {
+    display: grid;
+    grid-template-columns: var(--photo-row-columns);
+    align-items: end;
+    gap: 0.75rem;
+    padding: 0 0.7rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--afrik-muted);
+}
+
+.admin-photo-row > input[type='text'] {
+    width: 100%;
+    border: 1px solid var(--afrik-line);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.photo-cover-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0; /* global label spacing would offset it from the row baseline */
+    border: 1px solid rgba(19, 31, 35, 0.14);
+    border-radius: 11px;
+    background: white;
+    cursor: pointer;
+}
+
+.photo-cover-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.photo-cover-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+    color: rgba(19, 31, 35, 0.22);
+}
+
+.photo-cover-toggle:has(input:checked) {
+    border-color: rgba(200, 155, 60, 0.55);
+    background: rgba(200, 155, 60, 0.14);
+}
+
+.photo-cover-toggle:has(input:checked) .photo-cover-icon {
+    color: #c89b3c;
+}
+
+.photo-cover-toggle:focus-within {
+    outline: 2px solid rgba(15, 91, 76, 0.35);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .admin-photo-row.is-dragging {
@@ -1913,12 +1994,17 @@ main #home-location {
 }
 
 .photo-remove-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     border: 0;
-    border-radius: 9px;
-    padding: 0.5rem 0.65rem;
+    border-radius: 11px;
     background: rgba(180, 76, 76, 0.1);
     color: #7a1d1d;
-    font-size: 0.78rem;
+    font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -1936,24 +2022,24 @@ main #home-location {
 }
 
 .admin-photo-row > img {
-    width: 72px;
-    height: 56px;
+    width: 112px;
+    height: 84px;
     border-radius: 9px;
     object-fit: cover;
 }
 
 @media (max-width: 700px) {
-    .admin-photo-row {
-        grid-template-columns: 64px 1fr;
+    .photo-order-form {
+        --photo-row-columns: 18px 88px minmax(0, 1fr) 40px 40px;
+    }
+
+    .admin-photo-list-head {
+        display: none;
     }
 
     .admin-photo-row > img {
-        width: 64px;
-        height: 50px;
-    }
-
-    .admin-photo-row .checkbox-field {
-        grid-column: 1 / -1;
+        width: 88px;
+        height: 66px;
     }
 }
 

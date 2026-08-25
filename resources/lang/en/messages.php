@@ -174,6 +174,8 @@ return [
         'admin.summary' => 'Summary',
         'admin.room_or_area' => 'Room or area',
         'admin.use_for_cards' => 'Use for cards',
+        'admin.photo_column' => 'Photo',
+        'admin.cover_column' => 'Cover',
         'admin.nightly_rate_xof' => 'Nightly rate XOF',
         'admin.nightly_rate_eur' => 'Nightly rate EUR',
         'admin.minimum_stay' => 'Minimum stay',

@@ -174,6 +174,8 @@ return [
         'admin.summary' => 'Résumé',
         'admin.room_or_area' => 'Pièce ou espace',
         'admin.use_for_cards' => 'Utiliser pour les cartes',
+        'admin.photo_column' => 'Photo',
+        'admin.cover_column' => 'Couverture',
         'admin.nightly_rate_xof' => 'Tarif par nuit XOF',
         'admin.nightly_rate_eur' => 'Tarif par nuit EUR',
         'admin.minimum_stay' => 'Séjour minimum',
