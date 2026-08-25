@@ -1853,7 +1853,7 @@ main #home-location {
 
 /* Shared so the header labels stay aligned with the row content. */
 .photo-order-form {
-    --photo-row-columns: 18px 112px minmax(140px, 1fr) 40px 40px;
+    --photo-row-columns: 22px 18px 112px minmax(140px, 1fr) 40px 40px;
 }
 
 .admin-photo-list-head {
@@ -2021,6 +2021,14 @@ main #home-location {
     user-select: none;
 }
 
+.photo-position {
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--afrik-muted);
+    font-variant-numeric: tabular-nums;
+}
+
 .admin-photo-row > img {
     width: 112px;
     height: 84px;
@@ -2030,7 +2038,7 @@ main #home-location {
 
 @media (max-width: 700px) {
     .photo-order-form {
-        --photo-row-columns: 18px 88px minmax(0, 1fr) 40px 40px;
+        --photo-row-columns: 22px 18px 88px minmax(0, 1fr) 40px 40px;
     }
 
     .admin-photo-list-head {

@@ -243,6 +243,11 @@ document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 			if (order) {
 				order.value = index + 1;
 			}
+
+			const position = row.querySelector('[data-photo-position]');
+			if (position) {
+				position.textContent = index + 1;
+			}
 		});
 
 		if (status) {
