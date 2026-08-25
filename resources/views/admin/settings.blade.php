@@ -1,18 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.settings_title'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-gold">{{ __('messages.admin.title') }}</span>
-            <h1>{{ __('messages.admin.settings_title') }}</h1>
-            <p>{{ __('messages.admin.settings_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ __('messages.admin.settings_title') }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.settings_description') }}</p>
+    </div>
 
-    <section class="container dashboard-grid">
-        <div class="summary-card full-width">
+    <x-card>
             @if (session('status'))
                 <div class="alert success">
                     {{ session('status') }}
@@ -75,6 +71,5 @@
                     <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">Retour</a>
                 </div>
             </form>
-        </div>
-    </section>
+    </x-card>
 @endsection

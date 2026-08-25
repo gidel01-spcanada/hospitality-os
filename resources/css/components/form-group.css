@@ -1,0 +1,114 @@
+/* ============================================================================
+   Form Group & Section Styles
+   ============================================================================
+   Form sections, fieldsets, and grouped inputs
+   ============================================================================ */
+
+.form-group-wrapper {
+    margin-bottom: var(--space-8);
+}
+
+.form-group-wrapper:last-child {
+    margin-bottom: 0;
+}
+
+.form-section-header {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.form-section-header h3 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.form-section-header p {
+    margin: 0;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+}
+
+.form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+/* Form actions (buttons at end of form) */
+.form-actions,
+.form-footer {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-default);
+}
+
+.form-actions.left,
+.form-footer.left {
+    justify-content: flex-start;
+}
+
+.form-actions.center,
+.form-footer.center {
+    justify-content: center;
+}
+
+.form-actions.space-between,
+.form-footer.space-between {
+    justify-content: space-between;
+}
+
+/* Fieldset styles */
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-8) 0;
+}
+
+legend {
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+    padding: 0;
+}
+
+/* Form help text block */
+.form-help-block {
+    background-color: var(--bg-surface-secondary);
+    border-left: 4px solid var(--theme-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-6);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+}
+
+.form-help-block strong {
+    display: block;
+    margin-bottom: var(--space-1);
+    color: var(--text-primary);
+}
+
+/* ============================================================================
+   ADMIN FORM OVERRIDES
+   ============================================================================ */
+
+.admin-layout .form-section-header {
+    border-color: var(--color-slate-200);
+}
+
+.admin-layout .form-actions,
+.admin-layout .form-footer {
+    border-color: var(--color-slate-200);
+}
+
+.admin-layout .form-help-block {
+    background-color: var(--color-slate-50);
+    border-color: var(--color-primary-600);
+}

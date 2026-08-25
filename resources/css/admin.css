@@ -1,0 +1,408 @@
+/* ============================================================================
+   Admin Layout & Navigation Styles
+   ============================================================================
+   Sidebar navigation, topbar, breadcrumbs for admin/account areas
+   ============================================================================ */
+
+/* Admin body class */
+body.admin-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Admin container structure */
+.admin-shell {
+    display: block;
+    flex: 1;
+    gap: 0;
+}
+
+/* ============================================================================
+   ADMIN SIDEBAR NAVIGATION
+   ============================================================================ */
+
+.admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--topbar-height);
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--topbar-height));
+    background-color: var(--color-slate-50);
+    border-right: 1px solid var(--color-slate-200);
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width var(--transition-base);
+    z-index: var(--z-sticky);
+}
+
+.admin-sidebar.collapsed {
+    width: var(--sidebar-width-collapsed);
+}
+
+/* Sidebar nav menu */
+.admin-nav {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-3);
+}
+
+.admin-nav-section {
+    margin: var(--space-4) 0;
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--color-slate-200);
+}
+
+.admin-nav-section:first-child {
+    margin-top: 0;
+    border-top: none;
+}
+
+.admin-nav-section-title {
+    padding: 0 var(--space-3);
+    font-size: var(--font-xs);
+    font-weight: var(--font-bold);
+    color: var(--color-slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+    user-select: none;
+}
+
+/* Sidebar nav items */
+.admin-nav-item {
+    margin-bottom: var(--space-1);
+}
+
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    color: var(--color-slate-600);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+}
+
+.admin-nav-link:hover {
+    background-color: transparent;
+    color: inherit;
+}
+
+.admin-nav-link.is-active {
+    background-color: var(--color-primary-100);
+    color: var(--color-primary-600);
+    font-weight: var(--font-semibold);
+}
+
+.admin-nav-link .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* Sidebar collapsed styles */
+.admin-sidebar.collapsed .admin-nav-section-title,
+.admin-sidebar.collapsed .admin-nav-link span {
+    display: none;
+}
+
+.admin-sidebar.collapsed .admin-nav-link {
+    justify-content: center;
+    padding: var(--space-3);
+}
+
+.admin-sidebar.collapsed .admin-nav-link .icon {
+    margin: 0;
+}
+
+/* ============================================================================
+   ADMIN TOPBAR
+   ============================================================================ */
+
+.admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    height: var(--topbar-height);
+    padding: 0 var(--space-6);
+    background-color: white;
+    border-bottom: 1px solid var(--color-slate-200);
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: var(--z-fixed);
+}
+
+.admin-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.admin-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+/* Sidebar toggle button */
+.admin-sidebar-toggle {
+    background: none;
+    border: none;
+    padding: var(--space-2);
+    cursor: pointer;
+    color: var(--color-slate-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.admin-sidebar-toggle:hover {
+    background-color: transparent;
+    color: inherit;
+}
+
+/* ============================================================================
+   ADMIN MAIN CONTENT
+   ============================================================================ */
+
+.admin-main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    margin-top: var(--topbar-height);
+    transition: margin-left var(--transition-base);
+}
+
+/* Keep admin controls and cards visually stable during navigation. */
+.admin-layout .btn:hover,
+.admin-layout .card:hover,
+.admin-layout .card.clickable:hover {
+    transform: none;
+}
+
+.admin-layout .card.clickable:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.admin-layout .feature-card:hover,
+.admin-layout .summary-card:hover,
+.admin-layout .stat-card:hover {
+    transform: none;
+}
+
+.admin-sidebar.collapsed ~ .admin-main {
+    margin-left: var(--sidebar-width-collapsed);
+}
+
+.admin-content {
+    padding: var(--space-8);
+}
+
+/* ============================================================================
+   BREADCRUMBS
+   ============================================================================ */
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.breadcrumb-item a {
+    color: var(--color-primary-600);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.breadcrumb-item a:hover {
+    color: var(--color-primary-700);
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: var(--text-tertiary);
+    user-select: none;
+}
+
+.breadcrumb-item.is-current {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+/* ============================================================================
+   PAGE HEADER
+   ============================================================================ */
+
+.admin-page-header {
+    margin-bottom: var(--space-8);
+}
+
+.admin-page-title {
+    margin: 0 0 var(--space-3) 0;
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+}
+
+.admin-page-description {
+    margin: 0;
+    font-size: var(--font-base);
+    color: var(--text-secondary);
+}
+
+.admin-page-header-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+}
+
+/* ============================================================================
+   RESPONSIVE ADMIN LAYOUT
+   ============================================================================ */
+
+@media (max-width: 767px) {
+    :root {
+        --sidebar-width: 100vw;
+    }
+
+    .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: var(--topbar-height);
+        width: 100%;
+        height: calc(100vh - var(--topbar-height));
+        transform: translateX(-100%);
+        transition: transform var(--transition-base);
+        z-index: var(--z-modal);
+    }
+
+    .admin-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .admin-main {
+        margin-left: 0;
+    }
+
+    .admin-sidebar.collapsed {
+        width: 100%;
+        transform: translateX(-100%);
+    }
+
+    .admin-sidebar-toggle {
+        display: flex;
+    }
+
+    .admin-content {
+        padding: var(--space-4);
+    }
+
+    .admin-page-title {
+        font-size: var(--font-2xl);
+    }
+
+    .breadcrumbs {
+        flex-wrap: wrap;
+    }
+
+    .admin-page-header-actions {
+        flex-direction: column;
+    }
+
+    .admin-page-header-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ============================================================================
+   ADMIN DASHBOARD GRID
+   ============================================================================ */
+
+.admin-dashboard {
+    display: grid;
+    gap: var(--space-8);
+}
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-6);
+}
+
+.admin-stats-grid .stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-6);
+}
+
+/* ============================================================================
+   ADMIN TABLES
+   ============================================================================ */
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border: 1px solid var(--color-slate-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.admin-table thead {
+    background-color: var(--color-slate-50);
+    border-bottom: 2px solid var(--color-slate-200);
+}
+
+.admin-table th {
+    padding: var(--space-4);
+    text-align: left;
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.admin-table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-default);
+    font-size: var(--font-sm);
+    color: var(--text-primary);
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--color-slate-50);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Empty state */
+.admin-table-empty {
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.admin-table-empty p {
+    margin: 0;
+}

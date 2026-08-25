@@ -1,11 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.edit_establishment'))
 
 @section('content')
-    <section class="page-hero compact-hero"><div class="container narrow-shell"><span class="badge badge-gold">{{ __('messages.admin.title') }}</span><h1>{{ $establishment->name }}</h1><p>{{ __('messages.admin.establishment_editor_description') }}</p></div></section>
-    <section class="container dashboard-grid">
-        <div class="summary-card full-width">
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $establishment->name }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.establishment_editor_description') }}</p>
+    </div>
+    <x-card>
             @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
             <form method="POST" enctype="multipart/form-data" action="{{ $establishment->exists ? route('admin.establishments.update', $establishment) : route('admin.establishments.store') }}">
                 @csrf @if($establishment->exists) @method('PUT') @endif
@@ -76,6 +78,5 @@
                 </div>
                 <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save') }}</button><a class="btn btn-ghost" href="{{ route('admin.establishments.index') }}">{{ __('messages.admin.back') }}</a></div>
             </form>
-        </div>
-    </section>
+    </x-card>
 @endsection

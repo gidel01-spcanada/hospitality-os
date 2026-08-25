@@ -1,17 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $reservation->reservation_ref . ' | Réservation')
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-gold">{{ __('messages.admin.reservation') }}</span>
-            <h1>{{ $reservation->reservation_ref }}</h1>
-            <p>{{ $reservation->property?->name ?? __('messages.admin.property') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $reservation->reservation_ref }}</h1>
+        <p class="admin-page-description">{{ $reservation->property?->name ?? __('messages.admin.property') }}</p>
+    </div>
 
-    <section class="container admin-form-shell">
+    <x-card>
 
         @if (session('status'))
             <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
@@ -56,7 +53,7 @@
                     </div>
                 </dl>
 
-                <div class="summary-card" style="margin-top: 1.5rem;">
+                <div class="card" style="margin-top: 1.5rem;">
                     <h2>{{ __('messages.admin.financial_details') }}</h2>
                     <ul>
                         @foreach($reservation->priceLines as $line)
@@ -93,5 +90,5 @@
                 </form>
             </aside>
         </div>
-    </section>
+    </x-card>
 @endsection

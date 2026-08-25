@@ -26,6 +26,8 @@ class User extends Authenticatable
         'is_admin',
         'is_active',
         'locale',
+        'theme',
+        'timezone',
         'email_booking_updates',
         'email_marketing',
         'email_newsletter',

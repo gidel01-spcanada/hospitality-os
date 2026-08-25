@@ -1,11 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', $managedUser->exists ? __('messages.admin.edit_user') : __('messages.admin.add_user'))
 
 @section('content')
-    <section class="page-hero compact-hero"><div class="container"><span class="badge badge-gold">{{ __('messages.admin.title') }}</span><h1>{{ $managedUser->exists ? $managedUser->name : __('messages.admin.add_user') }}</h1><p>{{ $managedUser->exists ? __('messages.admin.user_editor_description') : __('messages.admin.create_user_description') }}</p></div></section>
-    <section class="container dashboard-grid">
-        <div class="summary-card full-width">
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $managedUser->exists ? $managedUser->name : __('messages.admin.add_user') }}</h1>
+        <p class="admin-page-description">{{ $managedUser->exists ? __('messages.admin.user_editor_description') : __('messages.admin.create_user_description') }}</p>
+    </div>
+    <x-card>
             @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
             <form method="POST" action="{{ $managedUser->exists ? route('admin.users.update', $managedUser) : route('admin.users.store') }}">
                 @csrf @if($managedUser->exists) @method('PUT') @endif
@@ -26,6 +28,5 @@
                 </div>
                 <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_user') }}</button><a class="btn btn-ghost" href="{{ route('admin.users.index') }}">{{ __('messages.admin.back') }}</a></div>
             </form>
-        </div>
-    </section>
+    </x-card>
 @endsection

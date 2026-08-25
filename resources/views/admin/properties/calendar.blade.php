@@ -1,17 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.calendar_title'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container narrow-shell">
-            <span class="badge badge-gold">{{ __('messages.admin.calendar_title') }}</span>
-            <h1>{{ $property->name }}</h1>
-            <p>{{ __('messages.admin.calendar_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $property->name }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.calendar_description') }}</p>
+    </div>
 
-    <section class="container admin-form-shell">
+    <x-card>
         @if (session('success'))
             <div class="reservation-success">{{ session('success') }}</div>
         @endif
@@ -71,5 +68,5 @@
                 </div>
             </div>
         </div>
-    </section>
+    </x-card>
 @endsection

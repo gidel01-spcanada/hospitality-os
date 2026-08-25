@@ -42,9 +42,21 @@ class AdminController extends Controller
         return view('admin.settings', compact('user', 'brand'));
     }
 
-    public function users(): View
+    public function users(Request $request): View
     {
-        $users = User::query()->latest()->get();
+        $users = User::query()
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $search = '%' . $request->string('search')->trim() . '%';
+                $query->where(function ($query) use ($search): void {
+                    $query->where('name', 'like', $search)
+                        ->orWhere('email', 'like', $search)
+                        ->orWhere('role', 'like', $search);
+                });
+            })
+            ->when($request->filled('role'), fn ($query) => $query->where('role', $request->string('role')->toString()))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }
@@ -129,6 +141,15 @@ class AdminController extends Controller
         ])->save();
 
         return redirect()->route('admin.users.index')->with('status', __('messages.flash.user_updated'));
+    }
+
+    public function deleteUser(User $managedUser): RedirectResponse
+    {
+        abort_if($managedUser->is(auth()->user()), 422, __('messages.errors.self_deactivation'));
+
+        $managedUser->delete();
+
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
 
     public function updateSettings(Request $request): RedirectResponse

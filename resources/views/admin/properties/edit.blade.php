@@ -1,17 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.edit_property'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-emerald">{{ __('messages.admin.management') }}</span>
-            <h1>{{ $property->name }}</h1>
-            <p>{{ __('messages.admin.editor_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $property->name }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.editor_description') }}</p>
+    </div>
 
-    <section class="container admin-form-shell">
+    <x-card>
         @if (session('success'))<div class="reservation-success">{{ session('success') }}</div>@endif
         @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
 
@@ -98,5 +95,5 @@
                 <div class="admin-panel"><h2>{{ __('messages.admin.calendars_impacting') }}</h2><form method="POST" action="{{ route('admin.properties.calendar.store', $property) }}">@csrf<div class="admin-form-grid"><label class="full-width"><span>{{ __('messages.admin.calendar_name') }}</span><input name="name" placeholder="Booking or Airbnb feed" required></label><label class="full-width"><span>{{ __('messages.admin.ics_url') }}</span><input type="url" name="url" placeholder="https://example.com/calendar.ics" required></label><label class="checkbox-field full-width"><input type="checkbox" name="is_enabled" value="1" checked><span>{{ __('messages.admin.enable_automatically') }}</span></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_calendar_feed') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.connected_calendars') }}</h3>@forelse ($property->calendarFeeds as $feed)<div class="admin-record-item"><form method="POST" action="{{ route('admin.properties.calendar.update', [$property, $feed]) }}">@csrf @method('PUT')<label><span>{{ __('messages.admin.calendar_name') }}</span><input name="name" value="{{ $feed->name }}" required></label><label><span>{{ __('messages.admin.ics_url') }}</span><input type="url" name="url" value="{{ $feed->url }}" required></label><label class="checkbox-field"><input type="checkbox" name="is_enabled" value="1" @checked($feed->is_enabled)><span>{{ __('messages.admin.enable_automatically') }}</span></label><button class="btn btn-primary btn-small" type="submit">{{ __('messages.admin.update') }}</button></form><span>{{ $feed->status }}</span><form method="POST" action="{{ route('admin.properties.calendar.sync', [$property, $feed]) }}">@csrf<button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.sync') }}</button></form><form method="POST" action="{{ route('admin.properties.calendar.destroy', [$property, $feed]) }}">@csrf @method('DELETE')<button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_calendars') }}</p>@endforelse</div><div class="form-actions"><label class="full-width"><span>{{ __('messages.admin.external_calendar_url') }}</span><input type="url" readonly value="{{ route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) }}"></label><p class="form-help">{{ __('messages.admin.external_calendar_help') }}</p><a class="btn btn-ghost" href="{{ route('admin.properties.calendar.export', $property) }}">{{ __('messages.admin.export_calendar') }}</a></div></div>
             </div>
         </div>
-    </section>
+    </x-card>
 @endsection

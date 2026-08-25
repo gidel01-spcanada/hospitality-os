@@ -17,15 +17,47 @@ use App\Models\ExternalCalendarFeed;
 
 class AdminPropertyController extends Controller
 {
+    public function create(): View
+    {
+        return view('admin.properties.create', [
+            'establishments' => Establishment::query()->orderBy('name')->get(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'establishment_id' => ['required', 'integer', 'exists:establishments,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'property_type' => ['required', 'in:apartment,house,villa,studio,room,other'],
+            'slug' => ['required', 'string', 'max:255', 'unique:properties,slug'],
+            'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
+            'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
+            'minimum_stay' => ['required', 'integer', 'min:1'],
+            'max_guests' => ['required', 'integer', 'min:1'],
+            'status' => ['required', 'in:draft,published,archived'],
+        ]);
+
+        $property = Property::query()->create($validated + [
+            'currency' => 'XOF',
+            'is_published' => $validated['status'] === 'published',
+        ]);
+
+        return redirect()->route('admin.properties.edit', $property)->with('success', 'Property created successfully.');
+    }
+
     public function index(Request $request): View
     {
         $establishments = Establishment::query()->orderBy('name')->get();
-        $establishmentId = $request->validate([
+        $filters = $request->validate([
             'establishment' => ['nullable', 'integer', 'exists:establishments,id'],
-        ])['establishment'] ?? null;
+            'status' => ['nullable', 'in:draft,published,archived'],
+        ]);
+        $establishmentId = $filters['establishment'] ?? null;
 
         $properties = Property::query()
             ->when($establishmentId, fn ($query) => $query->where('establishment_id', $establishmentId))
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->with('establishment')
             ->latest()
             ->get();

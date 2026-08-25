@@ -1,0 +1,281 @@
+/* ============================================================================
+   Design Tokens for Afrik Appart
+   ============================================================================
+   Semantic color tokens organized by category.
+   Theme-specific overrides at bottom.
+   ============================================================================ */
+
+:root {
+    /* BRAND COLORS - Primary Palette */
+    --color-primary-50: #f0faf9;
+    --color-primary-100: #d8f2f0;
+    --color-primary-200: #a9dfd7;
+    --color-primary-400: #309688;
+    --color-primary-600: #0f5b4c;
+    --color-primary-700: #0a3f35;
+    --color-primary-900: #051f1b;
+
+    /* BRAND COLORS - Secondary (Gold/Accent) */
+    --color-accent-50: #fdf9f5;
+    --color-accent-100: #fce6d0;
+    --color-accent-300: #f4c9a1;
+    --color-accent-500: #c89b3c;
+    --color-accent-600: #9d6f2a;
+    --color-accent-900: #5c401a;
+
+    /* STATUS COLORS */
+    --color-success-50: #f0fdf9;
+    --color-success-100: #ccfbf1;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+
+    --color-warning-50: #fffaf5;
+    --color-warning-100: #fef3c7;
+    --color-warning-600: #ca8a04;
+    --color-warning-700: #b45309;
+
+    --color-error-50: #fef2f2;
+    --color-error-100: #fee2e2;
+    --color-error-600: #dc2626;
+    --color-error-700: #b91c1c;
+
+    --color-info-50: #f0f9ff;
+    --color-info-100: #e0f2fe;
+    --color-info-600: #0284c7;
+    --color-info-700: #0369a1;
+
+    /* NEUTRAL COLORS - For Admin UI */
+    --color-slate-50: #f8fafc;
+    --color-slate-100: #f1f5f9;
+    --color-slate-200: #e2e8f0;
+    --color-slate-300: #cbd5e1;
+    --color-slate-400: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-600: #475569;
+    --color-slate-700: #334155;
+    --color-slate-800: #1e293b;
+    --color-slate-900: #0f172a;
+
+    /* SEMANTIC TEXT COLORS */
+    --text-primary: #1d2a2d;
+    --text-secondary: #57656b;
+    --text-tertiary: #8a9aa3;
+    --text-disabled: rgba(87, 101, 107, 0.5);
+    --text-inverse: #ffffff;
+
+    /* SEMANTIC BACKGROUND COLORS */
+    --bg-page: #f6f3ec;
+    --bg-surface: #ffffff;
+    --bg-surface-secondary: #fafbfc;
+    --bg-overlay: rgba(29, 42, 45, 0.1);
+    --bg-overlay-dark: rgba(29, 42, 45, 0.3);
+
+    /* BORDER COLORS */
+    --border-default: rgba(19, 31, 35, 0.08);
+    --border-strong: rgba(19, 31, 35, 0.16);
+    --border-interactive: var(--color-primary-600);
+    --border-error: var(--color-error-600);
+    --border-success: var(--color-success-600);
+    --border-warning: var(--color-warning-600);
+
+    /* SHADOW TOKENS */
+    --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.03);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 12px 20px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.08);
+
+    /* BORDER RADIUS */
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* SPACING SCALE (4px base unit) */
+    --space-px: 1px;
+    --space-0: 0;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 36px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-32: 128px;
+
+    /* TRANSITION TIMING */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Z-INDEX SCALE */
+    --z-dropdown: 1000;
+    --z-sticky: 1010;
+    --z-fixed: 1020;
+    --z-modal-backdrop: 1030;
+    --z-modal: 1040;
+    --z-popover: 1050;
+    --z-tooltip: 1060;
+
+    /* LAYOUT */
+    --container-max-width: 1200px;
+    --sidebar-width: 260px;
+    --sidebar-width-collapsed: 60px;
+    --topbar-height: 72px;
+
+    /* FORM SIZING */
+    --input-height-sm: 32px;
+    --input-height-md: 40px;
+    --input-height-lg: 48px;
+    --input-font-size: 16px;
+    --input-border-width: 1px;
+    --input-focus-ring-width: 3px;
+    --input-focus-ring-color: rgba(15, 91, 76, 0.1);
+
+    /* BUTTON SIZING */
+    --button-height-sm: 32px;
+    --button-height-md: 40px;
+    --button-height-lg: 48px;
+    --button-px-sm: 12px;
+    --button-px-md: 16px;
+    --button-px-lg: 20px;
+    --button-gap: 8px;
+}
+
+/* ============================================================================
+   THEME OVERRIDES
+   ============================================================================ */
+
+/* Theme: Brand Light (Default) */
+:root {
+    --theme-name: 'Brand Light';
+    --theme-primary: var(--color-primary-600);
+    --theme-primary-hover: var(--color-primary-700);
+    --theme-primary-light: var(--color-primary-100);
+    --theme-accent: var(--color-accent-500);
+    --theme-accent-hover: var(--color-accent-600);
+    --theme-bg: #f6f3ec;
+    --theme-surface: #ffffff;
+    --theme-text: #1d2a2d;
+    --theme-text-muted: #57656b;
+}
+
+/* Theme: Modern Dark */
+[data-theme='dark'] {
+    --theme-primary: #16dfc9;
+    --theme-primary-hover: #0fbaa9;
+    --theme-primary-light: rgba(22, 223, 201, 0.15);
+    --theme-accent: #ffd700;
+    --theme-accent-hover: #ffed4e;
+    --theme-bg: #0f172a;
+    --theme-surface: #1e293b;
+    --theme-text: #f1f5f9;
+    --theme-text-muted: #cbd5e1;
+}
+
+/* Theme: Ocean Blue */
+[data-theme='ocean'] {
+    --theme-primary: #0369a1;
+    --theme-primary-hover: #075985;
+    --theme-primary-light: #e0f2fe;
+    --theme-accent: #06b6d4;
+    --theme-accent-hover: #0891b2;
+    --theme-bg: #f0f9ff;
+    --theme-surface: #ffffff;
+    --theme-text: #0c2d4a;
+    --theme-text-muted: #475569;
+}
+
+/* Theme: Forest Green */
+[data-theme='forest'] {
+    --theme-primary: #15803d;
+    --theme-primary-hover: #166534;
+    --theme-primary-light: #f0fdf4;
+    --theme-accent: #ea580c;
+    --theme-accent-hover: #c2410c;
+    --theme-bg: #f7fdf8;
+    --theme-surface: #ffffff;
+    --theme-text: #172554;
+    --theme-text-muted: #4b5563;
+}
+
+/* Theme: Terracotta Sunset */
+[data-theme='sunset'] {
+    --theme-primary: #c2410c;
+    --theme-primary-hover: #92400e;
+    --theme-primary-light: #fff7ed;
+    --theme-accent: #f97316;
+    --theme-accent-hover: #ea580c;
+    --theme-bg: #fef3c7;
+    --theme-surface: #ffffff;
+    --theme-text: #5a2600;
+    --theme-text-muted: #78350f;
+}
+
+/* Theme: Warm Sand */
+[data-theme='sand'] {
+    --theme-primary: #b45309;
+    --theme-primary-hover: #92400e;
+    --theme-primary-light: #fffbeb;
+    --theme-accent: #d97706;
+    --theme-accent-hover: #b45309;
+    --theme-bg: #fffef9;
+    --theme-surface: #ffffff;
+    --theme-text: #5a3a1a;
+    --theme-text-muted: #78350f;
+}
+
+/* Theme: Premium Indigo */
+[data-theme='indigo'] {
+    --theme-primary: #4338ca;
+    --theme-primary-hover: #3730a3;
+    --theme-primary-light: #f0f4ff;
+    --theme-accent: #a78bfa;
+    --theme-accent-hover: #c4b5fd;
+    --theme-bg: #f5f3ff;
+    --theme-surface: #ffffff;
+    --theme-text: #3c366b;
+    --theme-text-muted: #6366f1;
+}
+
+/* Theme: High Contrast */
+[data-theme='contrast'] {
+    --theme-primary: #000000;
+    --theme-primary-hover: #1f2937;
+    --theme-primary-light: #f3f4f6;
+    --theme-accent: #ff0000;
+    --theme-accent-hover: #cc0000;
+    --theme-bg: #ffffff;
+    --theme-surface: #f9fafb;
+    --theme-text: #000000;
+    --theme-text-muted: #374151;
+}
+
+/* ============================================================================
+   APPLY THEME TOKENS
+   ============================================================================ */
+
+/* Public-facing pages use theme tokens */
+body:not(.admin-layout) {
+    background: radial-gradient(
+        circle at top left,
+        rgba(var(--theme-accent-rgb, 200, 155, 60), 0.12),
+        transparent 28%
+    ), var(--theme-bg);
+    color: var(--theme-text);
+}
+
+/* Admin pages use consistent slate */
+body.admin-layout {
+    background: var(--color-slate-50);
+    color: var(--color-slate-900);
+}

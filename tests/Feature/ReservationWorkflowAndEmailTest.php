@@ -54,8 +54,53 @@ class ReservationWorkflowAndEmailTest extends TestCase
             ->assertOk();
 
         $this->actingAs($admin)
+            ->get('/admin/bookings')
+            ->assertOk()
+            ->assertSee('Alice Doe')
+            ->assertSee('138,000.00 XOF')
+            ->assertSee('Pending Payment');
+
+        $this->actingAs($admin)
             ->get('/admin/reservations/' . $reservation->id)
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->put('/admin/reservations/' . $reservation->id, [
+                'property_id' => $property->id,
+                'full_name' => 'Alice Updated',
+                'email' => 'alice@example.com',
+                'phone' => '+229 99 99 99 99',
+                'country' => 'Bénin',
+                'check_in' => now()->addDays(10)->toDateString(),
+                'check_out' => now()->addDays(14)->toDateString(),
+                'adults' => 2,
+                'children' => 0,
+                'infants' => 0,
+                'notes' => 'Dates updated.',
+            ])
+            ->assertRedirect('/admin/reservations/' . $reservation->id);
+
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'subtotal' => 100000,
+            'fees' => 10000,
+            'taxes' => 5000,
+            'total_amount' => 115000,
+        ]);
+        $this->assertDatabaseHas('reservation_price_lines', ['reservation_id' => $reservation->id, 'label' => 'Nuit(s) x 4', 'amount' => 100000]);
+
+        $this->actingAs($admin)
+            ->put('/admin/reservations/' . $reservation->id, [
+                'property_id' => $property->id,
+                'full_name' => 'Alice Updated',
+                'email' => 'alice@example.com',
+                'check_in' => now()->addDays(10)->toDateString(),
+                'check_out' => now()->addDays(15)->toDateString(),
+                'adults' => 2,
+            ])
+            ->assertRedirect('/admin/reservations/' . $reservation->id);
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'total_amount' => 143750]);
 
         $this->actingAs($admin)
             ->patch('/admin/reservations/' . $reservation->id . '/status', [

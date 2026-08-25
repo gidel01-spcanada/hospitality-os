@@ -1,0 +1,221 @@
+/* ============================================================================
+   Icon Component Styles
+   ============================================================================
+   Heroicons SVG wrapper and icon display utilities
+   ============================================================================ */
+
+/* Base icon styles */
+.icon,
+svg.icon {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    vertical-align: -0.25em;
+    fill: currentColor;
+    color: inherit;
+    transition: color var(--transition-fast);
+}
+
+/* Icon sizes */
+.icon-xs,
+.icon.size-xs {
+    width: 1rem;
+    height: 1rem;
+}
+
+.icon-sm,
+.icon.size-sm {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.icon-md,
+.icon.size-md {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.icon-lg,
+.icon.size-lg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.icon-xl,
+.icon.size-xl {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.icon-2xl,
+.icon.size-2xl {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Icon in buttons */
+.btn .icon {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.btn-sm .icon {
+    width: 1em;
+    height: 1em;
+}
+
+.btn-lg .icon {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+/* Icon in form labels */
+label .icon {
+    width: 1em;
+    height: 1em;
+    margin-right: 4px;
+}
+
+/* Icon colors */
+.icon-primary {
+    color: var(--theme-primary);
+}
+
+.icon-secondary,
+.icon-accent {
+    color: var(--theme-accent);
+}
+
+.icon-success {
+    color: var(--color-success-600);
+}
+
+.icon-error,
+.icon-danger {
+    color: var(--color-error-600);
+}
+
+.icon-warning {
+    color: var(--color-warning-600);
+}
+
+.icon-info {
+    color: var(--color-info-600);
+}
+
+.icon-muted {
+    color: var(--text-tertiary);
+}
+
+.icon-disabled {
+    color: var(--text-disabled);
+}
+
+/* Icon animations */
+.icon.spin {
+    animation: spin 1s linear infinite;
+}
+
+.icon.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Icon in navigation */
+.nav .icon,
+nav .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 6px;
+}
+
+/* Icon in tabs */
+.section-tabs .icon,
+.tabs .icon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 4px;
+}
+
+/* Icon alignment helpers */
+.icon-align-top {
+    vertical-align: text-top;
+}
+
+.icon-align-middle {
+    vertical-align: -0.125em;
+}
+
+.icon-align-baseline {
+    vertical-align: baseline;
+}
+
+/* Icon with text wrapper */
+.icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+/* Icon only (hide text for screen readers) */
+.icon-only {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.icon-only + span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================================================
+   ADMIN ICON OVERRIDES
+   ============================================================================ */
+
+.admin-layout .icon-primary {
+    color: var(--color-primary-600);
+}
+
+.admin-layout .icon-secondary,
+.admin-layout .icon-accent {
+    color: var(--color-primary-600);
+}
+
+/* Icon badge (notification dot) */
+.icon-badge {
+    position: relative;
+}
+
+.icon-badge::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-error-600);
+    border-radius: 50%;
+}

@@ -1,0 +1,439 @@
+/* ============================================================================
+   Card & Badge Component Styles
+   ============================================================================
+   Cards for layouts and sections, badges for labels and status indicators
+   ============================================================================ */
+
+/* ============================================================================
+   CARD COMPONENT
+   ============================================================================ */
+
+.card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* Card hover effect */
+.card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+}
+
+/* Card with padding */
+.card.p-4 {
+    padding: var(--space-4);
+}
+
+.card.p-6 {
+    padding: var(--space-6);
+}
+
+.card.p-8 {
+    padding: var(--space-8);
+}
+
+/* Card header */
+.card-header {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-default);
+    background-color: var(--bg-surface-secondary);
+}
+
+.card-header h3,
+.card-header h4 {
+    margin: 0;
+    font-size: var(--font-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.card-header p {
+    margin: var(--space-2) 0 0 0;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+}
+
+/* Card body */
+.card-body {
+    padding: var(--space-6);
+}
+
+/* Card footer */
+.card-footer {
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-default);
+    background-color: var(--bg-surface-secondary);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+}
+
+/* Card variants */
+
+/* Elevated card (with shadow) */
+.card.elevated {
+    border: none;
+    box-shadow: var(--shadow-md);
+}
+
+.card.elevated:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Outlined card (more prominent border) */
+.card.outlined {
+    border-width: 2px;
+    border-color: var(--border-strong);
+}
+
+/* Flat card (minimal styling) */
+.card.flat {
+    border: none;
+    background-color: var(--bg-surface-secondary);
+    box-shadow: none;
+}
+
+/* Clickable card */
+.card.clickable {
+    cursor: pointer;
+}
+
+.card.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card.clickable:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-md);
+}
+
+/* ============================================================================
+   BADGE COMPONENT
+   ============================================================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 4px 12px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-semibold);
+    line-height: 1;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+/* Badge sizes */
+.badge-sm {
+    padding: 2px 8px;
+    font-size: var(--font-xs);
+}
+
+.badge-md {
+    padding: 4px 12px;
+    font-size: var(--font-xs);
+}
+
+.badge-lg {
+    padding: 6px 16px;
+    font-size: var(--font-sm);
+}
+
+/* ============================================================================
+   BADGE COLOR VARIANTS
+   ============================================================================ */
+
+/* Primary (Brand color) */
+.badge-primary,
+.badge {
+    background-color: var(--theme-primary);
+    color: white;
+}
+
+.badge-primary:hover,
+.badge:hover {
+    background-color: var(--theme-primary-hover);
+    text-decoration: none;
+}
+
+/* Secondary (Brand accent) */
+.badge-secondary,
+.badge-accent {
+    background-color: var(--theme-accent);
+    color: white;
+}
+
+.badge-secondary:hover,
+.badge-accent:hover {
+    background-color: var(--theme-accent-hover);
+    text-decoration: none;
+}
+
+/* Success (Green) */
+.badge-success {
+    background-color: var(--color-success-100);
+    color: var(--color-success-700);
+}
+
+.badge-success:hover {
+    background-color: var(--color-success-200);
+    text-decoration: none;
+}
+
+/* Error (Red) */
+.badge-error,
+.badge-danger {
+    background-color: var(--color-error-100);
+    color: var(--color-error-700);
+}
+
+.badge-error:hover,
+.badge-danger:hover {
+    background-color: var(--color-error-200);
+    text-decoration: none;
+}
+
+/* Warning (Orange) */
+.badge-warning {
+    background-color: var(--color-warning-100);
+    color: var(--color-warning-700);
+}
+
+.badge-warning:hover {
+    background-color: var(--color-warning-200);
+    text-decoration: none;
+}
+
+/* Info (Blue) */
+.badge-info {
+    background-color: var(--color-info-100);
+    color: var(--color-info-700);
+}
+
+.badge-info:hover {
+    background-color: var(--color-info-200);
+    text-decoration: none;
+}
+
+/* Neutral (Gray) */
+.badge-neutral,
+.badge-gray {
+    background-color: var(--color-slate-100);
+    color: var(--color-slate-700);
+}
+
+.badge-neutral:hover,
+.badge-gray:hover {
+    background-color: var(--color-slate-200);
+    text-decoration: none;
+}
+
+/* ============================================================================
+   BADGE VARIANTS
+   ============================================================================ */
+
+/* Outline badges */
+.badge-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-primary);
+}
+
+.badge-outline.primary {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+}
+
+.badge-outline.secondary {
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+}
+
+.badge-outline.success {
+    border-color: var(--color-success-600);
+    color: var(--color-success-700);
+}
+
+.badge-outline.error {
+    border-color: var(--color-error-600);
+    color: var(--color-error-700);
+}
+
+.badge-outline.warning {
+    border-color: var(--color-warning-600);
+    color: var(--color-warning-700);
+}
+
+/* Dot badge (with indicator) */
+.badge-dot {
+    padding: 4px 8px;
+}
+
+.badge-dot::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    margin-right: 6px;
+}
+
+/* Pill badge (more rounded) */
+.badge-pill {
+    border-radius: var(--radius-full);
+}
+
+/* Badge with close button */
+.badge-closeable {
+    padding-right: 6px;
+}
+
+.badge-closeable button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 4px;
+    cursor: pointer;
+    color: inherit;
+    font-size: var(--font-sm);
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.badge-closeable button:hover {
+    opacity: 1;
+}
+
+/* ============================================================================
+   ADMIN CARD & BADGE OVERRIDES
+   ============================================================================ */
+
+.admin-layout .card {
+    border-color: var(--color-slate-200);
+    background-color: white;
+}
+
+.admin-layout .card-header {
+    background-color: var(--color-slate-50);
+    border-color: var(--color-slate-200);
+}
+
+.admin-layout .card-footer {
+    background-color: var(--color-slate-50);
+    border-color: var(--color-slate-200);
+}
+
+.admin-layout .badge-primary,
+.admin-layout .badge {
+    background-color: var(--color-primary-600);
+    color: white;
+}
+
+.admin-layout .badge-primary:hover,
+.admin-layout .badge:hover {
+    background-color: var(--color-primary-700);
+}
+
+/* ============================================================================
+   SUMMARY CARD (Legacy Support)
+   ============================================================================ */
+
+.summary-card {
+    background-color: white;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    transition: box-shadow var(--transition-fast);
+}
+
+.summary-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.summary-card h2 {
+    margin-top: 0;
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+}
+
+.summary-card h2:first-child {
+    margin-top: 0;
+}
+
+.summary-card p {
+    margin-bottom: var(--space-4);
+    color: var(--text-secondary);
+}
+
+.summary-card p:last-child {
+    margin-bottom: 0;
+}
+
+.summary-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.summary-card li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-default);
+    font-size: var(--font-sm);
+}
+
+.summary-card li:last-child {
+    border-bottom: none;
+}
+
+.summary-card li strong {
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.summary-card li span {
+    color: var(--text-secondary);
+}
+
+.summary-card.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Stat card */
+.stat-card {
+    background-color: white;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    text-align: center;
+    transition: box-shadow var(--transition-fast);
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.stat-card span {
+    display: block;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.stat-card strong {
+    display: block;
+    font-size: var(--font-3xl);
+    font-weight: var(--font-bold);
+    color: var(--theme-primary);
+}

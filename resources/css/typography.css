@@ -1,0 +1,350 @@
+/* ============================================================================
+   Typography System
+   ============================================================================
+   Font scales, weights, line heights, and text utilities.
+   ============================================================================ */
+
+/* FONT FAMILY */
+:root {
+    --font-sans: 'Instrument Sans', 'Inter', 'Segoe UI', system-ui, -apple-system,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    --font-mono: 'Fira Code', 'Menlo', 'Courier New', monospace;
+}
+
+/* BASE TYPOGRAPHY */
+html {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   FONT SIZES & SCALE
+   ============================================================================ */
+
+:root {
+    /* Size scale (rem-based for accessibility) */
+    --font-xs: 0.75rem;    /* 12px */
+    --font-sm: 0.875rem;   /* 14px */
+    --font-base: 1rem;     /* 16px */
+    --font-lg: 1.125rem;   /* 18px */
+    --font-xl: 1.25rem;    /* 20px */
+    --font-2xl: 1.5rem;    /* 24px */
+    --font-3xl: 1.875rem;  /* 30px */
+    --font-4xl: 2.25rem;   /* 36px */
+    --font-5xl: 3rem;      /* 48px */
+    --font-6xl: 3.75rem;   /* 60px */
+
+    /* Font weights */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* Line heights */
+    --leading-tight: 1.2;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 1.75;
+}
+
+/* ============================================================================
+   HEADING STYLES
+   ============================================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    margin-top: 0;
+}
+
+h1 {
+    font-size: var(--font-4xl);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-6);
+}
+
+h2 {
+    font-size: var(--font-3xl);
+    letter-spacing: -0.01em;
+    margin-bottom: var(--space-5);
+}
+
+h3 {
+    font-size: var(--font-2xl);
+    margin-bottom: var(--space-4);
+}
+
+h4 {
+    font-size: var(--font-xl);
+    margin-bottom: var(--space-3);
+}
+
+h5 {
+    font-size: var(--font-lg);
+    margin-bottom: var(--space-3);
+}
+
+h6 {
+    font-size: var(--font-base);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-2);
+}
+
+/* ============================================================================
+   PARAGRAPH & TEXT STYLES
+   ============================================================================ */
+
+p {
+    margin-top: 0;
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-normal);
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+/* Small text / caption */
+.text-xs {
+    font-size: var(--font-xs);
+    line-height: var(--leading-tight);
+}
+
+.text-sm {
+    font-size: var(--font-sm);
+    line-height: var(--leading-snug);
+}
+
+.text-base {
+    font-size: var(--font-base);
+    line-height: var(--leading-normal);
+}
+
+.text-lg {
+    font-size: var(--font-lg);
+    line-height: var(--leading-normal);
+}
+
+.text-xl {
+    font-size: var(--font-xl);
+    line-height: var(--leading-relaxed);
+}
+
+/* Text styles */
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-tertiary {
+    color: var(--text-tertiary);
+}
+
+.text-disabled {
+    color: var(--text-disabled);
+}
+
+.text-inverse {
+    color: var(--text-inverse);
+}
+
+/* Font weights */
+.font-normal {
+    font-weight: var(--font-normal);
+}
+
+.font-medium {
+    font-weight: var(--font-medium);
+}
+
+.font-semibold {
+    font-weight: var(--font-semibold);
+}
+
+.font-bold {
+    font-weight: var(--font-bold);
+}
+
+/* Text alignment */
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+/* Text decoration */
+strong,
+.font-bold {
+    font-weight: var(--font-bold);
+}
+
+em,
+.italic {
+    font-style: italic;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.line-through {
+    text-decoration: line-through;
+}
+
+/* Semantic text styles */
+a {
+    color: var(--theme-primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--theme-primary-hover);
+    text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: 2px solid var(--theme-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* Lists */
+ul,
+ol {
+    margin-top: 0;
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-6);
+}
+
+li {
+    margin-bottom: var(--space-2);
+}
+
+/* Code */
+code {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    background-color: var(--color-slate-100);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+pre {
+    background-color: var(--color-slate-900);
+    color: var(--color-slate-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+    margin-bottom: var(--space-4);
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* Blockquote */
+blockquote {
+    margin: var(--space-4) 0;
+    padding-left: var(--space-4);
+    border-left: 4px solid var(--theme-primary);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Horizontal rule */
+hr {
+    border: none;
+    border-top: 1px solid var(--border-default);
+    margin: var(--space-8) 0;
+}
+
+/* ============================================================================
+   DISPLAY & LAYOUT TEXT UTILITIES
+   ============================================================================ */
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Uppercase, lowercase, capitalize */
+.uppercase {
+    text-transform: uppercase;
+}
+
+.lowercase {
+    text-transform: lowercase;
+}
+
+.capitalize {
+    text-transform: capitalize;
+}
+
+/* ============================================================================
+   RESPONSIVE TYPOGRAPHY
+   ============================================================================ */
+
+/* Mobile-first: smaller on mobile, larger on desktop */
+@media (min-width: 768px) {
+    h1 {
+        font-size: var(--font-5xl);
+        margin-bottom: var(--space-8);
+    }
+
+    h2 {
+        font-size: var(--font-4xl);
+        margin-bottom: var(--space-6);
+    }
+
+    h3 {
+        font-size: var(--font-3xl);
+        margin-bottom: var(--space-5);
+    }
+
+    p {
+        margin-bottom: var(--space-5);
+    }
+}

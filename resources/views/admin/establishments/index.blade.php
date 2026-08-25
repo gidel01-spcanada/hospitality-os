@@ -1,23 +1,23 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.establishment_management'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-gold">{{ __('messages.admin.title') }}</span>
-            <h1>{{ __('messages.admin.establishments') }}</h1>
-            <p>{{ __('messages.admin.establishments_description') }}</p>
+    <div class="admin-page-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 class="admin-page-title">{{ __('messages.admin.establishments') }}</h1>
+                <p class="admin-page-description">{{ __('messages.admin.establishments_description') }}</p>
+            </div>
+            <x-button tag="a" href="{{ route('admin.establishments.create') }}" variant="primary">{{ __('messages.admin.add_establishment') }}</x-button>
         </div>
-    </section>
+    </div>
 
-    <section class="container admin-list-shell">
+    <x-card>
         @if (session('success'))
             <div class="reservation-success">{{ session('success') }}</div>
         @endif
-        <div class="form-actions"><a class="btn btn-primary" href="{{ route('admin.establishments.create') }}">{{ __('messages.admin.add_establishment') }}</a></div>
-        <div class="admin-table-wrap">
-            <table class="admin-table">
+        <table class="admin-table">
                 <thead><tr><th>{{ __('messages.admin.name') }}</th><th>{{ __('messages.admin.city') }}</th><th>{{ __('messages.admin.properties') }}</th><th>{{ __('messages.admin.actions') }}</th></tr></thead>
                 <tbody>
                     @forelse ($establishments as $establishment)
@@ -26,15 +26,14 @@
                             <td>{{ $establishment->city ?: '—' }}</td>
                             <td>{{ $establishment->properties_count }}</td>
                             <td>
-                                <a class="btn btn-ghost btn-small" href="{{ route('admin.properties.index', ['establishment' => $establishment->id]) }}">{{ __('messages.admin.view_properties') }}</a>
-                                <a class="btn btn-ghost btn-small" href="{{ route('admin.establishments.edit', $establishment) }}">{{ __('messages.admin.edit') }}</a>
+                                <x-button tag="a" href="{{ route('admin.properties.index', ['establishment' => $establishment->id]) }}" variant="ghost" size="sm">{{ __('messages.admin.view_properties') }}</x-button>
+                                <x-button tag="a" href="{{ route('admin.establishments.edit', $establishment) }}" variant="ghost" size="sm">{{ __('messages.admin.edit') }}</x-button>
                             </td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="empty-state-inline">{{ __('messages.admin.no_establishments') }}</td></tr>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
-    </section>
+        </table>
+    </x-card>
 @endsection

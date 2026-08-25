@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\AdminEstablishmentController;
+use App\Http\Controllers\AdminPreferencesController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Models\Property;
@@ -14,9 +15,11 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
     $properties = collect();
     $establishments = collect();
     $reviews = collect();
+    $destinations = collect();
 
     if (Schema::hasTable('properties')) {
         $establishments = Establishment::query()->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
+        $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
         $properties = Property::query()
             ->published()
             ->when($request->integer('establishment'), fn ($query, $id) => $query->where('establishment_id', $id))
@@ -30,7 +33,7 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
         $reviews = \App\Models\SiteReview::query()->where('is_active', true)->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
-    return view('home', compact('properties', 'establishments', 'reviews'));
+    return view('home', compact('properties', 'establishments', 'reviews', 'destinations'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
@@ -61,16 +64,33 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::middleware('reservation-staff')->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::get('/admin/reservations', [AdminReservationController::class, 'index'])->name('admin.reservations.index');
+        Route::get('/admin/reservations/create', [AdminReservationController::class, 'create'])->name('admin.reservations.create');
+        Route::post('/admin/reservations', [AdminReservationController::class, 'store'])->name('admin.reservations.store');
+        Route::get('/admin/reservations/{reservation}/edit', [AdminReservationController::class, 'edit'])->name('admin.reservations.edit');
+        Route::put('/admin/reservations/{reservation}', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
+        Route::get('/admin/bookings', [AdminReservationController::class, 'index'])->name('admin.bookings.index');
+        Route::get('/admin/bookings/create', [AdminReservationController::class, 'create'])->name('admin.bookings.create');
+        Route::post('/admin/bookings', [AdminReservationController::class, 'store'])->name('admin.bookings.store');
+        Route::get('/admin/bookings/{reservation}/edit', [AdminReservationController::class, 'edit'])->name('admin.bookings.edit');
+        Route::put('/admin/bookings/{reservation}', [AdminReservationController::class, 'update'])->name('admin.bookings.update');
+        Route::get('/admin/bookings/{reservation}', [AdminReservationController::class, 'show'])->name('admin.bookings.show');
     });
 
     Route::middleware('admin')->group(function () {
+        Route::get('/admin/profile', [AdminPreferencesController::class, 'index'])->name('admin.profile');
+        Route::get('/admin/preferences', [AdminPreferencesController::class, 'index'])->name('admin.preferences');
+        Route::put('/admin/preferences/profile', [AdminPreferencesController::class, 'updateProfile'])->name('admin.preferences.profile.update');
+        Route::put('/admin/preferences/locale', [AdminPreferencesController::class, 'updateLocale'])->name('admin.preferences.locale.update');
+        Route::put('/admin/preferences/theme', [AdminPreferencesController::class, 'updateTheme'])->name('admin.preferences.theme.update');
+        Route::put('/admin/preferences/password', [AdminPreferencesController::class, 'updatePassword'])->name('admin.preferences.password.update');
         Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
         Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
         Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::get('/admin/users/{managedUser}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
         Route::put('/admin/users/{managedUser}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/admin/users/{managedUser}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
         Route::get('/admin/establishments', [AdminEstablishmentController::class, 'index'])->name('admin.establishments.index');
         Route::get('/admin/establishments/create', [AdminEstablishmentController::class, 'create'])->name('admin.establishments.create');
         Route::get('/admin/establishments/{establishment}/edit', [AdminEstablishmentController::class, 'edit'])->name('admin.establishments.edit');
@@ -84,6 +104,8 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::delete('/admin/reviews/{review}', [AdminController::class, 'deleteReview'])->name('admin.reviews.destroy');
         Route::post('/admin/reviews/import', [AdminController::class, 'importReviews'])->name('admin.reviews.import');
         Route::get('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'index'])->name('admin.properties.index');
+        Route::get('/admin/properties/create', [\App\Http\Controllers\AdminPropertyController::class, 'create'])->name('admin.properties.create');
+        Route::post('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'store'])->name('admin.properties.store');
         Route::get('/admin/properties/{property}/edit', [\App\Http\Controllers\AdminPropertyController::class, 'edit'])->name('admin.properties.edit');
         Route::put('/admin/properties/{property}', [\App\Http\Controllers\AdminPropertyController::class, 'update'])->name('admin.properties.update');
         Route::put('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'updateImages'])->name('admin.properties.images.update');

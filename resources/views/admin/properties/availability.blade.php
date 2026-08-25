@@ -1,18 +1,15 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.availability_title'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container narrow-shell">
-            <span class="badge badge-emerald">{{ __('messages.admin.availability_title') }}</span>
-            <h1>{{ $property->name }}</h1>
-            <p>{{ __('messages.admin.availability_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ $property->name }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.availability_description') }}</p>
+    </div>
 
-    <section class="container admin-form-shell">
-        <div class="admin-panel">
+    <x-card>
+        <div class="card-body">
             <h2>{{ __('messages.admin.result') }}</h2>
             <p>
                 <strong>{{ $available ? __('messages.admin.available') : __('messages.admin.unavailable') }}</strong>
@@ -22,5 +19,5 @@
                 <a class="btn btn-ghost" href="{{ route('admin.properties.edit', $property) }}">{{ __('messages.admin.back_property') }}</a>
             </div>
         </div>
-    </section>
+    </x-card>
 @endsection

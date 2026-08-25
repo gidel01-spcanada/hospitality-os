@@ -1,18 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.reviews_title'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-gold">Administration</span>
-            <h1>{{ __('messages.admin.reviews_title') }}</h1>
-            <p>{{ __('messages.admin.reviews_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ __('messages.admin.reviews_title') }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.reviews_description') }}</p>
+    </div>
 
-    <section class="container dashboard-grid">
-        <div class="summary-card full-width">
+    <x-card>
             @if (session('status'))
                 <div class="alert success">
                     {{ session('status') }}
@@ -148,6 +144,5 @@
                     @endforeach
                 </div>
             @endif
-        </div>
-    </section>
+    </x-card>
 @endsection

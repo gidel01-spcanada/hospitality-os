@@ -1,18 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', __('messages.admin.reservations'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-gold">{{ __('messages.admin.title') }}</span>
-            <h1>{{ __('messages.admin.reservations') }}</h1>
-            <p>{{ __('messages.admin.reservations_description') }}</p>
-        </div>
-    </section>
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">{{ __('messages.admin.reservations') }}</h1>
+        <p class="admin-page-description">{{ __('messages.admin.reservations_description') }}</p>
+    </div>
 
-    <section class="container admin-list-shell">
-        <div class="admin-table-wrap">
+    <x-card>
 
             <table class="admin-table">
                 <thead class="bg-slate-50 text-left">
@@ -28,7 +24,7 @@
                             <td>{{ $reservation->guest?->full_name ?? $reservation->email }}</td>
                             <td>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</td>
                             <td>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} XOF</td>
-                            <td><span class="badge badge-gold">{{ __('messages.admin.status_' . $reservation->status) }}</span></td>
+                            <td><x-badge variant="warning" size="sm">{{ __('messages.admin.status_' . $reservation->status) }}</x-badge></td>
                             <td><a class="inline-link" href="{{ route('admin.reservations.show', $reservation) }}">{{ __('messages.admin.view') }}</a>
                             </td>
                         </tr>
@@ -39,7 +35,5 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
-        </div>
-    </section>
+    </x-card>
 @endsection

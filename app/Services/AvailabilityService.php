@@ -10,7 +10,7 @@ use Carbon\Carbon;
 
 class AvailabilityService
 {
-    public function isAvailable(Property $property, Carbon $checkIn, Carbon $checkOut): bool
+    public function isAvailable(Property $property, Carbon $checkIn, Carbon $checkOut, ?int $ignoreReservationId = null): bool
     {
         if ($checkOut->lte($checkIn)) {
             return false;
@@ -19,6 +19,7 @@ class AvailabilityService
         $conflicts = Reservation::query()
             ->where('property_id', $property->id)
             ->where('status', '!=', 'cancelled')
+            ->when($ignoreReservationId, fn ($query) => $query->where('id', '!=', $ignoreReservationId))
             ->where('check_in', '<', $checkOut->toDateString())
             ->where('check_out', '>', $checkIn->toDateString())
             ->exists();

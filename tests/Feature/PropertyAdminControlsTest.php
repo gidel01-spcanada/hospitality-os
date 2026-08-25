@@ -87,7 +87,7 @@ class PropertyAdminControlsTest extends TestCase
 
         $feature = \App\Models\PropertyFeature::query()->where('property_id', $property->id)->firstOrFail();
 
-        $this->post('/properties/' . $property->slug . '/reserve', [
+        $response = $this->post('/properties/' . $property->slug . '/reserve', [
             'full_name' => 'Test Guest',
             'email' => 'extras@example.com',
             'phone' => '+22999999999',
@@ -98,9 +98,11 @@ class PropertyAdminControlsTest extends TestCase
             'children' => 0,
             'infants' => 0,
             'selected_features' => [$feature->id],
-        ])->assertRedirect('/properties/' . $property->slug);
+        ]);
 
         $reservation = \App\Models\Reservation::query()->where('email', 'extras@example.com')->firstOrFail();
+
+        $this->assertSame(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $response->headers->get('Location'));
 
         $this->assertDatabaseHas('reservation_price_lines', [
             'reservation_id' => $reservation->id,
