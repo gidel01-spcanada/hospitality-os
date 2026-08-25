@@ -54,7 +54,16 @@ class PayLaterGateway implements PaymentGateway
             return null;
         }
 
-        $attempt->status = $request->input('status', 'paid');
+        $status = $request->input('status', 'paid');
+        if (! in_array($status, ['paid', 'failed', 'cancelled', 'pending'], true)) {
+            return null;
+        }
+
+        if (in_array($attempt->status, ['paid', 'completed'], true) && $status !== 'paid') {
+            return $attempt;
+        }
+
+        $attempt->status = $status;
         $attempt->payload = array_merge((array) $attempt->payload, $request->all());
         $attempt->save();
 

@@ -46,13 +46,21 @@ class PaymentWorkflowTest extends TestCase
             'notes' => 'Awaiting payment.',
         ]);
 
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
         $this->get('/reservations/' . $reservation->id . '/checkout')
+            ->assertForbidden();
+
+        $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => str_repeat('0', 64)]))
+            ->assertForbidden();
+
+        $this->get($checkoutUrl)
             ->assertOk()
             ->assertSee('Finaliser la réservation');
 
-        $this->post('/reservations/' . $reservation->id . '/checkout', [
+        $this->post($checkoutUrl, [
             'provider' => 'pay_later',
-        ])->assertRedirect('/reservations/' . $reservation->id . '/checkout');
+        ])->assertRedirect($checkoutUrl);
 
         $this->assertDatabaseHas('payment_attempts', [
             'reservation_id' => $reservation->id,
@@ -60,11 +68,67 @@ class PaymentWorkflowTest extends TestCase
             'status' => 'created',
         ]);
 
-        $this->post('/reservations/' . $reservation->id . '/checkout/complete')
-            ->assertRedirect('/reservations/' . $reservation->id . '/checkout');
+        $completeUrl = route('checkout.complete', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $this->post($completeUrl)
+            ->assertRedirect($checkoutUrl);
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'pay_later', 'status' => 'created']);
+
+        $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
+        $webhookPayload = [
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+        ];
+        $webhookBody = json_encode($webhookPayload, JSON_THROW_ON_ERROR);
+
+        $this->postJson('/webhooks/pay_later', [
+            'provider_reference' => 'unknown-reference',
+            'status' => 'paid',
+        ])->assertForbidden();
+
+        $this->postJson('/webhooks/unknown-provider', [
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+        ])->assertNotFound();
+
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'created']);
+
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $webhookBody, config('services.payments.webhook_secret')),
+        ], $webhookBody)->assertOk();
+
+        $this->post($completeUrl)
+            ->assertRedirect($checkoutUrl);
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'pay_later', 'status' => 'paid']);
+
+        $failureBody = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'failed',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $failureBody, config('services.payments.webhook_secret')),
+        ], $failureBody)->assertOk();
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
+
+        $unknownStatusBody = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'forged-status',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $unknownStatusBody, config('services.payments.webhook_secret')),
+        ], $unknownStatusBody)->assertOk();
+
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
     }
 
     public function test_checkout_uses_establishment_payment_methods(): void
@@ -101,12 +165,13 @@ class PaymentWorkflowTest extends TestCase
             'source' => 'website',
         ]);
 
-        $this->get('/reservations/' . $reservation->id . '/checkout')
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $this->get($checkoutUrl)
             ->assertOk()
             ->assertSee('FedaPay sandbox')
             ->assertDontSee('Paiement différé');
 
-        $this->post('/reservations/' . $reservation->id . '/checkout', ['provider' => 'pay_later'])
+        $this->post($checkoutUrl, ['provider' => 'pay_later'])
             ->assertStatus(422);
     }
 }

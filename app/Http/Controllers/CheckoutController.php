@@ -10,16 +10,18 @@ use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
-    public function show(Reservation $reservation): View
+    public function show(Request $request, Reservation $reservation): View
     {
+        $token = $this->authorizeCheckout($request, $reservation);
         $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
         $paymentMethods = $this->paymentMethods($reservation);
 
-        return view('checkout.show', compact('reservation', 'paymentMethods'));
+        return view('checkout.show', compact('reservation', 'paymentMethods', 'token'));
     }
 
     public function start(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
     {
+        $token = $this->authorizeCheckout($request, $reservation);
         $validated = $request->validate([
             'provider' => ['required', 'string', 'in:pay_later,fedapay,paypal'],
         ]);
@@ -33,7 +35,7 @@ class CheckoutController extends Controller
 
         $reservation->update(['status' => 'pending_payment']);
 
-        return redirect()->route('checkout.show', $reservation)->with(
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with(
             'status',
             __('messages.flash.payment_started', ['gateway' => $gateway->name()])
         );
@@ -55,11 +57,17 @@ class CheckoutController extends Controller
         })->all();
     }
 
-    public function complete(Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
+    public function complete(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
     {
+        $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
         $gateway = $manager->resolve($attempt->provider);
-        $gateway->verifyStatus($attempt);
+        $attempt = $gateway->verifyStatus($attempt);
+
+        if (! in_array($attempt->status, ['paid', 'completed'], true)) {
+            return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
+                ->with('error', 'Payment is still awaiting verification.');
+        }
 
         $attempt->update([
             'status' => 'paid',
@@ -71,19 +79,44 @@ class CheckoutController extends Controller
             'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified and reservation confirmed.'),
         ]);
 
-        return redirect()->route('checkout.show', $reservation)->with('status', __('messages.flash.payment_verified'));
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
     }
 
     public function webhook(Request $request, string $provider, PaymentGatewayManager $manager)
     {
+        abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal'], true), 404, 'Unsupported payment provider.');
+
+        $secret = config('services.payments.webhook_secret');
+        $signature = $request->header('X-Webhook-Signature');
+        $expectedSignature = $secret ? hash_hmac('sha256', $request->getContent(), $secret) : null;
+
+        abort_unless($expectedSignature && $signature && hash_equals($expectedSignature, $signature), 403, 'Invalid webhook signature.');
+
         $attempt = $manager->resolve($provider)->handleWebhook($request);
 
         if ($attempt && $attempt->reservation) {
-            $attempt->reservation->update([
-                'status' => in_array($attempt->status, ['paid', 'completed']) ? 'confirmed' : 'payment_failed',
-            ]);
+            if (in_array($attempt->status, ['paid', 'completed'], true)) {
+                $attempt->reservation->update(['status' => 'confirmed']);
+            } elseif (in_array($attempt->status, ['failed', 'cancelled'], true) && $attempt->reservation->status !== 'confirmed') {
+                $attempt->reservation->update(['status' => 'payment_failed']);
+            }
         }
 
         return response()->json(['ok' => true, 'provider' => $provider, 'status' => $attempt?->status ?? 'ignored']);
+    }
+
+    private function authorizeCheckout(Request $request, Reservation $reservation): string
+    {
+        $token = (string) $request->query('token', $request->input('token', ''));
+        $owner = $request->user();
+
+        abort_unless(
+            ($owner && $reservation->user_id === $owner->id)
+                || ($reservation->checkout_token && $token && hash_equals($reservation->checkout_token, $token)),
+            403,
+            'Checkout access denied.'
+        );
+
+        return $token ?: (string) $reservation->checkout_token;
     }
 }

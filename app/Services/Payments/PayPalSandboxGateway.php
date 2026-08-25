@@ -53,7 +53,16 @@ class PayPalSandboxGateway implements PaymentGateway
             return null;
         }
 
-        $attempt->status = $request->input('event', 'paid');
+        $status = $request->input('event', 'paid');
+        if (! in_array($status, ['paid', 'completed', 'failed', 'cancelled', 'pending'], true)) {
+            return null;
+        }
+
+        if (in_array($attempt->status, ['paid', 'completed'], true) && $status !== 'paid' && $status !== 'completed') {
+            return $attempt;
+        }
+
+        $attempt->status = $status;
         $attempt->payload = array_merge((array) $attempt->payload, $request->all());
         $attempt->save();
 

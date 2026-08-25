@@ -10,11 +10,18 @@ class AuthSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminPassword = config('services.seed.admin_password');
+        $guestPassword = config('services.seed.guest_password');
+
+        if (blank($adminPassword) || blank($guestPassword)) {
+            throw new \RuntimeException('SEED_ADMIN_PASSWORD and SEED_GUEST_PASSWORD must be configured before running the auth seeder.');
+        }
+
         User::query()->updateOrCreate(
             ['email' => 'admin@afrikappart.test'],
             [
                 'name' => 'Afrik Appart Admin',
-                'password' => Hash::make('Password123!'),
+                'password' => Hash::make($adminPassword),
                 'role' => 'admin',
                 'is_admin' => true,
                 'locale' => 'fr',
@@ -29,7 +36,7 @@ class AuthSeeder extends Seeder
             ['email' => 'guest@afrikappart.test'],
             [
                 'name' => 'Guest Customer',
-                'password' => Hash::make('Password123!'),
+                'password' => Hash::make($guestPassword),
                 'role' => 'customer',
                 'is_admin' => false,
                 'locale' => 'fr',

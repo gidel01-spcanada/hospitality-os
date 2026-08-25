@@ -21,6 +21,9 @@
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="SEED_ADMIN_PASSWORD" value="Password123!"/>
+        <env name="SEED_GUEST_PASSWORD" value="Password123!"/>
+        <env name="PAYMENT_WEBHOOK_SECRET" value="testing-webhook-secret"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>

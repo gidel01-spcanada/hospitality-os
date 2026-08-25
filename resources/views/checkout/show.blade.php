@@ -59,7 +59,7 @@
             </section>
 
             <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <form action="{{ route('checkout.start', $reservation) }}" method="POST" class="space-y-4">
+                <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
                     @csrf
                     <div>
                         <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
@@ -92,7 +92,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('checkout.complete', $reservation) }}" method="POST" class="mt-6">
+                <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
                     @csrf
                     <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
                         {{ __('messages.checkout.simulate') }}

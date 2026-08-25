@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'seed' => [
+        'admin_password' => env('SEED_ADMIN_PASSWORD'),
+        'guest_password' => env('SEED_GUEST_PASSWORD'),
+    ],
+
+    'payments' => [
+        'webhook_secret' => env('PAYMENT_WEBHOOK_SECRET'),
+    ],
+
 ];

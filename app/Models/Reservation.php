@@ -16,6 +16,7 @@ class Reservation extends Model
         'guest_id',
         'user_id',
         'reservation_ref',
+        'checkout_token',
         'status',
         'check_in',
         'check_out',
@@ -40,6 +41,13 @@ class Reservation extends Model
         'taxes' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Reservation $reservation): void {
+            $reservation->checkout_token ??= bin2hex(random_bytes(32));
+        });
+    }
 
     public function property(): BelongsTo
     {
