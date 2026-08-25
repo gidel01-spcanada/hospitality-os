@@ -458,7 +458,8 @@ button, input, select {
     padding: 1.5rem;
 }
 
-.icon {
+/* Decorative tile used by the public feature cards; admin SVGs must keep their own sizing. */
+.feature-card .icon {
     display: grid;
     place-items: center;
     width: 54px;

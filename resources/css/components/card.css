@@ -331,14 +331,12 @@
     border-color: var(--color-slate-200);
 }
 
-.admin-layout .badge-primary,
-.admin-layout .badge {
+.admin-layout .badge-primary {
     background-color: var(--color-primary-600);
     color: white;
 }
 
-.admin-layout .badge-primary:hover,
-.admin-layout .badge:hover {
+.admin-layout .badge-primary:hover {
     background-color: var(--color-primary-700);
 }
 

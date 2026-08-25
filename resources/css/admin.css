@@ -347,6 +347,24 @@ body.admin-layout {
     gap: var(--space-6);
 }
 
+/* Bleeds media to the card edges; width must grow by the padding it cancels out. */
+.admin-card-media {
+    display: block;
+    width: calc(100% + (var(--space-6) * 2));
+    max-width: none; /* Preflight caps images at 100%, which would undo the bleed. */
+    height: 180px;
+    object-fit: cover;
+    margin: calc(var(--space-6) * -1) calc(var(--space-6) * -1) var(--space-6);
+}
+
+.admin-card-media-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-slate-100);
+    color: var(--text-tertiary);
+}
+
 .admin-stats-grid .stat-card {
     display: flex;
     flex-direction: column;

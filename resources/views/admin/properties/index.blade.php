@@ -46,25 +46,25 @@
     @forelse ($properties as $property)
         <x-card variant="elevated">
             @if ($property->cover_image)
-                <img src="{{ asset($property->cover_image) }}" alt="{{ $property->name }}" style="width: 100%; height: 180px; object-fit: cover; border-radius: var(--radius-lg) var(--radius-lg) 0 0; margin: -24px -24px 24px -24px;" />
+                <img src="{{ asset($property->cover_image) }}" alt="{{ $property->name }}" class="admin-card-media" />
             @else
-                <div style="width: 100%; height: 180px; background: var(--color-slate-100); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg) var(--radius-lg) 0 0; margin: -24px -24px 24px -24px;">
-                    <span style="color: var(--text-tertiary);">No image</span>
+                <div class="admin-card-media admin-card-media-empty">
+                    <span>No image</span>
                 </div>
             @endif
 
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3);">
-                    <div>
-                        <h3 style="margin: 0 0 var(--space-1);">{{ $property->name }}</h3>
+                    <div style="min-width: 0;">
+                        <h3 style="margin: 0 0 var(--space-1); font-size: var(--font-base); line-height: 1.35;">{{ $property->name }}</h3>
                         <p style="margin: 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ $property->establishment?->name ?? 'No establishment' }}</p>
                     </div>
                     @if ($property->status === 'published')
-                        <x-badge variant="success" size="sm" dot>Published</x-badge>
+                        <x-badge variant="success" size="sm" dot style="flex-shrink: 0;">Published</x-badge>
                     @elseif ($property->status === 'draft')
-                        <x-badge variant="warning" size="sm" dot>Draft</x-badge>
+                        <x-badge variant="warning" size="sm" dot style="flex-shrink: 0;">Draft</x-badge>
                     @else
-                        <x-badge variant="neutral" size="sm" dot>Archived</x-badge>
+                        <x-badge variant="neutral" size="sm" dot style="flex-shrink: 0;">Archived</x-badge>
                     @endif
                 </div>
 

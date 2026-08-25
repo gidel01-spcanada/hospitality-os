@@ -224,6 +224,26 @@
    ADMIN BUTTON OVERRIDES
    ============================================================================ */
 
+/* app.css redefines .btn as a public pill after this file is imported, so restate the shape for admin. */
+.admin-layout .btn {
+    gap: var(--button-gap);
+    padding: 0 var(--button-px-md);
+    height: var(--button-height-md);
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-md);
+}
+
+.admin-layout .btn-sm {
+    height: var(--button-height-sm);
+    padding: 0 var(--button-px-sm);
+}
+
+.admin-layout .btn-lg {
+    height: var(--button-height-lg);
+    padding: 0 var(--button-px-lg);
+}
+
 .admin-layout .btn-primary {
     background-color: var(--color-primary-600);
     color: white;
@@ -243,9 +263,11 @@
 }
 
 .admin-layout .btn-ghost {
-    color: var(--color-primary-600);
+    background-color: transparent;
+    color: var(--color-slate-600);
 }
 
 .admin-layout .btn-ghost:hover:not(:disabled):not(.is-disabled) {
-    background-color: rgba(15, 91, 76, 0.08);
+    background-color: var(--color-slate-100);
+    color: var(--color-primary-600);
 }
