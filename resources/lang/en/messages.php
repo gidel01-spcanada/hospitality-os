@@ -305,6 +305,7 @@ return [
     'properties.filter_heading' => 'Refine properties',
     'properties.reset' => 'Reset',
     'properties.all_establishments' => 'All establishments',
+    'properties.all_destinations' => 'All destinations',
     'properties.city' => 'City',
     'properties.guests' => 'Minimum guests',
     'properties.bedrooms' => 'Minimum bedrooms',

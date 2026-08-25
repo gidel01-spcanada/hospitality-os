@@ -13,30 +13,103 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 		return;
 	}
 
+	const urlOf = (source) => (typeof source === 'string' ? source : source.url);
+	const tagOf = (source) => (typeof source === 'string' ? '' : source.tag || '');
+
 	let currentIndex = Number(gallery.dataset.galleryStart || 0);
 	const image = gallery.querySelector('[data-gallery-image]') || gallery.querySelector('.property-image');
 	const counter = gallery.querySelector('[data-gallery-counter]');
+	const isImgElement = image.matches('img');
+	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	const render = () => {
-		const source = images[currentIndex];
-		const imageUrl = typeof source === 'string' ? source : source.url;
-		const imageTag = typeof source === 'string' ? '' : (source.tag || '');
-
-		if (image.matches('img')) {
-			image.src = imageUrl;
-		} else {
-			image.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("${imageUrl}")`;
+	const decoded = new Map();
+	const preload = (url) => {
+		if (!decoded.has(url)) {
+			decoded.set(url, new Promise((resolve) => {
+				const loader = new Image();
+				loader.onload = loader.onerror = () => resolve();
+				loader.src = url;
+			}));
 		}
 
+		return decoded.get(url);
+	};
+
+	const backgroundFor = (url) => `linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("${url}")`;
+
+	const applyImage = (url) => {
+		if (isImgElement) {
+			image.src = url;
+		} else {
+			image.style.backgroundImage = backgroundFor(url);
+		}
+	};
+
+	const applyMeta = (source) => {
 		const tag = gallery.querySelector('[data-gallery-tag]');
 		if (tag) {
-			tag.textContent = imageTag;
-			tag.hidden = !imageTag;
+			const value = tagOf(source);
+			tag.textContent = value;
+			tag.hidden = !value;
 		}
 
 		if (counter) {
 			counter.textContent = `${currentIndex + 1} / ${images.length}`;
 		}
+	};
+
+	let fadeTimer = null;
+	let activeLayer = null;
+
+	// Finish any in-flight crossfade immediately so rapid clicks never stack layers.
+	const commitLayer = () => {
+		if (fadeTimer) {
+			window.clearTimeout(fadeTimer);
+			fadeTimer = null;
+		}
+
+		if (activeLayer) {
+			applyImage(activeLayer.dataset.url);
+			activeLayer.remove();
+			activeLayer = null;
+		}
+	};
+
+	let renderToken = 0;
+
+	const render = async (animate = true) => {
+		const token = ++renderToken;
+		const source = images[currentIndex];
+		const url = urlOf(source);
+
+		await preload(url);
+
+		if (token !== renderToken) {
+			return;
+		}
+
+		commitLayer();
+		applyMeta(source);
+
+		if (!animate || prefersReducedMotion) {
+			applyImage(url);
+		} else {
+			const layer = document.createElement('div');
+			layer.className = 'gallery-fade-layer';
+			layer.dataset.url = url;
+			layer.style.backgroundImage = backgroundFor(url);
+			gallery.appendChild(layer);
+			activeLayer = layer;
+
+			requestAnimationFrame(() => {
+				layer.style.opacity = '1';
+			});
+
+			fadeTimer = window.setTimeout(commitLayer, 260);
+		}
+
+		preload(urlOf(images[(currentIndex + 1) % images.length]));
+		preload(urlOf(images[(currentIndex - 1 + images.length) % images.length]));
 	};
 
 	gallery.querySelector('[data-gallery-prev]')?.addEventListener('click', () => {
@@ -56,7 +129,7 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 		});
 	});
 
-	render();
+	render(false);
 });
 
 document.querySelectorAll('[data-language-tab]').forEach((tab) => {

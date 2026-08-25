@@ -17,8 +17,17 @@
             <details class="property-filters" {{ count($filters) ? 'open' : '' }}>
                 <summary><span><span class="badge badge-emerald">{{ __('messages.properties.search_badge') }}</span><strong>{{ __('messages.properties.filter_heading') }}</strong></span><a href="{{ route('properties.index') }}" class="inline-link">{{ __('messages.properties.reset') }}</a></summary>
                 <form method="GET" action="{{ route('properties.index') }}">
-                    <div class="form-grid">
-                    <div>
+                    <div class="filter-grid">
+                    <div class="filter-field filter-field-wide">
+                        <label for="destination">{{ __('messages.home.destination') }}</label>
+                        <select id="destination" name="destination">
+                            <option value="">{{ __('messages.properties.all_destinations') }}</option>
+                            @foreach ($destinations as $destination)
+                                <option value="{{ $destination }}" @selected(($filters['destination'] ?? null) === $destination)>{{ $destination }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="filter-field filter-field-wide">
                         <label for="establishment">{{ __('messages.common.establishment') }}</label>
                         <select id="establishment" name="establishment">
                             <option value="">{{ __('messages.properties.all_establishments') }}</option>
@@ -27,25 +36,21 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                        <label for="city">{{ __('messages.properties.city') }}</label>
-                        <input id="city" name="city" value="{{ $filters['city'] ?? '' }}" placeholder="Cotonou">
-                    </div>
-                    <div>
+                    <div class="filter-field">
                         <label for="guests">{{ __('messages.properties.guests') }}</label>
-                        <input id="guests" name="guests" type="number" min="1" value="{{ $filters['guests'] ?? '' }}">
+                        <input id="guests" name="guests" type="number" min="1" inputmode="numeric" value="{{ $filters['guests'] ?? '' }}">
                     </div>
-                    <div>
+                    <div class="filter-field">
                         <label for="bedrooms">{{ __('messages.properties.bedrooms') }}</label>
-                        <input id="bedrooms" name="bedrooms" type="number" min="1" value="{{ $filters['bedrooms'] ?? '' }}">
+                        <input id="bedrooms" name="bedrooms" type="number" min="1" inputmode="numeric" value="{{ $filters['bedrooms'] ?? '' }}">
                     </div>
-                    <div>
+                    <div class="filter-field">
                         <label for="min_price">{{ __('messages.properties.min_price') }}</label>
-                        <input id="min_price" name="min_price" type="number" min="0" step="1000" value="{{ $filters['min_price'] ?? '' }}">
+                        <input id="min_price" name="min_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['min_price'] ?? '' }}">
                     </div>
-                    <div>
+                    <div class="filter-field">
                         <label for="max_price">{{ __('messages.properties.max_price') }}</label>
-                        <input id="max_price" name="max_price" type="number" min="0" step="1000" value="{{ $filters['max_price'] ?? '' }}">
+                        <input id="max_price" name="max_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['max_price'] ?? '' }}">
                     </div>
                     </div>
                     <div class="form-actions"><button type="submit" class="btn btn-primary">{{ __('messages.properties.apply') }}</button></div>

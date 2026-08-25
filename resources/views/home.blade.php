@@ -38,7 +38,12 @@
                     <form class="search-form" method="GET" action="{{ route('properties.index') }}">
                         <label>
                             <span>{{ __('messages.home.destination') }}</span>
-                            <input type="text" name="city" value="Cotonou" aria-label="{{ __('messages.home.destination') }}" />
+                            <select name="destination" aria-label="{{ __('messages.home.destination') }}">
+                                <option value="">{{ __('messages.properties.all_destinations') }}</option>
+                                @foreach ($destinations as $destination)
+                                    <option value="{{ $destination }}">{{ $destination }}</option>
+                                @endforeach
+                            </select>
                         </label>
                         <div class="grid-two">
                             <label>

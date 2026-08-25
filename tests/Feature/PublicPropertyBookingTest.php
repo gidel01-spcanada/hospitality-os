@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Establishment;
 use App\Models\Property;
+use App\Models\Reservation;
 use App\Models\SiteReview;
 use Database\Seeders\DatabaseSeeder;
 use Tests\TestCase;
@@ -58,7 +59,8 @@ class PublicPropertyBookingTest extends TestCase
             'infants' => 0,
         ]);
 
-        $response->assertRedirect('/properties/appartement-401');
+        $reservation = Reservation::query()->where('email', 'alice@example.com')->latest()->firstOrFail();
+        $response->assertRedirect(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]));
         $this->assertDatabaseHas('reservation_guests', ['email' => 'alice@example.com']);
         $this->assertDatabaseHas('reservations', ['email' => 'alice@example.com', 'status' => 'pending']);
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'alice@example.com', 'template' => 'reservation_received', 'status' => 'queued']);
@@ -109,14 +111,32 @@ class PublicPropertyBookingTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('action="' . route('properties.index') . '"', false)
-            ->assertSee('name="city"', false)
+            ->assertSee('name="destination"', false)
             ->assertSee('name="guests"', false)
             ->assertSee('type="submit"', false);
 
-        $this->get('/properties?city=Cotonou&guests=3')
+        $this->get('/properties?destination=Cotonou&guests=3')
             ->assertOk()
-            ->assertSee('name="city" value="Cotonou"', false)
-            ->assertSee('name="guests" type="number" min="1" value="3"', false);
+            ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
+            ->assertSee('value="3"', false);
+
+        // Legacy links that still use the "city" parameter must keep working.
+        $this->get('/properties?city=Cotonou')
+            ->assertOk()
+            ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false);
+    }
+
+    public function test_properties_page_ignores_blank_filter_values(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->get('/properties?bedrooms=&destination=Cotonou&establishment=1&guests=&max_price=&min_price=')
+            ->assertOk()
+            ->assertSee('Appartement 401');
+
+        $this->get('/properties?destination=&establishment=&guests=&bedrooms=&min_price=&max_price=')
+            ->assertOk()
+            ->assertSee('Appartement 401');
     }
 
     public function test_property_detail_displays_reviews_map_and_social_preview_data(): void

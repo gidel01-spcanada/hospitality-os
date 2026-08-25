@@ -305,6 +305,7 @@ return [
     'properties.filter_heading' => 'Affiner les logements',
     'properties.reset' => 'Réinitialiser',
     'properties.all_establishments' => 'Tous les établissements',
+    'properties.all_destinations' => 'Toutes les destinations',
     'properties.city' => 'Ville',
     'properties.guests' => 'Voyageurs minimum',
     'properties.bedrooms' => 'Chambres minimum',

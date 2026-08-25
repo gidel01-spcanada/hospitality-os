@@ -23,6 +23,7 @@ class PublicPropertyController extends Controller
     {
         $filters = $request->validate([
             'establishment' => ['nullable', 'integer', 'exists:establishments,id'],
+            'destination' => ['nullable', 'string', 'max:120'],
             'city' => ['nullable', 'string', 'max:120'],
             'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
             'bedrooms' => ['nullable', 'integer', 'min:1', 'max:50'],
@@ -30,21 +31,32 @@ class PublicPropertyController extends Controller
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
         ]);
 
+        // Empty inputs arrive as null, so drop them before they reach the query builder.
+        $filters = array_filter($filters, static fn ($value) => $value !== null && $value !== '');
+
+        // "city" remains supported so previously shared search links keep working.
+        $destination = $filters['destination'] ?? $filters['city'] ?? null;
+
         $properties = Property::query()
             ->published()
             ->when($filters['establishment'] ?? null, fn ($query, $establishment) => $query->where('establishment_id', $establishment))
-            ->when($filters['city'] ?? null, fn ($query, $city) => $query->where('city', 'like', '%' . $city . '%'))
+            ->when($destination, fn ($query, $value) => $query->where('city', 'like', '%' . $value . '%'))
             ->when($filters['guests'] ?? null, fn ($query, $guests) => $query->where('max_guests', '>=', $guests))
             ->when($filters['bedrooms'] ?? null, fn ($query, $bedrooms) => $query->where('bedrooms', '>=', $bedrooms))
-            ->when(array_key_exists('min_price', $filters), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
-            ->when(array_key_exists('max_price', $filters), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
+            ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
+            ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
             ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
             ->orderBy('nightly_rate_xof')
             ->get();
 
-        $establishments = Establishment::query()->with('translations')->orderBy('name')->get();
+        if ($destination !== null) {
+            $filters['destination'] = $destination;
+        }
 
-        return view('properties.index', compact('properties', 'establishments', 'filters'));
+        $establishments = Establishment::query()->with('translations')->orderBy('name')->get();
+        $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
+
+        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters'));
     }
 
     public function show(Property $property): View
@@ -155,6 +167,7 @@ class PublicPropertyController extends Controller
 
         $emailService->queueForReservation($reservation, 'reservation_received', 'Confirmation de votre demande de réservation');
 
-        return redirect()->route('properties.show', $property)->with('status', __('messages.flash.reservation_saved'));
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token])
+            ->with('status', __('messages.flash.reservation_saved'));
     }
 }
