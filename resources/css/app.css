@@ -2176,7 +2176,8 @@ main #home-location {
     gap: 0.35rem;
 }
 
-.amenity-category-rename-action span:first-child {
+/* Scoped to the direct child only, so it doesn't also match the button's own icon span below it. */
+.amenity-category-rename-action > span:first-child {
     font-size: 0.75rem;
     font-weight: 700;
     visibility: hidden;
