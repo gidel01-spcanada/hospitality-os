@@ -136,6 +136,8 @@ return [
         'admin.save_category' => 'Enregistrer la catégorie',
         'admin.amenity_categories' => 'Catégories existantes',
         'admin.no_amenity_categories' => 'Aucune catégorie d’équipements pour le moment.',
+        'admin.select_category_help' => 'Choisissez une catégorie ci-dessous pour la renommer ou gérer ses équipements.',
+        'admin.no_amenities_in_category' => 'Aucun équipement dans cette catégorie pour le moment. Ajoutez-en un ci-dessous.',
         'admin.amenity_count' => '{0} Aucun équipement|{1} :count équipement|[2,*] :count équipements',
         'admin.move_to_category' => 'Déplacer vers la catégorie',
         'admin.save' => 'Enregistrer',

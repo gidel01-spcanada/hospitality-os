@@ -11,15 +11,19 @@ use Illuminate\View\View;
 
 class AdminAmenityController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $categories = AmenityCategory::query()
             ->withCount('amenities')
-            ->with(['amenities' => fn ($query) => $query->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->get();
 
-        return view('admin.amenities.index', compact('categories'));
+        $selectedCategory = $categories->firstWhere('id', (int) $request->query('category'))
+            ?? $categories->first();
+
+        $selectedCategory?->load(['amenities' => fn ($query) => $query->orderBy('sort_order')]);
+
+        return view('admin.amenities.index', compact('categories', 'selectedCategory'));
     }
 
     public function storeCategory(Request $request): RedirectResponse
@@ -31,14 +35,14 @@ class AdminAmenityController extends Controller
 
         $slug = Str::slug($validated['name_en']);
 
-        AmenityCategory::query()->create([
+        $category = AmenityCategory::query()->create([
             'slug' => $slug,
             'name_en' => $validated['name_en'],
             'name_fr' => $validated['name_fr'],
             'sort_order' => ((int) AmenityCategory::query()->max('sort_order')) + 10,
         ]);
 
-        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_category_created'));
+        return $this->toCategory($category)->with('success', __('messages.flash.amenity_category_created'));
     }
 
     public function updateCategory(Request $request, AmenityCategory $amenityCategory): RedirectResponse
@@ -50,13 +54,13 @@ class AdminAmenityController extends Controller
 
         $amenityCategory->update($validated);
 
-        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_category_updated'));
+        return $this->toCategory($amenityCategory)->with('success', __('messages.flash.amenity_category_updated'));
     }
 
     public function destroyCategory(AmenityCategory $amenityCategory): RedirectResponse
     {
         if ($amenityCategory->amenities()->exists()) {
-            return back()->withErrors(['category' => __('messages.errors.amenity_category_in_use')]);
+            return $this->toCategory($amenityCategory)->withErrors(['category' => __('messages.errors.amenity_category_in_use')]);
         }
 
         $amenityCategory->delete();
@@ -78,7 +82,7 @@ class AdminAmenityController extends Controller
             'sort_order' => ((int) $amenityCategory->amenities()->max('sort_order')) + 10,
         ]);
 
-        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_created'));
+        return $this->toCategory($amenityCategory)->with('success', __('messages.flash.amenity_created'));
     }
 
     public function updateAmenity(Request $request, Amenity $amenity): RedirectResponse
@@ -91,14 +95,22 @@ class AdminAmenityController extends Controller
 
         $amenity->update($validated);
 
-        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_updated'));
+        return $this->toCategory($validated['category_id'])->with('success', __('messages.flash.amenity_updated'));
     }
 
     public function destroyAmenity(Amenity $amenity): RedirectResponse
     {
+        $categoryId = $amenity->category_id;
         $amenity->delete();
 
-        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_deleted'));
+        return $this->toCategory($categoryId)->with('success', __('messages.flash.amenity_deleted'));
+    }
+
+    private function toCategory(AmenityCategory|int $category): RedirectResponse
+    {
+        $categoryId = $category instanceof AmenityCategory ? $category->id : $category;
+
+        return redirect()->route('admin.amenities.index', ['category' => $categoryId]);
     }
 
     private function uniqueAmenitySlug(string $name): string
