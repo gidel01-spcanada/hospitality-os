@@ -165,6 +165,10 @@ class PropertyAdminControlsTest extends TestCase
         $cover = $property->images()->where('is_cover', true)->firstOrFail();
         $this->assertStringStartsWith('uploads/properties/' . $property->slug . '/', $cover->file_path);
         $this->assertSame($cover->file_path, $property->cover_image);
+
+        // These photos are written to the real public disk (not a fake), so remove them here
+        // instead of leaving throwaway files behind for every test run.
+        $property->images()->get()->each(fn ($image) => \Illuminate\Support\Facades\File::delete(public_path($image->file_path)));
     }
 
     public function test_admin_can_remove_a_property_photo_and_reassign_cover(): void
@@ -266,6 +270,9 @@ class PropertyAdminControlsTest extends TestCase
         $establishment->refresh();
         $this->assertStringStartsWith('uploads/establishments/', $establishment->cover_image);
         $this->assertFileExists(public_path($establishment->cover_image));
+
+        // Written to the real public disk (not a fake), so clean it up rather than leaving it behind.
+        \Illuminate\Support\Facades\File::delete(public_path($establishment->cover_image));
     }
 
     public function test_admin_can_select_a_property_picture_as_establishment_main_picture(): void
