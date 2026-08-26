@@ -1,5 +1,9 @@
 @php
     $brand = \App\Support\BrandSettings::all();
+    if (config('platform.mode') === 'cloud') {
+        // Cloud mode is one unified brand across every tenant's properties -- never a tenant's own site name.
+        $brand['site_name'] = config('platform.brand_name');
+    }
     $currentLocale = app()->getLocale();
     $availableLocales = ['fr', 'en'];
     $alternateLocale = collect($availableLocales)->first(fn (string $locale) => $locale !== $currentLocale);

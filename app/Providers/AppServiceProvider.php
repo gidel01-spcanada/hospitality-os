@@ -25,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        config()->set('app.name', BrandSettings::siteName());
+        // Cloud mode is one unified "Hospitality OS" brand regardless of any tenant's own settings;
+        // on-premise keeps the operator's own brand, editable from the admin settings page.
+        config()->set('app.name', config('platform.mode') === 'cloud' ? config('platform.brand_name') : BrandSettings::siteName());
 
         $locale = auth()->user()?->locale
             ?? session('locale')
