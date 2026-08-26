@@ -8,6 +8,7 @@ use App\Models\ReservationPriceLine;
 use App\Models\Property;
 use App\Services\AvailabilityService;
 use App\Services\ReservationEmailService;
+use App\Support\CurrentTenant;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,14 +22,14 @@ class AdminReservationController extends Controller
     {
         return view('admin.reservations.form', [
             'reservation' => new Reservation(['adults' => 1, 'children' => 0, 'infants' => 0]),
-            'properties' => Property::query()->orderBy('name')->get(),
+            'properties' => $this->tenantProperties(),
         ]);
     }
 
     public function store(Request $request, AvailabilityService $availabilityService): RedirectResponse
     {
         $validated = $this->validateReservation($request);
-        $property = Property::query()->findOrFail($validated['property_id']);
+        $property = $this->ownedProperty($validated['property_id']);
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
 
@@ -46,14 +47,14 @@ class AdminReservationController extends Controller
 
         return view('admin.reservations.form', [
             'reservation' => $reservation,
-            'properties' => Property::query()->orderBy('name')->get(),
+            'properties' => $this->tenantProperties(),
         ]);
     }
 
     public function update(Request $request, Reservation $reservation, AvailabilityService $availabilityService): RedirectResponse
     {
         $validated = $this->validateReservation($request, $reservation);
-        $property = Property::query()->findOrFail($validated['property_id']);
+        $property = $this->ownedProperty($validated['property_id']);
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
 
@@ -97,6 +98,7 @@ class AdminReservationController extends Controller
     public function index(Request $request): View
     {
         $reservations = Reservation::query()
+            ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
             ->with(['property', 'guest'])
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
@@ -146,6 +148,26 @@ class AdminReservationController extends Controller
 
         return redirect()->route('admin.reservations.show', $reservation)
             ->with('status', __('messages.flash.reservation_status_updated'));
+    }
+
+    private function tenantProperties()
+    {
+        return Property::query()
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Property has no tenant_id of its own, so a manual lookup (not route-model binding) needs
+     * its own tenant check -- otherwise staff could assign a reservation to another tenant's property.
+     */
+    private function ownedProperty(int $propertyId): Property
+    {
+        return Property::query()
+            ->whereKey($propertyId)
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->firstOrFail();
     }
 
     private function validateReservation(Request $request, ?Reservation $reservation = null): array

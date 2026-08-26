@@ -63,6 +63,22 @@ class Property extends Model
         return $query->where('status', 'published');
     }
 
+    /**
+     * Properties have no tenant_id of their own (they inherit it through their establishment),
+     * so route-model binding is the enforcement point: a property owned by another tenant
+     * resolves to null here, which Laravel treats exactly like a scoped-out model -- a 404.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $property = parent::resolveRouteBinding($value, $field);
+
+        if ($property && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $property->establishment->tenant_id !== $tenantId) {
+            return null;
+        }
+
+        return $property;
+    }
+
     public function translations(): HasMany
     {
         return $this->hasMany(PropertyTranslation::class);

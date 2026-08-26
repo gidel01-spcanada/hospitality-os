@@ -54,6 +54,22 @@ class Reservation extends Model
         return $this->belongsTo(Property::class);
     }
 
+    /**
+     * No tenant_id of its own; reached through property -> establishment. Only enforced when
+     * a tenant context exists (staff/admin), so guest checkout and a customer's own dashboard
+     * lookup -- both tenant-less -- are unaffected.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $reservation = parent::resolveRouteBinding($value, $field);
+
+        if ($reservation && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $reservation->property->establishment->tenant_id !== $tenantId) {
+            return null;
+        }
+
+        return $reservation;
+    }
+
     public function guest(): BelongsTo
     {
         return $this->belongsTo(ReservationGuest::class, 'guest_id');

@@ -75,4 +75,19 @@ class User extends Authenticatable
     {
         return $this->isAdmin() || $this->isConcierge();
     }
+
+    /**
+     * Customers (tenant_id null) stay visible to any admin -- they're shared platform users, not
+     * tenant-owned. Staff (tenant_id set) from another tenant resolve to null, i.e. a 404.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $user = parent::resolveRouteBinding($value, $field);
+
+        if ($user && $user->tenant_id && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $user->tenant_id !== $tenantId) {
+            return null;
+        }
+
+        return $user;
+    }
 }

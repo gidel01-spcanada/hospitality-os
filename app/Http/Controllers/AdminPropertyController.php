@@ -8,11 +8,13 @@ use App\Models\PropertyFeature;
 use App\Models\PropertyImage;
 use App\Models\Establishment;
 use App\Services\AvailabilityService;
+use App\Support\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 use App\Models\ExternalCalendarFeed;
 
 class AdminPropertyController extends Controller
@@ -27,7 +29,7 @@ class AdminPropertyController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'establishment_id' => ['required', 'integer', 'exists:establishments,id'],
+            'establishment_id' => ['required', 'integer', $this->establishmentExistsRule()],
             'name' => ['required', 'string', 'max:255'],
             'property_type' => ['required', 'in:apartment,house,villa,studio,room,other'],
             'slug' => ['required', 'string', 'max:255', 'unique:properties,slug'],
@@ -50,12 +52,14 @@ class AdminPropertyController extends Controller
     {
         $establishments = Establishment::query()->orderBy('name')->get();
         $filters = $request->validate([
-            'establishment' => ['nullable', 'integer', 'exists:establishments,id'],
+            'establishment' => ['nullable', 'integer', $this->establishmentExistsRule()],
             'status' => ['nullable', 'in:draft,published,archived'],
         ]);
         $establishmentId = $filters['establishment'] ?? null;
 
+        // Property has no tenant_id of its own, so it's scoped here through its establishment.
         $properties = Property::query()
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
             ->when($establishmentId, fn ($query) => $query->where('establishment_id', $establishmentId))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->with('establishment')
@@ -85,7 +89,7 @@ class AdminPropertyController extends Controller
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published,archived'],
-            'establishment_id' => ['sometimes', 'integer', 'exists:establishments,id'],
+            'establishment_id' => ['sometimes', 'integer', $this->establishmentExistsRule()],
             'translations' => ['nullable', 'array'],
             'translations.fr.name' => ['nullable', 'string', 'max:255'],
             'translations.en.name' => ['nullable', 'string', 'max:255'],
@@ -285,5 +289,14 @@ class AdminPropertyController extends Controller
             : $fallbackTab;
 
         return redirect()->to(route('admin.properties.edit', $property) . '#' . $tab)->with('success', $message);
+    }
+
+    /**
+     * Rule::exists() doesn't respect Eloquent global scopes, so without this an admin could
+     * attach a property to another tenant's establishment by guessing its id.
+     */
+    private function establishmentExistsRule(): \Illuminate\Validation\Rules\Exists
+    {
+        return Rule::exists('establishments', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()));
     }
 }

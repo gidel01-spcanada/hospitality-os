@@ -8,6 +8,7 @@ use App\Models\Reservation;
 use App\Models\SiteReview;
 use App\Models\User;
 use App\Support\BrandSettings;
+use App\Support\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,12 +21,20 @@ class AdminController extends Controller
 
         abort_unless($user && $user->canManageReservations(), 403, 'Admin access required.');
 
+        // Property, Reservation, and User have no tenant_id of their own, so they're
+        // filtered here through their establishment (or directly, for users).
+        $tenantId = app(CurrentTenant::class)->id();
+        $ownedByTenant = fn ($query) => $query->whereHas('establishment', fn ($q) => $q->where('tenant_id', $tenantId));
+
         $stats = [
             'establishments' => Establishment::count(),
-            'properties' => Property::count(),
-            'bookings' => Reservation::count(),
-            'active_users' => User::count(),
-            'pending' => Reservation::whereIn('status', ['pending', 'pending_payment'])->count(),
+            'properties' => Property::query()->when($tenantId, $ownedByTenant)->count(),
+            'bookings' => Reservation::query()->when($tenantId, fn ($query) => $query->whereHas('property.establishment', fn ($q) => $q->where('tenant_id', $tenantId)))->count(),
+            'active_users' => User::query()->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))->count(),
+            'pending' => Reservation::query()
+                ->when($tenantId, fn ($query) => $query->whereHas('property.establishment', fn ($q) => $q->where('tenant_id', $tenantId)))
+                ->whereIn('status', ['pending', 'pending_payment'])
+                ->count(),
         ];
 
         return view('admin.dashboard', compact('user', 'stats'));
@@ -44,7 +53,11 @@ class AdminController extends Controller
 
     public function users(Request $request): View
     {
+        $tenantId = app(CurrentTenant::class)->id();
+
         $users = User::query()
+            // Staff belong to one tenant; customers (tenant_id null) are shared platform users.
+            ->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
                 $query->where(function ($query) use ($search): void {
@@ -92,6 +105,8 @@ class AdminController extends Controller
             'password' => $validated['password'],
             'role' => $validated['role'],
             'is_admin' => $validated['role'] === 'admin',
+            // Customers are shared platform users; only staff belong to the creating admin's tenant.
+            'tenant_id' => $validated['role'] !== 'customer' ? app(CurrentTenant::class)->id() : null,
             'locale' => $validated['locale'],
             'email_booking_updates' => $request->boolean('email_booking_updates'),
             'email_marketing' => $request->boolean('email_marketing'),
@@ -132,6 +147,8 @@ class AdminController extends Controller
             'email' => $validated['email'],
             'role' => $validated['role'],
             'is_admin' => $validated['role'] === 'admin',
+            // Customers are shared platform users; promoting one to staff assigns it to this tenant.
+            'tenant_id' => $validated['role'] !== 'customer' ? ($managedUser->tenant_id ?? app(CurrentTenant::class)->id()) : null,
             'locale' => $validated['locale'],
             'email_booking_updates' => $request->boolean('email_booking_updates'),
             'email_marketing' => $request->boolean('email_marketing'),

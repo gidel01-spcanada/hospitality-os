@@ -28,7 +28,7 @@ class BrandSettings
             return self::DEFAULTS;
         }
 
-        $rows = DB::table('settings')->select(['key', 'value'])->get()->keyBy('key');
+        $rows = self::query()->select(['key', 'value'])->get()->keyBy('key');
 
         $settings = [];
         foreach (self::DEFAULTS as $key => $default) {
@@ -56,17 +56,34 @@ class BrandSettings
                 continue;
             }
 
-            DB::table('settings')->updateOrInsert(
-                ['key' => $key],
+            self::query()->updateOrInsert(
+                ['key' => $key, 'tenant_id' => app(CurrentTenant::class)->id()],
                 [
                     'key' => $key,
                     'value' => (string) $value,
                     'type' => 'string',
+                    'tenant_id' => app(CurrentTenant::class)->id(),
                     'updated_at' => now(),
                     'created_at' => now(),
                 ]
             );
         }
+    }
+
+    /**
+     * Scoped to the current tenant when one is resolved (admin requests). Falls back to an
+     * unfiltered query otherwise -- today that only ever means the single on-premise tenant;
+     * unifying public branding across tenants for cloud mode is a later phase (ADR 0002).
+     */
+    private static function query(): \Illuminate\Database\Query\Builder
+    {
+        $query = DB::table('settings');
+
+        if ($tenantId = app(CurrentTenant::class)->id()) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query;
     }
 
     public static function siteName(): string
