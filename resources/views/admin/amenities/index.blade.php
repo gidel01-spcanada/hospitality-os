@@ -25,17 +25,19 @@
                 @if ($categories->isEmpty())
                     <p>{{ __('messages.admin.no_amenity_categories') }}</p>
                 @else
-                    <ul class="amenity-manager-list">
-                        @foreach ($categories as $category)
-                            <li>
-                                <a href="{{ route('admin.amenities.index', ['category' => $category->id]) }}"
-                                   class="amenity-manager-list-link {{ $selectedCategory?->id === $category->id ? 'is-active' : '' }}">
-                                    <span>{{ app()->getLocale() === 'fr' ? $category->name_fr : $category->name_en }}</span>
-                                    <span class="badge badge-primary">{{ $category->amenities_count }}</span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
+                    <form method="GET" action="{{ route('admin.amenities.index') }}" class="amenity-manager-select">
+                        <label>
+                            <span>{{ __('messages.admin.category_selector') }}</span>
+                            <select name="category" onchange="this.form.submit()">
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" @selected($selectedCategory?->id === $category->id)>
+                                        {{ app()->getLocale() === 'fr' ? $category->name_fr : $category->name_en }} ({{ $category->amenities_count }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <noscript><button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.view') }}</button></noscript>
+                    </form>
                 @endif
 
                 <h2 class="stacked-title">{{ __('messages.admin.add_amenity_category') }}</h2>
@@ -49,7 +51,10 @@
                         <span>{{ __('messages.admin.category_name_fr') }}</span>
                         <input type="text" name="name_fr" value="{{ old('name_fr') }}" required>
                     </label>
-                    <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_category') }}</button>
+                    <button type="submit" class="btn btn-primary btn-icon" title="{{ __('messages.admin.add_category') }}">
+                        <span aria-hidden="true">&#43;</span>
+                        <span class="sr-only">{{ __('messages.admin.add_category') }}</span>
+                    </button>
                 </form>
             </x-card>
         </aside>
@@ -69,18 +74,30 @@
                                 <span>{{ __('messages.admin.category_name_fr') }}</span>
                                 <input type="text" name="name_fr" value="{{ $selectedCategory->name_fr }}" required>
                             </label>
-                            <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_category') }}</button>
+                            <div class="amenity-category-rename-action">
+                                <span aria-hidden="true">&nbsp;</span>
+                                <button type="submit" class="btn btn-primary btn-icon" title="{{ __('messages.admin.save_category') }}">
+                                    <span aria-hidden="true">&#10003;</span>
+                                    <span class="sr-only">{{ __('messages.admin.save_category') }}</span>
+                                </button>
+                            </div>
                         </form>
 
                         <form method="POST" action="{{ route('admin.amenities.categories.destroy', $selectedCategory) }}">
                             @csrf
                             @method('DELETE')
-                            <button
-                                type="submit"
-                                class="btn btn-danger"
-                                @disabled($selectedCategory->amenities->isNotEmpty())
-                                title="{{ $selectedCategory->amenities->isNotEmpty() ? __('messages.errors.amenity_category_in_use') : '' }}"
-                            >{{ __('messages.admin.delete_category') }}</button>
+                            <div class="amenity-category-rename-action">
+                                <span aria-hidden="true">&nbsp;</span>
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger btn-icon"
+                                    @disabled($selectedCategory->amenities->isNotEmpty())
+                                    title="{{ $selectedCategory->amenities->isNotEmpty() ? __('messages.errors.amenity_category_in_use') : __('messages.admin.delete_category') }}"
+                                >
+                                    <span aria-hidden="true">&#10005;</span>
+                                    <span class="sr-only">{{ __('messages.admin.delete_category') }}</span>
+                                </button>
+                            </div>
                         </form>
                     </div>
 
@@ -111,12 +128,18 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.save') }}</button>
+                                        <button type="submit" class="btn btn-ghost btn-icon btn-small" title="{{ __('messages.admin.save') }}">
+                                            <span aria-hidden="true">&#10003;</span>
+                                            <span class="sr-only">{{ __('messages.admin.save') }}</span>
+                                        </button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.amenities.destroy', $amenity) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-small">{{ __('messages.admin.delete') }}</button>
+                                        <button type="submit" class="btn btn-danger btn-icon btn-small" title="{{ __('messages.admin.delete') }}">
+                                            <span aria-hidden="true">&#10005;</span>
+                                            <span class="sr-only">{{ __('messages.admin.delete') }}</span>
+                                        </button>
                                     </form>
                                 </div>
                             @endforeach
@@ -129,7 +152,10 @@
                         @csrf
                         <input type="text" name="name_en" placeholder="{{ __('messages.admin.amenity_name_en') }}" required>
                         <input type="text" name="name_fr" placeholder="{{ __('messages.admin.amenity_name_fr') }}" required>
-                        <button type="submit" class="btn btn-primary btn-small">{{ __('messages.admin.add_amenity') }}</button>
+                        <button type="submit" class="btn btn-primary btn-icon" title="{{ __('messages.admin.add_amenity') }}">
+                            <span aria-hidden="true">&#43;</span>
+                            <span class="sr-only">{{ __('messages.admin.add_amenity') }}</span>
+                        </button>
                     </form>
                 </x-card>
             @else

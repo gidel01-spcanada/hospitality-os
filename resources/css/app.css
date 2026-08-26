@@ -2064,46 +2064,41 @@ main #home-location {
     gap: 1.25rem;
 }
 
-.amenity-manager-list {
+.amenity-manager-select {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 0.75rem 0 1.25rem;
-    padding: 0;
-    list-style: none;
-}
-
-.amenity-manager-list-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: flex-end;
     gap: 0.6rem;
-    padding: 0.65rem 0.85rem;
-    border: 1px solid var(--afrik-line);
-    border-radius: 12px;
-    color: var(--afrik-text);
+    margin: 0.75rem 0 1.25rem;
+}
+
+.amenity-manager-select label {
+    flex: 1;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.75rem;
     font-weight: 700;
-    text-decoration: none;
+    color: var(--afrik-muted);
+}
+
+.amenity-manager-select select {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+    border: 1px solid var(--afrik-line);
+    padding: 0.55rem 0.7rem;
+    font: inherit;
     background: white;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.amenity-manager-list-link:hover {
-    border-color: rgba(15, 91, 76, 0.35);
-    text-decoration: none;
-}
-
-.amenity-manager-list-link.is-active {
-    border-color: var(--afrik-emerald);
-    background: rgba(15, 91, 76, 0.08);
 }
 
 .amenity-manager-new-category {
-    display: grid;
-    gap: 0.7rem;
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.6rem;
 }
 
 .amenity-manager-new-category label {
+    flex: 1 1 140px;
     display: grid;
     gap: 0.35rem;
     font-size: 0.75rem;
@@ -2122,26 +2117,23 @@ main #home-location {
 }
 
 .amenity-manager-detail-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) 42px 42px;
+    align-items: start;
+    gap: 0.6rem;
     padding-bottom: 1rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--afrik-line);
 }
 
-.amenity-category-rename {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 0.6rem;
-    align-items: end;
-    flex: 1 1 420px;
+/* Both forms join the header's flex row directly, so the save and delete buttons share one baseline. */
+.amenity-manager-detail-header form {
+    display: contents;
 }
 
 .amenity-category-rename label {
     display: grid;
+    height: 65.6px;
     gap: 0.35rem;
     font-size: 0.75rem;
     font-weight: 700;
@@ -2150,7 +2142,7 @@ main #home-location {
 
 .amenity-category-rename input {
     width: 100%;
-    min-height: 40px;
+    min-height: 42px;
     border-radius: 10px;
     border: 1px solid var(--afrik-line);
     padding: 0.5rem 0.65rem;
@@ -2158,11 +2150,43 @@ main #home-location {
     background: white;
 }
 
+/* Mirrors the label's caption+input grid, at the exact same fixed height, so the header's buttons align cleanly. */
+.amenity-category-rename-action {
+    display: grid;
+    height: 65.6px;
+    gap: 0.35rem;
+}
+
+.amenity-category-rename-action span:first-child {
+    font-size: 0.75rem;
+    font-weight: 700;
+    visibility: hidden;
+}
+
+/* Icon-only buttons: same square footprint everywhere so rows line up regardless of label length. */
+.btn-icon {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.btn-icon.btn-small {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    font-size: 0.9rem;
+}
+
 .amenity-admin-list-head {
     display: grid;
-    grid-template-columns: 1fr 1fr 160px 72px 36px;
+    grid-template-columns: 1fr 1fr 160px 34px 34px;
     gap: 0.5rem;
-    padding: 0 0.1rem 0.35rem;
+    /* Match .amenity-admin-row's horizontal padding so both grids compute identical column widths. */
+    padding: 0 0.35rem 0.35rem;
     font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -2178,7 +2202,7 @@ main #home-location {
 
 .amenity-admin-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 160px 72px 36px;
+    grid-template-columns: 1fr 1fr 160px 34px 34px;
     gap: 0.5rem;
     align-items: center;
     padding: 0.35rem;
@@ -2207,8 +2231,9 @@ main #home-location {
 
 .amenity-admin-add-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 42px;
     gap: 0.5rem;
+    align-items: center;
     padding-top: 1rem;
     margin-top: 0.5rem;
     border-top: 1px dashed var(--afrik-line);
@@ -2216,7 +2241,7 @@ main #home-location {
 
 .amenity-admin-add-row input {
     width: 100%;
-    min-height: 38px;
+    min-height: 42px;
     border-radius: 9px;
     border: 1px solid var(--afrik-line);
     padding: 0.4rem 0.55rem;
@@ -2231,10 +2256,22 @@ main #home-location {
 }
 
 @media (max-width: 640px) {
-    .amenity-category-rename,
+    .amenity-manager-detail-header,
     .amenity-admin-row,
     .amenity-admin-add-row {
         grid-template-columns: 1fr;
+    }
+
+    .amenity-category-rename label,
+    .amenity-category-rename-action {
+        height: auto;
+    }
+
+    .amenity-manager-detail-header .btn-icon,
+    .amenity-admin-row .btn-icon,
+    .amenity-admin-add-row .btn-icon {
+        width: 100%;
+        border-radius: 999px;
     }
 
     .amenity-admin-list-head {
