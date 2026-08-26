@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Amenity;
 use App\Models\AmenityCategory;
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,9 @@ class ReferenceDataSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seeders run outside any authenticated request, so there's no tenant context to stamp rows with automatically.
+        $tenantId = Tenant::query()->firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active'])->id;
+
         $categories = [
             'layout-views' => ['name_en' => 'Layout & Views', 'name_fr' => 'Agencement et vues', 'sort_order' => 10],
             'kitchen-dining' => ['name_en' => 'Kitchen & Dining', 'name_fr' => 'Cuisine et salle à manger', 'sort_order' => 20],
@@ -26,7 +30,7 @@ class ReferenceDataSeeder extends Seeder
 
         $categoryIds = [];
         foreach ($categories as $slug => $category) {
-            $categoryIds[$slug] = AmenityCategory::query()->updateOrCreate(['slug' => $slug], $category)->id;
+            $categoryIds[$slug] = AmenityCategory::query()->updateOrCreate(['slug' => $slug, 'tenant_id' => $tenantId], $category)->id;
         }
 
         // Booking.com's standard facility list, grouped under the categories above.
@@ -119,7 +123,7 @@ class ReferenceDataSeeder extends Seeder
         foreach ($amenities as $categorySlug => $categoryAmenities) {
             foreach ($categoryAmenities as $index => $amenity) {
                 Amenity::query()->updateOrCreate(
-                    ['slug' => $amenity['slug']],
+                    ['slug' => $amenity['slug'], 'tenant_id' => $tenantId],
                     [
                         'category_id' => $categoryIds[$categorySlug],
                         'name_en' => $amenity['name_en'],
@@ -148,7 +152,7 @@ class ReferenceDataSeeder extends Seeder
 
         foreach ($settings as $setting) {
             DB::table('settings')->updateOrInsert(
-                ['key' => $setting['key']],
+                ['key' => $setting['key'], 'tenant_id' => $tenantId],
                 $setting
             );
         }

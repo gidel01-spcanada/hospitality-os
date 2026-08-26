@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -17,6 +18,9 @@ class AuthSeeder extends Seeder
             throw new \RuntimeException('SEED_ADMIN_PASSWORD and SEED_GUEST_PASSWORD must be configured before running the auth seeder.');
         }
 
+        // Seeders run outside any authenticated request, so there's no tenant context to stamp rows with automatically.
+        $tenantId = Tenant::query()->firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active'])->id;
+
         User::query()->updateOrCreate(
             ['email' => 'admin@afrikappart.test'],
             [
@@ -24,6 +28,7 @@ class AuthSeeder extends Seeder
                 'password' => Hash::make($adminPassword),
                 'role' => 'admin',
                 'is_admin' => true,
+                'tenant_id' => $tenantId,
                 'locale' => 'fr',
                 'email_booking_updates' => true,
                 'email_marketing' => false,

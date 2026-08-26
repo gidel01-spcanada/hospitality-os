@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Amenity;
 use App\Models\Establishment;
 use App\Models\Property;
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,11 @@ class SamplePropertySeeder extends Seeder
 {
     public function run(): void
     {
+        // Seeders run outside any authenticated request, so there's no tenant context to stamp rows with automatically.
+        $tenantId = Tenant::query()->firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active'])->id;
+
         $establishment = Establishment::query()->updateOrCreate(
-            ['slug' => 'afrik-appart-cotonou'],
+            ['slug' => 'afrik-appart-cotonou', 'tenant_id' => $tenantId],
             [
                 'name' => 'Afrik Appart Cotonou',
                 'country_code' => 'BJ',
