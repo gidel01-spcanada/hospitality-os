@@ -2110,14 +2110,11 @@ main #home-location {
 }
 
 .amenity-manager-new-category {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
+    display: grid;
     gap: 0.6rem;
 }
 
 .amenity-manager-new-category label {
-    flex: 1 1 140px;
     display: grid;
     gap: 0.35rem;
     font-size: 0.75rem;
@@ -2133,6 +2130,11 @@ main #home-location {
     padding: 0.55rem 0.7rem;
     font: inherit;
     background: white;
+}
+
+/* The add button gets its own row below the fields instead of squeezing onto whichever field's line wraps last. */
+.amenity-manager-new-category button {
+    justify-self: end;
 }
 
 .amenity-manager-detail-header {
