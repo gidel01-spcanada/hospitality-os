@@ -13,6 +13,7 @@ class SiteReview extends Model
     protected $table = 'site_reviews';
 
     protected $fillable = [
+        'tenant_id',
         'source',
         'reviewer_name',
         'rating',

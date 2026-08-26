@@ -73,6 +73,9 @@
                             <button type="submit" class="btn btn-primary">{{ __('messages.nav.logout') }}</button>
                         </form>
                     @else
+                        @if (config('platform.mode') === 'cloud')
+                            <a class="btn btn-ghost" href="{{ route('host.register') }}">{{ __('messages.auth.host_register_badge') }}</a>
+                        @endif
                         <a class="btn btn-ghost" href="{{ route('login') }}">{{ __('messages.nav.login') }}</a>
                         <a class="btn btn-primary" href="{{ route('register') }}">{{ __('messages.nav.sign_up') }}</a>
                     @endauth

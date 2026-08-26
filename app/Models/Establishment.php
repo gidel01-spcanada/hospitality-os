@@ -12,6 +12,7 @@ class Establishment extends Model
     use HasFactory, BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'slug',
         'country_code',

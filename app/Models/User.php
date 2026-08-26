@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'is_admin',
         'is_active',
+        'tenant_id',
         'locale',
         'theme',
         'timezone',

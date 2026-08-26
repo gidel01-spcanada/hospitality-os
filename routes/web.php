@@ -43,6 +43,8 @@ Route::middleware(['guest', 'locale'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/host/register', [\App\Http\Controllers\TenantSignupController::class, 'create'])->name('host.register');
+    Route::post('/host/register', [\App\Http\Controllers\TenantSignupController::class, 'store'])->name('host.register.store');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');

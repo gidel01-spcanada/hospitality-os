@@ -12,6 +12,7 @@ class Amenity extends Model
     use HasFactory, BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'category_id',
         'name_en',
         'name_fr',
