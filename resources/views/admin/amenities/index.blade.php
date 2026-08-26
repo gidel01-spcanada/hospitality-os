@@ -41,24 +41,64 @@
         @if ($categories->isEmpty())
             <p>{{ __('messages.admin.no_amenity_categories') }}</p>
         @else
-            <div class="feature-grid">
+            <div class="amenity-category-grid">
                 @foreach ($categories as $category)
-                    <article class="feature-card">
-                        <h3>{{ app()->getLocale() === 'fr' ? $category->name_fr : $category->name_en }}</h3>
+                    <article class="feature-card amenity-category-card">
+                        <form method="POST" action="{{ route('admin.amenities.categories.update', $category) }}" class="amenity-category-rename">
+                            @csrf
+                            @method('PUT')
+                            <label>
+                                <span>{{ __('messages.admin.category_name_en') }}</span>
+                                <input type="text" name="name_en" value="{{ $category->name_en }}" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.category_name_fr') }}</span>
+                                <input type="text" name="name_fr" value="{{ $category->name_fr }}" required>
+                            </label>
+                            <button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.save_category') }}</button>
+                        </form>
+
                         <p>{{ trans_choice('messages.admin.amenity_count', $category->amenities_count, ['count' => $category->amenities_count]) }}</p>
 
                         @if ($category->amenities->isNotEmpty())
-                            <ul class="amenity-list">
+                            <div class="amenity-admin-list">
                                 @foreach ($category->amenities as $amenity)
-                                    <li>{{ app()->getLocale() === 'fr' ? $amenity->name_fr : $amenity->name_en }}</li>
+                                    <div class="amenity-admin-row">
+                                        <form method="POST" action="{{ route('admin.amenities.update', $amenity) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="text" name="name_en" value="{{ $amenity->name_en }}" required aria-label="{{ __('messages.admin.amenity_name_en') }}">
+                                            <input type="text" name="name_fr" value="{{ $amenity->name_fr }}" required aria-label="{{ __('messages.admin.amenity_name_fr') }}">
+                                            <select name="category_id" aria-label="{{ __('messages.admin.move_to_category') }}">
+                                                @foreach ($categories as $option)
+                                                    <option value="{{ $option->id }}" @selected($option->id === $category->id)>
+                                                        {{ app()->getLocale() === 'fr' ? $option->name_fr : $option->name_en }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.save') }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.amenities.destroy', $amenity) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-small">{{ __('messages.admin.delete') }}</button>
+                                        </form>
+                                    </div>
                                 @endforeach
-                            </ul>
+                            </div>
                         @endif
+
+                        <form method="POST" action="{{ route('admin.amenities.store', $category) }}" class="amenity-admin-add-row">
+                            @csrf
+                            <input type="text" name="name_en" placeholder="{{ __('messages.admin.amenity_name_en') }}" required>
+                            <input type="text" name="name_fr" placeholder="{{ __('messages.admin.amenity_name_fr') }}" required>
+                            <button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.add_amenity') }}</button>
+                        </form>
 
                         <form method="POST" action="{{ route('admin.amenities.categories.destroy', $category) }}" class="review-delete-form">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger" @disabled($category->amenities_count > 0)>{{ __('messages.admin.delete') }}</button>
+                            <button type="submit" class="btn btn-danger" @disabled($category->amenities_count > 0)>{{ __('messages.admin.delete_category') }}</button>
                         </form>
                     </article>
                 @endforeach

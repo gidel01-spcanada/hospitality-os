@@ -2051,6 +2051,96 @@ main #home-location {
     }
 }
 
+.amenity-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.25rem;
+}
+
+.amenity-category-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.amenity-category-card .amenity-category-rename {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.6rem;
+    align-items: end;
+}
+
+.amenity-category-card .amenity-category-rename label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--afrik-muted);
+}
+
+.amenity-category-card .amenity-category-rename input {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--afrik-line);
+    padding: 0.5rem 0.65rem;
+    font: inherit;
+}
+
+.amenity-admin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.amenity-admin-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 160px 72px 36px;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Forms can't nest, so the edit and delete forms are siblings that both join the row's grid. */
+.amenity-admin-row form {
+    display: contents;
+}
+
+.amenity-admin-row input,
+.amenity-admin-row select {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 9px;
+    border: 1px solid var(--afrik-line);
+    padding: 0.4rem 0.55rem;
+    font-size: 0.85rem;
+    background: white;
+}
+
+.amenity-admin-add-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--afrik-line);
+}
+
+.amenity-admin-add-row input {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 9px;
+    border: 1px solid var(--afrik-line);
+    padding: 0.4rem 0.55rem;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+    .amenity-category-card .amenity-category-rename,
+    .amenity-admin-row,
+    .amenity-admin-add-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .admin-record-list {
     display: grid;
     gap: 0.7rem;

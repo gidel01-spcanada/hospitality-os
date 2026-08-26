@@ -100,7 +100,11 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
         Route::get('/admin/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'index'])->name('admin.amenities.index');
         Route::post('/admin/amenities/categories', [\App\Http\Controllers\AdminAmenityController::class, 'storeCategory'])->name('admin.amenities.categories.store');
+        Route::put('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'updateCategory'])->name('admin.amenities.categories.update');
         Route::delete('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyCategory'])->name('admin.amenities.categories.destroy');
+        Route::post('/admin/amenities/categories/{amenityCategory}/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'storeAmenity'])->name('admin.amenities.store');
+        Route::put('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'updateAmenity'])->name('admin.amenities.update');
+        Route::delete('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyAmenity'])->name('admin.amenities.destroy');
         Route::get('/admin/reviews', [AdminController::class, 'reviews'])->name('admin.reviews');
         Route::post('/admin/reviews', [AdminController::class, 'storeReview'])->name('admin.reviews.store');
         Route::put('/admin/reviews/{review}', [AdminController::class, 'updateReview'])->name('admin.reviews.update');
