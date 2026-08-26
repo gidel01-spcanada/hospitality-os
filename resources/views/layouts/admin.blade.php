@@ -130,7 +130,18 @@
                 <!-- Settings -->
                 <li class="admin-nav-section">
                     <div class="admin-nav-section-title">Settings</div>
-                    
+
+                    @if (auth()->user()->isAdmin())
+                    <div class="admin-nav-item">
+                        <a href="{{ route('admin.amenities.index') }}" class="admin-nav-link {{ request()->is('admin/amenities*') ? 'is-active' : '' }}">
+                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M11.078 2.25c-.929 0-1.734.578-2.025 1.461L7.432 5.307H3.75A2.25 2.25 0 001.5 7.557v10.886A2.25 2.25 0 003.75 20.5h16.5a2.25 2.25 0 002.25-2.25V7.557a2.25 2.25 0 00-2.25-2.25H16.568l-1.621-3.846a2.25 2.25 0 00-2.025-1.461H11.078zm-2.05 6.369a.75.75 0 10-1.06 1.06L10.94 14l-2.972 2.97a.75.75 0 101.06 1.061L12 15.06l2.97 2.972a.75.75 0 10 1.061-1.06L13.06 14l2.97-2.97a.75.75 0 10-1.06-1.06L12 12.94l-2.97-2.97z" clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ __('messages.admin.amenities_title') }}</span>
+                        </a>
+                    </div>
+                    @endif
+
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.settings') }}" class="admin-nav-link {{ request()->is('admin/settings*') ? 'is-active' : '' }}">

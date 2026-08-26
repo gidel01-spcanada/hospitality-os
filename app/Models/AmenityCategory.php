@@ -4,23 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Amenity extends Model
+class AmenityCategory extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'category_id',
+        'slug',
         'name_en',
         'name_fr',
-        'slug',
         'sort_order',
     ];
 
-    public function category(): BelongsTo
+    public function amenities(): HasMany
     {
-        return $this->belongsTo(AmenityCategory::class, 'category_id');
+        return $this->hasMany(Amenity::class, 'category_id');
     }
 
     public function getNameAttribute(): string

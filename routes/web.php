@@ -98,6 +98,9 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/establishments/{establishment}', [AdminEstablishmentController::class, 'update'])->name('admin.establishments.update');
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
         Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+        Route::get('/admin/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'index'])->name('admin.amenities.index');
+        Route::post('/admin/amenities/categories', [\App\Http\Controllers\AdminAmenityController::class, 'storeCategory'])->name('admin.amenities.categories.store');
+        Route::delete('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyCategory'])->name('admin.amenities.categories.destroy');
         Route::get('/admin/reviews', [AdminController::class, 'reviews'])->name('admin.reviews');
         Route::post('/admin/reviews', [AdminController::class, 'storeReview'])->name('admin.reviews.store');
         Route::put('/admin/reviews/{review}', [AdminController::class, 'updateReview'])->name('admin.reviews.update');
