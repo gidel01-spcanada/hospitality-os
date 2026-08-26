@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', __('messages.common.contact'))
-@section('seo_description', __('messages.seo.contact_description'))
+@section('seo_description', __('messages.seo.contact_description', ['brand' => \App\Support\PlatformBrand::name()]))
 
 @section('content')
 <section class="page-hero compact-hero">

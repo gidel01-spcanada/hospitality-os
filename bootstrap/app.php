@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'platform-admin' => \App\Http\Middleware\EnsureUserIsPlatformAdmin::class,
             'reservation-staff' => \App\Http\Middleware\EnsureUserIsReservationStaff::class,
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'locale' => \App\Http\Middleware\SetLocale::class,

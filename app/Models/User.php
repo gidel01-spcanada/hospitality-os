@@ -26,6 +26,7 @@ class User extends Authenticatable
         'is_admin',
         'is_active',
         'tenant_id',
+        'is_platform_admin',
         'locale',
         'theme',
         'timezone',
@@ -56,10 +57,21 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
+            'is_platform_admin' => 'boolean',
             'email_booking_updates' => 'boolean',
             'email_marketing' => 'boolean',
             'email_newsletter' => 'boolean',
         ];
+    }
+
+    public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return (bool) $this->is_platform_admin;
     }
 
     public function isAdmin(): bool

@@ -29,6 +29,9 @@ class AuthSeeder extends Seeder
                 'role' => 'admin',
                 'is_admin' => true,
                 'tenant_id' => $tenantId,
+                // The on-premise/default install's admin also gets platform-admin access,
+                // since there's no meaningful distinction with a single tenant.
+                'is_platform_admin' => true,
                 'locale' => 'fr',
                 'email_booking_updates' => true,
                 'email_marketing' => false,

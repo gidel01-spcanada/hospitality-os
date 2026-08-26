@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $property->localized('name') . ' | Afrik Appart')
+@section('title', $property->localized('name') . ' | ' . \App\Support\PlatformBrand::name())
 @section('seo_description', $property->localized('description') ?: $property->localized('summary'))
 
 @push('head')

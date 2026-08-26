@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('messages.properties.title'))
+@section('title', __('messages.properties.title', ['brand' => \App\Support\PlatformBrand::name()]))
 @section('seo_description', __('messages.seo.properties_description'))
 
 @section('content')

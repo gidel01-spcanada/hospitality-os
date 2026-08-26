@@ -152,6 +152,17 @@
                         </a>
                     </div>
                     @endif
+
+                    @if (auth()->user()->isPlatformAdmin())
+                    <div class="admin-nav-item">
+                        <a href="{{ route('platform.tenants.index') }}" class="admin-nav-link {{ request()->is('platform/*') ? 'is-active' : '' }}">
+                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6A.75.75 0 0 1 9 5.25Zm6-3a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ __('messages.platform.tenants_title') }}</span>
+                        </a>
+                    </div>
+                    @endif
                 </li>
             </ul>
         </nav>

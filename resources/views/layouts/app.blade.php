@@ -1,14 +1,12 @@
 @php
     $brand = \App\Support\BrandSettings::all();
-    if (config('platform.mode') === 'cloud') {
-        // Cloud mode is one unified brand across every tenant's properties -- never a tenant's own site name.
-        $brand['site_name'] = config('platform.brand_name');
-    }
+    // Cloud mode is one unified brand across every tenant's properties -- never a tenant's own site name.
+    $brand['site_name'] = \App\Support\PlatformBrand::name();
     $currentLocale = app()->getLocale();
     $availableLocales = ['fr', 'en'];
     $alternateLocale = collect($availableLocales)->first(fn (string $locale) => $locale !== $currentLocale);
     $isPrivatePage = request()->routeIs('admin.*', 'account.*', 'dashboard', 'dashboard.reservations.*', 'checkout.*');
-    $seoDescription = trim((string) $__env->yieldContent('seo_description', __('messages.seo.site_description')));
+    $seoDescription = trim((string) $__env->yieldContent('seo_description', __('messages.seo.site_description', ['brand' => $brand['site_name']])));
     $seoTitle = trim((string) $__env->yieldContent('title', config('app.name', $brand['site_name'] ?? __('messages.brand.default_name'))));
     $seoImage = trim((string) $__env->yieldContent('seo_image', asset('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80')));
 @endphp

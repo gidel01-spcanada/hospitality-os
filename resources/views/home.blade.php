@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('messages.seo.home_title'))
+@section('title', __('messages.seo.home_title', ['brand' => \App\Support\PlatformBrand::name()]))
 @section('seo_description', __('messages.seo.home_description'))
 
 @section('content')
@@ -10,7 +10,7 @@
                 <div class="hero-copy">
                     <span class="eyebrow">{{ __('messages.home.eyebrow') }}</span>
                     <h1>{{ __('messages.home.hero_title') }}</h1>
-                    <p>{{ __('messages.home.hero_description') }}</p>
+                    <p>{{ __('messages.home.hero_description', ['brand' => \App\Support\PlatformBrand::name()]) }}</p>
                     <div class="hero-stats" aria-label="Statistiques de l'expérience">
                         <div>
                             <strong>4</strong>

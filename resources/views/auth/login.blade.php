@@ -8,7 +8,7 @@
             <div class="auth-header">
                 <span class="badge badge-emerald">{{ __('messages.auth.welcome') }}</span>
                 <h1>{{ __('messages.auth.login_title') }}</h1>
-                <p>{{ __('messages.auth.login_subtitle') }}</p>
+                <p>{{ __('messages.auth.login_subtitle', ['brand' => \App\Support\PlatformBrand::name()]) }}</p>
             </div>
 
             @if ($errors->any())

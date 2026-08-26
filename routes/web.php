@@ -131,6 +131,12 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/properties/{property}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\AdminCalendarController::class, 'syncFeed'])->name('admin.properties.calendar.sync');
         Route::get('/admin/properties/{property}/calendar/export.ics', [\App\Http\Controllers\AdminCalendarController::class, 'export'])->name('admin.properties.calendar.export');
     });
+
+    Route::middleware('platform-admin')->group(function () {
+        Route::get('/platform/tenants', [\App\Http\Controllers\PlatformAdminController::class, 'index'])->name('platform.tenants.index');
+        Route::post('/platform/tenants/{tenant}/suspend', [\App\Http\Controllers\PlatformAdminController::class, 'suspend'])->name('platform.tenants.suspend');
+        Route::post('/platform/tenants/{tenant}/activate', [\App\Http\Controllers\PlatformAdminController::class, 'activate'])->name('platform.tenants.activate');
+    });
 });
 
 Route::middleware('locale')->group(function () {
