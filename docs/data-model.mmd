@@ -1,0 +1,141 @@
+erDiagram
+    ESTABLISHMENT ||--o{ PROPERTY : owns
+    PROPERTY ||--o{ PROPERTY_IMAGE : has
+    PROPERTY ||--o{ PROPERTY_AMENITY : includes
+    AMENITY ||--o{ PROPERTY_AMENITY : mapped_to
+    PROPERTY ||--o{ RATE_RULE : prices
+    PROPERTY ||--o{ RESERVATION : books
+    RESERVATION_GUEST ||--o{ RESERVATION : guest_snapshot
+    RESERVATION ||--o{ PAYMENT_ATTEMPT : pays
+    RESERVATION ||--o{ RESERVATION_PRICE_LINE : breakdown
+    PROPERTY ||--o{ ADMIN_AVAILABILITY_BLOCK : blocks
+    PROPERTY ||--o{ EXTERNAL_CALENDAR_FEED : syncs
+    EXTERNAL_CALENDAR_FEED ||--o{ EXTERNAL_CALENDAR_EVENT : imports
+    USER ||--o{ AUDIT_LOG : records
+    USER ||--o{ RESERVATION : manages
+
+    ESTABLISHMENT {
+        bigint id PK
+        string name
+        string slug
+        string country_code
+        string city
+        string currency
+        text description
+    }
+
+    PROPERTY {
+        bigint id PK
+        bigint establishment_id FK
+        string name
+        string slug
+        string status
+        boolean is_published
+        string currency
+        decimal nightly_rate_xof
+        decimal nightly_rate_eur
+        int max_guests
+        int bedrooms
+        int bathrooms
+        int beds
+        string address
+        string city
+        string country
+    }
+
+    AMENITY {
+        bigint id PK
+        string name
+        string slug
+        string category
+    }
+
+    PROPERTY_IMAGE {
+        bigint id PK
+        bigint property_id FK
+        string file_path
+        string file_name
+        int sort_order
+        boolean is_cover
+    }
+
+    RATE_RULE {
+        bigint id PK
+        bigint property_id FK
+        date effective_from
+        date effective_to
+        decimal nightly_rate_xof
+        decimal nightly_rate_eur
+    }
+
+    RESERVATION_GUEST {
+        bigint id PK
+        string full_name
+        string email
+        string phone
+    }
+
+    RESERVATION {
+        bigint id PK
+        bigint property_id FK
+        bigint guest_id FK
+        bigint user_id FK
+        string reservation_ref
+        string status
+        date check_in
+        date check_out
+        int adults
+        decimal total_amount
+    }
+
+    PAYMENT_ATTEMPT {
+        bigint id PK
+        bigint reservation_id FK
+        string provider
+        string status
+        decimal amount
+    }
+
+    RESERVATION_PRICE_LINE {
+        bigint id PK
+        bigint reservation_id FK
+        string label
+        decimal amount
+    }
+
+    ADMIN_AVAILABILITY_BLOCK {
+        bigint id PK
+        bigint property_id FK
+        date start_date
+        date end_date
+    }
+
+    EXTERNAL_CALENDAR_FEED {
+        bigint id PK
+        bigint property_id FK
+        string name
+        text url
+        boolean is_enabled
+    }
+
+    EXTERNAL_CALENDAR_EVENT {
+        bigint id PK
+        bigint feed_id FK
+        string uid
+        date start_date
+        date end_date
+    }
+
+    USER {
+        bigint id PK
+        string email
+        string name
+    }
+
+    AUDIT_LOG {
+        bigint id PK
+        bigint user_id FK
+        string model_type
+        bigint model_id
+        string action
+    }

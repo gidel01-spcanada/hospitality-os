@@ -6,6 +6,7 @@ use App\Models\Amenity;
 use App\Models\Establishment;
 use App\Models\Property;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class SamplePropertySeeder extends Seeder
@@ -141,5 +142,16 @@ class SamplePropertySeeder extends Seeder
             ['currency_code' => 'EUR'],
             ['name' => 'Euro', 'xof_per_eur' => 655.957000, 'is_enabled' => true, 'effective_at' => now()]
         );
+
+        // Real apartment photos live in the workspace-level photo/ folder (outside the repo), so a fresh
+        // migrate:fresh/db:seed only re-links them in local dev, where that folder is actually present.
+        $workspaceRoot = dirname(base_path());
+        $photoSource = $workspaceRoot . DIRECTORY_SEPARATOR . 'photo';
+        if (app()->environment('local') && is_dir($photoSource)) {
+            Artisan::call('property:sync-media', [
+                '--source' => $photoSource,
+                '--manifest' => $workspaceRoot . DIRECTORY_SEPARATOR . 'seed-assets' . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR . 'manifest.json',
+            ]);
+        }
     }
 }

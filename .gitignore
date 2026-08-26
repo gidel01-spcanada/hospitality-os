@@ -23,6 +23,7 @@
 /database/*.sqlite-*
 /storage/framework/
 /storage/logs/
+/release
 Homestead.json
 Homestead.yaml
 Thumbs.db
