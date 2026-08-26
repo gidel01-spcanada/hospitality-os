@@ -2064,6 +2064,25 @@ main #home-location {
     gap: 1.25rem;
 }
 
+.amenity-manager-detail-title {
+    margin-bottom: 1rem;
+}
+
+.amenity-manager-detail-eyebrow {
+    margin: 0 0 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--afrik-muted);
+}
+
+.amenity-manager-detail-title h2 {
+    margin: 0;
+    font-size: var(--font-2xl);
+    color: var(--afrik-text);
+}
+
 .amenity-manager-select {
     display: flex;
     align-items: flex-end;

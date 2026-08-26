@@ -139,6 +139,7 @@ return [
         'admin.select_category_help' => 'Choisissez une catégorie ci-dessous pour la renommer ou gérer ses équipements.',
         'admin.category_selector' => 'Catégorie',
         'admin.add_category' => 'Ajouter une catégorie',
+        'admin.editing_category' => 'Modification de la catégorie',
         'admin.no_amenities_in_category' => 'Aucun équipement dans cette catégorie pour le moment. Ajoutez-en un ci-dessous.',
         'admin.amenity_count' => '{0} Aucun équipement|{1} :count équipement|[2,*] :count équipements',
         'admin.move_to_category' => 'Déplacer vers la catégorie',

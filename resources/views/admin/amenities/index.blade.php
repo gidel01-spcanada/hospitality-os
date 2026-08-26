@@ -62,6 +62,11 @@
         <section class="amenity-manager-detail">
             @if ($selectedCategory)
                 <x-card>
+                    <div class="amenity-manager-detail-title">
+                        <p class="amenity-manager-detail-eyebrow">{{ __('messages.admin.editing_category') }}</p>
+                        <h2>{{ app()->getLocale() === 'fr' ? $selectedCategory->name_fr : $selectedCategory->name_en }}</h2>
+                    </div>
+
                     <div class="amenity-manager-detail-header">
                         <form method="POST" action="{{ route('admin.amenities.categories.update', $selectedCategory) }}" class="amenity-category-rename">
                             @csrf

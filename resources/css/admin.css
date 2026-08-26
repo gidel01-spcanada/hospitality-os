@@ -268,6 +268,13 @@ body.admin-layout {
     color: var(--text-secondary);
 }
 
+/* Section headings inside admin cards inherit the public site's larger desktop h2 (36px),
+   which reads bigger than the page's own h1 (30px). Keep them clearly subordinate instead. */
+.admin-layout h2 {
+    font-size: var(--font-xl);
+    margin-bottom: var(--space-4);
+}
+
 .admin-page-header-actions {
     display: flex;
     gap: var(--space-3);

@@ -139,6 +139,7 @@ return [
         'admin.select_category_help' => 'Pick a category below to rename it or manage its features.',
         'admin.category_selector' => 'Category',
         'admin.add_category' => 'Add category',
+        'admin.editing_category' => 'Editing category',
         'admin.no_amenities_in_category' => 'No features in this category yet. Add one below.',
         'admin.amenity_count' => '{0} No features|{1} :count feature|[2,*] :count features',
         'admin.move_to_category' => 'Move to category',
