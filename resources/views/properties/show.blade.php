@@ -107,6 +107,19 @@
                             <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
                         </div>
 
+                        @if (auth()->user()?->role === 'customer' && $property->establishment)
+                            <div class="message-new-panel">
+                                <h2>{{ __('messages.messages.contact_concierge') }}</h2>
+                                <form method="POST" action="{{ route('messages.store') }}" class="message-form">
+                                    @csrf
+                                    <input type="hidden" name="establishment_id" value="{{ $property->establishment->id }}">
+                                    <label for="property-message-body">{{ __('messages.messages.message') }}</label>
+                                    <textarea id="property-message-body" name="body" rows="4" maxlength="5000" required></textarea>
+                                    <button type="submit" class="btn btn-primary btn-full">{{ __('messages.messages.send') }}</button>
+                                </form>
+                            </div>
+                        @endif
+
                         @if (session('status'))
                             <div class="reservation-success">
                                 {{ session('status') }}

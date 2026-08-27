@@ -79,6 +79,17 @@
                     </div>
                 </li>
 
+                <li class="admin-nav-section">
+                    <div class="admin-nav-item">
+                        <a href="{{ route('admin.messages.index') }}" class="admin-nav-link {{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}">
+                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M4.5 3.75A2.25 2.25 0 0 0 2.25 6v9a2.25 2.25 0 0 0 2.25 2.25h3.879l3.09 2.318a.75.75 0 0 0 .962 0l3.09-2.318H19.5A2.25 2.25 0 0 0 21.75 15V6a2.25 2.25 0 0 0-2.25-2.25h-15ZM6.75 8.25A.75.75 0 0 1 7.5 7.5h9a.75.75 0 0 1 0 1.5h-9a.75.75 0 0 1-.75-.75Zm.75 3a.75.75 0 0 0 0 1.5h5.25a.75.75 0 0 0 0-1.5H7.5Z" clip-rule="evenodd" />
+                            </svg>
+                            <span>{{ __('messages.messages.title') }}</span>
+                        </a>
+                    </div>
+                </li>
+
                 <!-- Management -->
                 <li class="admin-nav-section">
                     <div class="admin-nav-section-title">{{ __('messages.admin.management') }}</div>

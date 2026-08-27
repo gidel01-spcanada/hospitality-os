@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Tenant;
+use App\Support\BrandSettings;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -45,5 +47,22 @@ class DatabaseSchemaTest extends TestCase
         $this->assertDatabaseHas('settings', ['key' => 'site_name', 'value' => 'Afrik Appart']);
         $this->assertDatabaseHas('amenities', ['slug' => 'wifi']);
         $this->assertDatabaseHas('properties', ['slug' => 'appartement-401']);
+    }
+
+    public function test_on_premise_branding_uses_the_default_tenant_settings(): void
+    {
+        Artisan::call('db:seed', ['--class' => DatabaseSeeder::class]);
+        $otherTenant = Tenant::query()->create(['name' => 'Sunrise Stays', 'slug' => 'sunrise-stays', 'status' => 'active']);
+
+        \DB::table('settings')->insert([
+            'key' => 'site_name',
+            'value' => 'Sunrise Stays',
+            'type' => 'string',
+            'tenant_id' => $otherTenant->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertSame('Afrik Appart', BrandSettings::siteName());
     }
 }

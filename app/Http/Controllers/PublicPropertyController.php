@@ -8,10 +8,13 @@ use App\Models\SiteReview;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPriceLine;
+use App\Models\User;
+use App\Notifications\GuestAccountSetupNotification;
 use App\Services\ReservationEmailService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -125,10 +128,31 @@ class PublicPropertyController extends Controller
             ]
         );
 
+        $reservationUser = $request->user();
+        $createdGuestAccount = false;
+
+        if (! $reservationUser) {
+            $reservationUser = User::query()->firstOrCreate(
+                ['email' => strtolower($validated['email'])],
+                [
+                    'name' => $validated['full_name'],
+                    'password' => Str::password(64),
+                    'role' => 'customer',
+                    'is_admin' => false,
+                    'locale' => app()->getLocale(),
+                    'email_booking_updates' => true,
+                    'email_message_updates' => true,
+                    'email_marketing' => false,
+                    'email_newsletter' => false,
+                ]
+            );
+            $createdGuestAccount = $reservationUser->wasRecentlyCreated;
+        }
+
         $reservation = Reservation::query()->create([
             'property_id' => $property->id,
             'guest_id' => $guest->id,
-            'user_id' => auth()->id(),
+            'user_id' => $reservationUser?->id,
             'reservation_ref' => 'AFK-' . strtoupper(Str::random(6)) . '-' . now()->format('ymd'),
             'status' => 'pending',
             'check_in' => $checkIn->toDateString(),
@@ -166,6 +190,13 @@ class PublicPropertyController extends Controller
         ReservationPriceLine::query()->insert($priceLines);
 
         $emailService->queueForReservation($reservation, 'reservation_received', 'Confirmation de votre demande de réservation');
+
+        if ($createdGuestAccount) {
+            $reservationUser->notify(new GuestAccountSetupNotification(
+                Password::broker()->createToken($reservationUser),
+                $reservation->reservation_ref,
+            ));
+        }
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token])
             ->with('status', __('messages.flash.reservation_saved'));

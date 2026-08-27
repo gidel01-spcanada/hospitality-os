@@ -15,6 +15,15 @@ class CustomerSelfServiceTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Mot de passe oublié ?', false)
+            ->assertSee('href="' . route('password.request') . '"', false)
+            ->assertSee('href="' . route('privacy') . '"', false)
+            ->assertSee('href="' . route('terms') . '"', false)
+            ->assertSee('href="' . route('cookies') . '"', false)
+            ->assertSee('© ' . now()->year . ' Afrik Appart. Tous droits réservés.', false);
+
         $user = User::factory()->create([
             'name' => 'Amina Diallo',
             'email' => 'amina@example.com',

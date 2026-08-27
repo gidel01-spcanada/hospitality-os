@@ -91,7 +91,7 @@ class CustomerDashboardTest extends TestCase
             ->get('/dashboard/reservations/' . $reservation->id)
             ->assertOk()
             ->assertSee('Détails')
-            ->assertSee('confirmed');
+            ->assertSee('Confirmée');
     }
 
     public function test_customer_can_update_language_and_email_preferences(): void
@@ -149,7 +149,10 @@ class CustomerDashboardTest extends TestCase
         $this->actingAs($admin)
             ->post('/admin/settings', [
                 'site_name' => 'Maison Bleu',
+                'site_icon' => 'MB',
+                'customer_theme' => 'ocean-coral',
                 'site_tagline' => 'Vivez des séjours paisibles en Afrique.',
+                'footer_copyright' => '© :year Maison Bleu. Tous droits réservés.',
                 'contact_email' => 'hello@maisonbleu.example',
                 'support_phone' => '+229 97 00 00 00',
                 'default_locale' => 'fr',
@@ -168,16 +171,24 @@ class CustomerDashboardTest extends TestCase
             ->assertRedirect('/admin/settings');
 
         $this->assertDatabaseHas('settings', ['key' => 'site_name', 'value' => 'Maison Bleu']);
+        $this->assertDatabaseHas('settings', ['key' => 'site_icon', 'value' => 'MB']);
+        $this->assertDatabaseHas('settings', ['key' => 'customer_theme', 'value' => 'ocean-coral']);
         $this->assertDatabaseHas('settings', ['key' => 'contact_email', 'value' => 'hello@maisonbleu.example']);
+        $this->assertDatabaseHas('settings', ['key' => 'footer_copyright', 'value' => '© :year Maison Bleu. Tous droits réservés.']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_booking_url', 'value' => 'https://www.booking.com/hotel/fr/maison-bleu.html']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_google_url', 'value' => 'https://maps.google.com/?q=Maison+Bleu']);
         $this->assertDatabaseHas('settings', ['key' => 'email_sender_name', 'value' => 'Maison Bleu']);
         $this->assertDatabaseHas('settings', ['key' => 'customer_confirmation_subject', 'value' => 'Confirmation de votre demande']);
 
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('data-site-theme="ocean-coral"', false)
+            ->assertSee('class="brand-mark">MB</span>', false);
+
         $this->actingAs($admin)
             ->get('/admin/users')
             ->assertOk()
-            ->assertSee('Utilisateurs');
+            ->assertSee('Gestion des utilisateurs');
 
         $this->actingAs($admin)
             ->post('/admin/reviews', [

@@ -2,17 +2,20 @@
     $brand = \App\Support\BrandSettings::all();
     // Cloud mode is one unified brand across every tenant's properties -- never a tenant's own site name.
     $brand['site_name'] = \App\Support\PlatformBrand::name();
+    $siteIcon = $brand['site_icon'] ?? 'A';
+    $customerTheme = config('platform.mode') === 'on_premise' ? ($brand['customer_theme'] ?? 'emerald-gold') : 'emerald-gold';
     $currentLocale = app()->getLocale();
     $availableLocales = ['fr', 'en'];
     $alternateLocale = collect($availableLocales)->first(fn (string $locale) => $locale !== $currentLocale);
-    $isPrivatePage = request()->routeIs('admin.*', 'account.*', 'dashboard', 'dashboard.reservations.*', 'checkout.*');
+    $isPrivatePage = request()->routeIs('admin.*', 'account.*', 'dashboard', 'dashboard.reservations.*', 'messages.*', 'checkout.*');
     $seoDescription = trim((string) $__env->yieldContent('seo_description', __('messages.seo.site_description', ['brand' => $brand['site_name']])));
     $seoTitle = trim((string) $__env->yieldContent('title', config('app.name', $brand['site_name'] ?? __('messages.brand.default_name'))));
     $seoImage = trim((string) $__env->yieldContent('seo_image', asset('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80')));
+    $footerCopyright = strtr((string) ($brand['footer_copyright'] ?? ''), [':year' => now()->year, ':site_name' => $brand['site_name']]);
 @endphp
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-site-theme="{{ $customerTheme }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,7 +44,7 @@
         <header class="topbar">
             <div class="container topbar-inner">
                 <a href="{{ route('home') }}" class="brand" aria-label="{{ $brand['site_name'] ?? __('messages.brand.default_name') }} homepage">
-                    <span class="brand-mark">A</span>
+                    <span class="brand-mark">{{ $siteIcon }}</span>
                     <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
                 </a>
                 <nav class="nav" aria-label="Main navigation">
@@ -82,11 +85,11 @@
         </header>
 
         @auth
-            @if (auth()->user()->isAdmin() && request()->routeIs('admin.*'))
+            @if (auth()->user()->canManageReservations() && request()->routeIs('admin.*'))
                 <div class="container section-tabs-shell">
                     @include('partials.admin-tabs')
                 </div>
-            @elseif (request()->routeIs('account.*', 'dashboard', 'dashboard.reservations.*'))
+            @elseif (request()->routeIs('account.*', 'dashboard', 'dashboard.reservations.*', 'messages.*'))
                 <div class="container section-tabs-shell">
                     @include('partials.account-tabs')
                 </div>
@@ -101,7 +104,7 @@
             <div class="container footer-inner">
                 <div>
                     <div class="brand footer-brand">
-                        <span class="brand-mark">A</span>
+                        <span class="brand-mark">{{ $siteIcon }}</span>
                         <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
                     </div>
                     <p>{{ $brand['site_tagline'] ?? __('messages.brand.default_tagline') }}</p>
@@ -111,6 +114,15 @@
                     <p>{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}</p>
                     <p>{{ $brand['support_phone'] ?? '+229 00 00 00 00' }}</p>
                 </div>
+                <div>
+                    <h3>{{ __('messages.legal.title') }}</h3>
+                    <p><a href="{{ route('privacy') }}">{{ __('messages.legal.privacy') }}</a></p>
+                    <p><a href="{{ route('terms') }}">{{ __('messages.legal.terms') }}</a></p>
+                    <p><a href="{{ route('cookies') }}">{{ __('messages.legal.cookies') }}</a></p>
+                </div>
+            </div>
+            <div class="container footer-copyright">
+                <p>{{ $footerCopyright }}</p>
             </div>
         </footer>
     </body>

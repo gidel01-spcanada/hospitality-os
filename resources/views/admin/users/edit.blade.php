@@ -23,6 +23,7 @@
                     <label class="checkbox-field"><input type="checkbox" name="email_verified" value="1" @checked(old('email_verified', (bool) $managedUser->email_verified_at))><span>{{ __('messages.admin.email_verified') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $managedUser->exists ? $managedUser->is_active : true))><span>{{ __('messages.admin.account_active') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="email_booking_updates" value="1" @checked(old('email_booking_updates', $managedUser->email_booking_updates))><span>{{ __('messages.admin.reservation_updates') }}</span></label>
+                    <label class="checkbox-field"><input type="checkbox" name="email_message_updates" value="1" @checked(old('email_message_updates', $managedUser->email_message_updates ?? true))><span>{{ __('messages.profile.message_updates') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="email_marketing" value="1" @checked(old('email_marketing', $managedUser->email_marketing))><span>{{ __('messages.admin.marketing_offers') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="email_newsletter" value="1" @checked(old('email_newsletter', $managedUser->email_newsletter))><span>{{ __('messages.admin.newsletter') }}</span></label>
                 </div>

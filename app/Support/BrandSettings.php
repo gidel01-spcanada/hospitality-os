@@ -12,6 +12,8 @@ class BrandSettings
      */
     public const DEFAULTS = [
         'site_name' => 'Afrik Appart',
+        'site_icon' => 'A',
+        'customer_theme' => 'emerald-gold',
         'site_tagline' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
         'contact_email' => 'support@afrikappart.example',
         'support_phone' => '+229 00 00 00 00',
@@ -21,6 +23,8 @@ class BrandSettings
         'review_source_google_url' => '',
         'email_sender_name' => 'Afrik Appart',
         'email_sender_email' => 'support@afrikappart.example',
+        'guest_account_setup_subject' => 'Suivez votre réservation',
+        'guest_account_setup_message' => 'Créez votre mot de passe pour suivre votre réservation et échanger avec notre équipe.',
         'customer_confirmation_subject' => 'Confirmation de votre demande',
         'customer_confirmation_message' => 'Merci pour votre demande. Nous vous répondrons rapidement.',
         'pre_arrival_subject' => 'Votre arrivée prochaine',
@@ -28,6 +32,7 @@ class BrandSettings
         'post_stay_subject' => 'Merci pour votre séjour',
         'post_stay_message' => 'Merci d’avoir choisi Afrik Appart. Nous espérons vous revoir bientôt.',
         'footer_copy' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
+        'footer_copyright' => '© :year :site_name. Tous droits réservés.',
     ];
 
     public static function all(): array
@@ -59,18 +64,20 @@ class BrandSettings
 
     public static function set(array $values): void
     {
+        $tenantId = self::tenantId();
+
         foreach ($values as $key => $value) {
             if ($value === null || $value === '') {
                 continue;
             }
 
             self::query()->updateOrInsert(
-                ['key' => $key, 'tenant_id' => app(CurrentTenant::class)->id()],
+                ['key' => $key, 'tenant_id' => $tenantId],
                 [
                     'key' => $key,
                     'value' => (string) $value,
                     'type' => 'string',
-                    'tenant_id' => app(CurrentTenant::class)->id(),
+                    'tenant_id' => $tenantId,
                     'updated_at' => now(),
                     'created_at' => now(),
                 ]
@@ -78,20 +85,28 @@ class BrandSettings
         }
     }
 
-    /**
-     * Scoped to the current tenant when one is resolved (admin requests). Falls back to an
-     * unfiltered query otherwise -- today that only ever means the single on-premise tenant;
-     * unifying public branding across tenants for cloud mode is a later phase (ADR 0002).
-     */
     private static function query(): \Illuminate\Database\Query\Builder
     {
         $query = DB::table('settings');
 
-        if ($tenantId = app(CurrentTenant::class)->id()) {
+        if ($tenantId = self::tenantId()) {
             $query->where('tenant_id', $tenantId);
         }
 
         return $query;
+    }
+
+    private static function tenantId(): ?int
+    {
+        if ($tenantId = app(CurrentTenant::class)->id()) {
+            return $tenantId;
+        }
+
+        if (config('platform.mode') !== 'on_premise' || ! Schema::hasTable('tenants')) {
+            return null;
+        }
+
+        return DB::table('tenants')->where('slug', 'default')->value('id');
     }
 
     public static function siteName(): string
@@ -102,6 +117,11 @@ class BrandSettings
     public static function siteTagline(): string
     {
         return (string) self::get('site_tagline', self::DEFAULTS['site_tagline']);
+    }
+
+    public static function siteIcon(): string
+    {
+        return (string) self::get('site_icon', self::DEFAULTS['site_icon']);
     }
 
     public static function supportEmail(): string

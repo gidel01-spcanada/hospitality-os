@@ -32,6 +32,39 @@
     --afrik-line: rgba(19, 31, 35, 0.08);
 }
 
+html[data-site-theme='ocean-coral'] {
+    --afrik-bg: #eef7f8;
+    --afrik-surface: #ffffff;
+    --afrik-emerald: #126782;
+    --afrik-emerald-strong: #0b4057;
+    --afrik-gold: #e47b61;
+    --afrik-text: #18343d;
+    --afrik-muted: #52717a;
+    --afrik-line: rgba(24, 52, 61, 0.12);
+}
+
+html[data-site-theme='terracotta-teal'] {
+    --afrik-bg: #fbf1e9;
+    --afrik-surface: #fffdfb;
+    --afrik-emerald: #16706d;
+    --afrik-emerald-strong: #0d4d4b;
+    --afrik-gold: #c65f43;
+    --afrik-text: #382b2a;
+    --afrik-muted: #78615a;
+    --afrik-line: rgba(56, 43, 42, 0.12);
+}
+
+html[data-site-theme='sunrise-ink'] {
+    --afrik-bg: #fff8e8;
+    --afrik-surface: #fffef9;
+    --afrik-emerald: #1b5a70;
+    --afrik-emerald-strong: #123b51;
+    --afrik-gold: #d88924;
+    --afrik-text: #202b3a;
+    --afrik-muted: #65707c;
+    --afrik-line: rgba(32, 43, 58, 0.12);
+}
+
 * { box-sizing: border-box; }
 
 html {
@@ -814,6 +847,16 @@ button, input, select {
     color: var(--afrik-muted);
 }
 
+.footer-copyright {
+    border-top: 1px solid rgba(19, 31, 35, 0.08);
+    padding: 1rem 0;
+}
+
+.footer-copyright p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
 .property-card-link {
     overflow: hidden;
 }
@@ -1382,6 +1425,118 @@ main #home-location {
     color: var(--afrik-muted);
 }
 
+.message-new-panel,
+.message-thread {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+    padding: 1.25rem;
+    border: 1px solid rgba(19, 31, 35, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.82);
+}
+
+.message-new-panel {
+    margin-bottom: 1.5rem;
+}
+
+.message-new-panel h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.message-form {
+    display: grid;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.message-form label {
+    color: var(--afrik-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.message-form select,
+.message-form textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--afrik-line);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    background: white;
+    color: var(--afrik-text);
+}
+
+.message-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.message-thread-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.message-thread-preview {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid rgba(19, 31, 35, 0.08);
+    border-radius: 16px;
+    background: white;
+    color: inherit;
+    text-decoration: none;
+}
+
+.message-thread-preview span,
+.message-bubble p {
+    overflow-wrap: anywhere;
+}
+
+.message-thread-preview span {
+    color: var(--afrik-muted);
+}
+
+.message-bubble {
+    max-width: min(720px, 100%);
+    min-width: 0;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    background: rgba(15, 91, 76, 0.06);
+}
+
+.message-bubble-own {
+    justify-self: end;
+    background: rgba(200, 155, 60, 0.14);
+}
+
+.message-bubble header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.message-bubble time {
+    color: var(--afrik-muted);
+    font-size: 0.78rem;
+}
+
+.message-bubble p {
+    margin: 0.5rem 0 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.message-reply-form {
+    margin-top: 1rem;
+}
+
 @media (max-width: 1080px) {
     .feature-grid,
     .property-grid,
@@ -1578,7 +1733,7 @@ main #home-location {
     color: var(--afrik-text);
 }
 
-.checkbox-row {
+.auth-form label.checkbox-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -1586,8 +1741,9 @@ main #home-location {
     color: var(--afrik-text) !important;
 }
 
-.checkbox-row input {
+.auth-form label.checkbox-row input {
     width: 18px;
+    flex: 0 0 18px;
     min-height: auto;
     accent-color: var(--afrik-emerald);
 }

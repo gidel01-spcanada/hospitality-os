@@ -58,7 +58,7 @@ class ReservationWorkflowAndEmailTest extends TestCase
             ->assertOk()
             ->assertSee('Alice Doe')
             ->assertSee('138,000.00 XOF')
-            ->assertSee('Pending Payment');
+            ->assertSee('En attente');
 
         $this->actingAs($admin)
             ->get('/admin/reservations/' . $reservation->id)

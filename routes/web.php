@@ -62,6 +62,10 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/account/security', [AuthController::class, 'updatePassword'])->name('account.security.update');
     Route::post('/dashboard/preferences', [AuthController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/dashboard/reservations/{reservation}', [AuthController::class, 'reservationDetail'])->name('dashboard.reservations.show');
+    Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
+    Route::post('/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
+    Route::get('/messages/{thread}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
+    Route::post('/messages/{thread}', [\App\Http\Controllers\MessageController::class, 'reply'])->name('messages.reply');
 
     Route::middleware('reservation-staff')->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
@@ -72,6 +76,9 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/reservations/{reservation}', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
+        Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
+        Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
+        Route::post('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'reply'])->name('admin.messages.reply');
         Route::get('/admin/bookings', [AdminReservationController::class, 'index'])->name('admin.bookings.index');
         Route::get('/admin/bookings/create', [AdminReservationController::class, 'create'])->name('admin.bookings.create');
         Route::post('/admin/bookings', [AdminReservationController::class, 'store'])->name('admin.bookings.store');

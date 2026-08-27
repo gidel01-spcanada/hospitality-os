@@ -39,5 +39,18 @@
                 @endforeach
             </ul>
         </div>
+
+        @if (auth()->user()?->role === 'customer' && $reservation->property?->establishment)
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.messages.contact_concierge') }}</h2>
+                <form method="POST" action="{{ route('messages.store') }}" class="message-form">
+                    @csrf
+                    <input type="hidden" name="establishment_id" value="{{ $reservation->property->establishment->id }}">
+                    <label for="reservation-message-body">{{ __('messages.messages.message') }}</label>
+                    <textarea id="reservation-message-body" name="body" rows="4" maxlength="5000" required></textarea>
+                    <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
+                </form>
+            </div>
+        @endif
     </section>
 @endsection

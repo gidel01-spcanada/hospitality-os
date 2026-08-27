@@ -11,6 +11,26 @@ body.admin-layout {
     min-height: 100vh;
 }
 
+/* Keep admin form controls readable instead of stretching across the workspace. */
+body.admin-layout input:not([type='checkbox']):not([type='radio']):not([type='file']),
+body.admin-layout select {
+    width: 100%;
+    max-width: 520px;
+}
+
+body.admin-layout textarea {
+    width: 100%;
+    max-width: 720px;
+}
+
+@media (max-width: 700px) {
+    body.admin-layout input:not([type='checkbox']):not([type='radio']):not([type='file']),
+    body.admin-layout select,
+    body.admin-layout textarea {
+        max-width: 100%;
+    }
+}
+
 /* Admin container structure */
 .admin-shell {
     display: block;

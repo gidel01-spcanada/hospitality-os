@@ -25,8 +25,29 @@
                     </div>
 
                     <div>
+                        <label for="site_icon">{{ __('messages.admin.site_icon') }}</label>
+                        <input id="site_icon" name="site_icon" type="text" maxlength="3" value="{{ old('site_icon', $brand['site_icon'] ?? 'A') }}">
+                    </div>
+
+                    @if (config('platform.mode') === 'on_premise')
+                        <div>
+                            <label for="customer_theme">{{ __('messages.admin.customer_theme') }}</label>
+                            <select id="customer_theme" name="customer_theme">
+                                @foreach (['emerald-gold' => __('messages.admin.theme_emerald_gold'), 'ocean-coral' => __('messages.admin.theme_ocean_coral'), 'terracotta-teal' => __('messages.admin.theme_terracotta_teal'), 'sunrise-ink' => __('messages.admin.theme_sunrise_ink')] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('customer_theme', $brand['customer_theme'] ?? 'emerald-gold') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    <div>
                         <label for="site_tagline">{{ __('messages.admin.tagline') }}</label>
                         <input id="site_tagline" name="site_tagline" type="text" value="{{ old('site_tagline', $brand['site_tagline'] ?? 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.') }}">
+                    </div>
+
+                    <div>
+                        <label for="footer_copyright">{{ __('messages.admin.footer_copyright') }}</label>
+                        <input id="footer_copyright" name="footer_copyright" type="text" value="{{ old('footer_copyright', $brand['footer_copyright'] ?? '') }}">
                     </div>
 
                     <div>
@@ -77,6 +98,16 @@
                         <div>
                             <label for="email_sender_email">{{ __('messages.admin.email_sender_email') }}</label>
                             <input id="email_sender_email" name="email_sender_email" type="email" value="{{ old('email_sender_email', $brand['email_sender_email'] ?? 'support@afrikappart.example') }}">
+                        </div>
+
+                        <div>
+                            <label for="guest_account_setup_subject">{{ __('messages.admin.guest_account_setup_subject') }}</label>
+                            <input id="guest_account_setup_subject" name="guest_account_setup_subject" type="text" value="{{ old('guest_account_setup_subject', $brand['guest_account_setup_subject'] ?? '') }}">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label for="guest_account_setup_message">{{ __('messages.admin.guest_account_setup_message') }}</label>
+                            <textarea id="guest_account_setup_message" name="guest_account_setup_message" rows="4">{{ old('guest_account_setup_message', $brand['guest_account_setup_message'] ?? '') }}</textarea>
                         </div>
 
                         <div>

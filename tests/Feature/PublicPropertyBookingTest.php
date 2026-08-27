@@ -8,8 +8,11 @@ use App\Models\Establishment;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\SiteReview;
+use App\Models\User;
+use App\Notifications\GuestAccountSetupNotification;
 use Database\Seeders\DatabaseSeeder;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Notification;
 
 class PublicPropertyBookingTest extends TestCase
 {
@@ -29,6 +32,7 @@ class PublicPropertyBookingTest extends TestCase
     public function test_public_catalog_and_booking_flow_work(): void
     {
         ini_set('memory_limit', '1G');
+        Notification::fake();
 
         Artisan::call('db:seed');
         Artisan::call('property:sync-media', [
@@ -64,6 +68,9 @@ class PublicPropertyBookingTest extends TestCase
         $this->assertDatabaseHas('reservation_guests', ['email' => 'alice@example.com']);
         $this->assertDatabaseHas('reservations', ['email' => 'alice@example.com', 'status' => 'pending']);
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'alice@example.com', 'template' => 'reservation_received', 'status' => 'queued']);
+        $account = User::query()->where('email', 'alice@example.com')->firstOrFail();
+        $this->assertSame($account->id, $reservation->user_id);
+        Notification::assertSentTo($account, GuestAccountSetupNotification::class);
     }
 
     public function test_unpublished_properties_are_not_customer_visible(): void

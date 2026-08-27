@@ -195,7 +195,7 @@ class AuthController extends Controller
             __('messages.errors.reservation_access')
         );
 
-        $reservation->load(['property', 'guest', 'priceLines']);
+        $reservation->load(['property.establishment', 'guest', 'priceLines']);
 
         return view('dashboard-reservation', compact('user', 'reservation'));
     }
@@ -223,6 +223,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'locale' => ['required', 'in:fr,en'],
             'email_booking_updates' => ['nullable', 'boolean'],
+            'email_message_updates' => ['nullable', 'boolean'],
             'email_marketing' => ['nullable', 'boolean'],
             'email_newsletter' => ['nullable', 'boolean'],
         ]);
@@ -233,6 +234,7 @@ class AuthController extends Controller
         $user->forceFill([
             'locale' => $validated['locale'],
             'email_booking_updates' => $request->boolean('email_booking_updates'),
+            'email_message_updates' => $request->boolean('email_message_updates'),
             'email_marketing' => $request->boolean('email_marketing'),
             'email_newsletter' => $request->boolean('email_newsletter'),
         ])->save();

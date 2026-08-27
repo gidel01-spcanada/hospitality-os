@@ -54,5 +54,22 @@ class AuthSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        User::query()->updateOrCreate(
+            ['email' => 'concierge@afrikappart.test'],
+            [
+                'name' => 'Afrik Appart Concierge',
+                'password' => Hash::make($guestPassword),
+                'role' => 'concierge',
+                'is_admin' => false,
+                'tenant_id' => $tenantId,
+                'is_platform_admin' => false,
+                'locale' => 'fr',
+                'email_booking_updates' => true,
+                'email_marketing' => false,
+                'email_newsletter' => false,
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }

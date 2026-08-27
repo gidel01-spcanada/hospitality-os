@@ -31,6 +31,7 @@ class User extends Authenticatable
         'theme',
         'timezone',
         'email_booking_updates',
+        'email_message_updates',
         'email_marketing',
         'email_newsletter',
     ];
@@ -59,6 +60,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'is_platform_admin' => 'boolean',
             'email_booking_updates' => 'boolean',
+            'email_message_updates' => 'boolean',
             'email_marketing' => 'boolean',
             'email_newsletter' => 'boolean',
         ];

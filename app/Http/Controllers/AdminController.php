@@ -93,6 +93,7 @@ class AdminController extends Controller
             'role' => ['required', 'in:customer,admin,concierge'],
             'locale' => ['required', 'in:fr,en'],
             'email_booking_updates' => ['nullable', 'boolean'],
+            'email_message_updates' => ['nullable', 'boolean'],
             'email_marketing' => ['nullable', 'boolean'],
             'email_newsletter' => ['nullable', 'boolean'],
             'email_verified' => ['nullable', 'boolean'],
@@ -109,6 +110,7 @@ class AdminController extends Controller
             'tenant_id' => $validated['role'] !== 'customer' ? app(CurrentTenant::class)->id() : null,
             'locale' => $validated['locale'],
             'email_booking_updates' => $request->boolean('email_booking_updates'),
+            'email_message_updates' => $request->boolean('email_message_updates'),
             'email_marketing' => $request->boolean('email_marketing'),
             'email_newsletter' => $request->boolean('email_newsletter'),
             'email_verified_at' => $request->boolean('email_verified') ? now() : null,
@@ -126,6 +128,7 @@ class AdminController extends Controller
             'role' => ['required', 'in:customer,admin,concierge'],
             'locale' => ['required', 'in:fr,en'],
             'email_booking_updates' => ['nullable', 'boolean'],
+            'email_message_updates' => ['nullable', 'boolean'],
             'email_marketing' => ['nullable', 'boolean'],
             'email_newsletter' => ['nullable', 'boolean'],
             'email_verified' => ['nullable', 'boolean'],
@@ -151,6 +154,7 @@ class AdminController extends Controller
             'tenant_id' => $validated['role'] !== 'customer' ? ($managedUser->tenant_id ?? app(CurrentTenant::class)->id()) : null,
             'locale' => $validated['locale'],
             'email_booking_updates' => $request->boolean('email_booking_updates'),
+            'email_message_updates' => $request->boolean('email_message_updates'),
             'email_marketing' => $request->boolean('email_marketing'),
             'email_newsletter' => $request->boolean('email_newsletter'),
             'email_verified_at' => $request->boolean('email_verified') ? ($managedUser->email_verified_at ?? now()) : null,
@@ -175,9 +179,11 @@ class AdminController extends Controller
 
         abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
 
-        $validated = $request->validate([
+        $rules = [
             'site_name' => ['required', 'string', 'max:255'],
+            'site_icon' => ['required', 'string', 'max:3'],
             'site_tagline' => ['nullable', 'string', 'max:255'],
+            'footer_copyright' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['required', 'email', 'max:255'],
             'support_phone' => ['nullable', 'string', 'max:255'],
             'default_locale' => ['required', 'in:fr,en'],
@@ -186,13 +192,21 @@ class AdminController extends Controller
             'review_source_google_url' => ['nullable', 'url', 'max:2048'],
             'email_sender_name' => ['nullable', 'string', 'max:255'],
             'email_sender_email' => ['nullable', 'email', 'max:255'],
+            'guest_account_setup_subject' => ['nullable', 'string', 'max:255'],
+            'guest_account_setup_message' => ['nullable', 'string'],
             'customer_confirmation_subject' => ['nullable', 'string', 'max:255'],
             'customer_confirmation_message' => ['nullable', 'string'],
             'pre_arrival_subject' => ['nullable', 'string', 'max:255'],
             'pre_arrival_message' => ['nullable', 'string'],
             'post_stay_subject' => ['nullable', 'string', 'max:255'],
             'post_stay_message' => ['nullable', 'string'],
-        ]);
+        ];
+
+        $rules['customer_theme'] = config('platform.mode') === 'on_premise'
+            ? ['required', 'in:emerald-gold,ocean-coral,terracotta-teal,sunrise-ink']
+            : ['nullable', 'in:emerald-gold,ocean-coral,terracotta-teal,sunrise-ink'];
+
+        $validated = $request->validate($rules);
 
         BrandSettings::set($validated);
         config()->set('app.name', $validated['site_name']);
