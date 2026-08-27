@@ -1,20 +1,20 @@
 @extends('layouts.admin')
 
-@section('title', 'Users')
+@section('title', __('messages.admin.users_title'))
 
 @section('content')
 <!-- Page Header -->
 <div class="admin-page-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h1 class="admin-page-title">User Management</h1>
-            <p class="admin-page-description">Manage team members and user accounts</p>
+            <h1 class="admin-page-title">{{ __('messages.admin.users_title') }}</h1>
+            <p class="admin-page-description">{{ __('messages.admin.users_description') }}</p>
         </div>
         <x-button tag="a" href="/admin/users/create" variant="primary">
             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                 <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75V20.25a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
             </svg>
-            <span>Add User</span>
+            <span>{{ __('messages.admin.add_user') }}</span>
         </x-button>
     </div>
 </div>
@@ -26,25 +26,25 @@
             <div style="flex: 1;">
                 <x-input
                     name="search"
-                    label="Search Users"
-                    placeholder="Name, email, or role..."
+                    label="{{ __('messages.admin.search_users') }}"
+                    placeholder="{{ __('messages.admin.search_users_placeholder') }}"
                     value="{{ request('search') }}"
                 />
             </div>
 
             <div>
-                <label for="role" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Role</label>
+                <label for="role" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.admin.role') }}</label>
                 <select name="role" id="role" class="input-md" style="min-width: 150px;">
-                    <option value="">All Roles</option>
-                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="concierge" {{ request('role') === 'concierge' ? 'selected' : '' }}>Concierge</option>
-                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer</option>
+                    <option value="">{{ __('messages.admin.all_roles') }}</option>
+                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>{{ __('messages.admin.administrator') }}</option>
+                    <option value="concierge" {{ request('role') === 'concierge' ? 'selected' : '' }}>{{ __('messages.admin.concierge') }}</option>
+                    <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>{{ __('messages.admin.customer') }}</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: var(--space-2);">
-                <x-button type="submit" variant="primary">Filter</x-button>
-                <x-button tag="a" href="/admin/users" variant="secondary">Reset</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.admin.filter') }}</x-button>
+                <x-button tag="a" href="/admin/users" variant="secondary">{{ __('messages.admin.reset') }}</x-button>
             </div>
         </form>
     </div>
@@ -55,12 +55,12 @@
     <table class="admin-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th style="text-align: right;">Actions</th>
+                <th>{{ __('messages.admin.name') }}</th>
+                <th>{{ __('messages.common.email') }}</th>
+                <th>{{ __('messages.admin.role') }}</th>
+                <th>{{ __('messages.admin.status') }}</th>
+                <th>{{ __('messages.admin.joined') }}</th>
+                <th style="text-align: right;">{{ __('messages.admin.actions') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -75,12 +75,12 @@
                     </td>
                     <td>
                         @if ($user->email_verified_at)
-                            <x-badge variant="success" size="sm" dot>Active</x-badge>
+                            <x-badge variant="success" size="sm" dot>{{ __('messages.admin.active') }}</x-badge>
                         @else
-                            <x-badge variant="warning" size="sm" dot>Pending</x-badge>
+                            <x-badge variant="warning" size="sm" dot>{{ __('messages.admin.pending') }}</x-badge>
                         @endif
                     </td>
-                    <td>{{ $user->created_at->format('M d, Y') }}</td>
+                    <td>{{ $user->created_at->translatedFormat('d M Y') }}</td>
                     <td style="text-align: right;">
                         <div style="display: flex; gap: var(--space-2); justify-content: flex-end;">
                             <x-button tag="a" href="/admin/users/{{ $user->id }}/edit" variant="ghost" size="sm" title="Edit">
@@ -106,7 +106,7 @@
             @empty
                 <tr>
                     <td colspan="6" class="admin-table-empty">
-                        <p>No users found matching your criteria.</p>
+                        <p>{{ __('messages.admin.no_users') }}</p>
                     </td>
                 </tr>
             @endforelse

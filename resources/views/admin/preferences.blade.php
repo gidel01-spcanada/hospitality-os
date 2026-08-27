@@ -1,20 +1,20 @@
 {{-- resources/views/admin/preferences.blade.php --}}
 @extends('layouts.admin')
 
-@section('title', 'Preferences')
+@section('title', __('messages.admin.user_preferences'))
 
 @section('content')
 <!-- Page Header -->
 <div class="admin-page-header">
-    <h1 class="admin-page-title">User Preferences</h1>
-    <p class="admin-page-description">Customize your admin experience and personal settings</p>
+    <h1 class="admin-page-title">{{ __('messages.admin.user_preferences') }}</h1>
+    <p class="admin-page-description">{{ __('messages.admin.user_preferences_description') }}</p>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: var(--space-6);">
     <!-- Profile Settings -->
     <x-card>
         <div class="card-header">
-            <h3>Profile Information</h3>
+            <h3>{{ __('messages.profile.personal') }}</h3>
         </div>
         <form method="POST" action="/admin/preferences/profile" class="card-body">
             @csrf
@@ -22,14 +22,14 @@
 
             <x-input 
                 name="name" 
-                label="Full Name"
+                label="{{ __('messages.profile.full_name') }}"
                 value="{{ auth()->user()->name }}"
                 required
             />
 
             <x-input 
                 name="email" 
-                label="Email Address"
+                label="{{ __('messages.profile.email') }}"
                 type="email"
                 value="{{ auth()->user()->email }}"
                 required
@@ -37,13 +37,13 @@
 
             <x-input 
                 name="current_password" 
-                label="Current Password (to make changes)"
+                label="{{ __('messages.admin.current_password_for_changes') }}"
                 type="password"
                 required
             />
 
             <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4);">
-                <x-button type="submit" variant="primary">Save Profile</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.profile.save') }}</x-button>
             </div>
         </form>
     </x-card>
@@ -51,14 +51,14 @@
     <!-- Language & Locale -->
     <x-card>
         <div class="card-header">
-            <h3>Language & Locale</h3>
+            <h3>{{ __('messages.admin.language_locale') }}</h3>
         </div>
         <form method="POST" action="/admin/preferences/locale" class="card-body">
             @csrf
             @method('PUT')
 
             <div>
-                <label for="locale" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Preferred Language</label>
+                <label for="locale" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.profile.language') }}</label>
                 <select name="locale" id="locale" class="input-md">
                     <option value="en" {{ auth()->user()->locale === 'en' ? 'selected' : '' }}>English</option>
                     <option value="fr" {{ auth()->user()->locale === 'fr' ? 'selected' : '' }}>Français</option>
@@ -66,7 +66,7 @@
             </div>
 
             <div>
-                <label for="timezone" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2); margin-top: var(--space-4);">Timezone</label>
+                <label for="timezone" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2); margin-top: var(--space-4);">{{ __('messages.admin.timezone') }}</label>
                 <select name="timezone" id="timezone" class="input-md">
                     <option value="UTC" {{ auth()->user()->timezone === 'UTC' ? 'selected' : '' }}>UTC</option>
                     <option value="Africa/Lagos" {{ auth()->user()->timezone === 'Africa/Lagos' ? 'selected' : '' }}>West Africa Time (Lagos)</option>
@@ -75,7 +75,7 @@
             </div>
 
             <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4);">
-                <x-button type="submit" variant="primary">Save Preferences</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.profile.save') }}</x-button>
             </div>
         </form>
     </x-card>
@@ -85,9 +85,9 @@
 <div style="margin-top: var(--space-8);">
     <x-card>
         <div class="card-header">
-            <h3>Theme Selection</h3>
+            <h3>{{ __('messages.admin.theme_selection') }}</h3>
             <p style="margin: var(--space-2) 0 0 0; color: var(--text-secondary); font-size: var(--font-sm);">
-                Choose your preferred color theme for the admin panel
+                {{ __('messages.admin.theme_description') }}
             </p>
         </div>
 
@@ -116,8 +116,8 @@
                             <div style="width: 24px; height: 24px; background: #1F2937; border-radius: var(--radius-md);"></div>
                             <div style="width: 24px; height: 24px; background: #F3F4F6; border-radius: var(--radius-md); border: 1px solid #D1D5DB;"></div>
                         </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">Light Admin</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">Professional & Clean</div>
+                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_light') }}</div>
+                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_light_description') }}</div>
                     </div>
                 </label>
 
@@ -142,8 +142,8 @@
                             <div style="width: 24px; height: 24px; background: #F3F4F6; border-radius: var(--radius-md);"></div>
                             <div style="width: 24px; height: 24px; background: #1F2937; border-radius: var(--radius-md); border: 1px solid #374151;"></div>
                         </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">Dark Admin</div>
-                        <div style="font-size: var(--font-xs); color: #9CA3AF; margin-top: var(--space-1);">Easy on the Eyes</div>
+                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_dark') }}</div>
+                        <div style="font-size: var(--font-xs); color: #9CA3AF; margin-top: var(--space-1);">{{ __('messages.admin.theme_dark_description') }}</div>
                     </div>
                 </label>
 
@@ -167,8 +167,8 @@
                             <div style="width: 24px; height: 24px; background: #0f5b4c; border-radius: var(--radius-md);"></div>
                             <div style="width: 24px; height: 24px; background: #d1fae5; border-radius: var(--radius-md);"></div>
                         </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">Emerald</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">Nature-Inspired</div>
+                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_emerald') }}</div>
+                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_emerald_description') }}</div>
                     </div>
                 </label>
 
@@ -192,14 +192,14 @@
                             <div style="width: 24px; height: 24px; background: #c89b3c; border-radius: var(--radius-md);"></div>
                             <div style="width: 24px; height: 24px; background: #fef3c7; border-radius: var(--radius-md);"></div>
                         </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">Gold</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">Luxury Feel</div>
+                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_gold') }}</div>
+                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_gold_description') }}</div>
                     </div>
                 </label>
             </div>
 
             <div style="display: flex; gap: var(--space-2);">
-                <x-button type="submit" variant="primary">Apply Theme</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.admin.apply_theme') }}</x-button>
             </div>
         </form>
     </x-card>
@@ -209,7 +209,7 @@
 <div style="margin-top: var(--space-8);">
     <x-card>
         <div class="card-header">
-            <h3>Security</h3>
+            <h3>{{ __('messages.profile.tabs.security') }}</h3>
         </div>
 
         <form method="POST" action="/admin/preferences/password" class="card-body">
@@ -218,27 +218,27 @@
 
             <x-input 
                 name="current_password" 
-                label="Current Password"
+                label="{{ __('messages.security.current_password') }}"
                 type="password"
                 required
             />
 
             <x-input 
                 name="password" 
-                label="New Password"
+                label="{{ __('messages.security.new_password') }}"
                 type="password"
                 required
             />
 
             <x-input 
                 name="password_confirmation" 
-                label="Confirm New Password"
+                label="{{ __('messages.security.confirm_password') }}"
                 type="password"
                 required
             />
 
             <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4);">
-                <x-button type="submit" variant="primary">Update Password</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.security.save') }}</x-button>
             </div>
         </form>
     </x-card>

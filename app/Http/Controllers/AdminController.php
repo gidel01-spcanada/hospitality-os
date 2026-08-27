@@ -184,6 +184,14 @@ class AdminController extends Controller
             'secondary_locale' => ['required', 'in:fr,en'],
             'review_source_booking_url' => ['nullable', 'url', 'max:2048'],
             'review_source_google_url' => ['nullable', 'url', 'max:2048'],
+            'email_sender_name' => ['nullable', 'string', 'max:255'],
+            'email_sender_email' => ['nullable', 'email', 'max:255'],
+            'customer_confirmation_subject' => ['nullable', 'string', 'max:255'],
+            'customer_confirmation_message' => ['nullable', 'string'],
+            'pre_arrival_subject' => ['nullable', 'string', 'max:255'],
+            'pre_arrival_message' => ['nullable', 'string'],
+            'post_stay_subject' => ['nullable', 'string', 'max:255'],
+            'post_stay_message' => ['nullable', 'string'],
         ]);
 
         BrandSettings::set($validated);

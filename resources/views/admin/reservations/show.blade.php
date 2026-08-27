@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', $reservation->reservation_ref . ' | Réservation')
+    @section('title', $reservation->reservation_ref . ' | ' . __('messages.admin.reservation'))
 
 @section('content')
     <div class="admin-page-header">
@@ -45,7 +45,7 @@
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.travelers') }}</dt>
-                        <dd class="mt-1">{{ $reservation->adults }} adulte(s), {{ $reservation->children }} enfant(s), {{ $reservation->infants }} bébé(s)</dd>
+                        <dd class="mt-1">{{ __('messages.admin.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.total') }}</dt>

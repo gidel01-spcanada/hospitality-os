@@ -66,6 +66,51 @@
                     </div>
                 </div>
 
+                <div style="margin-top: var(--space-8);">
+                    <h2 style="margin-bottom: var(--space-4);">{{ __('messages.admin.customer_emails') }}</h2>
+                    <div class="form-grid">
+                        <div>
+                            <label for="email_sender_name">{{ __('messages.admin.email_sender_name') }}</label>
+                            <input id="email_sender_name" name="email_sender_name" type="text" value="{{ old('email_sender_name', $brand['email_sender_name'] ?? 'Afrik Appart') }}">
+                        </div>
+
+                        <div>
+                            <label for="email_sender_email">{{ __('messages.admin.email_sender_email') }}</label>
+                            <input id="email_sender_email" name="email_sender_email" type="email" value="{{ old('email_sender_email', $brand['email_sender_email'] ?? 'support@afrikappart.example') }}">
+                        </div>
+
+                        <div>
+                            <label for="customer_confirmation_subject">{{ __('messages.admin.customer_confirmation_subject') }}</label>
+                            <input id="customer_confirmation_subject" name="customer_confirmation_subject" type="text" value="{{ old('customer_confirmation_subject', $brand['customer_confirmation_subject'] ?? '') }}">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label for="customer_confirmation_message">{{ __('messages.admin.customer_confirmation_message') }}</label>
+                            <textarea id="customer_confirmation_message" name="customer_confirmation_message" rows="4">{{ old('customer_confirmation_message', $brand['customer_confirmation_message'] ?? '') }}</textarea>
+                        </div>
+
+                        <div>
+                            <label for="pre_arrival_subject">{{ __('messages.admin.pre_arrival_subject') }}</label>
+                            <input id="pre_arrival_subject" name="pre_arrival_subject" type="text" value="{{ old('pre_arrival_subject', $brand['pre_arrival_subject'] ?? '') }}">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label for="pre_arrival_message">{{ __('messages.admin.pre_arrival_message') }}</label>
+                            <textarea id="pre_arrival_message" name="pre_arrival_message" rows="4">{{ old('pre_arrival_message', $brand['pre_arrival_message'] ?? '') }}</textarea>
+                        </div>
+
+                        <div>
+                            <label for="post_stay_subject">{{ __('messages.admin.post_stay_subject') }}</label>
+                            <input id="post_stay_subject" name="post_stay_subject" type="text" value="{{ old('post_stay_subject', $brand['post_stay_subject'] ?? '') }}">
+                        </div>
+
+                        <div style="grid-column: 1 / -1;">
+                            <label for="post_stay_message">{{ __('messages.admin.post_stay_message') }}</label>
+                            <textarea id="post_stay_message" name="post_stay_message" rows="4">{{ old('post_stay_message', $brand['post_stay_message'] ?? '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_settings') }}</button>
                     <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">Retour</a>

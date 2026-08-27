@@ -174,4 +174,46 @@ class PaymentWorkflowTest extends TestCase
         $this->post($checkoutUrl, ['provider' => 'pay_later'])
             ->assertStatus(422);
     }
+
+    public function test_customer_can_cancel_an_unfinalized_reservation_from_checkout(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create([
+            'full_name' => 'Cancellation Guest',
+            'email' => 'cancellation@example.com',
+        ]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-CANCEL-001',
+            'status' => 'pending',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 100000,
+            'fees' => 10000,
+            'taxes' => 5000,
+            'total_amount' => 115000,
+            'source' => 'website',
+        ]);
+
+        $cancelUrl = route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->post(route('checkout.cancel', ['reservation' => $reservation, 'token' => str_repeat('0', 64)]))
+            ->assertForbidden();
+
+        $this->post($cancelUrl)
+            ->assertRedirect(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]));
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'cancelled']);
+
+        $this->post($cancelUrl)->assertStatus(422);
+        $reservation->update(['status' => 'confirmed']);
+        $this->post($cancelUrl)->assertStatus(422);
+    }
 }

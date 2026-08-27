@@ -143,7 +143,8 @@ class CustomerDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/settings')
             ->assertOk()
-            ->assertSee('Paramètres du site');
+            ->assertSee('Paramètres du site')
+            ->assertSee('E-mails client');
 
         $this->actingAs($admin)
             ->post('/admin/settings', [
@@ -155,6 +156,14 @@ class CustomerDashboardTest extends TestCase
                 'secondary_locale' => 'en',
                 'review_source_booking_url' => 'https://www.booking.com/hotel/fr/maison-bleu.html',
                 'review_source_google_url' => 'https://maps.google.com/?q=Maison+Bleu',
+                'email_sender_name' => 'Maison Bleu',
+                'email_sender_email' => 'hello@maisonbleu.example',
+                'customer_confirmation_subject' => 'Confirmation de votre demande',
+                'customer_confirmation_message' => 'Merci, nous avons bien reçu votre demande.',
+                'pre_arrival_subject' => 'Votre arrivée',
+                'pre_arrival_message' => 'Nous vous attendons bientôt.',
+                'post_stay_subject' => 'Merci pour votre séjour',
+                'post_stay_message' => 'Merci pour votre confiance.',
             ])
             ->assertRedirect('/admin/settings');
 
@@ -162,6 +171,13 @@ class CustomerDashboardTest extends TestCase
         $this->assertDatabaseHas('settings', ['key' => 'contact_email', 'value' => 'hello@maisonbleu.example']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_booking_url', 'value' => 'https://www.booking.com/hotel/fr/maison-bleu.html']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_google_url', 'value' => 'https://maps.google.com/?q=Maison+Bleu']);
+        $this->assertDatabaseHas('settings', ['key' => 'email_sender_name', 'value' => 'Maison Bleu']);
+        $this->assertDatabaseHas('settings', ['key' => 'customer_confirmation_subject', 'value' => 'Confirmation de votre demande']);
+
+        $this->actingAs($admin)
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertSee('Utilisateurs');
 
         $this->actingAs($admin)
             ->post('/admin/reviews', [

@@ -32,11 +32,11 @@
                         <li>
                             <div>
                                 <strong>{{ $reservation->reservation_ref }}</strong>
-                                <span>{{ $reservation->property?->name ?? 'Logement' }}</span>
+                                <span>{{ $reservation->property?->name ?? __('messages.checkout.property') }}</span>
                             </div>
                             <div class="reservation-meta">
                                 <span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span>
-                                <span>{{ $reservation->status }}</span>
+                                <span>{{ __('messages.admin.status_' . $reservation->status) }}</span>
                             </div>
                             <a href="{{ route('dashboard.reservations.show', $reservation) }}">{{ __('messages.dashboard.view') }}</a>
                         </li>

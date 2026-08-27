@@ -13,7 +13,7 @@
         @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
 
         <div class="property-editor-tabs" data-property-tabs>
-            <div class="property-tab-list" role="tablist" aria-label="Property editor sections">
+            <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.property_editor_sections') }}">
                 @foreach (['general' => __('messages.admin.general_information'), 'photos' => __('messages.admin.photos'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="property-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
@@ -27,7 +27,7 @@
                         <div class="admin-form-grid">
                             <label><span>{{ __('messages.admin.establishment') }}</span><select name="establishment_id" required>@foreach ($establishments as $establishment)<option value="{{ $establishment->id }}" @selected(old('establishment_id', $property->establishment_id) == $establishment->id)>{{ $establishment->name }}</option>@endforeach</select></label>
                             <label><span>{{ __('messages.admin.property_name') }}</span><input name="name" value="{{ old('name', $property->name) }}" required></label>
-                            <label><span>{{ __('messages.admin.property_type') }}</span><select name="property_type" required>@foreach (['apartment' => 'Appartement', 'house' => 'Maison', 'villa' => 'Villa', 'studio' => 'Studio', 'room' => 'Chambre', 'other' => 'Autre'] as $value => $label)<option value="{{ $value }}" @selected(old('property_type', $property->property_type ?: 'apartment') === $value)>{{ $label }}</option>@endforeach</select></label>
+                            <label><span>{{ __('messages.admin.property_type') }}</span><select name="property_type" required>@foreach (['apartment', 'house', 'villa', 'studio', 'room', 'other'] as $value)<option value="{{ $value }}" @selected(old('property_type', $property->property_type ?: 'apartment') === $value)>{{ __('messages.admin.type_' . $value) }}</option>@endforeach</select></label>
                             <label><span>{{ __('messages.admin.slug') }}</span><input name="slug" value="{{ old('slug', $property->slug) }}" required></label>
                         </div>
                         <div class="admin-form-grid">
@@ -70,7 +70,7 @@
                     </form>
                     @if ($property->images->isNotEmpty())
                         <form method="POST" action="{{ route('admin.properties.images.update', $property) }}" class="photo-order-form">@csrf @method('PUT')<p class="form-help">{{ __('messages.admin.drag_photo_help') }}</p><div class="admin-photo-list-head" aria-hidden="true"><span>#</span><span></span><span>{{ __('messages.admin.photo_column') }}</span><span>{{ __('messages.admin.room_or_area') }}</span><span>{{ __('messages.admin.cover_column') }}</span><span></span></div><div class="admin-photo-list" data-photo-sortable>@foreach ($property->images->sortBy('sort_order') as $image)<div class="admin-photo-row" draggable="true" data-photo-id="{{ $image->id }}"><span class="photo-position" data-photo-position aria-hidden="true">{{ $loop->iteration }}</span><span class="photo-drag-handle" aria-hidden="true">&#8942;&#8942;</span><img src="{{ asset($image->file_path) }}" alt="{{ $property->name }} photo"><input type="hidden" name="image_order[{{ $image->id }}]" value="{{ $loop->iteration }}" data-photo-order><input type="text" name="image_tags[{{ $image->id }}]" value="{{ old('image_tags.' . $image->id, $image->room_tag) }}" maxlength="100" placeholder="Living room, bedroom 1..." aria-label="{{ __('messages.admin.room_or_area') }}"><label class="photo-cover-toggle" title="{{ __('messages.admin.use_for_cards') }}"><input type="radio" name="cover_image_id" value="{{ $image->id }}" @checked($image->is_cover || (!$property->images->contains('is_cover', true) && $loop->first))><span class="photo-cover-icon" aria-hidden="true">&#9733;</span><span class="sr-only">{{ __('messages.admin.use_for_cards') }}</span></label><button type="submit" class="photo-remove-button" name="remove_image_id" value="{{ $image->id }}" title="{{ __('messages.admin.remove_photo') }}" aria-label="{{ __('messages.admin.remove_photo') }}"><span aria-hidden="true">&#10005;</span></button></div>@endforeach</div><p class="photo-order-status" data-photo-order-status hidden>{{ __('messages.admin.photo_order_pending') }}</p><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_photos') }}</button></div></form>
-                    @else<p class="form-help">No photos have been imported for this property yet.</p>@endif
+                    @else<p class="form-help">{{ __('messages.admin.no_photos') }}</p>@endif
                 </div>
             </div>
 

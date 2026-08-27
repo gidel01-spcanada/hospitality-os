@@ -82,6 +82,17 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
     }
 
+    public function cancel(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        abort_unless(in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true), 422, __('messages.checkout.cancellation_unavailable'));
+
+        $reservation->update(['status' => 'cancelled']);
+
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
+            ->with('status', __('messages.checkout.cancelled'));
+    }
+
     public function webhook(Request $request, string $provider, PaymentGatewayManager $manager)
     {
         abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal'], true), 404, 'Unsupported payment provider.');

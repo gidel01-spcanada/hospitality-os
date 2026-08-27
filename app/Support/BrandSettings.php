@@ -19,6 +19,14 @@ class BrandSettings
         'secondary_locale' => 'en',
         'review_source_booking_url' => '',
         'review_source_google_url' => '',
+        'email_sender_name' => 'Afrik Appart',
+        'email_sender_email' => 'support@afrikappart.example',
+        'customer_confirmation_subject' => 'Confirmation de votre demande',
+        'customer_confirmation_message' => 'Merci pour votre demande. Nous vous répondrons rapidement.',
+        'pre_arrival_subject' => 'Votre arrivée prochaine',
+        'pre_arrival_message' => 'Nous vous souhaitons la bienvenue et nous sommes ravis de vous accueillir très bientôt.',
+        'post_stay_subject' => 'Merci pour votre séjour',
+        'post_stay_message' => 'Merci d’avoir choisi Afrik Appart. Nous espérons vous revoir bientôt.',
         'footer_copy' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
     ];
 

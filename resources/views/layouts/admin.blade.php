@@ -25,13 +25,13 @@
                 </button>
                 
                 <a href="/admin" class="text-lg font-bold text-primary" style="text-decoration: none;">
-                    Afrik Appart Admin
+                    {{ __('messages.admin.title') }}
                 </a>
             </div>
 
             <div class="admin-topbar-right">
                 <!-- Booking queue -->
-                <a class="btn btn-ghost" href="{{ route('admin.bookings.index') }}" aria-label="Open booking queue" title="Booking queue">
+                <a class="btn btn-ghost" href="{{ route('admin.bookings.index') }}" aria-label="{{ __('messages.admin.open_reservations') }}" title="{{ __('messages.admin.open_reservations') }}">
                     <svg class="icon icon-md" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M5.85 3.5a.75.75 0 00-1.117-1.007A19.5 19.5 0 005.503 19.5h12.994a19.5 19.5 0 00.617-16.007.75.75 0 00-1.117 1.007A18 18 0 0018.503 19.5H5.503a18 18 0 00.347-15.993z" />
                     </svg>
@@ -48,15 +48,15 @@
                     
                     <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); min-width: 200px; box-shadow: var(--shadow-md); z-index: var(--z-dropdown);">
                         <a href="/admin/profile" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
-                            My Profile
+                            {{ __('messages.profile.tabs.profile') }}
                         </a>
                         <a href="/admin/preferences" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
-                            Preferences
+                            {{ __('messages.profile.tabs.preferences') }}
                         </a>
                         <form method="POST" action="/logout" style="display: inline;">
                             @csrf
                             <button type="submit" class="user-dropdown-item" style="width: 100%; text-align: left; padding: var(--space-3); background: none; border: none; cursor: pointer; color: var(--color-error-600); font-weight: var(--font-medium);">
-                                Logout
+                                {{ __('messages.nav.logout') }}
                             </button>
                         </form>
                     </div>
@@ -74,22 +74,22 @@
                             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M11.47 3.841a.75.75 0 015.06 0l7.915 4.027A.75.75 0 0124 7.574V20.25a.75.75 0 01-.75.75H2.75A.75.75 0 012 20.25V7.574a.75.75 0 01.395-.659l7.915-4.027zM9 6.75V15a.75.75 0 001.5 0V6.75H9zm0 0h1.5m3 0H15V15a.75.75 0 001.5 0V6.75h-1.5m0 0h1.5M9 15h6" />
                             </svg>
-                            <span>Dashboard</span>
+                            <span>{{ __('messages.admin.dashboard') }}</span>
                         </a>
                     </div>
                 </li>
 
                 <!-- Management -->
                 <li class="admin-nav-section">
-                    <div class="admin-nav-section-title">Management</div>
-                    
+                    <div class="admin-nav-section-title">{{ __('messages.admin.management') }}</div>
+
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->is('admin/users*') ? 'is-active' : '' }}">
                             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 001.591-.079 9.018 9.018 0 002.997-.960 7.5 7.5 0 015.562-2.035 7.5 7.5 0 015.562 2.035 9.018 9.018 0 002.997.96 9.337 9.337 0 001.591.079 9.38 9.38 0 002.625-.372V9a6 6 0 00-9-5.582v.003a6 6 0 01-7.356 9.017.75.75 0 11-.564-1.41 7.5 7.5 0 009.213-7.844V9a6 6 0 00-9 5.582v10.128z" />
                             </svg>
-                            <span>Users</span>
+                            <span>{{ __('messages.admin.users_title') }}</span>
                         </a>
                     </div>
                     @endif
@@ -99,7 +99,7 @@
                             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M6.584 2.915A3 3 0 0013.9 1h.2a3 3 0 013 3v2h3.97a3 3 0 012.992 3.718A20.086 20.086 0 0121.93 10H21a.75.75 0 100 1.5h.97l-.978 12.71a3 3 0 01-2.991 2.79h-15.946a3 3 0 01-2.993-2.79L1.03 11.5H0a.75.75 0 000 1.5h.07A20.086 20.086 0 012.116 8.633 3 3 0 015.108 6.915h3.976v-2a3 3 0 011.5-2.585zM5.5 4v2h13v-2a1.5 1.5 0 00-1.5-1.5h-.2a1.5 1.5 0 00-1.5 1.5H7a1.5 1.5 0 00-1.5-1.5 1.5 1.5 0 00-1.5 1.5z" />
                             </svg>
-                            <span>Bookings</span>
+                            <span>{{ __('messages.admin.reservations') }}</span>
                         </a>
                     </div>
 
@@ -110,7 +110,7 @@
                                 <path d="M19.5 6h-15v9h15V6z" />
                                 <path fill-rule="evenodd" d="M3.751 2.25a.75.75 0 00-.75.75v16.5a.75.75 0 001.5 0V3a.75.75 0 00-.75-.75zM20.25 2.25a.75.75 0 00-.75.75v16.5a.75.75 0 001.5 0V3a.75.75 0 00-.75-.75z" clip-rule="evenodd" />
                             </svg>
-                            <span>Properties</span>
+                            <span>{{ __('messages.admin.properties') }}</span>
                         </a>
                     </div>
                     @endif
@@ -121,7 +121,7 @@
                                 <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                     <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6A.75.75 0 0 1 9 5.25Zm6-3a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
                                 </svg>
-                                <span>Establishments</span>
+                                <span>{{ __('messages.admin.establishments') }}</span>
                             </a>
                         </div>
                     @endif
@@ -129,7 +129,7 @@
 
                 <!-- Settings -->
                 <li class="admin-nav-section">
-                    <div class="admin-nav-section-title">Settings</div>
+                    <div class="admin-nav-section-title">{{ __('messages.admin.settings_title') }}</div>
 
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
@@ -148,7 +148,7 @@
                             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                 <path fill-rule="evenodd" d="M11.078 2.25c-.929 0-1.734.578-2.025 1.461L7.432 5.307H3.75A2.25 2.25 0 001.5 7.557v10.886A2.25 2.25 0 003.75 20.5h16.5a2.25 2.25 0 002.25-2.25V7.557a2.25 2.25 0 00-2.25-2.25H16.568l-1.621-3.846a2.25 2.25 0 00-2.025-1.461H11.078zm-2.05 6.369a.75.75 0 10-1.06 1.06L10.94 14l-2.972 2.97a.75.75 0 101.06 1.061L12 15.06l2.97 2.972a.75.75 0 10 1.061-1.06L13.06 14l2.97-2.97a.75.75 0 10-1.06-1.06L12 12.94l-2.97-2.97z" clip-rule="evenodd" />
                             </svg>
-                            <span>Settings</span>
+                            <span>{{ __('messages.admin.settings') }}</span>
                         </a>
                     </div>
                     @endif
@@ -174,7 +174,7 @@
                 @if ($breadcrumbs ?? null)
                     <nav class="breadcrumbs" aria-label="Breadcrumb">
                         <span class="breadcrumb-item">
-                            <a href="/admin">Home</a>
+                            <a href="/admin">{{ __('messages.nav.home') }}</a>
                         </span>
                         @foreach ($breadcrumbs as $crumb)
                             <span class="breadcrumb-separator">›</span>

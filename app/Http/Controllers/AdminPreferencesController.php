@@ -30,7 +30,7 @@ class AdminPreferencesController extends Controller
             'email' => $validated['email'],
         ])->save();
 
-        return back()->with('success', 'Profile updated successfully.');
+        return back()->with('success', __('messages.profile.updated'));
     }
 
     public function updateLocale(Request $request): RedirectResponse
@@ -44,7 +44,7 @@ class AdminPreferencesController extends Controller
         app()->setLocale($validated['locale']);
         $request->session()->put('locale', $validated['locale']);
 
-        return back()->with('success', 'Language and locale preferences updated successfully.');
+        return back()->with('success', __('messages.admin.locale_preferences_updated'));
     }
 
     public function updateTheme(Request $request): RedirectResponse
@@ -55,7 +55,7 @@ class AdminPreferencesController extends Controller
 
         $request->user()->forceFill($validated)->save();
 
-        return back()->with('success', 'Theme updated successfully.');
+        return back()->with('success', __('messages.admin.theme_updated'));
     }
 
     public function updatePassword(Request $request): RedirectResponse
@@ -69,6 +69,6 @@ class AdminPreferencesController extends Controller
             'password' => Hash::make($validated['password']),
         ])->save();
 
-        return back()->with('success', 'Password updated successfully.');
+        return back()->with('success', __('messages.security.updated'));
     }
 }

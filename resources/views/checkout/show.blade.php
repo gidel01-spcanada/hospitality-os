@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +26,7 @@
                         <p class="text-sm text-slate-500">{{ __('messages.checkout.reference') }}</p>
                         <h2 class="text-xl font-semibold">{{ $reservation->reservation_ref }}</h2>
                     </div>
-                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{{ $reservation->status }}</span>
+                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{{ __('messages.admin.status_' . $reservation->status) }}</span>
                 </div>
 
                 <dl class="grid gap-4 sm:grid-cols-2">
@@ -35,11 +35,11 @@
                         <dd class="mt-1 font-medium">{{ $reservation->property?->name ?? '—' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">Dates</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.reservation.dates') }}</dt>
                         <dd class="mt-1">{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">Montant</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.reservation.total') }}</dt>
                         <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</dd>
                     </div>
                     <div>
@@ -59,21 +59,23 @@
             </section>
 
             <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
-                        <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
-                            @foreach ($paymentMethods as $provider => $method)
-                                <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
+                    <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
+                            <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
+                                @foreach ($paymentMethods as $provider => $method)
+                                    <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
-                        {{ __('messages.checkout.start') }}
-                    </button>
-                </form>
+                        <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
+                            {{ __('messages.checkout.start') }}
+                        </button>
+                    </form>
+                @endif
 
                 @if($reservation->paymentAttempts->isNotEmpty())
                     <div class="mt-6 border-t border-slate-200 pt-4">
@@ -92,12 +94,23 @@
                     </div>
                 @endif
 
-                <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
-                    @csrf
-                    <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
-                        {{ __('messages.checkout.simulate') }}
-                    </button>
-                </form>
+                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
+                    <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
+                        @csrf
+                        <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
+                            {{ __('messages.checkout.simulate') }}
+                        </button>
+                    </form>
+                @endif
+
+                @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-3" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                        @csrf
+                        <button type="submit" class="w-full rounded-md border border-red-200 bg-white px-4 py-2.5 font-medium text-red-700 hover:bg-red-50">
+                            {{ __('messages.checkout.cancel_reservation') }}
+                        </button>
+                    </form>
+                @endif
             </aside>
         </div>
     </div>

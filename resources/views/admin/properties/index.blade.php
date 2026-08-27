@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Properties')
+@section('title', __('messages.admin.properties'))
 
 @section('content')
 <div class="admin-page-header">
@@ -26,17 +26,17 @@
                 </select>
             </div>
             <div>
-                <label for="status" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Status</label>
+                <label for="status" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.admin.status') }}</label>
                 <select id="status" name="status" class="input-md">
-                    <option value="">All statuses</option>
-                    @foreach (['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'] as $value => $label)
+                    <option value="">{{ __('messages.admin.all_status') }}</option>
+                    @foreach (['draft' => __('messages.admin.draft'), 'published' => __('messages.admin.published'), 'archived' => __('messages.admin.archived')] as $value => $label)
                         <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
             <div style="display: flex; gap: var(--space-2);">
-                <x-button type="submit" variant="primary">Filter</x-button>
-                <x-button tag="a" href="{{ route('admin.properties.index') }}" variant="secondary">Reset</x-button>
+                <x-button type="submit" variant="primary">{{ __('messages.admin.filter') }}</x-button>
+                <x-button tag="a" href="{{ route('admin.properties.index') }}" variant="secondary">{{ __('messages.admin.reset') }}</x-button>
             </div>
         </form>
     </div>
@@ -60,11 +60,11 @@
                         <p style="margin: 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ $property->establishment?->name ?? 'No establishment' }}</p>
                     </div>
                     @if ($property->status === 'published')
-                        <x-badge variant="success" size="sm" dot style="flex-shrink: 0;">Published</x-badge>
+                        <x-badge variant="success" size="sm" dot style="flex-shrink: 0;">{{ __('messages.admin.published') }}</x-badge>
                     @elseif ($property->status === 'draft')
-                        <x-badge variant="warning" size="sm" dot style="flex-shrink: 0;">Draft</x-badge>
+                        <x-badge variant="warning" size="sm" dot style="flex-shrink: 0;">{{ __('messages.admin.draft') }}</x-badge>
                     @else
-                        <x-badge variant="neutral" size="sm" dot style="flex-shrink: 0;">Archived</x-badge>
+                        <x-badge variant="neutral" size="sm" dot style="flex-shrink: 0;">{{ __('messages.admin.archived') }}</x-badge>
                     @endif
                 </div>
 
@@ -75,9 +75,9 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-4); border-top: 1px solid var(--border-default);">
                     <span style="font-size: var(--font-sm); color: var(--text-secondary);">
-                        {{ $property->availabilityBlocks()->count() + $property->rateRules()->count() }} rules
+                        {{ $property->availabilityBlocks()->count() + $property->rateRules()->count() }} {{ __('messages.admin.rules') }}
                     </span>
-                    <x-button tag="a" href="{{ route('admin.properties.edit', $property) }}" variant="ghost" size="sm">Edit</x-button>
+                    <x-button tag="a" href="{{ route('admin.properties.edit', $property) }}" variant="ghost" size="sm">{{ __('messages.admin.edit') }}</x-button>
                 </div>
             </div>
         </x-card>
@@ -85,9 +85,9 @@
         <div style="grid-column: 1 / -1;">
             <x-card>
                 <div class="card-body" style="text-align: center;">
-                    <h3>No properties found</h3>
-                    <p style="color: var(--text-secondary);">Create a property or adjust your filters.</p>
-                    <x-button tag="a" href="{{ route('admin.properties.create') }}" variant="primary">Add Property</x-button>
+                    <h3>{{ __('messages.admin.no_properties_found') }}</h3>
+                    <p style="color: var(--text-secondary);">{{ __('messages.admin.no_properties_found_help') }}</p>
+                    <x-button tag="a" href="{{ route('admin.properties.create') }}" variant="primary">{{ __('messages.admin.add_property') }}</x-button>
                 </div>
             </x-card>
         </div>

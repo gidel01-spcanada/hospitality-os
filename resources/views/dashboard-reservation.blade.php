@@ -15,9 +15,9 @@
         <div class="summary-card full-width">
             <h2>{{ __('messages.reservation.details') }}</h2>
             <ul>
-                <li><strong>{{ __('messages.reservation.status') }}</strong><span>{{ $reservation->status }}</span></li>
+                <li><strong>{{ __('messages.reservation.status') }}</strong><span>{{ __('messages.admin.status_' . $reservation->status) }}</span></li>
                 <li><strong>{{ __('messages.reservation.dates') }}</strong><span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span></li>
-                <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ $reservation->adults }} adult(s), {{ $reservation->children }} child(ren), {{ $reservation->infants }} infant(s)</span></li>
+                <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</span></li>
                 <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
             </ul>
         </div>
@@ -25,7 +25,7 @@
         <div class="summary-card">
             <h2>{{ __('messages.reservation.contact') }}</h2>
             <ul>
-                <li><strong>Email</strong><span>{{ $reservation->email }}</span></li>
+                <li><strong>{{ __('messages.common.email') }}</strong><span>{{ $reservation->email }}</span></li>
                 <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
                 <li><strong>{{ __('messages.reservation.country') }}</strong><span>{{ $reservation->guest?->country ?? '—' }}</span></li>
             </ul>
