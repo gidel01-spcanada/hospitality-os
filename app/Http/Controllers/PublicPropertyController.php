@@ -58,8 +58,9 @@ class PublicPropertyController extends Controller
 
         $establishments = Establishment::query()->with('translations')->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
+        $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
 
-        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters'));
+        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds'));
     }
 
     public function show(Property $property): View

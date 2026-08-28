@@ -45,6 +45,23 @@
             @endif
         </div>
 
+        <div class="summary-card">
+            <h2>{{ __('messages.favorites.title') }}</h2>
+            @if ($favoriteProperties->isEmpty())
+                <p>{{ __('messages.favorites.empty') }}</p>
+                <a class="btn btn-ghost" href="{{ route('properties.index') }}">{{ __('messages.dashboard.explore') }}</a>
+            @else
+                <ul class="reservation-list">
+                    @foreach ($favoriteProperties as $favoriteProperty)
+                        <li>
+                            <div><strong>{{ $favoriteProperty->localized('name') }}</strong><span>{{ $favoriteProperty->city }}</span></div>
+                            <a href="{{ route('properties.show', $favoriteProperty) }}">{{ __('messages.dashboard.view') }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+
         <div class="summary-card full-width">
             <h2>{{ __('messages.dashboard.preferences') }}</h2>
             <form method="POST" action="{{ route('dashboard.preferences.update') }}">

@@ -702,6 +702,49 @@ button, input, select {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.property-card {
+    position: relative;
+}
+
+.favorite-form,
+.favorite-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 3;
+}
+
+.favorite-button {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #ffffff;
+    cursor: pointer;
+    filter: drop-shadow(0 4px 8px rgba(19, 31, 35, 0.18));
+}
+
+.favorite-button svg {
+    width: 1.4rem;
+    height: 1.4rem;
+    fill: transparent;
+    stroke: #b42318;
+    stroke-width: 1.8;
+}
+
+.favorite-button.is-favorite svg {
+    fill: #dc2626;
+    stroke: #dc2626;
+}
+
+.favorite-button:hover,
+.favorite-button:focus-visible {
+    background: #ffffff;
+}
+
 .property-image {
     min-height: 220px;
     border-top-left-radius: 24px;

@@ -99,8 +99,13 @@ class AuthController extends Controller
             ->with('property')
             ->orderByDesc('created_at')
             ->get();
+        $favoriteProperties = $user->favoriteProperties()
+            ->published()
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
+            ->orderByDesc('property_favorites.created_at')
+            ->get();
 
-        return view('dashboard', compact('user', 'reservations'));
+        return view('dashboard', compact('user', 'reservations', 'favoriteProperties'));
     }
 
     public function accountProfile(): View

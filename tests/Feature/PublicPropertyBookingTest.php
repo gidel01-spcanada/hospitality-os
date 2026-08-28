@@ -29,6 +29,33 @@ class PublicPropertyBookingTest extends TestCase
         ])->assertOk()->assertJson(['available' => true]);
     }
 
+    public function test_authenticated_customer_can_toggle_property_favorite(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::factory()->create(['role' => 'customer']);
+        $property = Property::query()->where('status', 'published')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get('/properties')
+            ->assertOk()
+            ->assertSee(__('messages.favorites.add'));
+
+        $this->actingAs($user)
+            ->post(route('properties.favorite.toggle', $property))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('property_favorites', ['user_id' => $user->id, 'property_id' => $property->id]);
+        $this->actingAs($user)
+            ->get('/properties')
+            ->assertOk()
+            ->assertSee('class="favorite-button is-favorite"', false)
+            ->assertSee($property->localized('name'));
+        $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee($property->localized('name'));
+
+        $this->actingAs($user)->post(route('properties.favorite.toggle', $property))->assertRedirect();
+        $this->assertDatabaseMissing('property_favorites', ['user_id' => $user->id, 'property_id' => $property->id]);
+    }
+
     public function test_public_catalog_and_booking_flow_work(): void
     {
         ini_set('memory_limit', '1G');

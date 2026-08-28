@@ -97,6 +97,11 @@ class Property extends Model
         return $this->belongsToMany(Amenity::class, 'property_amenities');
     }
 
+    public function favoritedByUsers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'property_favorites')->withTimestamps();
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(PropertyImage::class);

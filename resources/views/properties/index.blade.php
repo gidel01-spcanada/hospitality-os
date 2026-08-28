@@ -63,8 +63,21 @@
                         $coverImage = $property->images->firstWhere('is_cover', true) ?? $property->images->first();
                         $coverUrl = $coverImage ? asset($coverImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
                         $coverIndex = $coverImage ? $property->images->search(fn ($image) => $image->id === $coverImage->id) : 0;
+                        $isFavorite = in_array($property->id, $favoritePropertyIds ?? [], true);
                     @endphp
                     <article class="property-card property-card-link">
+                        @auth
+                            <form method="POST" action="{{ route('properties.favorite.toggle', $property) }}" class="favorite-form">
+                                @csrf
+                                <button type="submit" class="favorite-button {{ $isFavorite ? 'is-favorite' : '' }}" aria-label="{{ $isFavorite ? __('messages.favorites.remove') : __('messages.favorites.add') }}" title="{{ $isFavorite ? __('messages.favorites.remove') : __('messages.favorites.add') }}">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
+                                </button>
+                            </form>
+                        @else
+                            <a class="favorite-button" href="{{ route('login') }}" aria-label="{{ __('messages.favorites.login') }}" title="{{ __('messages.favorites.login') }}">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
+                            </a>
+                        @endauth
                         <div class="property-gallery" data-gallery='@json($galleryImages)' data-gallery-start="{{ $coverIndex === false ? 0 : $coverIndex }}">
                             <div class="property-image" style="background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("{{ $coverUrl }}");"></div>
                             @if ($coverImage?->room_tag)

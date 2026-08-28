@@ -29,11 +29,13 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
             ->get();
     }
 
+            $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
+
     if (Schema::hasTable('site_reviews')) {
         $reviews = \App\Models\SiteReview::query()->where('is_active', true)->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
-    return view('home', compact('properties', 'establishments', 'reviews', 'destinations'));
+    return view('home', compact('properties', 'establishments', 'reviews', 'destinations', 'favoritePropertyIds'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
@@ -62,6 +64,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/account/security', [AuthController::class, 'updatePassword'])->name('account.security.update');
     Route::post('/dashboard/preferences', [AuthController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/dashboard/reservations/{reservation}', [AuthController::class, 'reservationDetail'])->name('dashboard.reservations.show');
+    Route::post('/properties/{property}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('properties.favorite.toggle');
     Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
     Route::post('/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
     Route::get('/messages/{thread}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');

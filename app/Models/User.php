@@ -71,6 +71,11 @@ class User extends Authenticatable
         return $this->belongsTo(Tenant::class);
     }
 
+    public function favoriteProperties(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Property::class, 'property_favorites')->withTimestamps();
+    }
+
     public function isPlatformAdmin(): bool
     {
         return (bool) $this->is_platform_admin;
