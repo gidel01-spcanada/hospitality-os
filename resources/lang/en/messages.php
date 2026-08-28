@@ -402,6 +402,7 @@ return [
     'dashboard.view' => 'View',
     'favorites.title' => 'Favorite apartments',
     'favorites.empty' => 'You have not saved any apartments yet.',
+    'favorites.only' => 'Show favorites only',
     'favorites.add' => 'Add to favorites',
     'favorites.remove' => 'Remove from favorites',
     'favorites.login' => 'Sign in to save this apartment',

@@ -32,6 +32,7 @@ class PublicPropertyController extends Controller
             'bedrooms' => ['nullable', 'integer', 'min:1', 'max:50'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
+            'favorites' => ['nullable', 'boolean'],
         ]);
 
         // Empty inputs arrive as null, so drop them before they reach the query builder.
@@ -39,6 +40,8 @@ class PublicPropertyController extends Controller
 
         // "city" remains supported so previously shared search links keep working.
         $destination = $filters['destination'] ?? $filters['city'] ?? null;
+        $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
+        $favoritesOnly = (bool) ($filters['favorites'] ?? false);
 
         $properties = Property::query()
             ->published()
@@ -48,7 +51,9 @@ class PublicPropertyController extends Controller
             ->when($filters['bedrooms'] ?? null, fn ($query, $bedrooms) => $query->where('bedrooms', '>=', $bedrooms))
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
+            ->when($favoritesOnly && auth()->check(), fn ($query) => $query->whereIn('id', $favoritePropertyIds))
             ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
+            ->when($favoritePropertyIds, fn ($query) => $query->orderByRaw('CASE WHEN id IN (' . implode(',', array_fill(0, count($favoritePropertyIds), '?')) . ') THEN 0 ELSE 1 END', $favoritePropertyIds))
             ->orderBy('nightly_rate_xof')
             ->get();
 
@@ -58,7 +63,6 @@ class PublicPropertyController extends Controller
 
         $establishments = Establishment::query()->with('translations')->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
-        $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
 
         return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds'));
     }

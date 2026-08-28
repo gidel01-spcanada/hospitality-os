@@ -402,6 +402,7 @@ return [
     'dashboard.view' => 'Voir',
     'favorites.title' => 'Logements favoris',
     'favorites.empty' => 'Vous n’avez encore enregistré aucun logement.',
+    'favorites.only' => 'Afficher uniquement mes favoris',
     'favorites.add' => 'Ajouter aux favoris',
     'favorites.remove' => 'Retirer des favoris',
     'favorites.login' => 'Connectez-vous pour enregistrer ce logement',

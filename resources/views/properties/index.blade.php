@@ -52,6 +52,13 @@
                         <label for="max_price">{{ __('messages.properties.max_price') }}</label>
                         <input id="max_price" name="max_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['max_price'] ?? '' }}">
                     </div>
+                    @auth
+                        @if (auth()->user()->role === 'customer')
+                            <div class="filter-field filter-field-checkbox">
+                                <label for="favorites"><input id="favorites" name="favorites" type="checkbox" value="1" @checked(($filters['favorites'] ?? false))> {{ __('messages.favorites.only') }}</label>
+                            </div>
+                        @endif
+                    @endauth
                     </div>
                     <div class="form-actions"><button type="submit" class="btn btn-primary">{{ __('messages.properties.apply') }}</button></div>
                 </form>

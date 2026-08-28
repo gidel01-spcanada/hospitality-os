@@ -50,6 +50,24 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('class="favorite-button is-favorite"', false)
             ->assertSee($property->localized('name'));
+
+        $otherProperty = Property::query()
+            ->whereKeyNot($property->id)
+            ->where('status', 'published')
+            ->firstOrFail();
+        $orderedResponse = $this->actingAs($user)->get('/properties');
+        $this->assertLessThan(
+            strpos($orderedResponse->getContent(), route('properties.show', $otherProperty)),
+            strpos($orderedResponse->getContent(), route('properties.show', $property))
+        );
+
+        $this->actingAs($user)
+            ->get('/properties?favorites=1')
+            ->assertOk()
+            ->assertSee('name="favorites"', false)
+            ->assertSee('checked', false)
+            ->assertSee($property->localized('name'))
+            ->assertDontSee($otherProperty->localized('name'));
         $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee($property->localized('name'));
 
         $this->actingAs($user)->post(route('properties.favorite.toggle', $property))->assertRedirect();
