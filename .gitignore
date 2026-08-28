@@ -21,6 +21,8 @@
 /vendor
 /database/*.sqlite
 /database/*.sqlite-*
+/afrik-appart-mysql-export.sql
+/afrik-appart-mysql-seed-export.sql
 /storage/framework/
 /storage/logs/
 /release
