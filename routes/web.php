@@ -191,6 +191,7 @@ Route::middleware('locale')->group(function () {
     Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->name('checkout.start');
     Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->name('checkout.complete');
     Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::get('/reservations/{reservation}/checkout/{provider}/return', [\App\Http\Controllers\CheckoutController::class, 'return'])->name('checkout.return');
 });
 Route::post('/webhooks/{provider}', [\App\Http\Controllers\CheckoutController::class, 'webhook'])->name('checkout.webhook');
 

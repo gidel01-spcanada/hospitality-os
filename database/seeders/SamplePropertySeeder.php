@@ -147,14 +147,12 @@ class SamplePropertySeeder extends Seeder
             ['name' => 'Euro', 'xof_per_eur' => 655.957000, 'is_enabled' => true, 'effective_at' => now()]
         );
 
-        // Real apartment photos live in the workspace-level photo/ folder (outside the repo), so a fresh
-        // migrate:fresh/db:seed only re-links them in local dev, where that folder is actually present.
-        $workspaceRoot = dirname(base_path());
-        $photoSource = $workspaceRoot . DIRECTORY_SEPARATOR . 'photo';
+        // Real apartment photos are optional local seed assets and may be absent in CI/deploy builds.
+        $photoSource = base_path('photo');
         if (app()->environment('local') && is_dir($photoSource)) {
             Artisan::call('property:sync-media', [
                 '--source' => $photoSource,
-                '--manifest' => $workspaceRoot . DIRECTORY_SEPARATOR . 'seed-assets' . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR . 'manifest.json',
+                '--manifest' => base_path('seed-assets/properties/manifest.json'),
             ]);
         }
     }

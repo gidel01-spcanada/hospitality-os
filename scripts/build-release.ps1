@@ -59,6 +59,7 @@ try {
         throw "Vite build did not produce $viteManifest; refusing to package a release without assets."
     }
 
+    Invoke-BuildStep 'Laravel config clear before test suite' { php artisan config:clear }
     Invoke-BuildStep 'Laravel test suite' { php artisan test }
 
     git clean -fd -- public/uploads
@@ -71,23 +72,45 @@ finally {
 Remove-Item $AppRelease, $PublicRelease -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $AppRelease, $PublicRelease | Out-Null
 
-Copy-Item (Join-Path $AppRoot '*') $AppRelease -Recurse -Force
-$pathsToRemove = @(
+$rootItemsToSkip = @(
+    '.bluehost-credentials.json',
+    '.bluehost-credentials.template.json',
     '.git',
     '.github',
+    'afrikappart_db.txt',
+    'amenities-before.png',
+    'bluehost-deploy-script.ps1',
+    'details_preview.html',
+    'home_preview.html',
     'node_modules',
+    'photo',
+    'project-state.json',
+    'release',
+    'seed-assets',
+    'short-term-rental-website-master-prompt (1).md',
+    'short-term-rental-website-master-prompt (2).md',
+    'short-term-rental-website-master-prompt.md',
+    'tests'
+)
+Get-ChildItem $AppRoot -Force |
+    Where-Object { $_.Name -notin $rootItemsToSkip } |
+    ForEach-Object { Copy-Item $_.FullName $AppRelease -Recurse -Force }
+
+$pathsToRemove = @(
     'tests',
     'phpunit.xml',
     '.env',
     '.env.example',
     '.phpunit.result.cache',
+    'bootstrap\cache\config.php',
     'database\*.sqlite',
     'database\*.sqlite-*',
     'storage\logs',
     'storage\framework\cache',
     'storage\framework\sessions',
     'storage\framework\testing',
-    'public\build'
+    'public\build',
+    'public\hot'
 )
 foreach ($path in $pathsToRemove) {
     $target = Join-Path $AppRelease $path
@@ -97,6 +120,7 @@ foreach ($path in $pathsToRemove) {
 }
 
 Copy-Item (Join-Path $AppRoot 'public\*') $PublicRelease -Recurse -Force
+Remove-Item (Join-Path $PublicRelease 'hot') -Force -ErrorAction SilentlyContinue
 
 # Rewrite the manifest from scratch; appending would carry stale hashes from previous builds.
 Remove-Item $ManifestPath -Force -ErrorAction SilentlyContinue
@@ -106,6 +130,15 @@ if ($files.Count -gt 0) {
     $files |
         ForEach-Object { (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash + '  ' + $_.FullName } |
         Set-Content -Encoding utf8 -Path $ManifestPath
+}
+
+Push-Location $AppRoot
+try {
+    Invoke-BuildStep 'composer install (development restore)' { composer install --no-interaction --prefer-dist }
+    Invoke-BuildStep 'Laravel config cache (development restore)' { php artisan config:cache }
+}
+finally {
+    Pop-Location
 }
 
 Write-Host "Release package created successfully."

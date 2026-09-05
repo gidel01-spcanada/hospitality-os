@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAvailabilityBlock;
+use App\Models\Amenity;
 use App\Models\Property;
 use App\Models\PropertyFeature;
 use App\Models\PropertyImage;
@@ -25,6 +26,8 @@ class AdminPropertyController extends Controller
     {
         return view('admin.properties.create', [
             'establishments' => Establishment::query()->orderBy('name')->get(),
+            'amenities' => Amenity::query()->with('category')->orderBy('sort_order')->get(),
+            'xofPerEur' => (float) \App\Support\BrandSettings::get('eur_to_xof_rate', 655.957),
         ]);
     }
 
@@ -40,12 +43,17 @@ class AdminPropertyController extends Controller
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published,archived'],
+            'amenity_ids' => ['nullable', 'array'],
+            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
         ]);
 
+        $amenityIds = $validated['amenity_ids'] ?? [];
+        unset($validated['amenity_ids']);
         $property = Property::query()->create($validated + [
             'currency' => 'XOF',
             'is_published' => $validated['status'] === 'published',
         ]);
+        $property->amenities()->sync($amenityIds);
 
         return redirect()->route('admin.properties.edit', $property)->with('success', 'Property created successfully.');
     }
@@ -76,8 +84,10 @@ class AdminPropertyController extends Controller
         $property->load(['images', 'amenities', 'features', 'translations', 'rateRules', 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
 
         $establishments = Establishment::query()->orderBy('name')->get();
+        $amenities = Amenity::query()->with('category')->orderBy('sort_order')->get();
+        $xofPerEur = (float) \App\Support\BrandSettings::get('eur_to_xof_rate', 655.957);
 
-        return view('admin.properties.edit', compact('property', 'establishments'));
+        return view('admin.properties.edit', compact('property', 'establishments', 'amenities', 'xofPerEur'));
     }
 
     public function update(Request $request, Property $property): RedirectResponse
@@ -92,6 +102,8 @@ class AdminPropertyController extends Controller
             'max_guests' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published,archived'],
             'establishment_id' => ['sometimes', 'integer', $this->establishmentExistsRule()],
+            'amenity_ids' => ['nullable', 'array'],
+            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
             'translations' => ['nullable', 'array'],
             'translations.fr.name' => ['nullable', 'string', 'max:255'],
             'translations.en.name' => ['nullable', 'string', 'max:255'],
@@ -102,8 +114,11 @@ class AdminPropertyController extends Controller
         ]);
 
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        $amenityIds = $validated['amenity_ids'] ?? [];
+        unset($validated['amenity_ids']);
         $property->fill($validated);
         $property->save();
+        $property->amenities()->sync($amenityIds);
 
         foreach (['fr', 'en'] as $locale) {
             $content = $validated['translations'][$locale] ?? [];
@@ -213,7 +228,7 @@ class AdminPropertyController extends Controller
             ]);
         }
 
-        $directory = public_path('uploads/properties/' . $property->slug);
+        $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR . $property->slug;
         File::ensureDirectoryExists($directory);
         $nextOrder = ((int) $property->images()->max('sort_order')) + 1;
         $hasCover = $property->images()->where('is_cover', true)->exists();
@@ -221,7 +236,7 @@ class AdminPropertyController extends Controller
         $firstUploadedPath = null;
 
         foreach ($acceptedPhotos as $file) {
-            $filename = $file->hashName();
+            $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . pathinfo($file->hashName(), PATHINFO_EXTENSION);
             $mimeType = $file->getMimeType();
             $file->move($directory, $filename);
             $dimensions = @getimagesize($directory . DIRECTORY_SEPARATOR . $filename) ?: [];

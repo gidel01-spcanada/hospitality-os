@@ -44,4 +44,35 @@ return [
         'webhook_secret' => env('PAYMENT_WEBHOOK_SECRET'),
     ],
 
+    'fedapay' => [
+        'environment' => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
+        'public_key' => env('FEDAPAY_PUBLIC_KEY'),
+        'secret_key' => env('FEDAPAY_SECRET_KEY'),
+        'base_url' => env('FEDAPAY_BASE_URL', 'https://api.fedapay.com/v1'),
+    ],
+
+    'paypal' => [
+        'environment' => env('PAYPAL_ENVIRONMENT', 'sandbox'),
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'base_url' => env('PAYPAL_BASE_URL', 'https://api-m.paypal.com'),
+    ],
+
+    'cinetpay' => [
+        'environment' => env('CINETPAY_ENVIRONMENT', 'sandbox'),
+        'site_id' => env('CINETPAY_SITE_ID'),
+        'api_key' => env('CINETPAY_API_KEY'),
+        'base_url' => env('CINETPAY_BASE_URL', 'https://api-checkout.cinetpay.com/v2'),
+    ],
+
+    'mpesa' => [
+        'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+        'consumer_key' => env('MPESA_CONSUMER_KEY'),
+        'consumer_secret' => env('MPESA_CONSUMER_SECRET'),
+        'shortcode' => env('MPESA_SHORTCODE'),
+        'passkey' => env('MPESA_PASSKEY'),
+        'base_url' => env('MPESA_BASE_URL', 'https://api.safaricom.co.ke'),
+    ],
+
 ];

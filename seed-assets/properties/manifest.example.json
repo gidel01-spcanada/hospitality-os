@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-08-22T00:00:00Z",
+  "source_directory": "Afrik Appart/photo",
+  "properties": [
+    {
+      "property_slug": "appartement-401",
+      "source_folder": "appartement 401",
+      "image_count": 14,
+      "images": [
+        {
+          "property_slug": "appartement-401",
+          "source_folder": "appartement 401",
+          "source_file": "IMG_001.jpg",
+          "relative_path": "uploads/properties/appartement-401/img-001-card.webp",
+          "sort_order": 1,
+          "is_cover": true,
+          "variants": {
+            "full": "uploads/properties/appartement-401/img-001-full.webp",
+            "large": "uploads/properties/appartement-401/img-001-large.webp",
+            "card": "uploads/properties/appartement-401/img-001-card.webp",
+            "thumb": "uploads/properties/appartement-401/img-001-thumb.webp"
+          }
+        }
+      ]
+    }
+  ]
+}

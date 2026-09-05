@@ -52,26 +52,41 @@ function Invoke-FtpDirectory([string]$remotePath) {
 }
 
 function Send-FtpFile([string]$localPath, [string]$remotePath) {
-    $request = [System.Net.FtpWebRequest]::Create((Get-FtpUri $remotePath))
-    $request.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
-    $request.Credentials = [System.Net.NetworkCredential]::new($config.username, $config.password)
-    $request.EnableSsl = [bool]$config.useTls
-    $request.UseBinary = $true
-    $request.UsePassive = $true
-    $stream = $null
-    $file = $null
-    try {
-        $file = [System.IO.File]::OpenRead($localPath)
-        $stream = $request.GetRequestStream()
-        $file.CopyTo($stream)
-        $stream.Dispose()
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $request = [System.Net.FtpWebRequest]::Create((Get-FtpUri $remotePath))
+        $request.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
+        $request.Credentials = [System.Net.NetworkCredential]::new($config.username, $config.password)
+        $request.EnableSsl = [bool]$config.useTls
+        $request.UseBinary = $true
+        $request.UsePassive = $true
         $stream = $null
-        $response = $request.GetResponse()
-        $response.Dispose()
-    } finally {
-        if ($stream) { $stream.Dispose() }
-        if ($file) { $file.Dispose() }
+        $file = $null
+        $response = $null
+        try {
+            $file = [System.IO.File]::OpenRead($localPath)
+            $stream = $request.GetRequestStream()
+            $file.CopyTo($stream)
+            $stream.Close()
+            $stream = $null
+            $response = $request.GetResponse()
+            $response.Close()
+
+            return
+        } catch {
+            $lastError = $_
+            if ($attempt -eq 3) {
+                throw
+            }
+            Write-Warning "Upload failed for $remotePath on attempt $attempt; retrying. $($_.Exception.Message)"
+        } finally {
+            if ($response) { try { $response.Close() } catch { } }
+            if ($stream) { try { $stream.Close() } catch { } }
+            if ($file) { try { $file.Close() } catch { } }
+        }
     }
+
+    if ($lastError) { throw $lastError }
 }
 
 function Remove-FtpFile([string]$remotePath) {
@@ -139,10 +154,68 @@ function Publish-Directory([string]$localRoot, [string]$remoteRoot) {
     }
 }
 
+function Get-RelativeRemotePath([string]$fromPath, [string]$toPath) {
+    $fromParts = @($fromPath.Trim('/').Split('/') | Where-Object { $_ })
+    $toParts = @($toPath.Trim('/').Split('/') | Where-Object { $_ })
+    $index = 0
+    while ($index -lt $fromParts.Count -and $index -lt $toParts.Count -and $fromParts[$index] -eq $toParts[$index]) {
+        $index++
+    }
+
+    $relativeParts = @()
+    for ($i = $index; $i -lt $fromParts.Count; $i++) {
+        $relativeParts += '..'
+    }
+    for ($i = $index; $i -lt $toParts.Count; $i++) {
+        $relativeParts += $toParts[$i]
+    }
+
+    if ($relativeParts.Count -eq 0) {
+        return '.'
+    }
+
+    return ($relativeParts -join '/')
+}
+
+function New-PublicUploadRoot() {
+    $publicSource = Join-Path $ReleaseRoot 'public'
+    $publicUploadRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('hospitality-os-public-' + [guid]::NewGuid().ToString('N'))
+    Remove-Item $publicUploadRoot -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $publicUploadRoot | Out-Null
+    Copy-Item (Join-Path $publicSource '*') $publicUploadRoot -Recurse -Force
+
+    $indexPath = Join-Path $publicUploadRoot 'index.php'
+    if (Test-Path $indexPath) {
+        $appRelativePath = Get-RelativeRemotePath $config.publicPath $config.appPath
+        $index = Get-Content $indexPath -Raw
+        $index = $index.Replace("__DIR__.'/../storage/", "__DIR__.'/$appRelativePath/storage/")
+        $index = $index.Replace("__DIR__.'/../vendor/", "__DIR__.'/$appRelativePath/vendor/")
+        $index = $index.Replace("__DIR__.'/../bootstrap/", "__DIR__.'/$appRelativePath/bootstrap/")
+        Set-Content -Path $indexPath -Value $index -NoNewline
+    }
+
+    return $publicUploadRoot
+}
+
 if ($CleanRemoteDevelopmentTrees) {
     Remove-FtpDirectoryFromLocalTree (Join-Path (Split-Path $PSScriptRoot -Parent) '.git') "$($config.appPath)/.git"
     Remove-FtpDirectoryFromLocalTree (Join-Path (Split-Path $PSScriptRoot -Parent) 'node_modules') "$($config.appPath)/node_modules"
 }
+foreach ($sensitiveFile in @('.bluehost-credentials.json', '.bluehost-credentials.template.json')) {
+    Remove-FtpFile "$($config.appPath)/$sensitiveFile"
+}
+Remove-FtpFile "$($config.publicPath)/hot"
+Remove-FtpFile "$($config.appPath)/public/hot"
 Publish-Directory (Join-Path $ReleaseRoot 'app') $config.appPath
-Publish-Directory (Join-Path $ReleaseRoot 'public') $config.publicPath
+$appBuildRoot = Join-Path $ReleaseRoot 'public\build'
+if (-not (Test-Path (Join-Path $appBuildRoot 'manifest.json'))) {
+    throw "Vite manifest not found at $appBuildRoot. Build the release before deploying."
+}
+Publish-Directory $appBuildRoot "$($config.appPath)/public/build"
+$publicUploadRoot = New-PublicUploadRoot
+try {
+    Publish-Directory $publicUploadRoot $config.publicPath
+} finally {
+    Remove-Item $publicUploadRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
 Write-Host 'Bluehost deployment completed without uploading .env files.'

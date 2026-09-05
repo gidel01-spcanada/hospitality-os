@@ -14,9 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
-        $middleware->web(append: [
-            \App\Http\Middleware\ResolveTenant::class,
-        ]);
+        $middleware->web(
+            append: [
+                \App\Http\Middleware\ResolveTenant::class,
+            ],
+            replace: [
+                \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
+            ],
+        );
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'platform-admin' => \App\Http\Middleware\EnsureUserIsPlatformAdmin::class,

@@ -14,6 +14,7 @@ use App\Services\ReservationEmailService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -197,10 +198,18 @@ class PublicPropertyController extends Controller
         $emailService->queueForReservation($reservation, 'reservation_received', 'Confirmation de votre demande de réservation');
 
         if ($createdGuestAccount) {
-            $reservationUser->notify(new GuestAccountSetupNotification(
-                Password::broker()->createToken($reservationUser),
-                $reservation->reservation_ref,
-            ));
+            try {
+                $reservationUser->notify(new GuestAccountSetupNotification(
+                    Password::broker()->createToken($reservationUser),
+                    $reservation->reservation_ref,
+                ));
+            } catch (\Throwable $exception) {
+                Log::warning('Guest account setup notification could not be sent.', [
+                    'reservation_id' => $reservation->id,
+                    'user_id' => $reservationUser->id,
+                    'exception' => $exception,
+                ]);
+            }
         }
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token])

@@ -23,6 +23,12 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
+if [[ ! -f public/build/manifest.json ]]; then
+  echo "Vite manifest is missing at $APP_ROOT/public/build/manifest.json." >&2
+  echo "Deploy release/public/build to both the Laravel app public/build directory and the web document root build directory." >&2
+  exit 1
+fi
+
 if ! command -v php >/dev/null 2>&1; then
   echo "php is not installed or not on PATH" >&2
   exit 1
@@ -83,7 +89,6 @@ if ! curl -fsSL -H 'Accept: application/json' "$API_URL" | php -r '$response = j
   exit 1
 fi
 echo "Mobile API OK: $API_URL"
-
 echo "-- Application summary --"
 php artisan about --only=environment,php,cache,queue || true
 

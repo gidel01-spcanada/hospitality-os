@@ -195,12 +195,13 @@ document.querySelectorAll('[data-property-tab]').forEach((tab) => {
 			panel.classList.toggle('is-active', active);
 			panel.hidden = !active;
 		});
+		window.sessionStorage.setItem(`admin-editor-tab:${window.location.pathname}`, tabName);
 		window.history.replaceState(null, '', `#${tabName}`);
 	});
 });
 
 document.querySelectorAll('[data-property-tabs]').forEach((editor) => {
-	const requestedTab = window.location.hash.slice(1);
+	const requestedTab = window.location.hash.slice(1) || window.sessionStorage.getItem(`admin-editor-tab:${window.location.pathname}`);
 	const tab = editor.querySelector(`[data-property-tab="${requestedTab}"]`);
 	tab?.click();
 
@@ -216,6 +217,21 @@ document.querySelectorAll('[data-property-tabs]').forEach((editor) => {
 			}
 			field.value = activeTab;
 		});
+	});
+});
+
+document.querySelectorAll('[data-currency-pair]').forEach((input) => {
+	input.addEventListener('input', () => {
+		const pair = input.dataset.currencyPair;
+		const rate = Number(input.dataset.xofPerEur);
+		const value = Number(input.value);
+		const target = document.querySelector(`[data-currency-pair="${pair}"][data-currency-input="${input.dataset.currencyInput === 'xof' ? 'eur' : 'xof'}"]`);
+
+		if (!target || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(value)) {
+			return;
+		}
+
+		target.value = (input.dataset.currencyInput === 'xof' ? value / rate : value * rate).toFixed(2);
 	});
 });
 

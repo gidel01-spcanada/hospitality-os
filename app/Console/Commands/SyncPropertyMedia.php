@@ -31,7 +31,7 @@ class SyncPropertyMedia extends Command
         ini_set('memory_limit', '1G');
 
         $source = rtrim((string) ($this->option('source') ?: dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'photo'), '/\\');
-        $target = rtrim((string) ($this->option('target') ?: public_path('uploads/properties')), '/\\');
+        $target = rtrim((string) ($this->option('target') ?: config('filesystems.public_upload_path') . DIRECTORY_SEPARATOR . 'properties'), '/\\');
         $manifestPath = rtrim((string) ($this->option('manifest') ?: dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'seed-assets' . DIRECTORY_SEPARATOR . 'properties' . DIRECTORY_SEPARATOR . 'manifest.json'), '/\\');
 
         if (! is_dir($source)) {

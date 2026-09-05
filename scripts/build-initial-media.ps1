@@ -1,11 +1,11 @@
 param(
-    [string]$SourceDir = 'C:\Users\gfoumbi\Downloads\Afrik Appart\photo',
-    [string]$TargetDir = 'C:\Users\gfoumbi\Downloads\Afrik Appart\repository\release\initial-media\uploads\properties',
-    [string]$ManifestPath = 'C:\Users\gfoumbi\Downloads\Afrik Appart\seed-assets\properties\manifest.json'
+     [string]$SourceDir = 'C:\Users\gidel\source\repos\hospitality-os\photo',
+    [string]$TargetDir = 'C:\Users\gidel\source\repos\hospitality-os\release\initial-media\uploads\properties',
+    [string]$ManifestPath = 'C:\Users\gidel\source\repos\hospitality-os\seed-assets\properties\manifest.json'
 )
 
 # scripts/ lives inside the Laravel app repo, so the app root is the repo root itself.
 $projectRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
-Set-Location $projectRoot
+Root
 
 php -d memory_limit=1G artisan property:sync-media --source="$SourceDir" --target="$TargetDir" --manifest="$ManifestPath"

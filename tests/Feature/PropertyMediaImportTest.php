@@ -18,7 +18,7 @@ class PropertyMediaImportTest extends TestCase
 
         Artisan::call('db:seed');
 
-        $sourceDir = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'photo';
+        $sourceDir = base_path('photo');
         $targetDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-media';
         $manifestPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-manifest.json';
 

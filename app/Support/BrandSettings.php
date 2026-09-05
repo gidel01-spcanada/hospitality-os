@@ -37,11 +37,15 @@ class BrandSettings
 
     public static function all(): array
     {
-        if (! Schema::hasTable('settings')) {
+        try {
+            if (! Schema::hasTable('settings')) {
+                return self::DEFAULTS;
+            }
+
+            $rows = self::query()->select(['key', 'value'])->get()->keyBy('key');
+        } catch (\Throwable) {
             return self::DEFAULTS;
         }
-
-        $rows = self::query()->select(['key', 'value'])->get()->keyBy('key');
 
         $settings = [];
         foreach (self::DEFAULTS as $key => $default) {

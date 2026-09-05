@@ -1,0 +1,256 @@
+{
+    "project": "Afrik Appart",
+    "schema_version": 1,
+    "current_milestone": "M14",
+    "last_completed_milestone": "M14",
+    "status": "completed",
+    "completed_milestones": [
+        "M00",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "M07",
+        "M08",
+        "M09",
+        "M10",
+        "M11",
+        "M12",
+        "M13",
+        "M14"
+    ],
+    "artifacts": [
+        {
+            "path": "README.md",
+            "size_bytes": 1095,
+            "sha256": "ae0aae6d310cc4d773b857dce3b32071f803b92aae384ebe65c003d4fe2856fb",
+            "milestone": "M00",
+            "created_utc": "2026-08-22T19:13:16.1762543-04:00"
+        },
+        {
+            "path": "CHANGELOG.md",
+            "size_bytes": 1786,
+            "sha256": "0ea34c84738d12de865d4d8595fa0d7d7db26d3ece4f8084d8fda0c8d4af7ed2",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "docs/input-inventory.md",
+            "size_bytes": 3614,
+            "sha256": "310a189edceb34f0a2f7fb6b50c12c89b34e3fb7ae28fc24ce5d053d967b04bf",
+            "milestone": "M00",
+            "created_utc": "2026-08-22T19:13:16.1762543-04:00"
+        },
+        {
+            "path": "docs/requirements-baseline.md",
+            "size_bytes": 2689,
+            "sha256": "b2a3c899bed7a1668d4012663e8ca15f80366e2743c7d3a4309960467a52b122",
+            "milestone": "M00",
+            "created_utc": "2026-08-22T19:13:16.1762543-04:00"
+        },
+        {
+            "path": "docs/content-todo.md",
+            "size_bytes": 2152,
+            "sha256": "797057d0daa6774f6f77f9854952c439be73382bc6dd3eac308a814491c50158",
+            "milestone": "M00",
+            "created_utc": "2026-08-22T19:13:16.1762543-04:00"
+        },
+        {
+            "path": "docs/architecture.md",
+            "size_bytes": 2165,
+            "sha256": "c5986014575f2566627c4f0dfdb4ff23af2cb105b7014af6e3c2513f495a9a34",
+            "milestone": "M01",
+            "created_utc": "2026-08-22T23:26:56.5521399Z"
+        },
+        {
+            "path": "docs/adr/0001-laravel-bluehost.md",
+            "size_bytes": 1165,
+            "sha256": "4895b3462adbd2cb455ad100233fc2958833893c84c772db8e85962202a52e9e",
+            "milestone": "M01",
+            "created_utc": "2026-08-22T23:26:56.5521399Z"
+        },
+        {
+            "path": "docs/database.md",
+            "size_bytes": 2943,
+            "sha256": "6C050076451DC00DC3889E08A84BB584362891FE1F2771279AA6CC7CCF359212",
+            "milestone": "M02",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "docs/data-model.mmd",
+            "size_bytes": 3224,
+            "sha256": "17D4281D7C26860A32C9EB129A640B17E5B45E9E0F4FE578CF31E2BA3A35405C",
+            "milestone": "M02",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "artifacts/checkpoints/M02_validation.txt",
+            "size_bytes": 432,
+            "sha256": "152DFD7B8C4267CB316893ED562B5756B8A1D7EFC7C0685D781C299DE9F05043",
+            "milestone": "M02",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "scripts/build-initial-media.ps1",
+            "size_bytes": 543,
+            "sha256": "A183ED5096FF68E0693F978589500A4080B185B46BD1EDB03FE5BBB5065AACBF",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "scripts/build-initial-media.sh",
+            "size_bytes": 413,
+            "sha256": "17D15C1630FC115FEDE77D1D6DB855DCCE4B48D0EBBF030807C965FF84D02E8F",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "seed-assets/properties/manifest.json",
+            "size_bytes": 79949,
+            "sha256": "428CCDCEA30C7809F9E1F772D5AD45E362E2BD6BFF7F8CF35E24F42566FE3E6F",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T23:38:40Z"
+        },
+        {
+            "path": "artifacts/checkpoints/M03_validation.txt",
+            "size_bytes": 829,
+            "sha256": "8E9A693F63B1D10A74C285799D043135AB4BFB972DCF5D180AD58303AAB22CC1",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "afrik-appart-M03-optimized-media-v1.zip",
+            "size_bytes": 125655049,
+            "sha256": "508704944D16F61ED3E3C2ED7A3A9331A948CBE05E57F19E62076A568C6DF231",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "afrik-appart-M03-optimized-media-v1.zip.sha256",
+            "size_bytes": 107,
+            "sha256": "BC7F33FCD9C5E3D3C703726659BA55D63F1ED030EC8B52C587448D1CAFE8C090",
+            "milestone": "M03",
+            "created_utc": "2026-08-22T00:00:00Z"
+        },
+        {
+            "path": "afrik-appart-M05-auth-admin-v1.zip",
+            "size_bytes": 194317,
+            "sha256": "5b86ad271db1a15eef1be10516f2c5141d36bbfd8680efff55196781bdaff7b6",
+            "milestone": "M05",
+            "created_utc": "2026-08-23T00:12:12Z"
+        },
+        {
+            "path": "afrik-appart-M05-auth-admin-v1.zip.sha256",
+            "size_bytes": 102,
+            "sha256": "b7df8a4e72a2ea7b545b6cf39314e8496208b91f12d4b01da635db4ba157f70b",
+            "milestone": "M05",
+            "created_utc": "2026-08-23T00:12:12Z"
+        },
+        {
+            "path": "artifacts/checkpoints/M05_validation.txt",
+            "size_bytes": 170,
+            "sha256": "4b3dc110380a99a781abbb4005410fae8082d619e56afef5dd56a7159dcedd76",
+            "milestone": "M05",
+            "created_utc": "2026-08-23T00:12:12Z"
+        },
+        {
+            "path": "afrik-appart-M06-property-admin-v1.zip",
+            "size_bytes": 201622,
+            "sha256": "75c54b5a2098ba7989cf9021eb325c6b57decb4abef99c3380efdc1d713534cc",
+            "milestone": "M06",
+            "created_utc": "2026-08-23T00:18:19Z"
+        },
+        {
+            "path": "afrik-appart-M06-property-admin-v1.zip.sha256",
+            "size_bytes": 106,
+            "sha256": "9309159f9d8a53bdd3c8ae84b2ea2b11b9c4395b7f4f1faa89b881fb592e2997",
+            "milestone": "M06",
+            "created_utc": "2026-08-23T00:18:19Z"
+        },
+        {
+            "path": "artifacts/checkpoints/M06_validation.txt",
+            "size_bytes": 197,
+            "sha256": "42557415debbb2cf4670282ba4569e1bf9f8e97e8acfd9877ae39fb9c347cbfd",
+            "milestone": "M06",
+            "created_utc": "2026-08-23T00:18:19Z"
+        },
+        {
+            "path": "afrik-appart-M07-icalendar-v1.zip",
+            "size_bytes": 208569,
+            "sha256": "cafe57e8eed724ab2a63da48462300d8f891bdf46a914b131c4c62c08d3bb112",
+            "milestone": "M07",
+            "created_utc": "2026-08-23T00:23:39Z"
+        },
+        {
+            "path": "afrik-appart-M07-icalendar-v1.zip.sha256",
+            "size_bytes": 101,
+            "sha256": "27035152608c9798d5f33c6e30d8c728b60311ef885c0a8fa14a621eed05a5bd",
+            "milestone": "M07",
+            "created_utc": "2026-08-23T00:23:39Z"
+        },
+        {
+            "path": "artifacts/checkpoints/M07_validation.txt",
+            "size_bytes": 222,
+            "sha256": "0f62782b79ce53706d3ce7785e06f7a5e839dd92a46611ab3b57f2f50ce4514d",
+            "milestone": "M07",
+            "created_utc": "2026-08-23T00:23:39Z"
+        }
+    ],
+    "validation": [
+        {
+            "name": "photo_mapping_count",
+            "result": "passed",
+            "details": "401=14, 402=12, 403=19, 404=13, total=58"
+        },
+        {
+            "name": "laravel_scaffold_boot",
+            "result": "passed",
+            "details": "php artisan key:generate --force succeeded and the application booted successfully."
+        },
+        {
+            "name": "frontend_build",
+            "result": "passed",
+            "details": "npm run build completed successfully with a production Vite build."
+        },
+        {
+            "name": "database_migrate_seed",
+            "result": "passed",
+            "details": "php artisan migrate:fresh --seed completed successfully and the database population loaded reference and sample records."
+        },
+        {
+            "name": "feature_smoke_test",
+            "result": "passed",
+            "details": "php artisan test --filter='HealthTest|DatabaseSchemaTest' passed: 4 tests, 24 assertions."
+        },
+        {
+            "name": "media_import_inventory",
+            "result": "passed",
+            "details": "php -d memory_limit=1G artisan test --filter='HealthTest|DatabaseSchemaTest|PropertyMediaImportTest' passed: 5 tests, 40 assertions, with 58 imported gallery rows for the four source folders."
+        },
+        {
+            "name": "archive_verification",
+            "result": "passed",
+            "details": "The M03 checkpoint ZIP and checksum file were created and verified successfully."
+        },
+        {
+            "name": "auth_and_admin_shell",
+            "result": "passed",
+            "details": "php artisan test --filter='AuthAndAdminFlowTest|HealthTest|DatabaseSchemaTest|PropertyMediaImportTest|PublicPropertyBookingTest' passed: 9 tests, 61 assertions."
+        },
+        {
+            "name": "property_admin_and_pricing",
+            "result": "passed",
+            "details": "php artisan test --filter='AuthAndAdminFlowTest|PropertyAdminControlsTest|HealthTest|DatabaseSchemaTest|PropertyMediaImportTest|PublicPropertyBookingTest' passed: 11 tests, 68 assertions."
+        },
+        {
+            "name": "icalendar_import_export",
+            "result": "passed",
+            "details": "php artisan test --filter='AuthAndAdminFlowTest|PropertyAdminControlsTest|CalendarFeedControlsTest|HealthTest|DatabaseSchemaTest|PropertyMediaImportTest|PublicPropertyBookingTest' passed: 13 tests, 79 assertions."
+        }
+    ],
+    "blocking_issue": null,
+    "next_action": "Resume Afrik Appart and begin M08 reservation workflow and transactional email.",
+    "updated_at_utc": "2026-08-23T00:23:39Z"
+}

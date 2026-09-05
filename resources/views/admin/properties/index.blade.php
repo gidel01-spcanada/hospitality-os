@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="admin-page-header">
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: var(--space-4);">
+    <div class="admin-page-actions" style="justify-content: space-between; gap: var(--space-4);">
         <div>
             <h1 class="admin-page-title">{{ __('messages.admin.properties') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.properties_description') }}</p>
@@ -25,8 +25,8 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label for="status" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.admin.status') }}</label>
+            <div class="property-index-filter-field">
+                <label for="status">{{ __('messages.admin.status') }}</label>
                 <select id="status" name="status" class="input-md">
                     <option value="">{{ __('messages.admin.all_status') }}</option>
                     @foreach (['draft' => __('messages.admin.draft'), 'published' => __('messages.admin.published'), 'archived' => __('messages.admin.archived')] as $value => $label)
@@ -34,7 +34,7 @@
                     @endforeach
                 </select>
             </div>
-            <div style="display: flex; gap: var(--space-2);">
+            <div class="admin-filter-actions property-index-filter-actions">
                 <x-button type="submit" variant="primary">{{ __('messages.admin.filter') }}</x-button>
                 <x-button tag="a" href="{{ route('admin.properties.index') }}" variant="secondary">{{ __('messages.admin.reset') }}</x-button>
             </div>
@@ -73,18 +73,22 @@
                     <x-badge variant="secondary" size="sm">{{ number_format((float) $property->nightly_rate_xof, 0, ',', ' ') }} XOF/night</x-badge>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-4); border-top: 1px solid var(--border-default);">
-                    <span style="font-size: var(--font-sm); color: var(--text-secondary);">
+                <div class="property-index-card-footer">
+                    <span>
                         {{ $property->availabilityBlocks()->count() + $property->rateRules()->count() }} {{ __('messages.admin.rules') }}
                     </span>
-                    <x-button tag="a" href="{{ route('admin.properties.edit', $property) }}" variant="ghost" size="sm">{{ __('messages.admin.edit') }}</x-button>
+                    <x-button tag="a" href="{{ route('admin.properties.edit', $property) }}" variant="ghost" size="sm" class="btn-icon" title="{{ __('messages.admin.edit') }}" aria-label="{{ __('messages.admin.edit') }}">
+                        <svg class="icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9l-6.455 6.456M9 9l6 6" />
+                        </svg>
+                    </x-button>
                 </div>
             </div>
         </x-card>
     @empty
         <div style="grid-column: 1 / -1;">
             <x-card>
-                <div class="card-body" style="text-align: center;">
+                <div class="card-body property-index-empty-content">
                     <h3>{{ __('messages.admin.no_properties_found') }}</h3>
                     <p style="color: var(--text-secondary);">{{ __('messages.admin.no_properties_found_help') }}</p>
                     <x-button tag="a" href="{{ route('admin.properties.create') }}" variant="primary">{{ __('messages.admin.add_property') }}</x-button>

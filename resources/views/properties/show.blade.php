@@ -151,7 +151,7 @@
                                     <label for="adults">{{ __('messages.properties.adults') }}</label>
                                     <select id="adults" name="adults">
                                         @for ($i = 1; $i <= min(6, (int) $property->max_guests); $i++)
-                                            <option value="{{ $i }}" @selected(old('adults', 2) == $i)>{{ $i }}</option>
+                                            <option value="{{ $i }}" @selected(old('adults', 2) == $i)>{{ $i }} {{ $i === 1 ? __('messages.properties.adult') : __('messages.properties.adults') }}</option>
                                         @endfor
                                     </select>
                                 </div>

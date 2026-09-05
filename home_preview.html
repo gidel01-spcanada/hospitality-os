@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AfrikAppart | Premium Rentals Prototype</title>
+  <style>
+    :root{
+      --bg:#f7f4ee;
+      --surface:#ffffff;
+      --surface-2:#fcfaf5;
+      --text:#1f2a2e;
+      --muted:#6d7a80;
+      --line:rgba(31,42,46,.10);
+      --emerald:#0f5b4c;
+      --emerald-2:#156a5a;
+      --gold:#c89b3c;
+      --gold-soft:rgba(200,155,60,.14);
+      --shadow:0 18px 50px rgba(20,29,32,.10);
+      --shadow-soft:0 10px 24px rgba(20,29,32,.08);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:16px;
+      --radius-sm:12px;
+      --container:1200px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(200,155,60,0.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(15,91,76,0.10), transparent 28%),
+        var(--bg);
+    }
+    img{max-width:100%;display:block}
+    a{color:inherit;text-decoration:none}
+    button,input{font:inherit}
+
+    .container{width:min(calc(100% - 32px),var(--container));margin:0 auto}
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:blur(16px);
+      background:rgba(247,244,238,.78);
+      border-bottom:1px solid rgba(31,42,46,.06);
+    }
+    .nav-inner{
+      display:flex; align-items:center; justify-content:space-between; gap:18px;
+      padding:16px 0;
+    }
+    .brand{
+      display:inline-flex; align-items:center; gap:12px;
+      font-weight:800; letter-spacing:.2px; font-size:1.05rem;
+    }
+    .brand-mark{
+      width:40px; height:40px; border-radius:14px; display:grid; place-items:center;
+      color:white; background:linear-gradient(135deg,var(--emerald),var(--emerald-2));
+      box-shadow:0 10px 20px rgba(15,91,76,.22);
+    }
+    .nav-links{
+      display:flex; align-items:center; gap:26px;
+      color:var(--muted); font-weight:600;
+    }
+    .nav-links a:hover{color:var(--emerald)}
+    .nav-actions{display:flex; align-items:center; gap:12px}
+
+    .btn{
+      border:0; border-radius:999px; padding:13px 18px; font-weight:700; cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+      display:inline-flex; align-items:center; justify-content:center; gap:10px; white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{
+      color:#fff; background:linear-gradient(135deg,var(--emerald),var(--emerald-2));
+      box-shadow:0 14px 30px rgba(15,91,76,.22);
+    }
+    .btn-primary:hover{box-shadow:0 18px 36px rgba(15,91,76,.28)}
+    .btn-ghost{color:var(--emerald); background:rgba(15,91,76,.08)}
+
+    .hero{padding:24px 0 24px}
+    .hero-card{
+      position:relative; min-height:710px; border-radius:36px; overflow:hidden; box-shadow:var(--shadow);
+      background:
+        linear-gradient(120deg, rgba(10,22,20,.76), rgba(10,22,20,.26)),
+        url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    }
+    .hero-overlay{
+      position:absolute; inset:0;
+      background:linear-gradient(180deg, rgba(9,18,18,.20), rgba(9,18,18,.55) 70%, rgba(9,18,18,.72));
+    }
+    .hero-content{
+      position:relative; z-index:2; min-height:710px;
+      display:grid; grid-template-columns:1.1fr .9fr; gap:28px; align-items:end; padding:56px;
+    }
+    .hero-copy{color:#fff; max-width:720px; padding-bottom:18px}
+    .eyebrow{
+      display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:999px;
+      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.14);
+      color:rgba(255,255,255,.9); font-weight:700; letter-spacing:.3px; margin-bottom:22px;
+    }
+    .hero h1{
+      margin:0; font-size:clamp(3rem,6vw,5.7rem); line-height:.96; letter-spacing:-.05em;
+    }
+    .hero p{
+      margin:22px 0 0; color:rgba(255,255,255,.82); font-size:1.08rem; line-height:1.8; max-width:600px;
+    }
+    .stats{
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:28px; max-width:620px;
+    }
+    .stat{
+      background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.12); border-radius:22px;
+      padding:18px 18px 16px; backdrop-filter:blur(10px);
+    }
+    .stat strong{display:block; font-size:1.35rem; margin-bottom:4px}
+    .stat span{color:rgba(255,255,255,.78); font-size:.96rem}
+
+    .search-shell{
+      align-self:end; background:rgba(255,255,255,.92); border:1px solid rgba(255,255,255,.56);
+      border-radius:30px; box-shadow:var(--shadow); padding:18px; backdrop-filter:blur(16px);
+    }
+    .search-top{
+      display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px;
+    }
+    .search-top h2{margin:0; font-size:1.1rem}
+    .search-top p{margin:4px 0 0; color:var(--muted); font-size:.94rem}
+    .pill-row{display:flex; flex-wrap:wrap; gap:10px}
+    .pill{
+      border:1px solid rgba(15,91,76,.16); background:rgba(15,91,76,.06); color:var(--emerald);
+      border-radius:999px; padding:10px 14px; font-weight:700; font-size:.92rem; cursor:pointer;
+    }
+    .search-grid{display:grid; grid-template-columns:1.3fr 1fr 1fr auto; gap:12px; margin-top:16px}
+    .field{
+      background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:14px 16px;
+      min-height:72px; display:flex; flex-direction:column; justify-content:center;
+    }
+    .field label{
+      font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);
+      margin-bottom:6px; font-weight:700;
+    }
+    .field input{
+      border:0; outline:0; width:100%; color:var(--text); background:transparent; font-weight:600; font-size:.98rem;
+    }
+    .search-btn{min-width:132px; border-radius:20px; min-height:72px; align-self:stretch}
+
+    .section{padding:74px 0 0}
+    .section-head{
+      display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:24px;
+    }
+    .section-head h2{margin:0; font-size:clamp(1.7rem,2.5vw,2.45rem); letter-spacing:-.03em}
+    .section-head p{margin:8px 0 0; color:var(--muted); max-width:640px; line-height:1.7}
+    .section-link{color:var(--emerald); font-weight:800; white-space:nowrap}
+
+    .destination-grid, .feature-grid, .property-grid{display:grid; gap:18px}
+    .destination-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .feature-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .property-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+    .card{
+      background:var(--surface); border:1px solid rgba(31,42,46,.07); box-shadow:var(--shadow-soft);
+      border-radius:var(--radius-xl); overflow:hidden; transition:transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover{transform:translateY(-4px); box-shadow:var(--shadow)}
+    .destination-card .media, .property-card .media{
+      aspect-ratio:4/3; background-size:cover; background-position:center; position:relative;
+    }
+    .destination-card .media::after, .property-card .media::after{
+      content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent, rgba(0,0,0,.22));
+    }
+    .destination-copy, .property-copy{padding:18px}
+    .destination-copy h3, .property-copy h3{margin:0 0 6px; font-size:1.05rem}
+    .destination-copy p, .property-copy p{margin:0; color:var(--muted); line-height:1.6; font-size:.95rem}
+
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px;
+      font-weight:700; font-size:.85rem;
+    }
+    .badge-gold{color:#855f0f; background:var(--gold-soft)}
+    .badge-emerald{color:var(--emerald); background:rgba(15,91,76,.10)}
+
+    .features .card{padding:24px 22px}
+    .icon{
+      width:54px; height:54px; border-radius:18px; display:grid; place-items:center; margin-bottom:16px;
+      background:linear-gradient(135deg, rgba(15,91,76,.12), rgba(200,155,60,.14)); color:var(--emerald);
+      font-size:1.25rem; font-weight:900;
+    }
+    .features h3{margin:0 0 8px; font-size:1.08rem}
+    .features p{margin:0; color:var(--muted); line-height:1.7; font-size:.95rem}
+
+    .property-card .topline{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;
+    }
+    .rating{
+      display:inline-flex; align-items:center; gap:6px; color:#c28c23; font-weight:800; font-size:.92rem;
+    }
+    .property-meta{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 16px}
+    .meta-chip{
+      padding:8px 10px; border-radius:999px; background:#f4f7f8; color:#415055; font-size:.85rem; font-weight:600;
+    }
+    .price-row{
+      display:flex; align-items:end; justify-content:space-between; gap:14px; padding-top:16px;
+      border-top:1px solid rgba(31,42,46,.08);
+    }
+    .price-row strong{font-size:1.2rem; display:block}
+    .price-row span{color:var(--muted); font-size:.9rem}
+
+    .promo{padding:80px 0 0}
+    .promo-card{
+      border-radius:34px; overflow:hidden;
+      background:
+        linear-gradient(120deg, rgba(15,91,76,.94), rgba(12,46,40,.86)),
+        url('https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+      box-shadow:var(--shadow); color:white; padding:44px;
+      display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:center;
+    }
+    .promo h2{margin:0; font-size:clamp(2rem,4vw,3.4rem); letter-spacing:-.04em}
+    .promo p{margin:16px 0 0; color:rgba(255,255,255,.80); line-height:1.8; max-width:680px}
+    .promo-list{display:grid; gap:12px; margin-top:22px}
+    .promo-item{
+      display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:18px;
+      background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12);
+    }
+    .promo-item b{display:block}
+    .promo-item small{color:rgba(255,255,255,.70)}
+    .promo-box{
+      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.12); border-radius:26px;
+      padding:28px; backdrop-filter:blur(12px); box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .promo-box h3{margin:0 0 10px; font-size:1.25rem}
+    .promo-box p{margin:0; color:rgba(255,255,255,.78)}
+    .newsletter{margin-top:18px; display:flex; gap:10px}
+    .newsletter input{
+      flex:1; min-width:0; border:0; outline:0; border-radius:999px; padding:14px 18px;
+      background:rgba(255,255,255,.94); color:var(--text);
+    }
+
+    .footer{
+      margin-top:80px; background:linear-gradient(180deg,#17362f,#102521); color:rgba(255,255,255,.82);
+      padding:56px 0 26px;
+    }
+    .footer-grid{
+      display:grid; grid-template-columns:1.2fr repeat(3,1fr); gap:28px;
+    }
+    .footer h4{margin:0 0 16px; color:#fff; font-size:1rem}
+    .footer a{display:block; color:rgba(255,255,255,.76); padding:7px 0}
+    .footer a:hover{color:#fff}
+    .footer-brand p{max-width:420px; line-height:1.8; margin:16px 0 0}
+    .footer-bottom{
+      border-top:1px solid rgba(255,255,255,.10); margin-top:34px; padding-top:18px;
+      display:flex; justify-content:space-between; gap:18px; color:rgba(255,255,255,.64);
+      font-size:.95rem; flex-wrap:wrap;
+    }
+    .wave{
+      display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%;
+      background:rgba(255,255,255,.14);
+    }
+    .mobile-only{display:none}
+
+    @media (max-width:1100px){
+      .hero-content, .promo-card, .footer-grid{grid-template-columns:1fr}
+      .destination-grid, .feature-grid, .property-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .search-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .search-btn{grid-column:1 / -1}
+    }
+    @media (max-width:840px){
+      .nav-links{display:none}
+      .mobile-only{display:inline-flex}
+      .hero-card, .hero-content{min-height:auto}
+      .hero-content{padding:26px}
+      .hero h1{font-size:clamp(2.35rem,11vw,4rem)}
+      .stats{grid-template-columns:1fr}
+      .section{padding-top:58px}
+      .section-head{align-items:start; flex-direction:column}
+    }
+    @media (max-width:640px){
+      .container{width:min(calc(100% - 20px),var(--container))}
+      .nav-inner{padding:12px 0}
+      .brand{font-size:.98rem}
+      .brand-mark{width:36px; height:36px}
+      .hero-card{border-radius:24px}
+      .hero-content{padding:18px; gap:18px}
+      .search-grid, .destination-grid, .feature-grid, .property-grid{grid-template-columns:1fr}
+      .promo-card{padding:22px; border-radius:24px}
+      .newsletter{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="#top" class="brand" aria-label="AfrikAppart home">
+        <span class="brand-mark">A</span>
+        <span>AfrikAppart</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#destinations">Destinations</a>
+        <a href="#properties">Properties</a>
+        <a href="#why-us">Why us</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost mobile-only" type="button">Menu</button>
+        <button class="btn btn-ghost" type="button">Sign in</button>
+        <button class="btn btn-primary" type="button">List your property</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-card">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="wave">✦</span> Premium stays across West Africa</div>
+            <h1>Find a beautiful place to stay, with confidence.</h1>
+            <p>
+              Discover refined apartments, serviced homes, and unique short-term stays designed for travelers, business guests, and families who want comfort with style.
+            </p>
+
+            <div class="stats" aria-label="Platform statistics">
+              <div class="stat"><strong>2,500+</strong><span>Verified stays</span></div>
+              <div class="stat"><strong>15</strong><span>Countries served</span></div>
+              <div class="stat"><strong>24/7</strong><span>Support available</span></div>
+            </div>
+          </div>
+
+          <aside class="search-shell" aria-label="Search properties">
+            <div class="search-top">
+              <div>
+                <h2>Start your search</h2>
+                <p>Plan your next stay in a few seconds.</p>
+              </div>
+              <span class="badge badge-gold">Best rates</span>
+            </div>
+
+            <div class="pill-row" aria-label="Quick filters">
+              <button class="pill" type="button">Business trip</button>
+              <button class="pill" type="button">Family stay</button>
+              <button class="pill" type="button">Beach view</button>
+              <button class="pill" type="button">Monthly stay</button>
+            </div>
+
+            <div class="search-grid">
+              <div class="field">
+                <label for="location">Location</label>
+                <input id="location" type="text" value="Cotonou, Benin" />
+              </div>
+              <div class="field">
+                <label for="checkin">Check-in</label>
+                <input id="checkin" type="text" value="Tue, Aug 12" />
+              </div>
+              <div class="field">
+                <label for="checkout">Check-out</label>
+                <input id="checkout" type="text" value="Sat, Aug 16" />
+              </div>
+              <button class="btn btn-primary search-btn" type="button">Search stays</button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="destinations">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="badge badge-emerald">Popular destinations</span>
+            <h2>Find your next city with a premium feel.</h2>
+            <p>Curated urban and coastal destinations with a polished stay experience, ideal for both short breaks and longer work trips.</p>
+          </div>
+          <a href="#" class="section-link">View all destinations →</a>
+        </div>
+
+        <div class="destination-grid">
+          <article class="card destination-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=80')"></div>
+            <div class="destination-copy">
+              <h3>Abidjan</h3>
+              <p>Modern skyline, vibrant business district, and refined city stays.</p>
+            </div>
+          </article>
+          <article class="card destination-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1502602898536-47ad22581b52?auto=format&fit=crop&w=900&q=80')"></div>
+            <div class="destination-copy">
+              <h3>Cotonou</h3>
+              <p>Coastal energy with premium apartments near key business hubs.</p>
+            </div>
+          </article>
+          <article class="card destination-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80')"></div>
+            <div class="destination-copy">
+              <h3>Lomé</h3>
+              <p>Relaxed seaside atmosphere with elegant short-term rentals.</p>
+            </div>
+          </article>
+          <article class="card destination-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=900&q=80')"></div>
+            <div class="destination-copy">
+              <h3>Accra</h3>
+              <p>Strong hospitality scene, premium neighborhoods, and easy access.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section features" id="why-us">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="badge badge-gold">Why book with AfrikAppart</span>
+            <h2>A more trustworthy booking experience.</h2>
+            <p>We focus on clarity, confidence, and a premium presentation that helps guests move from browsing to booking faster.</p>
+          </div>
+        </div>
+
+        <div class="feature-grid">
+          <article class="card">
+            <div class="icon">✓</div>
+            <h3>Verified listings</h3>
+            <p>Every property is presented with consistent details and a professional layout for better trust.</p>
+          </article>
+          <article class="card">
+            <div class="icon">★</div>
+            <h3>Premium presentation</h3>
+            <p>Large imagery, elegant cards, and a clean hierarchy make the site feel modern and upscale.</p>
+          </article>
+          <article class="card">
+            <div class="icon">⟲</div>
+            <h3>Flexible stays</h3>
+            <p>Designed for short visits, business trips, and longer stays with clear search and booking flow.</p>
+          </article>
+          <article class="card">
+            <div class="icon">☎</div>
+            <h3>Local support</h3>
+            <p>Guests can get help quickly through a clear support-first layout that feels reliable and human.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="properties">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="badge badge-emerald">Featured stays</span>
+            <h2>Property cards that feel more premium.</h2>
+            <p>These cards are intentionally calm and spacious so the listing feels more like a boutique hotel catalog than a classifieds page.</p>
+          </div>
+          <a href="#" class="section-link">Browse properties →</a>
+        </div>
+
+        <div class="property-grid">
+          <article class="card property-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1000&q=80')"></div>
+            <div class="property-copy">
+              <div class="topline">
+                <span class="badge badge-gold">Luxury apartment</span>
+                <span class="rating">★ 4.9</span>
+              </div>
+              <h3>Skyline Residence</h3>
+              <p>Cotonou • 2 bedrooms • city center</p>
+              <div class="property-meta">
+                <span class="meta-chip">Wi-Fi</span>
+                <span class="meta-chip">AC</span>
+                <span class="meta-chip">Kitchen</span>
+                <span class="meta-chip">Security</span>
+              </div>
+              <div class="price-row">
+                <div><strong>$92</strong><span>per night</span></div>
+                <button class="btn btn-primary" type="button">View</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card property-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1000&q=80')"></div>
+            <div class="property-copy">
+              <div class="topline">
+                <span class="badge badge-emerald">Business stay</span>
+                <span class="rating">★ 4.8</span>
+              </div>
+              <h3>Urban Comfort Suite</h3>
+              <p>Abidjan • near business district</p>
+              <div class="property-meta">
+                <span class="meta-chip">Workspace</span>
+                <span class="meta-chip">Parking</span>
+                <span class="meta-chip">Elevator</span>
+                <span class="meta-chip">Fast Wi-Fi</span>
+              </div>
+              <div class="price-row">
+                <div><strong>$74</strong><span>per night</span></div>
+                <button class="btn btn-primary" type="button">View</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card property-card">
+            <div class="media" style="background-image:url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1000&q=80')"></div>
+            <div class="property-copy">
+              <div class="topline">
+                <span class="badge badge-gold">Premium home</span>
+                <span class="rating">★ 5.0</span>
+              </div>
+              <h3>Marina Calm House</h3>
+              <p>Lomé • serene and stylish</p>
+              <div class="property-meta">
+                <span class="meta-chip">Terrace</span>
+                <span class="meta-chip">Pool</span>
+                <span class="meta-chip">Family-friendly</span>
+                <span class="meta-chip">Smart lock</span>
+              </div>
+              <div class="price-row">
+                <div><strong>$118</strong><span>per night</span></div>
+                <button class="btn btn-primary" type="button">View</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="promo" id="contact">
+      <div class="container promo-card">
+        <div>
+          <span class="badge badge-gold">Grow with AfrikAppart</span>
+          <h2>Make your property feel more premium, too.</h2>
+          <p>
+            This layout is designed to increase trust and improve booking conversion while keeping the interface calm, refined, and easy to scan.
+          </p>
+          <div class="promo-list">
+            <div class="promo-item">
+              <span class="wave">1</span>
+              <div><b>Better first impression</b><small>Luxury styling with stronger hierarchy</small></div>
+            </div>
+            <div class="promo-item">
+              <span class="wave">2</span>
+              <div><b>More confident browsing</b><small>Cleaner structure and clearer CTA flow</small></div>
+            </div>
+            <div class="promo-item">
+              <span class="wave">3</span>
+              <div><b>Easy to extend</b><small>Ready to translate into Angular components</small></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="promo-box">
+          <h3>Get the next prototype update</h3>
+          <p>We can use this same visual language for the listing page, property details page, and host dashboard next.</p>
+          <div class="newsletter">
+            <input type="email" placeholder="Email address" aria-label="Email address" />
+            <button class="btn btn-primary" type="button">Request update</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a href="#top" class="brand" style="color:#fff;">
+          <span class="brand-mark">A</span>
+          <span>AfrikAppart</span>
+        </a>
+        <p>
+          Premium short-term rentals with a more trusted, elegant, and conversion-friendly browsing experience.
+        </p>
+      </div>
+
+      <div>
+        <h4>Explore</h4>
+        <a href="#destinations">Destinations</a>
+        <a href="#properties">Featured stays</a>
+        <a href="#why-us">Why us</a>
+      </div>
+
+      <div>
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+      </div>
+
+      <div>
+        <h4>Support</h4>
+        <a href="#">Help center</a>
+        <a href="#">Contact</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <div>© 2026 AfrikAppart. All rights reserved.</div>
+      <div>Built as a visual prototype for review before Angular integration.</div>
+    </div>
+  </footer>
+</body>
+</html>
