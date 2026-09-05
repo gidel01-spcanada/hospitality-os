@@ -81,7 +81,7 @@ class PublicPropertyBookingTest extends TestCase
 
         Artisan::call('db:seed');
         Artisan::call('property:sync-media', [
-            '--source' => dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'photo',
+            '--source' => base_path('photo'),
             '--target' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-m04',
             '--manifest' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-m04-manifest.json',
         ]);
@@ -166,6 +166,13 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('name="destination"', false)
             ->assertSee('name="guests"', false)
             ->assertSee('type="submit"', false);
+
+        $this->get('/?destination=Cotonou&guests=3&check_in=2026-10-01&check_out=2026-10-03')
+            ->assertOk()
+            ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
+            ->assertSee('<option value="3" selected>3 voyageurs</option>', false)
+            ->assertSee('name="check_in" value="2026-10-01"', false)
+            ->assertSee('name="check_out" value="2026-10-03"', false);
 
         $this->get('/properties?destination=Cotonou&guests=3')
             ->assertOk()

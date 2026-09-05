@@ -41,26 +41,26 @@
                             <select name="destination" aria-label="{{ __('messages.home.destination') }}">
                                 <option value="">{{ __('messages.properties.all_destinations') }}</option>
                                 @foreach ($destinations as $destination)
-                                    <option value="{{ $destination }}">{{ $destination }}</option>
+                                    <option value="{{ $destination }}" @selected(request('destination') === $destination)>{{ $destination }}</option>
                                 @endforeach
                             </select>
                         </label>
                         <div class="grid-two">
                             <label>
                                 <span>{{ __('messages.home.arrival') }}</span>
-                                <input type="date" name="check_in" aria-label="{{ __('messages.home.arrival') }}" />
+                                <input type="date" name="check_in" value="{{ request('check_in') }}" aria-label="{{ __('messages.home.arrival') }}" />
                             </label>
                             <label>
                                 <span>{{ __('messages.home.departure') }}</span>
-                                <input type="date" name="check_out" aria-label="{{ __('messages.home.departure') }}" />
+                                <input type="date" name="check_out" value="{{ request('check_out') }}" aria-label="{{ __('messages.home.departure') }}" />
                             </label>
                         </div>
                         <label>
                             <span>{{ __('messages.home.travelers') }}</span>
                             <select name="guests" aria-label="{{ __('messages.home.travelers') }}">
-                                <option value="2">2 voyageurs</option>
-                                <option value="3">3 voyageurs</option>
-                                <option value="4">4 voyageurs</option>
+                                <option value="2" @selected(request('guests', '2') == 2)>2 voyageurs</option>
+                                <option value="3" @selected(request('guests') == 3)>3 voyageurs</option>
+                                <option value="4" @selected(request('guests') == 4)>4 voyageurs</option>
                             </select>
                         </label>
                         <button type="submit" class="btn btn-primary btn-full">{{ __('messages.home.search') }}</button>

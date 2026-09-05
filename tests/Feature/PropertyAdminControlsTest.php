@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Amenity;
 use App\Models\Establishment;
 use App\Models\Property;
 use App\Models\AdminAvailabilityBlock;
@@ -21,6 +22,8 @@ class PropertyAdminControlsTest extends TestCase
 
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $property = \App\Models\Property::firstOrFail();
+        $amenityIds = Amenity::query()->limit(2)->pluck('id')->all();
+        sort($amenityIds);
 
         $this->actingAs($admin)
             ->put('/admin/properties/' . $property->id, [
@@ -33,11 +36,13 @@ class PropertyAdminControlsTest extends TestCase
                 'max_guests' => 3,
                 'status' => 'published',
                 'is_published' => true,
+                'amenity_ids' => $amenityIds,
                 'active_tab' => 'general',
             ])
             ->assertRedirect('/admin/properties/' . $property->id . '/edit#general');
 
         $this->assertDatabaseHas('properties', ['id' => $property->id, 'property_type' => 'villa', 'nightly_rate_xof' => '27000.00', 'minimum_stay' => 3]);
+        $this->assertSame($amenityIds, $property->fresh()->amenities()->pluck('amenities.id')->sort()->values()->all());
 
         $this->actingAs($admin)
             ->post('/admin/properties/' . $property->id . '/features', [
@@ -155,13 +160,16 @@ class PropertyAdminControlsTest extends TestCase
             ->post('/admin/properties/' . $property->id . '/images', [
                 'photos' => [
                     UploadedFile::fake()->image('living-room.jpg', 1200, 800),
-                    UploadedFile::fake()->image('bedroom.jpg', 1200, 800),
+                    UploadedFile::fake()->image('living-room.jpg', 1200, 800),
                 ],
             ])
             ->assertRedirect(route('admin.properties.edit', $property) . '#photos');
 
         $this->assertSame(2, $property->images()->count());
         $property->refresh();
+        $uploadedPaths = $property->images()->pluck('file_path')->all();
+        $this->assertCount(2, array_unique($uploadedPaths));
+        $this->assertMatchesRegularExpression('~uploads/properties/' . preg_quote($property->slug, '~') . '/\d{17}-[a-z0-9]{12}\.jpg~', $uploadedPaths[0]);
         $cover = $property->images()->where('is_cover', true)->firstOrFail();
         $this->assertStringStartsWith('uploads/properties/' . $property->slug . '/', $cover->file_path);
         $this->assertSame($cover->file_path, $property->cover_image);
@@ -176,7 +184,7 @@ class PropertyAdminControlsTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $property = Property::firstOrFail();
-        $sourcePath = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'photo' . DIRECTORY_SEPARATOR . 'appartement 401' . DIRECTORY_SEPARATOR . 'ChatGPT Image Jul 24, 2026, 04_22_56 PM.png';
+        $sourcePath = base_path('photo/appartement 401/ChatGPT Image Jul 24, 2026, 04_22_56 PM.png');
         $temporaryPath = tempnam(sys_get_temp_dir(), 'afrikappart-upload-');
 
         $this->assertNotFalse($temporaryPath);
@@ -262,6 +270,17 @@ class PropertyAdminControlsTest extends TestCase
 
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $establishment = Establishment::firstOrFail();
+        config()->set('services.fedapay.environment', 'production');
+        config()->set('services.fedapay.public_key', 'pk_live_test');
+        config()->set('services.fedapay.secret_key', 'sk_live_test');
+        config()->set('services.cinetpay.environment', 'production');
+        config()->set('services.cinetpay.site_id', '123456');
+        config()->set('services.cinetpay.api_key', 'cinetpay_live_test');
+        config()->set('services.mpesa.environment', 'production');
+        config()->set('services.mpesa.consumer_key', 'mpesa_consumer_key');
+        config()->set('services.mpesa.consumer_secret', 'mpesa_consumer_secret');
+        config()->set('services.mpesa.shortcode', '174379');
+        config()->set('services.mpesa.passkey', 'mpesa_passkey');
 
         $this->actingAs($admin)
             ->put('/admin/establishments/' . $establishment->id, [
@@ -277,19 +296,27 @@ class PropertyAdminControlsTest extends TestCase
                 'latitude' => 6.3703,
                 'longitude' => 2.3912,
                 'google_maps_url' => 'https://maps.google.com/?q=6.3703,2.3912',
+                'active_tab' => 'online',
                 'payment_methods' => [
                     'pay_later' => ['enabled' => '1', 'instructions' => 'Pay on arrival'],
-                    'fedapay' => ['enabled' => '1', 'instructions' => 'Use mobile money'],
+                    'fedapay' => ['enabled' => '1', 'mode' => 'production', 'instructions' => 'Use mobile money'],
+                    'cinetpay' => ['enabled' => '1', 'mode' => 'production', 'instructions' => 'Pay with mobile money or card'],
+                    'mpesa' => ['enabled' => '1', 'mode' => 'production', 'instructions' => 'Pay through M-Pesa STK Push'],
                 ],
             ])
-            ->assertRedirect('/admin/establishments');
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#online');
 
         $establishment->refresh();
         $this->assertSame(['Wi-Fi', 'Pool', 'Parking'], $establishment->features);
         $this->assertSame('https://example.com/establishment.jpg', $establishment->cover_image);
         $this->assertSame('Rue 123, Cotonou', $establishment->address);
         $this->assertTrue($establishment->payment_methods['fedapay']['enabled']);
+        $this->assertSame('production', $establishment->payment_methods['fedapay']['mode']);
         $this->assertSame('Use mobile money', $establishment->payment_methods['fedapay']['instructions']);
+        $this->assertTrue($establishment->payment_methods['cinetpay']['enabled']);
+        $this->assertSame('production', $establishment->payment_methods['cinetpay']['mode']);
+        $this->assertTrue($establishment->payment_methods['mpesa']['enabled']);
+        $this->assertSame('production', $establishment->payment_methods['mpesa']['mode']);
     }
 
     public function test_establishment_editor_has_section_tabs_and_a_country_selector(): void
@@ -328,7 +355,7 @@ class PropertyAdminControlsTest extends TestCase
             'country_code' => $establishment->country_code,
             'currency' => $establishment->currency,
             'google_maps_url' => 'https://www.google.com/maps?q=6.3703,2.3912',
-        ])->assertRedirect('/admin/establishments');
+        ])->assertRedirect(route('admin.establishments.edit', $establishment) . '#general');
 
         $this->assertDatabaseHas('establishments', [
             'id' => $establishment->id,
@@ -351,7 +378,7 @@ class PropertyAdminControlsTest extends TestCase
                 'currency' => $establishment->currency,
                 'cover_image_upload' => UploadedFile::fake()->image('establishment-cover.jpg', 1600, 900),
             ])
-            ->assertRedirect('/admin/establishments');
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#general');
 
         $establishment->refresh();
         $this->assertStringStartsWith('uploads/establishments/', $establishment->cover_image);
@@ -407,7 +434,7 @@ class PropertyAdminControlsTest extends TestCase
                 'currency' => $establishment->currency,
                 'property_image_id' => $image->id,
             ])
-            ->assertRedirect('/admin/establishments');
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#general');
 
         $this->assertDatabaseHas('establishments', ['id' => $establishment->id, 'cover_image' => $image->file_path]);
     }

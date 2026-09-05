@@ -35,8 +35,8 @@
         </x-form-group>
 
         <x-form-group title="{{ __('messages.admin.pricing_capacity') }}" description="{{ __('messages.admin.pricing_capacity_description') }}">
-            <x-input name="nightly_rate_xof" label="{{ __('messages.admin.nightly_rate_xof') }}" type="number" min="0" step="0.01" required value="{{ old('nightly_rate_xof', 0) }}" />
-            <x-input name="nightly_rate_eur" label="{{ __('messages.admin.nightly_rate_eur') }}" type="number" min="0" step="0.01" required value="{{ old('nightly_rate_eur', 0) }}" />
+            <x-input name="nightly_rate_xof" label="{{ __('messages.admin.nightly_rate_xof') }}" type="number" min="0" step="0.01" required value="{{ old('nightly_rate_xof', 0) }}" data-currency-input="xof" data-currency-pair="create" data-xof-per-eur="{{ $xofPerEur }}" />
+            <x-input name="nightly_rate_eur" label="{{ __('messages.admin.nightly_rate_eur') }}" type="number" min="0" step="0.01" required value="{{ old('nightly_rate_eur', 0) }}" data-currency-input="eur" data-currency-pair="create" data-xof-per-eur="{{ $xofPerEur }}" />
             <x-input name="minimum_stay" label="{{ __('messages.admin.minimum_stay') }}" type="number" min="1" required value="{{ old('minimum_stay', 1) }}" />
             <x-input name="max_guests" label="{{ __('messages.admin.maximum_guests') }}" type="number" min="1" required value="{{ old('max_guests', 1) }}" />
             <div>

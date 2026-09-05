@@ -26,8 +26,8 @@ class PayPalSandboxGateway implements PaymentGateway
             'status' => 'created',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => [
-                'environment' => env('PAYPAL_ENVIRONMENT', 'sandbox'),
-                'mode' => 'sandbox',
+                'environment' => config('services.paypal.environment', 'sandbox'),
+                'mode' => $context['mode'] ?? 'sandbox',
                 'reservation_ref' => $reservation->reservation_ref,
             ],
         ]);

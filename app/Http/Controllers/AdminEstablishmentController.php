@@ -22,15 +22,18 @@ class AdminEstablishmentController extends Controller
     {
         $establishment->load(['translations', 'properties.images']);
 
-        return view('admin.establishments.edit', compact('establishment'));
+        $paymentProviderReadiness = $this->paymentProviderReadiness();
+
+        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness'));
     }
 
     public function create(): View
     {
         $establishment = new Establishment(['country_code' => 'BJ', 'currency' => 'XOF']);
         $establishment->setRelation('properties', collect());
+        $paymentProviderReadiness = $this->paymentProviderReadiness();
 
-        return view('admin.establishments.edit', compact('establishment'));
+        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -58,7 +61,15 @@ class AdminEstablishmentController extends Controller
         $establishment->fill($validated)->save();
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
-        return redirect()->route('admin.establishments.index')->with('success', __('messages.flash.establishment_updated'));
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#' . $this->activeTab($request))
+            ->with('success', __('messages.flash.establishment_updated'));
+    }
+
+    private function activeTab(Request $request): string
+    {
+        return in_array($request->input('active_tab'), ['general', 'online', 'translations', 'payments'], true)
+            ? $request->input('active_tab')
+            : 'general';
     }
 
     private function validatedData(Request $request, ?Establishment $establishment = null): array
@@ -81,6 +92,7 @@ class AdminEstablishmentController extends Controller
             'google_maps_url' => ['nullable', 'url', 'max:2048'],
             'payment_methods' => ['nullable', 'array'],
             'payment_methods.*.enabled' => ['nullable', 'boolean'],
+            'payment_methods.*.mode' => ['nullable', 'in:sandbox,production'],
             'payment_methods.*.instructions' => ['nullable', 'string', 'max:500'],
             'features' => ['nullable', 'array'],
             'features.*' => ['nullable', 'string', 'max:100'],
@@ -100,10 +112,10 @@ class AdminEstablishmentController extends Controller
     private function storeCoverImage(Request $request, ?string $currentPath, ?Establishment $establishment): ?string
     {
         if ($request->hasFile('cover_image_upload')) {
-            $directory = public_path('uploads/establishments');
+            $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'establishments';
             File::ensureDirectoryExists($directory);
             $file = $request->file('cover_image_upload');
-            $filename = $file->hashName();
+            $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . pathinfo($file->hashName(), PATHINFO_EXTENSION);
             $file->move($directory, $filename);
 
             return 'uploads/establishments/' . $filename;
@@ -143,14 +155,52 @@ class AdminEstablishmentController extends Controller
 
     private function normalizePaymentMethods(array $methods): array
     {
-        return collect(['pay_later', 'fedapay', 'paypal'])->mapWithKeys(function (string $provider) use ($methods) {
+        return collect(['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa'])->mapWithKeys(function (string $provider) use ($methods) {
             $method = $methods[$provider] ?? [];
+            $enabled = filter_var($method['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $mode = $method['mode'] ?? 'sandbox';
+
+            if ($enabled && $mode === 'production' && ! ($this->paymentProviderReadiness()[$provider]['production_ready'] ?? false)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "payment_methods.$provider.mode" => "Production credentials must be configured in the server environment before activating $provider.",
+                ]);
+            }
 
             return [$provider => [
-                'enabled' => filter_var($method['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'enabled' => $enabled,
+                'mode' => $mode,
                 'instructions' => trim((string) ($method['instructions'] ?? '')),
             ]];
         })->all();
+    }
+
+    private function paymentProviderReadiness(): array
+    {
+        return [
+            'pay_later' => ['production_ready' => true],
+            'fedapay' => [
+                'production_ready' => config('services.fedapay.environment') === 'production'
+                    && filled(config('services.fedapay.public_key'))
+                    && filled(config('services.fedapay.secret_key')),
+            ],
+            'paypal' => [
+                'production_ready' => config('services.paypal.environment') === 'production'
+                    && filled(config('services.paypal.client_id'))
+                    && filled(config('services.paypal.client_secret')),
+            ],
+            'cinetpay' => [
+                'production_ready' => config('services.cinetpay.environment') === 'production'
+                    && filled(config('services.cinetpay.site_id'))
+                    && filled(config('services.cinetpay.api_key')),
+            ],
+            'mpesa' => [
+                'production_ready' => config('services.mpesa.environment') === 'production'
+                    && filled(config('services.mpesa.consumer_key'))
+                    && filled(config('services.mpesa.consumer_secret'))
+                    && filled(config('services.mpesa.shortcode'))
+                    && filled(config('services.mpesa.passkey')),
+            ],
+        ];
     }
 
     private function coordinatesFromGoogleMapsUrl(array $validated): array

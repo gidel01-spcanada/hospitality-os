@@ -185,10 +185,12 @@ class AuthAndAdminFlowTest extends TestCase
 
         $this->actingAs($concierge)->get('/admin')->assertOk();
         $this->actingAs($concierge)->get('/admin')
+            ->assertSee('href="' . route('account.settings') . '"', false)
             ->assertDontSee('href="' . route('admin.users.index') . '"', false)
             ->assertDontSee('href="' . route('admin.properties.index') . '"', false)
             ->assertDontSee('href="' . route('admin.settings') . '"', false);
         $this->actingAs($concierge)->get('/admin/reservations')->assertOk();
+        $this->actingAs($concierge)->get(route('account.settings'))->assertOk();
         $this->actingAs($concierge)->get('/admin/properties')->assertForbidden();
         $this->actingAs($concierge)->get('/admin/users')->assertForbidden();
     }

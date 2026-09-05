@@ -8,13 +8,15 @@ use Illuminate\Support\Str;
 
 class PaymentGatewayManager
 {
-    public function resolve(string $provider = null): PaymentGateway
+    public function resolve(string $provider = null, string $mode = 'sandbox'): PaymentGateway
     {
         $provider = $provider ?? env('PAYMENT_PROVIDER', 'pay_later');
 
         return match ($provider) {
-            'fedapay' => app(FedaPaySandboxGateway::class),
-            'paypal' => app(PayPalSandboxGateway::class),
+            'fedapay' => $mode === 'production' ? app(FedaPayLiveGateway::class) : app(FedaPaySandboxGateway::class),
+            'paypal' => $mode === 'production' ? app(PayPalLiveGateway::class) : app(PayPalSandboxGateway::class),
+            'cinetpay' => $mode === 'production' ? app(CinetPayLiveGateway::class) : app(CinetPaySandboxGateway::class),
+            'mpesa' => $mode === 'production' ? app(MpesaLiveGateway::class) : app(MpesaSandboxGateway::class),
             'pay_later' => app(PayLaterGateway::class),
             default => app(PayLaterGateway::class),
         };

@@ -6,7 +6,7 @@
 @section('content')
 <!-- Page Header -->
 <div class="admin-page-header">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="admin-page-actions" style="justify-content: space-between;">
         <div>
             <h1 class="admin-page-title">{{ __('messages.admin.reservations') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.reservations_description') }}</p>
@@ -55,7 +55,7 @@
                 <input type="date" name="date_to" id="date_to" class="input-md" value="{{ request('date_to') }}" />
             </div>
 
-            <div style="display: flex; gap: var(--space-2);">
+            <div class="admin-filter-actions">
                 <x-button type="submit" variant="primary">{{ __('messages.admin.filter') }}</x-button>
                 <x-button tag="a" href="/admin/bookings" variant="secondary">{{ __('messages.admin.reset') }}</x-button>
             </div>
@@ -102,15 +102,15 @@
                         </x-badge>
                     </td>
                     <td style="text-align: right;">
-                        <div style="display: flex; gap: var(--space-2); justify-content: flex-end;">
-                            <x-button tag="a" href="/admin/bookings/{{ $booking->id }}" variant="ghost" size="sm" title="{{ __('messages.admin.view') }}">
+                        <div class="admin-row-actions">
+                            <x-button tag="a" href="/admin/bookings/{{ $booking->id }}" variant="ghost" size="sm" class="btn-icon" title="{{ __('messages.admin.view') }}" aria-label="{{ __('messages.admin.view') }}">
                                 <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
                                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 01.708 0L12 14.293l9.646-9.647a.5.5 0 11.708.708l-10 10a.5.5 0 01-.708 0l-10-10a.5.5 0 010-.708z" clip-rule="evenodd" />
                                 </svg>
                             </x-button>
 
-                            <x-button tag="a" href="/admin/bookings/{{ $booking->id }}/edit" variant="ghost" size="sm" title="{{ __('messages.admin.edit') }}">
+                            <x-button tag="a" href="/admin/bookings/{{ $booking->id }}/edit" variant="ghost" size="sm" class="btn-icon" title="{{ __('messages.admin.edit') }}" aria-label="{{ __('messages.admin.edit') }}">
                                 <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9l-6.455 6.456M9 9l6 6" />
                                 </svg>

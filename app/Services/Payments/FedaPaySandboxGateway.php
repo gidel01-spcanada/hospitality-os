@@ -26,8 +26,8 @@ class FedaPaySandboxGateway implements PaymentGateway
             'status' => 'created',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => [
-                'environment' => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
-                'mode' => 'sandbox',
+                'environment' => config('services.fedapay.environment', 'sandbox'),
+                'mode' => $context['mode'] ?? 'sandbox',
                 'reservation_ref' => $reservation->reservation_ref,
             ],
         ]);

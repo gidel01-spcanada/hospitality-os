@@ -54,7 +54,7 @@
                 </div>
                 <div id="establishment-panel-online" class="property-tab-panel" role="tabpanel" data-property-panel="online" hidden>
                     <div class="form-grid">
-                        <div class="full-width">
+                        <div class="full-width establishment-cover-image-field">
                         <label for="cover_image_upload">{{ __('messages.admin.cover_photo') }}</label>
                         @if ($establishment->cover_image)
                             <img class="establishment-cover-preview" src="{{ asset($establishment->cover_image) }}" alt="{{ $establishment->name }}">
@@ -74,8 +74,10 @@
                                 @endforeach
                             </select>
                         @endif
-                        <label for="cover_image">{{ __('messages.admin.existing_url_path') }}</label>
-                        <input id="cover_image" type="text" name="cover_image" value="{{ old('cover_image', $establishment->cover_image) }}" placeholder="https://... ou uploads/..."></div>
+                        <div class="establishment-cover-image-path">
+                            <label for="cover_image">{{ __('messages.admin.existing_url_path') }}</label>
+                            <input id="cover_image" type="text" name="cover_image" value="{{ old('cover_image', $establishment->cover_image) }}" placeholder="https://... ou uploads/...">
+                        </div></div>
                         <div><label for="email">{{ __('messages.common.email') }}</label><input id="email" type="email" name="email" value="{{ old('email', $establishment->email) }}"></div>
                         <div><label for="phone">{{ __('messages.admin.phone') }}</label><input id="phone" name="phone" value="{{ old('phone', $establishment->phone) }}"></div>
                         <div><label for="latitude">{{ __('messages.admin.latitude') }}</label><input id="latitude" type="number" step="any" name="latitude" value="{{ old('latitude', $establishment->latitude) }}"></div>
