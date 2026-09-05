@@ -33,6 +33,7 @@ class DatabaseSchemaTest extends TestCase
             'settings',
             'email_outbox',
             'audit_logs',
+            'mobile_access_tokens',
         ];
 
         foreach ($tables as $table) {
@@ -47,6 +48,9 @@ class DatabaseSchemaTest extends TestCase
         $this->assertDatabaseHas('settings', ['key' => 'site_name', 'value' => 'Afrik Appart']);
         $this->assertDatabaseHas('amenities', ['slug' => 'wifi']);
         $this->assertDatabaseHas('properties', ['slug' => 'appartement-401']);
+        $this->assertDatabaseHas('users', ['email' => 'admin@afrikappart.test', 'role' => 'admin']);
+        $this->assertDatabaseHas('users', ['email' => 'concierge@afrikappart.test', 'role' => 'concierge']);
+        $this->assertDatabaseHas('users', ['email' => 'guest@afrikappart.test', 'role' => 'customer']);
     }
 
     public function test_on_premise_branding_uses_the_default_tenant_settings(): void

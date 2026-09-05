@@ -76,6 +76,14 @@ for PATH_CHECK in "/up" "/health"; do
   fi
 done
 
+echo "-- Checking mobile API --"
+API_URL="${TARGET}/api/v1/properties"
+if ! curl -fsSL -H 'Accept: application/json' "$API_URL" | php -r '$response = json_decode(stream_get_contents(STDIN), true); exit(is_array($response) && array_key_exists("data", $response) ? 0 : 1);'; then
+  echo "Mobile API check failed at $API_URL" >&2
+  exit 1
+fi
+echo "Mobile API OK: $API_URL"
+
 echo "-- Application summary --"
 php artisan about --only=environment,php,cache,queue || true
 

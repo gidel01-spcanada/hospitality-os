@@ -19,6 +19,8 @@ use App\Models\ExternalCalendarFeed;
 
 class AdminPropertyController extends Controller
 {
+    private const MAX_PROPERTY_PHOTO_UPLOAD_BYTES = 3 * 1024 * 1024;
+
     public function create(): View
     {
         return view('admin.properties.create', [
@@ -171,8 +173,45 @@ class AdminPropertyController extends Controller
     {
         $validated = $request->validate([
             'photos' => ['required', 'array', 'min:1'],
-            'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp'],
+        ], [
+            'photos.*.uploaded' => __('messages.errors.image_upload_failed'),
         ]);
+
+        $acceptedPhotos = [];
+        $rejectedPhotoNames = [];
+        $uploadedBytes = 0;
+        $hasIndividuallyOversizedPhoto = false;
+
+        foreach ($validated['photos'] as $photo) {
+            $photoBytes = (int) $photo->getSize();
+
+            if ($photoBytes > self::MAX_PROPERTY_PHOTO_UPLOAD_BYTES) {
+                $rejectedPhotoNames[] = $photo->getClientOriginalName();
+                $hasIndividuallyOversizedPhoto = true;
+
+                continue;
+            }
+
+            if ($uploadedBytes + $photoBytes > self::MAX_PROPERTY_PHOTO_UPLOAD_BYTES) {
+                $rejectedPhotoNames[] = $photo->getClientOriginalName();
+
+                continue;
+            }
+
+            $acceptedPhotos[] = $photo;
+            $uploadedBytes += $photoBytes;
+        }
+
+        if ($acceptedPhotos === []) {
+            if (count($rejectedPhotoNames) === 1 && $hasIndividuallyOversizedPhoto) {
+                return back()->withErrors(['photos.0' => __('messages.errors.image_file_too_large')]);
+            }
+
+            return back()->withErrors([
+                'photos' => __('messages.errors.photos_upload_limit', ['files' => implode(', ', $rejectedPhotoNames)]),
+            ]);
+        }
 
         $directory = public_path('uploads/properties/' . $property->slug);
         File::ensureDirectoryExists($directory);
@@ -181,15 +220,16 @@ class AdminPropertyController extends Controller
         $hadCover = $hasCover;
         $firstUploadedPath = null;
 
-        foreach ($validated['photos'] as $file) {
+        foreach ($acceptedPhotos as $file) {
             $filename = $file->hashName();
+            $mimeType = $file->getMimeType();
             $file->move($directory, $filename);
             $dimensions = @getimagesize($directory . DIRECTORY_SEPARATOR . $filename) ?: [];
             $path = 'uploads/properties/' . $property->slug . '/' . $filename;
             $property->images()->create([
                 'file_path' => $path,
                 'file_name' => $filename,
-                'mime_type' => $file->getMimeType(),
+                'mime_type' => $mimeType,
                 'width' => $dimensions[0] ?? null,
                 'height' => $dimensions[1] ?? null,
                 'sort_order' => $nextOrder++,
@@ -204,7 +244,15 @@ class AdminPropertyController extends Controller
             $property->forceFill(['cover_image' => $firstUploadedPath])->save();
         }
 
-        return $this->editorRedirect($property, $request, __('messages.flash.photos_uploaded'), 'photos');
+        $response = $this->editorRedirect($property, $request, __('messages.flash.photos_uploaded'), 'photos');
+
+        if ($rejectedPhotoNames !== []) {
+            $response->withErrors([
+                'photos' => __('messages.errors.photos_upload_limit', ['files' => implode(', ', $rejectedPhotoNames)]),
+            ]);
+        }
+
+        return $response;
     }
 
     public function storePriceRule(Request $request, Property $property): RedirectResponse

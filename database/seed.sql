@@ -20,6 +20,9 @@ INSERT INTO settings (`key`, value, type) VALUES
     ('calendar_freshness_minutes', '15', 'integer')
 ON DUPLICATE KEY UPDATE value = VALUES(value), type = VALUES(type);
 
+-- Mobile access tokens are deliberately not seeded. They are issued by POST /api/v1/auth/login
+-- and stored only as hashes in the mobile_access_tokens table.
+
 INSERT INTO currency_configs (currency_code, name, xof_per_eur, is_enabled, effective_at) VALUES
     ('XOF', 'West African CFA Franc', 655.957000, 1, NOW()),
     ('EUR', 'Euro', 655.957000, 1, NOW())

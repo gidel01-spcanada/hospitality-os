@@ -122,7 +122,7 @@ class AdminReservationController extends Controller
 
     public function show(Reservation $reservation): View
     {
-        $reservation->load(['property', 'guest', 'priceLines']);
+        $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
 
         return view('admin.reservations.show', compact('reservation'));
     }
@@ -148,6 +148,16 @@ class AdminReservationController extends Controller
 
         return redirect()->route('admin.reservations.show', $reservation)
             ->with('status', __('messages.flash.reservation_status_updated'));
+    }
+
+    public function sendPaymentLink(Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
+    {
+        abort_unless($reservation->canSendPaymentLink(), 403);
+
+        $emailService->queuePaymentLink($reservation);
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('status', __('messages.flash.payment_link_queued'));
     }
 
     private function tenantProperties()

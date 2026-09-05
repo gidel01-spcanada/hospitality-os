@@ -88,6 +88,18 @@
 
                     <button type="submit" class="btn btn-primary btn-full">{{ __('messages.admin.save_status') }}</button>
                 </form>
+
+                @if ($reservation->canSendPaymentLink())
+                    @php $paymentLink = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]); @endphp
+                    <div class="payment-link-actions" style="margin-top: 1rem;">
+                        <form action="{{ route('admin.reservations.payment-link.send', $reservation) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-ghost btn-full">{{ __('messages.admin.send_payment_link') }}</button>
+                        </form>
+                        <button type="button" class="btn btn-ghost btn-full" data-copy-payment-link="{{ $paymentLink }}" data-copy-payment-link-success="{{ __('messages.admin.payment_link_copied') }}" data-copy-payment-link-error="{{ __('messages.admin.payment_link_copy_failed') }}">{{ __('messages.admin.copy_payment_link') }}</button>
+                        <p class="form-help" data-copy-payment-link-status aria-live="polite" hidden></p>
+                    </div>
+                @endif
             </aside>
         </div>
     </x-card>

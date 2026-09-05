@@ -227,6 +227,7 @@ document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 	const rows = () => Array.from(list.querySelectorAll('[data-photo-id]'));
 	const currentOrder = () => rows().map((row) => row.dataset.photoId).join(',');
 	const initialOrder = currentOrder();
+	const initialPositions = new Map(rows().map((row, index) => [row.dataset.photoId, index + 1]));
 
 	const clearDropTargets = () => {
 		rows().forEach((row) => row.classList.remove('is-drop-before', 'is-drop-after'));
@@ -239,15 +240,18 @@ document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 
 	const updatePhotoOrder = () => {
 		rows().forEach((row, index) => {
+			const currentPosition = index + 1;
 			const order = row.querySelector('[data-photo-order]');
 			if (order) {
-				order.value = index + 1;
+				order.value = currentPosition;
 			}
 
 			const position = row.querySelector('[data-photo-position]');
 			if (position) {
-				position.textContent = index + 1;
+				position.textContent = currentPosition;
 			}
+
+			row.classList.toggle('is-order-changed', initialPositions.get(row.dataset.photoId) !== currentPosition);
 		});
 
 		if (status) {
@@ -299,6 +303,25 @@ document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 	});
 
 	updatePhotoOrder();
+});
+
+document.querySelectorAll('[data-copy-payment-link]').forEach((button) => {
+	button.addEventListener('click', async () => {
+		const status = button.parentElement?.querySelector('[data-copy-payment-link-status]');
+
+		try {
+			await navigator.clipboard.writeText(button.dataset.copyPaymentLink ?? '');
+			if (status) {
+				status.textContent = button.dataset.copyPaymentLinkSuccess ?? 'Payment link copied.';
+				status.hidden = false;
+			}
+		} catch {
+			if (status) {
+				status.textContent = button.dataset.copyPaymentLinkError ?? 'Unable to copy the payment link.';
+				status.hidden = false;
+			}
+		}
+	});
 });
 
 document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => {

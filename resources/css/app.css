@@ -2115,6 +2115,12 @@ main #home-location {
     cursor: grab;
 }
 
+.admin-photo-row.is-order-changed {
+    border-color: #c78b18;
+    background: #fff4d6;
+    box-shadow: inset 4px 0 0 #c78b18;
+}
+
 /* Shared so the header labels stay aligned with the row content. */
 .photo-order-form {
     --photo-row-columns: 22px 18px 112px minmax(140px, 1fr) 40px 40px;

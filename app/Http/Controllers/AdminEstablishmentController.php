@@ -72,7 +72,7 @@ class AdminEstablishmentController extends Controller
             'currency' => ['required', 'string', 'size:3'],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'string', 'max:2048'],
-            'cover_image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'cover_image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'property_image_id' => ['nullable', 'integer'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:80'],
@@ -91,6 +91,9 @@ class AdminEstablishmentController extends Controller
             'translations.en.description' => ['nullable', 'string'],
             'translations.fr.features' => ['nullable', 'string'],
             'translations.en.features' => ['nullable', 'string'],
+        ], [
+            'cover_image_upload.max' => __('messages.errors.image_file_too_large'),
+            'cover_image_upload.uploaded' => __('messages.errors.image_upload_failed'),
         ]);
     }
 

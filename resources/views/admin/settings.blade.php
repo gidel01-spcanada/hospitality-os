@@ -15,10 +15,17 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.settings.update') }}">
-                @csrf
+            <div class="property-editor-tabs" data-property-tabs>
+                <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.settings_sections') }}">
+                    @foreach (['general' => __('messages.admin.general_information'), 'email' => __('messages.admin.email_communications')] as $tab => $label)
+                        <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="settings-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
+                    @endforeach
+                </div>
+                <form method="POST" action="{{ route('admin.settings.update') }}">
+                    @csrf
 
-                <div class="form-grid">
+                    <div id="settings-panel-general" class="property-tab-panel is-active" role="tabpanel" data-property-panel="general">
+                        <div class="form-grid">
                     <div>
                         <label for="site_name">{{ __('messages.admin.site_name') }}</label>
                         <input id="site_name" name="site_name" type="text" value="{{ old('site_name', $brand['site_name'] ?? 'Afrik Appart') }}">
@@ -85,11 +92,12 @@
                         <label for="review_source_google_url">{{ __('messages.admin.google_reviews_url') }}</label>
                         <input id="review_source_google_url" name="review_source_google_url" type="url" value="{{ old('review_source_google_url', $brand['review_source_google_url'] ?? '') }}" placeholder="https://maps.google.com/...">
                     </div>
-                </div>
+                        </div>
+                    </div>
 
-                <div style="margin-top: var(--space-8);">
-                    <h2 style="margin-bottom: var(--space-4);">{{ __('messages.admin.customer_emails') }}</h2>
-                    <div class="form-grid">
+                    <div id="settings-panel-email" class="property-tab-panel" role="tabpanel" data-property-panel="email" hidden>
+                        <h2 style="margin-bottom: var(--space-4);">{{ __('messages.admin.email_communications') }}</h2>
+                        <div class="form-grid">
                         <div>
                             <label for="email_sender_name">{{ __('messages.admin.email_sender_name') }}</label>
                             <input id="email_sender_name" name="email_sender_name" type="text" value="{{ old('email_sender_name', $brand['email_sender_name'] ?? 'Afrik Appart') }}">
@@ -140,12 +148,14 @@
                             <textarea id="post_stay_message" name="post_stay_message" rows="4">{{ old('post_stay_message', $brand['post_stay_message'] ?? '') }}</textarea>
                         </div>
                     </div>
-                </div>
+                        </div>
+                    </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_settings') }}</button>
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">Retour</a>
-                </div>
-            </form>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_settings') }}</button>
+                        <a href="{{ route('admin.dashboard') }}" class="btn btn-ghost">Retour</a>
+                    </div>
+                </form>
+            </div>
     </x-card>
 @endsection

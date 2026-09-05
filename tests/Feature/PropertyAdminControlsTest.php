@@ -171,6 +171,68 @@ class PropertyAdminControlsTest extends TestCase
         $property->images()->get()->each(fn ($image) => \Illuminate\Support\Facades\File::delete(public_path($image->file_path)));
     }
 
+    public function test_admin_can_upload_the_supplied_png_file(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        $sourcePath = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'photo' . DIRECTORY_SEPARATOR . 'appartement 401' . DIRECTORY_SEPARATOR . 'ChatGPT Image Jul 24, 2026, 04_22_56 PM.png';
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'afrikappart-upload-');
+
+        $this->assertNotFalse($temporaryPath);
+        copy($sourcePath, $temporaryPath);
+
+        $response = $this->actingAs($admin)
+            ->post('/admin/properties/' . $property->id . '/images', [
+                'photos' => [new UploadedFile($temporaryPath, basename($sourcePath), 'image/png', null, true)],
+            ]);
+
+        $response->assertRedirect(route('admin.properties.edit', $property) . '#photos');
+        $this->assertSame(1, $property->images()->count());
+        $property->images()->each(fn ($image) => \Illuminate\Support\Facades\File::delete(public_path($image->file_path)));
+    }
+
+    public function test_admin_cannot_upload_a_property_photo_larger_than_three_megabytes(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.properties.edit', $property))
+            ->post('/admin/properties/' . $property->id . '/images', [
+                'photos' => [UploadedFile::fake()->image('oversized.jpg')->size(3073)],
+            ]);
+
+        $response->assertRedirect(route('admin.properties.edit', $property));
+        $response->assertSessionHasErrors([
+            'photos.0' => 'Chaque photo ne doit pas dépasser 3 Mo.',
+        ]);
+        $this->assertSame(0, $property->images()->count());
+    }
+
+    public function test_admin_is_told_which_photos_exceed_the_combined_three_megabyte_upload_limit(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+
+        $response = $this->actingAs($admin)
+            ->post('/admin/properties/' . $property->id . '/images', [
+                'photos' => [
+                    UploadedFile::fake()->image('first.jpg')->size(2048),
+                    UploadedFile::fake()->image('second.jpg')->size(2048),
+                ],
+            ]);
+
+        $response->assertRedirect(route('admin.properties.edit', $property) . '#photos');
+        $response->assertSessionHasErrors('photos');
+        $response->assertSessionHasErrors('photos', 'second.jpg');
+        $this->assertSame(1, $property->images()->count());
+
+        $property->images()->each(fn ($image) => \Illuminate\Support\Facades\File::delete(public_path($image->file_path)));
+    }
+
     public function test_admin_can_remove_a_property_photo_and_reassign_cover(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -230,6 +292,30 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertSame('Use mobile money', $establishment->payment_methods['fedapay']['instructions']);
     }
 
+    public function test_establishment_editor_has_section_tabs_and_a_country_selector(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.establishments.edit', $establishment))
+            ->assertOk()
+            ->assertSee('data-property-tab="general"', false)
+            ->assertSee('data-property-tab="online"', false)
+            ->assertSee('data-property-tab="translations"', false)
+            ->assertSee('data-property-tab="payments"', false)
+            ->assertSee('<select id="country_code" name="country_code" required>', false)
+            ->assertSee('<option value="BJ" selected>', false)
+            ->assertSee('<select id="currency" name="currency" required>', false)
+            ->assertSee('<option value="XOF" selected>', false)
+            ->assertSee('value="NGN"', false)
+            ->assertSee('value="EUR"', false)
+            ->assertSee('value="USD"', false)
+            ->assertSee('value="GBP"', false)
+            ->assertSee('value="CAD"', false);
+    }
+
     public function test_google_maps_link_populates_missing_establishment_coordinates(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -273,6 +359,31 @@ class PropertyAdminControlsTest extends TestCase
 
         // Written to the real public disk (not a fake), so clean it up rather than leaving it behind.
         \Illuminate\Support\Facades\File::delete(public_path($establishment->cover_image));
+    }
+
+    public function test_establishment_upload_limit_failure_has_a_clear_message(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'afrikappart-upload-');
+
+        $this->assertNotFalse($temporaryPath);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.establishments.edit', $establishment))
+            ->put('/admin/establishments/' . $establishment->id, [
+                'name' => $establishment->name,
+                'slug' => $establishment->slug,
+                'country_code' => $establishment->country_code,
+                'currency' => $establishment->currency,
+                'cover_image_upload' => new UploadedFile($temporaryPath, 'cover.png', 'image/png', UPLOAD_ERR_INI_SIZE, true),
+            ]);
+
+        $response->assertRedirect(route('admin.establishments.edit', $establishment));
+        $response->assertSessionHasErrors([
+            'cover_image_upload' => 'La photo n’a pas pu être téléversée. Vérifiez qu’elle ne dépasse pas 3 Mo, puis réessayez.',
+        ]);
     }
 
     public function test_admin_can_select_a_property_picture_as_establishment_main_picture(): void

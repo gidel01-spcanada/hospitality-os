@@ -103,6 +103,18 @@ class ReservationWorkflowAndEmailTest extends TestCase
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'total_amount' => 143750]);
 
         $this->actingAs($admin)
+            ->post('/admin/reservations/' . $reservation->id . '/payment-link')
+            ->assertRedirect('/admin/reservations/' . $reservation->id);
+
+        $this->assertDatabaseHas('email_outbox', [
+            'recipient_email' => 'alice@example.com',
+            'template' => 'payment_link',
+            'status' => 'queued',
+        ]);
+        $paymentLink = \App\Models\EmailOutbox::query()->where('template', 'payment_link')->latest()->firstOrFail();
+        $this->assertSame(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $paymentLink->payload['checkout_url']);
+
+        $this->actingAs($admin)
             ->patch('/admin/reservations/' . $reservation->id . '/status', [
                 'status' => 'confirmed',
                 'notes' => 'Client confirmed and deposit requested.',
@@ -111,5 +123,22 @@ class ReservationWorkflowAndEmailTest extends TestCase
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'alice@example.com', 'template' => 'reservation_status_updated', 'status' => 'queued']);
+        $this->actingAs($admin)
+            ->post('/admin/reservations/' . $reservation->id . '/payment-link')
+            ->assertForbidden();
+
+        $reservation->update(['status' => 'pending']);
+        $reservation->paymentAttempts()->create([
+            'provider' => 'pay_later',
+            'provider_reference' => 'verified-payment',
+            'currency' => 'XOF',
+            'amount' => 143750,
+            'status' => 'verified',
+            'idempotency_key' => 'verified-payment-link-test',
+        ]);
+
+        $this->actingAs($admin)
+            ->post('/admin/reservations/' . $reservation->id . '/payment-link')
+            ->assertForbidden();
     }
 }
