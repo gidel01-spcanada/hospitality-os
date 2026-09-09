@@ -8,6 +8,7 @@
             <span class="badge badge-emerald">{{ __('messages.reservation.badge') }}</span>
             <h1>{{ $reservation->reservation_ref }}</h1>
             <p>{{ $reservation->property?->name ?? __('messages.checkout.property') }}</p>
+            <a href="{{ route('dashboard') }}" class="inline-link">← {{ __('messages.dashboard.reservations') }}</a>
         </div>
     </section>
 
@@ -20,7 +21,26 @@
                 <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</span></li>
                 <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
             </ul>
+
+            @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                    @csrf
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-ghost">{{ __('messages.checkout.cancel_reservation') }}</button>
+                    </div>
+                </form>
+            @endif
         </div>
+
+
+        @if ($reservation->receipts->isNotEmpty())
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.receipts.title') }}</h2>
+                @foreach ($reservation->receipts as $receipt)
+                    <a class="btn btn-primary" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.receipts.download', ['number' => $receipt->receipt_number]) }}</a>
+                @endforeach
+            </div>
+        @endif
 
         <div class="summary-card">
             <h2>{{ __('messages.reservation.contact') }}</h2>
@@ -48,7 +68,9 @@
                     <input type="hidden" name="establishment_id" value="{{ $reservation->property->establishment->id }}">
                     <label for="reservation-message-body">{{ __('messages.messages.message') }}</label>
                     <textarea id="reservation-message-body" name="body" rows="4" maxlength="5000" required></textarea>
-                    <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
+                    </div>
                 </form>
             </div>
         @endif

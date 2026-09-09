@@ -44,7 +44,13 @@ class MobileApiTest extends TestCase
         $login->assertCreated()->assertJsonPath('user.role', 'customer');
         $token = $login->json('token');
 
-        $this->getJson('/api/v1/properties')->assertOk()->assertJsonPath('data.0.id', $property->id);
+        $this->getJson('/api/v1/properties')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $property->id)
+            ->assertJsonPath('data.0.bedrooms', $property->bedrooms)
+            ->assertJsonPath('data.0.bathrooms', $property->bathrooms)
+            ->assertJsonPath('data.0.beds', $property->beds)
+            ->assertJsonPath('data.0.minimum_stay', $property->minimum_stay);
         $this->withToken($token)->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.email', $customer->email);
         $this->withToken($token)->getJson('/api/v1/customer/reservations')->assertOk()->assertJsonPath('data.0.id', $reservation->id);
     }

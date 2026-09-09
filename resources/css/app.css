@@ -69,10 +69,12 @@ html[data-site-theme='sunrise-ink'] {
 
 html {
     scroll-behavior: smooth;
+    overflow-x: clip;
 }
 
 body {
     margin: 0;
+    overflow-x: clip;
     font-family: 'Inter', 'Segoe UI', sans-serif;
     background: radial-gradient(circle at top left, rgba(200, 155, 60, 0.12), transparent 28%), var(--afrik-bg);
     color: var(--afrik-text);
@@ -149,8 +151,33 @@ button, input, select {
     gap: 10px;
 }
 
+.mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--afrik-line);
+    border-radius: 10px;
+    background: white;
+    color: var(--afrik-text);
+    cursor: pointer;
+}
+
+.mobile-menu-toggle span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
 .section-tabs-shell {
     padding-top: 1rem;
+    min-width: 0;
 }
 
 .section-tabs {
@@ -161,17 +188,19 @@ button, input, select {
     border: 1px solid rgba(15, 91, 76, 0.14);
     border-radius: 14px;
     background: #f6f3ec;
+    min-width: 0;
 }
 
 .section-tabs a {
-    flex: 0 0 auto;
+    min-width: 0;
     padding: 0.65rem 0.85rem;
     border-radius: 10px;
     color: var(--afrik-muted);
     font-size: 0.88rem;
     font-weight: 700;
     text-decoration: none;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    text-align: center;
 }
 
 .section-tabs a:hover,
@@ -481,6 +510,7 @@ button, input, select {
     padding: 0.9rem 1rem;
     color: var(--afrik-text);
     font-size: 1rem;
+    font-weight: 400;
     letter-spacing: normal;
     text-transform: none;
 }
@@ -626,6 +656,7 @@ button, input, select {
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 1.2rem;
+    min-width: 0;
     padding: 1.2rem 1.4rem;
     margin-bottom: 1.5rem;
     border: 1px solid rgba(15, 91, 76, 0.08);
@@ -670,11 +701,16 @@ button, input, select {
     line-height: 1.6;
 }
 
+.review-summary-copy {
+    min-width: 0;
+}
+
 .review-summary-links {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.6rem;
+    min-width: 0;
 }
 
 .review-summary-links a {
@@ -688,6 +724,10 @@ button, input, select {
     text-decoration: none;
     font-size: 0.8rem;
     font-weight: 700;
+}
+
+.property-review-links {
+    justify-content: flex-end;
 }
 
 .review-card {
@@ -795,7 +835,10 @@ button, input, select {
 }
 
 .property-image {
+    display: block;
+    width: 100%;
     min-height: 220px;
+    object-fit: cover;
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
     background-size: cover;
@@ -1146,6 +1189,27 @@ button, input, select {
     color: white;
 }
 
+.share-links button {
+    padding: 0.45rem 0.65rem;
+    border: none;
+    border-radius: 9px;
+    background: white;
+    color: var(--afrik-emerald);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.share-links button:hover {
+    background: var(--afrik-emerald);
+    color: white;
+}
+
+.share-panel .form-help {
+    width: 100%;
+    margin: 0;
+}
+
 .property-show-layout {
     display: grid;
     grid-template-columns: minmax(0, 2.1fr) minmax(280px, 0.9fr);
@@ -1210,27 +1274,70 @@ button, input, select {
     min-width: 0;
 }
 
+.price-summary {
+    margin: -2px -2px 1rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(200, 155, 60, 0.28);
+    border-radius: 14px;
+    background: rgba(200, 155, 60, 0.1);
+}
+
 .price-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.7rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
     color: var(--afrik-muted);
 }
 
+.price-label {
+    display: block;
+    font-size: 0.9rem;
+}
+
 .price-row strong {
-    color: var(--afrik-text);
-    font-size: clamp(1.2rem, 2vw, 1.7rem);
+    color: #8a6518;
+    font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+    text-align: right;
 }
 
 .muted-row {
-    margin-bottom: 1.2rem;
+    margin-bottom: 0;
+}
+
+.property-video-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.property-video-list h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.property-video-frame {
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border-radius: 18px;
+    background: #172326;
+}
+
+.property-video-frame iframe,
+.property-video-frame video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: cover;
 }
 
 .booking-form {
     display: grid;
     gap: 0.9rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--afrik-line);
 }
 
 .booking-form .form-actions {
@@ -1265,6 +1372,20 @@ button, input, select {
 .booking-form .btn-full {
     min-width: 0;
     white-space: normal;
+}
+
+.account-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.account-choice input[type="checkbox"] {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
 }
 
 .input-group {
@@ -1674,6 +1795,33 @@ main #home-location {
         display: none;
     }
 
+    .mobile-menu-toggle {
+        display: flex;
+        margin-left: auto;
+    }
+
+    .nav-actions.is-open {
+        position: absolute;
+        top: calc(100% + 0.65rem);
+        right: 16px;
+        z-index: 50;
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+        min-width: min(250px, calc(100vw - 32px));
+        padding: 0.85rem;
+        border: 1px solid var(--afrik-line);
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 16px 32px rgba(20, 29, 32, 0.14);
+    }
+
+    .nav-actions.is-open .btn,
+    .nav-actions.is-open form,
+    .nav-actions.is-open form .btn {
+        width: 100%;
+    }
+
     .hero-card {
         min-height: auto;
     }
@@ -1721,6 +1869,21 @@ main #home-location {
 
     .property-review-grid {
         grid-template-columns: 1fr;
+    }
+
+    .review-summary {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .review-summary-links,
+    .property-review-links {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .review-summary-links a {
+        flex: 1 1 10rem;
     }
 }
 
@@ -1790,6 +1953,21 @@ main #home-location {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(19, 31, 35, 0.06);
     box-shadow: 0 18px 32px rgba(20, 29, 32, 0.06);
+}
+
+.auth-panel {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(19, 31, 35, 0.06);
+    box-shadow: 0 18px 32px rgba(20, 29, 32, 0.06);
+}
+
+.auth-panel .field-group {
+    display: grid;
+    gap: 0.45rem;
 }
 
 .auth-header {
@@ -1932,6 +2110,7 @@ main #home-location {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    min-width: 0;
     color: var(--afrik-muted);
     border-bottom: 1px solid rgba(19, 31, 35, 0.06);
     padding-bottom: 0.6rem;
@@ -1943,7 +2122,14 @@ main #home-location {
 }
 
 .summary-card li strong {
+    min-width: 0;
     color: var(--afrik-text);
+}
+
+.summary-card li span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
 }
 
 .summary-card p,
@@ -1979,10 +2165,18 @@ main #home-location {
     font-weight: 700;
 }
 
+.summary-card.full-width form > div:not(.form-actions) > label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
 .summary-card.full-width form input:not([type="checkbox"]):not([type="radio"]),
 .summary-card.full-width form select,
 .summary-card.full-width form textarea {
     width: 100%;
+    max-width: 420px;
     min-height: 50px;
     border: 2px solid rgba(15, 91, 76, 0.2);
     border-radius: 12px;
@@ -1995,6 +2189,7 @@ main #home-location {
 
 .summary-card.full-width form textarea {
     min-height: 110px;
+    max-width: 620px;
     resize: vertical;
 }
 
@@ -2026,6 +2221,20 @@ main #home-location {
 }
 
 @media (max-width: 700px) {
+    .section-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+    }
+
+    .section-tabs a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.55rem 0.45rem;
+    }
+
     .summary-card.full-width form .form-grid,
     .admin-form-grid {
         grid-template-columns: 1fr;
@@ -2761,6 +2970,52 @@ main #home-location {
     gap: 0.35rem;
 }
 
+.availability-calendar-months {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.availability-month-title {
+    display: block;
+    margin-bottom: 0.65rem;
+    color: var(--afrik-text);
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.property-availability-card .detail-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.property-availability-card .detail-card-heading h2 {
+    margin-bottom: 0;
+}
+
+@media (max-width: 560px) {
+    .property-availability-card .detail-card-heading {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .property-availability-card .detail-card-heading h2,
+    .property-availability-card .detail-card-heading .btn {
+        width: 100%;
+    }
+
+    .property-availability-card .detail-card-heading .btn {
+        white-space: normal;
+    }
+}
+
+.property-availability-content {
+    margin-top: 1rem;
+}
+
 .availability-calendar-grid > strong {
     padding-bottom: 0.35rem;
     color: var(--afrik-muted);
@@ -2784,6 +3039,12 @@ main #home-location {
 .availability-external { background: #f6dfb4; color: #785516; }
 .availability-past { background: #d9dde0; color: #68747a; }
 .availability-empty { background: transparent; }
+
+@media (max-width: 720px) {
+    .availability-calendar-months {
+        grid-template-columns: 1fr;
+    }
+}
 
 .admin-panel {
     background: rgba(255, 255, 255, 0.9);
@@ -3089,5 +3350,11 @@ main #home-location {
     .dashboard-grid,
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .summary-card,
+    .stat-card {
+        padding: 1rem;
+        min-width: 0;
     }
 }

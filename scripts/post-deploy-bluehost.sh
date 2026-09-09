@@ -88,8 +88,8 @@ if ! curl -fsSL -H 'Accept: application/json' "$API_URL" | php -r '$response = j
   echo "Mobile API check failed at $API_URL" >&2
   exit 1
 fi
-echo "Mobile API OK: $API_URL"
+eccd c:\usetsho "Mobile API OK: $API_URL"
 echo "-- Application summary --"
-php artisan about --only=environment,php,cache,queue || true
+cdphp artisan about --only=environment,php,cache,queue || true
 
 echo "Bluehost post-deploy validation finished successfully."

@@ -100,6 +100,14 @@
                         <p class="form-help" data-copy-payment-link-status aria-live="polite" hidden></p>
                     </div>
                 @endif
+
+                <div class="payment-link-actions" style="margin-top: 1rem;">
+                    <form action="{{ route('admin.reservations.confirm-offline-payment', $reservation) }}" method="POST">
+                        @csrf
+                        <input name="provider_reference" type="text" placeholder="{{ __('messages.receipts.reference_placeholder') }}">
+                        <button type="submit" class="btn btn-primary btn-full">{{ __('messages.receipts.confirm_offline') }}</button>
+                    </form>
+                </div>
             </aside>
         </div>
     </x-card>

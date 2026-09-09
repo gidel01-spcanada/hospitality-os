@@ -31,6 +31,8 @@ class PublicPropertyController extends Controller
             'city' => ['nullable', 'string', 'max:120'],
             'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
             'bedrooms' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'check_in' => ['nullable', 'date', 'after_or_equal:today'],
+            'check_out' => ['nullable', 'date', 'after:check_in'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
             'favorites' => ['nullable', 'boolean'],
@@ -43,6 +45,8 @@ class PublicPropertyController extends Controller
         $destination = $filters['destination'] ?? $filters['city'] ?? null;
         $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
         $favoritesOnly = (bool) ($filters['favorites'] ?? false);
+        $checkIn = $filters['check_in'] ?? null;
+        $checkOut = $filters['check_out'] ?? null;
 
         $properties = Property::query()
             ->published()
@@ -50,6 +54,21 @@ class PublicPropertyController extends Controller
             ->when($destination, fn ($query, $value) => $query->where('city', 'like', '%' . $value . '%'))
             ->when($filters['guests'] ?? null, fn ($query, $guests) => $query->where('max_guests', '>=', $guests))
             ->when($filters['bedrooms'] ?? null, fn ($query, $bedrooms) => $query->where('bedrooms', '>=', $bedrooms))
+            ->when($checkIn && $checkOut, function ($query) use ($checkIn, $checkOut): void {
+                $query
+                    ->whereDoesntHave('reservations', fn ($reservationQuery) => $reservationQuery
+                        ->where('status', '!=', 'cancelled')
+                        ->where('check_in', '<', $checkOut)
+                        ->where('check_out', '>', $checkIn))
+                    ->whereDoesntHave('availabilityBlocks', fn ($blockQuery) => $blockQuery
+                        ->where('start_date', '<', $checkOut)
+                        ->where('end_date', '>', $checkIn))
+                    ->whereDoesntHave('calendarFeeds', fn ($feedQuery) => $feedQuery
+                        ->where('is_enabled', true)
+                        ->whereHas('events', fn ($eventQuery) => $eventQuery
+                            ->where('start_date', '<', $checkOut)
+                            ->where('end_date', '>', $checkIn)));
+            })
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
             ->when($favoritesOnly && auth()->check(), fn ($query) => $query->whereIn('id', $favoritePropertyIds))
@@ -71,10 +90,27 @@ class PublicPropertyController extends Controller
     public function show(Property $property): View
     {
         abort_unless($property->status === 'published', 404);
-        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true)]);
-        $reviews = SiteReview::query()->active()->orderByDesc('reviewed_at')->limit(6)->get();
+        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
+        $reviews = SiteReview::query()
+            ->active()
+            ->when($property->establishment?->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
+            ->orderByDesc('reviewed_at')
+            ->limit(6)
+            ->get();
 
         return view('properties.show', compact('property', 'reviews'));
+    }
+
+    public function resume(Request $request, ReservationEmailService $emailService): RedirectResponse
+    {
+        $pending = $request->session()->pull('pending_public_reservation');
+        abort_unless(is_array($pending) && ! empty($pending['property_id']), 404);
+
+        $property = Property::query()->with('establishment')->findOrFail($pending['property_id']);
+        abort_unless($property->status === 'published', 404);
+        $request->merge($pending['data'] ?? []);
+
+        return $this->reserve($request, $property, $emailService);
     }
 
     public function availability(Request $request, Property $property, AvailabilityService $availabilityService)
@@ -93,9 +129,10 @@ class PublicPropertyController extends Controller
 
     public function reserve(Request $request, Property $property, ReservationEmailService $emailService): RedirectResponse
     {
+        $authenticatedUser = $request->user();
         $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email:filter', 'max:255'],
+            'full_name' => [$authenticatedUser ? 'nullable' : 'required', 'string', 'max:120'],
+            'email' => [$authenticatedUser ? 'nullable' : 'required', 'email:filter', 'max:255'],
             'phone' => ['nullable', 'string', 'max:40'],
             'country' => ['nullable', 'string', 'max:80'],
             'check_in' => ['required', 'date', 'after_or_equal:today'],
@@ -105,10 +142,55 @@ class PublicPropertyController extends Controller
             'infants' => ['nullable', 'integer', 'min:0', 'max:4'],
             'selected_features' => ['nullable', 'array'],
             'selected_features.*' => ['integer', Rule::exists('property_features', 'id')->where(fn ($query) => $query->where('property_id', $property->id)->where('is_active', true))],
+            'create_account' => ['sometimes', 'boolean'],
         ], [
             'check_in.after_or_equal' => 'La date d’arrivée doit être aujourd’hui ou plus tard.',
             'check_out.after' => 'La date de départ doit être après la date d’arrivée.',
         ]);
+
+        if ($authenticatedUser) {
+            $validated['full_name'] = $authenticatedUser->name;
+            $validated['email'] = $authenticatedUser->email;
+        }
+
+        $email = strtolower($validated['email']);
+        $tenantId = $property->establishment?->tenant_id;
+        $existingAccount = User::query()
+            ->where('email', $email)
+            ->where(function ($query) use ($tenantId): void {
+                $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id');
+            })
+            ->first();
+
+        if (! $request->user() && $existingAccount && $existingAccount->email_verified_at === null) {
+            $request->session()->put('pending_public_reservation', [
+                'property_id' => $property->id,
+                'data' => $validated,
+            ]);
+
+            try {
+                $existingAccount->notify(new GuestAccountSetupNotification(
+                    Password::broker()->createToken($existingAccount),
+                    $property->localized('name') ?? $property->name,
+                ));
+            } catch (\Throwable $exception) {
+                Log::warning('Guest account setup notification could not be resent.', [
+                    'user_id' => $existingAccount->id,
+                    'exception' => $exception,
+                ]);
+            }
+
+            return back()->withInput()->with('status', __('messages.auth.confirm_email_before_reservation'));
+        }
+
+        if (! $request->user() && $existingAccount) {
+            $request->session()->put('pending_public_reservation', [
+                'property_id' => $property->id,
+                'data' => $validated,
+            ]);
+
+            return redirect()->route('login')->with('status', __('messages.auth.existing_account_login'));
+        }
 
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
@@ -122,7 +204,7 @@ class PublicPropertyController extends Controller
         $totalAmount = round($subtotal + $fees + $taxes, 2);
 
         $guest = ReservationGuest::query()->firstOrCreate(
-            ['email' => strtolower($validated['email'])],
+            ['email' => $email],
             [
                 'full_name' => $validated['full_name'],
                 'phone' => $validated['phone'] ?? null,
@@ -137,14 +219,15 @@ class PublicPropertyController extends Controller
         $reservationUser = $request->user();
         $createdGuestAccount = false;
 
-        if (! $reservationUser) {
+        if (! $reservationUser && $request->boolean('create_account', true)) {
             $reservationUser = User::query()->firstOrCreate(
-                ['email' => strtolower($validated['email'])],
+                ['email' => $email],
                 [
                     'name' => $validated['full_name'],
                     'password' => Str::password(64),
                     'role' => 'customer',
                     'is_admin' => false,
+                    'tenant_id' => $tenantId,
                     'locale' => app()->getLocale(),
                     'email_booking_updates' => true,
                     'email_message_updates' => true,
@@ -154,7 +237,6 @@ class PublicPropertyController extends Controller
             );
             $createdGuestAccount = $reservationUser->wasRecentlyCreated;
         }
-
         $reservation = Reservation::query()->create([
             'property_id' => $property->id,
             'guest_id' => $guest->id,
@@ -167,7 +249,7 @@ class PublicPropertyController extends Controller
             'children' => (int) ($validated['children'] ?? 0),
             'infants' => (int) ($validated['infants'] ?? 0),
             'currency' => 'XOF',
-            'email' => strtolower($validated['email']),
+            'email' => $email,
             'subtotal' => $subtotal,
             'fees' => $fees,
             'taxes' => $taxes,

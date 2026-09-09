@@ -78,7 +78,7 @@ class AdminCalendarController extends Controller
 
     public function export(Property $property)
     {
-        $events = $property->reservations()->whereNotIn('status', ['cancelled'])->get()->map(function ($reservation) {
+        $events = $property->reservations()->where('status', 'confirmed')->get()->map(function ($reservation) {
             return [
                 'uid' => 'reservation-' . $reservation->id,
                 'summary' => 'Reserved: ' . $reservation->reservation_ref,

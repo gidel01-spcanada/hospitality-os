@@ -39,6 +39,10 @@ class AuthController extends Controller
             app()->setLocale($locale);
             $request->session()->put('locale', $locale);
 
+            if ($request->session()->has('pending_public_reservation')) {
+                return redirect()->route('reservation.resume');
+            }
+
             return redirect($user && $user->canManageReservations() ? route('admin.dashboard') : route('dashboard'));
         }
 
@@ -75,7 +79,7 @@ class AuthController extends Controller
             'email_newsletter' => false,
         ]);
 
-        Auth::login($user);
+            Auth::login($user);
         app()->setLocale($locale);
         session()->put('locale', $locale);
 
@@ -200,7 +204,7 @@ class AuthController extends Controller
             __('messages.errors.reservation_access')
         );
 
-        $reservation->load(['property.establishment', 'guest', 'priceLines']);
+        $reservation->load(['property.establishment', 'guest', 'priceLines', 'receipts']);
 
         return view('dashboard-reservation', compact('user', 'reservation'));
     }
@@ -293,6 +297,7 @@ class AuthController extends Controller
             function (User $user, string $password) {
                 $user->forceFill([
                     'password' => Hash::make($password),
+                    'email_verified_at' => now(),
                 ])->setRememberToken(str()->random(60));
 
                 $user->save();

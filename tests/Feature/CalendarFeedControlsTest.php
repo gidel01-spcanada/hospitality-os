@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ExternalCalendarFeed;
 use App\Models\Property;
+use App\Models\Reservation;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,6 +53,24 @@ class CalendarFeedControlsTest extends TestCase
         $this->assertDatabaseHas('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-1']);
         $this->assertNotNull($feed->fresh()->last_successful_sync_at);
 
+        Reservation::query()->create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-CALENDAR-CONFIRMED',
+            'status' => 'confirmed',
+            'check_in' => '2026-09-20',
+            'check_out' => '2026-09-22',
+            'email' => 'confirmed@example.com',
+        ]);
+
+        Reservation::query()->create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-CALENDAR-PENDING',
+            'status' => 'pending',
+            'check_in' => '2026-09-23',
+            'check_out' => '2026-09-25',
+            'email' => 'pending@example.com',
+        ]);
+
         $this->actingAs($admin)
             ->get('/admin/properties/' . $property->id . '/edit')
             ->assertOk()
@@ -62,6 +81,8 @@ class CalendarFeedControlsTest extends TestCase
         $export->assertOk();
         $export->assertHeader('Content-Type', 'text/calendar; charset=UTF-8');
         $export->assertSee('BEGIN:VCALENDAR');
+        $export->assertSee('AFK-CALENDAR-CONFIRMED');
+        $export->assertDontSee('AFK-CALENDAR-PENDING');
 
         $this->actingAs($admin)
             ->delete('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id)

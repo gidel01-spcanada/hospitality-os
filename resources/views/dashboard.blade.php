@@ -62,29 +62,6 @@
             @endif
         </div>
 
-        <div class="summary-card full-width">
-            <h2>{{ __('messages.dashboard.preferences') }}</h2>
-            <form method="POST" action="{{ route('dashboard.preferences.update') }}">
-                @csrf
-                <div>
-                    <label for="locale">{{ __('messages.profile.language') }}</label>
-                    <select id="locale" name="locale">
-                        <option value="fr" @selected(old('locale', $user->locale ?? 'fr') === 'fr')>Français</option>
-                        <option value="en" @selected(old('locale', $user->locale ?? 'fr') === 'en')>English</option>
-                    </select>
-                </div>
-                <div>
-                    <label><input type="checkbox" name="email_booking_updates" value="1" @checked(old('email_booking_updates', (bool) ($user->email_booking_updates ?? true)))> {{ __('messages.profile.booking_updates') }}</label>
-                    <label><input type="checkbox" name="email_message_updates" value="1" @checked(old('email_message_updates', (bool) ($user->email_message_updates ?? true)))> {{ __('messages.profile.message_updates') }}</label>
-                    <label><input type="checkbox" name="email_marketing" value="1" @checked(old('email_marketing', (bool) ($user->email_marketing ?? false)))> {{ __('messages.profile.marketing') }}</label>
-                    <label><input type="checkbox" name="email_newsletter" value="1" @checked(old('email_newsletter', (bool) ($user->email_newsletter ?? false)))> {{ __('messages.profile.newsletter') }}</label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">{{ __('messages.profile.save') }}</button>
-                </div>
-            </form>
-        </div>
-
         @if ($user->canManageReservations())
             <div class="summary-card full-width">
                 <h2>{{ __('messages.dashboard.staff_access') }}</h2>

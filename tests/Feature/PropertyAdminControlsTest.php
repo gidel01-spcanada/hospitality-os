@@ -34,6 +34,9 @@ class PropertyAdminControlsTest extends TestCase
                 'nightly_rate_eur' => 41.15,
                 'minimum_stay' => 3,
                 'max_guests' => 3,
+                'bedrooms' => 2,
+                'bathrooms' => 1,
+                'beds' => 3,
                 'status' => 'published',
                 'is_published' => true,
                 'amenity_ids' => $amenityIds,
@@ -41,7 +44,7 @@ class PropertyAdminControlsTest extends TestCase
             ])
             ->assertRedirect('/admin/properties/' . $property->id . '/edit#general');
 
-        $this->assertDatabaseHas('properties', ['id' => $property->id, 'property_type' => 'villa', 'nightly_rate_xof' => '27000.00', 'minimum_stay' => 3]);
+        $this->assertDatabaseHas('properties', ['id' => $property->id, 'property_type' => 'villa', 'nightly_rate_xof' => '27000.00', 'minimum_stay' => 3, 'bedrooms' => 2, 'bathrooms' => 1, 'beds' => 3]);
         $this->assertSame($amenityIds, $property->fresh()->amenities()->pluck('amenities.id')->sort()->values()->all());
 
         $this->actingAs($admin)

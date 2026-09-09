@@ -1,5 +1,16 @@
 import './bootstrap';
 
+const mobileMenuToggle = document.querySelector('[data-mobile-menu-toggle]');
+const mobileNavActions = document.querySelector('.nav-actions');
+
+if (mobileMenuToggle && mobileNavActions) {
+	mobileNavActions.id = 'mobile-nav-actions';
+	mobileMenuToggle.addEventListener('click', () => {
+		const isOpen = mobileNavActions.classList.toggle('is-open');
+		mobileMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+	});
+}
+
 document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	let images;
 
@@ -15,6 +26,7 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 
 	const urlOf = (source) => (typeof source === 'string' ? source : source.url);
 	const tagOf = (source) => (typeof source === 'string' ? '' : source.tag || '');
+	const altOf = (source) => (typeof source === 'string' ? '' : source.alt || '');
 
 	let currentIndex = Number(gallery.dataset.galleryStart || 0);
 	const image = gallery.querySelector('[data-gallery-image]') || gallery.querySelector('.property-image');
@@ -37,9 +49,11 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 
 	const backgroundFor = (url) => `linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("${url}")`;
 
-	const applyImage = (url) => {
+	const applyImage = (source) => {
+		const url = urlOf(source);
 		if (isImgElement) {
 			image.src = url;
+			image.alt = altOf(source);
 		} else {
 			image.style.backgroundImage = backgroundFor(url);
 		}
@@ -69,7 +83,7 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 		}
 
 		if (activeLayer) {
-			applyImage(activeLayer.dataset.url);
+			applyImage(images[Number(activeLayer.dataset.index)]);
 			activeLayer.remove();
 			activeLayer = null;
 		}
@@ -92,11 +106,11 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 		applyMeta(source);
 
 		if (!animate || prefersReducedMotion) {
-			applyImage(url);
+			applyImage(source);
 		} else {
 			const layer = document.createElement('div');
 			layer.className = 'gallery-fade-layer';
-			layer.dataset.url = url;
+			layer.dataset.index = currentIndex;
 			layer.style.backgroundImage = backgroundFor(url);
 			gallery.appendChild(layer);
 			activeLayer = layer;
@@ -155,6 +169,7 @@ document.querySelectorAll('[data-check-availability]').forEach((button) => {
 	button.addEventListener('click', async () => {
 		const form = button.closest('form');
 		const result = form.querySelector('[data-availability-result]');
+		form.querySelectorAll('.form-error-box, .reservation-success').forEach((el) => el.remove());
 		const payload = new FormData();
 		payload.append('check_in', form.elements.check_in.value);
 		payload.append('check_out', form.elements.check_out.value);
@@ -340,6 +355,25 @@ document.querySelectorAll('[data-copy-payment-link]').forEach((button) => {
 	});
 });
 
+document.querySelectorAll('[data-copy-share-link]').forEach((button) => {
+	button.addEventListener('click', async () => {
+		const status = button.closest('.share-panel')?.querySelector('[data-copy-share-link-status]');
+
+		try {
+			await navigator.clipboard.writeText(button.dataset.copyShareLink ?? '');
+			if (status) {
+				status.textContent = button.dataset.copyShareLinkSuccess ?? 'Link copied.';
+				status.hidden = false;
+			}
+		} catch {
+			if (status) {
+				status.textContent = button.dataset.copyShareLinkError ?? 'Unable to copy the link.';
+				status.hidden = false;
+			}
+		}
+	});
+});
+
 document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => {
 	const parseRanges = (value) => {
 		try {
@@ -356,26 +390,39 @@ document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => 
 	const inRange = (date, ranges) => ranges.some(([start, end]) => date >= start && date <= end);
 	const headings = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-	const render = () => {
-		const year = displayedMonth.getFullYear();
-		const month = displayedMonth.getMonth();
+	const renderMonth = (monthDate) => {
+		const year = monthDate.getFullYear();
+		const month = monthDate.getMonth();
 		const firstDay = new Date(year, month, 1);
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 		const formatDate = (day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-		calendar.innerHTML = `<div class="availability-calendar-title"><button type="button" data-calendar-prev aria-label="Previous month">&larr;</button><strong>${displayedMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</strong><button type="button" data-calendar-next aria-label="Next month">&rarr;</button></div><div class="availability-calendar-grid">${headings.map((heading) => `<strong>${heading}</strong>`).join('')}</div>`;
-		const grid = calendar.querySelector('.availability-calendar-grid');
-		for (let blank = 0; blank < firstDay.getDay(); blank += 1) {
-			grid.insertAdjacentHTML('beforeend', '<span class="availability-day availability-empty"></span>');
-		}
+		const days = [];
+		for (let blank = 0; blank < firstDay.getDay(); blank += 1) days.push('<span class="availability-day availability-empty"></span>');
 		for (let day = 1; day <= daysInMonth; day += 1) {
 			const date = formatDate(day);
 			const past = date < today.toISOString().slice(0, 10);
 			const status = past ? 'past' : (inRange(date, external) ? 'external' : (inRange(date, blocked) || inRange(date, reserved) ? 'blocked' : 'available'));
-			grid.insertAdjacentHTML('beforeend', `<span class="availability-day availability-${status}">${day}</span>`);
+			days.push(`<span class="availability-day availability-${status}">${day}</span>`);
 		}
+		return `<div class="availability-month"><strong class="availability-month-title">${monthDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</strong><div class="availability-calendar-grid">${headings.map((heading) => `<strong>${heading}</strong>`).join('')}${days.join('')}</div></div>`;
+	};
+
+	const render = () => {
+		const secondMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1);
+		calendar.innerHTML = `<div class="availability-calendar-title"><button type="button" data-calendar-prev aria-label="Previous two months">&larr;</button><span>${displayedMonth.toLocaleString(undefined, { month: 'short', year: 'numeric' })} - ${secondMonth.toLocaleString(undefined, { month: 'short', year: 'numeric' })}</span><button type="button" data-calendar-next aria-label="Next two months">&rarr;</button></div><div class="availability-calendar-months">${renderMonth(displayedMonth)}${renderMonth(secondMonth)}</div>`;
 		calendar.querySelector('[data-calendar-prev]').addEventListener('click', () => { displayedMonth.setMonth(displayedMonth.getMonth() - 1); render(); });
 		calendar.querySelector('[data-calendar-next]').addEventListener('click', () => { displayedMonth.setMonth(displayedMonth.getMonth() + 1); render(); });
 	};
 
 	render();
+});
+
+document.querySelectorAll('[data-toggle-availability]').forEach((button) => {
+	button.addEventListener('click', () => {
+		const content = document.getElementById(button.getAttribute('aria-controls'));
+		const expanded = button.getAttribute('aria-expanded') === 'true';
+		button.setAttribute('aria-expanded', String(!expanded));
+		button.textContent = expanded ? button.dataset.showLabel : button.dataset.hideLabel;
+		if (content) content.hidden = expanded;
+	});
 });

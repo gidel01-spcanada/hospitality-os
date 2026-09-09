@@ -3,13 +3,17 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Establishment;
+use App\Models\ExternalCalendarEvent;
+use App\Models\ExternalCalendarFeed;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\SiteReview;
 use App\Models\User;
 use App\Notifications\GuestAccountSetupNotification;
+use App\Support\BrandSettings;
 use Database\Seeders\DatabaseSeeder;
 use Tests\TestCase;
 use Illuminate\Support\Facades\Notification;
@@ -27,6 +31,88 @@ class PublicPropertyBookingTest extends TestCase
             'check_in' => now()->addMonths(2)->startOfMonth()->toDateString(),
             'check_out' => now()->addMonths(2)->startOfMonth()->addDays(2)->toDateString(),
         ])->assertOk()->assertJson(['available' => true]);
+    }
+
+    public function test_existing_customer_email_requires_login_before_reservation_checkout(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('status', 'published')->firstOrFail();
+
+        $this->post('/properties/' . $property->slug . '/reserve', [
+            'full_name' => 'Guest Customer',
+            'email' => 'guest@afrikappart.test',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+        ])->assertRedirect(route('login'))
+            ->assertSessionHas('pending_public_reservation');
+
+        $this->assertDatabaseMissing('reservations', ['email' => 'guest@afrikappart.test']);
+    }
+
+    public function test_authenticated_customer_can_reserve_without_reentering_name_or_email(): void
+    {
+        Notification::fake();
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $property = Property::query()->where('status', 'published')->firstOrFail();
+        $customer = User::factory()->create([
+            'name' => 'Amina Customer',
+            'email' => 'amina@example.com',
+            'role' => 'customer',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($customer)->post('/properties/' . $property->slug . '/reserve', [
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('reservations', [
+            'email' => 'amina@example.com',
+            'user_id' => $customer->id,
+        ]);
+        $this->assertDatabaseHas('reservation_guests', [
+            'email' => 'amina@example.com',
+            'full_name' => 'Amina Customer',
+        ]);
+    }
+
+    public function test_unverified_existing_account_email_receives_confirmation_email_instead_of_login_prompt(): void
+    {
+        Notification::fake();
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('status', 'published')->firstOrFail();
+        $unverified = User::factory()->create([
+            'email' => 'unverified@example.com',
+            'role' => 'customer',
+            'tenant_id' => $property->establishment?->tenant_id,
+            'email_verified_at' => null,
+        ]);
+
+        $response = $this->post('/properties/' . $property->slug . '/reserve', [
+            'full_name' => 'Unverified Customer',
+            'email' => 'unverified@example.com',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertNotSame(route('login'), $response->headers->get('Location'));
+        $response->assertSessionHas('pending_public_reservation');
+        $response->assertSessionHas('status', __('messages.auth.confirm_email_before_reservation'));
+
+        $this->assertDatabaseMissing('reservations', ['email' => 'unverified@example.com']);
+        Notification::assertSentTo($unverified, GuestAccountSetupNotification::class);
     }
 
     public function test_authenticated_customer_can_toggle_property_favorite(): void
@@ -78,6 +164,7 @@ class PublicPropertyBookingTest extends TestCase
     {
         ini_set('memory_limit', '1G');
         Notification::fake();
+        $this->withoutMiddleware(ValidateCsrfToken::class);
 
         Artisan::call('db:seed');
         Artisan::call('property:sync-media', [
@@ -108,6 +195,8 @@ class PublicPropertyBookingTest extends TestCase
             'infants' => 0,
         ]);
 
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
         $reservation = Reservation::query()->where('email', 'alice@example.com')->latest()->firstOrFail();
         $response->assertRedirect(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]));
         $this->assertDatabaseHas('reservation_guests', ['email' => 'alice@example.com']);
@@ -156,6 +245,82 @@ class PublicPropertyBookingTest extends TestCase
             ->assertDontSee('Appartement 401');
     }
 
+    public function test_home_search_accepts_one_traveler(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('<option value="1"', false)
+            ->assertSee('1 voyageur')
+            ->assertSee('data-mobile-menu-toggle', false)
+            ->assertSee('href="' . route('login') . '"', false);
+
+        $this->get('/properties?guests=1')
+            ->assertOk()
+            ->assertSee('Appartement 401');
+    }
+
+    public function test_properties_date_filter_excludes_external_calendar_conflicts(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $feed = ExternalCalendarFeed::query()->create([
+            'property_id' => $property->id,
+            'name' => 'External booking calendar',
+            'url' => 'https://example.com/external.ics',
+            'is_enabled' => true,
+        ]);
+        ExternalCalendarEvent::query()->create([
+            'feed_id' => $feed->id,
+            'uid' => 'external-conflict-1',
+            'summary' => 'External booking',
+            'start_date' => '2026-10-10',
+            'end_date' => '2026-10-13',
+        ]);
+
+        $this->get('/properties?check_in=2026-10-11&check_out=2026-10-12')
+            ->assertOk()
+            ->assertDontSee('Appartement 401');
+
+        $this->get('/properties/appartement-401')
+            ->assertOk()
+            ->assertSee('data-external="[]"', false)
+            ->assertSee('2026-10-10', false)
+            ->assertDontSee(__('messages.admin.external_bookings'));
+    }
+
+    public function test_availability_check_rejects_enabled_external_calendar_conflicts(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $feed = ExternalCalendarFeed::query()->create([
+            'property_id' => $property->id,
+            'name' => 'External booking calendar',
+            'url' => 'https://example.com/external.ics',
+            'is_enabled' => true,
+        ]);
+        ExternalCalendarEvent::query()->create([
+            'feed_id' => $feed->id,
+            'uid' => 'external-api-conflict-1',
+            'summary' => 'External booking',
+            'start_date' => '2026-12-10',
+            'end_date' => '2026-12-13',
+        ]);
+
+        $this->postJson('/properties/' . $property->slug . '/availability', [
+            'check_in' => '2026-12-11',
+            'check_out' => '2026-12-12',
+        ])->assertOk()->assertJson(['available' => false]);
+
+        $feed->update(['is_enabled' => false]);
+
+        $this->postJson('/properties/' . $property->slug . '/availability', [
+            'check_in' => '2026-12-11',
+            'check_out' => '2026-12-12',
+        ])->assertOk()->assertJson(['available' => true]);
+    }
+
     public function test_home_search_redirects_to_properties_with_selected_filters(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -170,14 +335,17 @@ class PublicPropertyBookingTest extends TestCase
         $this->get('/?destination=Cotonou&guests=3&check_in=2026-10-01&check_out=2026-10-03')
             ->assertOk()
             ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
-            ->assertSee('<option value="3" selected>3 voyageurs</option>', false)
             ->assertSee('name="check_in" value="2026-10-01"', false)
-            ->assertSee('name="check_out" value="2026-10-03"', false);
+            ->assertSee('name="check_out" value="2026-10-03"', false)
+            ->assertSee('name="guests"', false)
+            ->assertSee('<option value="3" selected>3 voyageurs</option>', false);
 
-        $this->get('/properties?destination=Cotonou&guests=3')
+        $this->get('/properties?destination=Cotonou&guests=3&check_in=2026-10-01&check_out=2026-10-03')
             ->assertOk()
             ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
-            ->assertSee('value="3"', false);
+            ->assertSee('value="3"', false)
+            ->assertSee('id="check_in" name="check_in" type="date" value="2026-10-01"', false)
+            ->assertSee('id="check_out" name="check_out" type="date" value="2026-10-03"', false);
 
         // Legacy links that still use the "city" parameter must keep working.
         $this->get('/properties?city=Cotonou')
@@ -208,6 +376,7 @@ class PublicPropertyBookingTest extends TestCase
             'google_maps_url' => 'https://maps.google.com/?q=6.3703,2.3912',
         ]);
         SiteReview::create([
+            'tenant_id' => $property->establishment->tenant_id,
             'source' => 'google',
             'reviewer_name' => 'Awa',
             'rating' => 5,
@@ -215,13 +384,57 @@ class PublicPropertyBookingTest extends TestCase
             'is_active' => true,
             'reviewed_at' => now(),
         ]);
+        SiteReview::create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'source' => 'booking',
+            'reviewer_name' => 'Moussa',
+            'rating' => 4,
+            'review_text' => 'Excellent location',
+            'is_active' => true,
+            'reviewed_at' => now()->subDay(),
+        ]);
+        BrandSettings::set([
+            'review_source_booking_url' => 'https://www.booking.com/hotel/example',
+            'review_source_google_url' => 'https://maps.google.com/?cid=example',
+        ]);
 
         $this->get('/properties/appartement-401')
             ->assertOk()
             ->assertSee('Wonderful stay')
+            ->assertSee('Excellent location')
+            ->assertSee('Bénin')
+            ->assertDontSee('>BJ<', false)
+            ->assertSee('google')
+            ->assertSee('booking')
+            ->assertSee('https://www.booking.com/hotel/example', false)
+            ->assertSee('https://maps.google.com/?cid=example', false)
             ->assertSee('location-map', false)
             ->assertSee('property="og:image"', false)
             ->assertSee('facebook.com/sharer', false);
+    }
+
+    public function test_property_detail_uses_establishment_location_information(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->update([
+            'address' => '12 Avenue de la Marina',
+            'city' => 'Cotonou',
+            'country_code' => 'BJ',
+        ]);
+        $property->update([
+            'address' => 'Property-specific address',
+            'city' => 'Property-specific city',
+            'country' => 'XX',
+        ]);
+
+        $this->get('/properties/appartement-401')
+            ->assertOk()
+            ->assertSee('<div class="info-row"><span>Adresse</span><strong>12 Avenue de la Marina</strong></div>', false)
+            ->assertSee('<div class="info-row"><span>Ville</span><strong>Cotonou</strong></div>', false)
+            ->assertSee('<div class="info-row"><span>Pays</span><strong>BJ</strong></div>', false)
+            ->assertDontSee('<div class="info-row"><span>Adresse</span><strong>Property-specific address</strong></div>', false)
+            ->assertDontSee('<div class="info-row"><span>Ville</span><strong>Property-specific city</strong></div>', false);
     }
 
     public function test_property_detail_renders_translated_labels_for_english_guests(): void
@@ -250,6 +463,7 @@ class PublicPropertyBookingTest extends TestCase
         $this->get('/sitemap.xml')
             ->assertOk()
             ->assertHeader('Content-Type', 'application/xml')
+            ->assertSee("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset", false)
             ->assertSee('<urlset', false)
             ->assertSee(route('properties.index'), false);
     }

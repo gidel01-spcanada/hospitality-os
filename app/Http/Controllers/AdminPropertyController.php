@@ -16,6 +16,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use App\Models\ExternalCalendarFeed;
 
 class AdminPropertyController extends Controller
@@ -40,8 +41,12 @@ class AdminPropertyController extends Controller
             'slug' => ['required', 'string', 'max:255', 'unique:properties,slug'],
             'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
             'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
+            'video_urls' => ['nullable', 'string', 'max:10000'],
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
+            'bedrooms' => ['required', 'integer', 'min:0'],
+            'bathrooms' => ['required', 'integer', 'min:0'],
+            'beds' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published,archived'],
             'amenity_ids' => ['nullable', 'array'],
             'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
@@ -49,6 +54,7 @@ class AdminPropertyController extends Controller
 
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
+        $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
         $property = Property::query()->create($validated + [
             'currency' => 'XOF',
             'is_published' => $validated['status'] === 'published',
@@ -98,8 +104,12 @@ class AdminPropertyController extends Controller
             'slug' => ['required', 'string', 'max:255', 'unique:properties,slug,' . $property->id],
             'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
             'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
+            'video_urls' => ['nullable', 'string', 'max:10000'],
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
+            'bedrooms' => ['sometimes', 'integer', 'min:0'],
+            'bathrooms' => ['sometimes', 'integer', 'min:0'],
+            'beds' => ['sometimes', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published,archived'],
             'establishment_id' => ['sometimes', 'integer', $this->establishmentExistsRule()],
             'amenity_ids' => ['nullable', 'array'],
@@ -116,6 +126,7 @@ class AdminPropertyController extends Controller
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
+        $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
         $property->fill($validated);
         $property->save();
         $property->amenities()->sync($amenityIds);
@@ -352,6 +363,30 @@ class AdminPropertyController extends Controller
             : $fallbackTab;
 
         return redirect()->to(route('admin.properties.edit', $property) . '#' . $tab)->with('success', $message);
+    }
+
+    private function normalizeVideoUrls(?string $value): array
+    {
+        $urls = collect(preg_split('/\r\n|\r|\n/', (string) $value))
+            ->map(fn (string $url) => trim($url))
+            ->filter()
+            ->values();
+
+        $invalidUrls = $urls->filter(function (string $url): bool {
+            $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+            return ! filter_var($url, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true);
+        });
+
+        if ($invalidUrls->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'video_urls' => __('messages.errors.invalid_video_urls', ['urls' => $invalidUrls->implode(', ')]),
+            ]);
+        }
+
+        return $urls
+            ->unique()
+            ->all();
     }
 
     /**

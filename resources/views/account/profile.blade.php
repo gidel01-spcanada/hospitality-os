@@ -41,9 +41,5 @@
                 </div>
             </form>
         </div>
-
-        <div class="summary-card full-width">
-            <h2>{{ __('messages.profile.preferences') }}</h2>
-        </div>
     </section>
 @endsection

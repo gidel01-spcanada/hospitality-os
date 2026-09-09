@@ -11,6 +11,9 @@
         <div class="mb-6">
             <p class="text-sm uppercase tracking-[0.2em] text-amber-600">{{ __('messages.checkout.badge') }}</p>
             <h1 class="text-3xl font-bold">{{ __('messages.checkout.title') }}</h1>
+            @auth
+                <a class="mt-2 inline-block text-sm text-amber-700 underline" href="{{ route('dashboard') }}">{{ __('messages.checkout.back_to_account') }}</a>
+            @endauth
         </div>
 
         @if (session('status'))
@@ -77,6 +80,10 @@
                     </form>
                 @endif
 
+                @if (in_array('pay_later', array_keys($paymentMethods), true) && $reservation->status === 'pending')
+                    <p class="mt-3 text-center text-sm text-slate-600">{{ __('messages.checkout.pay_later') }}: {{ $paymentMethods['pay_later']['instructions'] ?: __('messages.checkout.pay_later') }}</p>
+                @endif
+
                 @if($reservation->paymentAttempts->isNotEmpty())
                     <div class="mt-6 border-t border-slate-200 pt-4">
                         <h3 class="text-md font-semibold">{{ __('messages.checkout.attempts') }}</h3>
@@ -94,13 +101,16 @@
                     </div>
                 @endif
 
-                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
+                @php $latestAttempt = $reservation->paymentAttempts->last(); @endphp
+                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && ($isDevEnvironment || $latestAttempt->provider !== 'pay_later'))
                     <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
                         @csrf
                         <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
                             {{ __('messages.checkout.simulate') }}
                         </button>
                     </form>
+                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt?->provider === 'pay_later' && ! $isDevEnvironment)
+                    <p class="mt-6 text-center text-sm text-slate-500">{{ __('messages.checkout.simulate_unavailable') }}</p>
                 @endif
 
                 @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))

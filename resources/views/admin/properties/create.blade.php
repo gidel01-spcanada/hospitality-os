@@ -39,6 +39,9 @@
             <x-input name="nightly_rate_eur" label="{{ __('messages.admin.nightly_rate_eur') }}" type="number" min="0" step="0.01" required value="{{ old('nightly_rate_eur', 0) }}" data-currency-input="eur" data-currency-pair="create" data-xof-per-eur="{{ $xofPerEur }}" />
             <x-input name="minimum_stay" label="{{ __('messages.admin.minimum_stay') }}" type="number" min="1" required value="{{ old('minimum_stay', 1) }}" />
             <x-input name="max_guests" label="{{ __('messages.admin.maximum_guests') }}" type="number" min="1" required value="{{ old('max_guests', 1) }}" />
+            <x-input name="bedrooms" label="{{ __('messages.admin.bedrooms') }}" type="number" min="0" required value="{{ old('bedrooms', 0) }}" />
+            <x-input name="bathrooms" label="{{ __('messages.admin.bathrooms') }}" type="number" min="0" required value="{{ old('bathrooms', 0) }}" />
+            <x-input name="beds" label="{{ __('messages.admin.beds') }}" type="number" min="0" required value="{{ old('beds', 0) }}" />
             <div>
                 <label for="status">{{ __('messages.admin.status') }} <span class="required">*</span></label>
                 <select id="status" name="status" class="input-md" required>

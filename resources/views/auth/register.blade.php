@@ -29,7 +29,7 @@
 
                 <label>
                     <span>Email</span>
-                    <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" required>
+                    <input type="email" name="email" value="{{ old('email', request('email')) }}" autocomplete="email" required>
                 </label>
 
                 <label>
