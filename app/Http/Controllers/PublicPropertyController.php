@@ -129,7 +129,7 @@ class PublicPropertyController extends Controller
 
     public function reserve(Request $request, Property $property, ReservationEmailService $emailService): RedirectResponse
     {
-        $authenticatedUser = $request->user();
+        $authenticatedUser = $request->user()?->role === 'customer' ? $request->user() : null;
         $validated = $request->validate([
             'full_name' => [$authenticatedUser ? 'nullable' : 'required', 'string', 'max:120'],
             'email' => [$authenticatedUser ? 'nullable' : 'required', 'email:filter', 'max:255'],

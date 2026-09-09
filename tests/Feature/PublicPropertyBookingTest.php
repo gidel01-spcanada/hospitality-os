@@ -432,7 +432,7 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('<div class="info-row"><span>Adresse</span><strong>12 Avenue de la Marina</strong></div>', false)
             ->assertSee('<div class="info-row"><span>Ville</span><strong>Cotonou</strong></div>', false)
-            ->assertSee('<div class="info-row"><span>Pays</span><strong>BJ</strong></div>', false)
+            ->assertSee('<div class="info-row"><span>Pays</span><strong>Bénin</strong></div>', false)
             ->assertDontSee('<div class="info-row"><span>Adresse</span><strong>Property-specific address</strong></div>', false)
             ->assertDontSee('<div class="info-row"><span>Ville</span><strong>Property-specific city</strong></div>', false);
     }
