@@ -182,7 +182,7 @@
 
                         <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}">
                             @csrf
-                            @guest
+                            @if (! auth()->check() || auth()->user()->role !== 'customer')
                                 <div class="input-group">
                                     <label for="full_name">{{ __('messages.properties.full_name') }}</label>
                                     <input id="full_name" name="full_name" type="text" value="{{ old('full_name') }}" required>
@@ -191,7 +191,7 @@
                                     <label for="email">{{ __('messages.common.email') }}</label>
                                     <input id="email" name="email" type="email" value="{{ old('email') }}" required>
                                 </div>
-                            @endguest
+                            @endif
                             <div class="grid-two compact-grid">
                                 <div class="input-group">
                                     <label for="check_in">{{ __('messages.properties.check_in') }}</label>
