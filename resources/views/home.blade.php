@@ -58,6 +58,7 @@
                         <label>
                             <span>{{ __('messages.home.travelers') }}</span>
                             <select name="guests" aria-label="{{ __('messages.home.travelers') }}">
+                                <option value="1" @selected(request('guests', '1') == 1)>1 voyageur</option>
                                 <option value="2" @selected(request('guests', '2') == 2)>2 voyageurs</option>
                                 <option value="3" @selected(request('guests') == 3)>3 voyageurs</option>
                                 <option value="4" @selected(request('guests') == 4)>4 voyageurs</option>
@@ -263,7 +264,7 @@
                             </a>
                         @endauth
                         <a href="{{ route('properties.show', $property) }}" class="property-link" aria-label="Voir {{ $property->localized('name') }}">
-                            <div class="property-image" style="background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url('{{ $property->cover_image ? asset($property->cover_image) : 'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80' }}');"></div>
+                            <img src="{{ $property->cover_image ? asset($property->cover_image) : 'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80' }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => 1]) }}" class="property-image" loading="lazy">
                             <div class="property-copy">
                                 <div class="meta-row">
                                     <span class="badge badge-emerald">{{ $property->localized('name') }}</span>

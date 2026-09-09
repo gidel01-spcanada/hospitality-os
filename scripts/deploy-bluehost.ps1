@@ -131,7 +131,7 @@ function Publish-Directory([string]$localRoot, [string]$remoteRoot) {
     Invoke-FtpDirectory $remoteRoot
     $items = Get-ChildItem $localRoot -Recurse -Force
     foreach ($item in $items) {
-        if ($item.Name -eq '.git') {
+        if ($item.Name -in @('.git', '.gitignore')) {
             continue
         }
         $relative = $item.FullName.Substring($localRoot.Length).TrimStart('\', '/')
@@ -179,6 +179,12 @@ function Get-RelativeRemotePath([string]$fromPath, [string]$toPath) {
 
 function New-PublicUploadRoot() {
     $publicSource = Join-Path $ReleaseRoot 'public'
+    foreach ($requiredFile in @('robots.txt', 'sitemap.xml')) {
+        if (-not (Test-Path (Join-Path $publicSource $requiredFile))) {
+            throw "Required public SEO file is missing from the release: $requiredFile"
+        }
+    }
+
     $publicUploadRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('hospitality-os-public-' + [guid]::NewGuid().ToString('N'))
     Remove-Item $publicUploadRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $publicUploadRoot | Out-Null

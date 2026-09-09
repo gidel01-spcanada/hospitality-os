@@ -16,8 +16,9 @@ class CheckoutController extends Controller
         $token = $this->authorizeCheckout($request, $reservation);
         $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
         $paymentMethods = $this->paymentMethods($reservation);
+        $isDevEnvironment = app()->environment(['local', 'testing']);
 
-        return view('checkout.show', compact('reservation', 'paymentMethods', 'token'));
+        return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment'));
     }
 
     public function start(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
@@ -81,6 +82,8 @@ class CheckoutController extends Controller
     {
         $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
+        // Offline (pay_later) has no external status to verify; only an admin-confirmed receipt marks it paid outside dev.
+        abort_if($attempt->provider === 'pay_later' && ! app()->environment(['local', 'testing']), 403, __('messages.checkout.simulate_unavailable'));
         $gateway = $manager->resolve($attempt->provider, $attempt->payload['mode'] ?? 'sandbox');
         $attempt = $gateway->verifyStatus($attempt);
 

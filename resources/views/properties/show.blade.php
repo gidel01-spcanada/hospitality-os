@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $property->localized('name') . ' | ' . \App\Support\PlatformBrand::name())
+@section('title', __('messages.seo.property_title', ['name' => $property->localized('name'), 'bedrooms' => $property->bedrooms, 'city' => $property->city, 'brand' => \App\Support\PlatformBrand::name()]))
 @section('seo_description', $property->localized('description') ?: $property->localized('summary'))
 
 @push('head')
@@ -30,20 +30,42 @@
             'image' => [$shareImageUrl],
             'address' => array_filter([
                 '@type' => 'PostalAddress',
-                'streetAddress' => $property->address ?: $property->establishment?->address,
-                'addressLocality' => $property->city ?: $property->establishment?->city,
-                'addressCountry' => $property->country ?: $property->establishment?->country_code,
+                'streetAddress' => $property->establishment?->address ?: $property->address,
+                'addressLocality' => $property->establishment?->city ?: $property->city,
+                'addressCountry' => $property->establishment?->country_code ?: $property->country,
             ]),
             'geo' => $property->establishment?->latitude && $property->establishment?->longitude ? [
                 '@type' => 'GeoCoordinates',
                 'latitude' => (float) $property->establishment->latitude,
                 'longitude' => (float) $property->establishment->longitude,
             ] : null,
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => url()->current(),
+                'price' => (float) $property->nightly_rate_xof,
+                'priceCurrency' => $property->currency,
+                'availability' => 'https://schema.org/InStock',
+            ],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
 @endpush
 
 @section('content')
+    @php
+        $locationAddress = $property->establishment?->address ?: $property->address;
+        $locationCity = $property->establishment?->city ?: $property->city;
+        $locationCountryCode = $property->establishment?->country_code ?: $property->country;
+        $locationCountry = $locationCountryCode;
+        $countryNames = [
+            'fr' => ['BJ' => 'Bénin', 'FR' => 'France', 'CI' => 'Côte d’Ivoire', 'SN' => 'Sénégal', 'TG' => 'Togo', 'GH' => 'Ghana', 'NG' => 'Nigeria'],
+            'en' => ['BJ' => 'Benin', 'FR' => 'France', 'CI' => 'Ivory Coast', 'SN' => 'Senegal', 'TG' => 'Togo', 'GH' => 'Ghana', 'NG' => 'Nigeria'],
+        ];
+        if ($locationCountryCode && class_exists(\Locale::class)) {
+            $displayCountry = \Locale::getDisplayRegion('und-' . strtoupper($locationCountryCode), app()->getLocale());
+            $locationCountry = $displayCountry ?: $locationCountryCode;
+        }
+        $locationCountry = $countryNames[app()->getLocale()][strtoupper((string) $locationCountryCode)] ?? $locationCountry;
+    @endphp
     <section class="property-show-header">
         <div class="container">
             <div class="property-show-topline">
@@ -62,13 +84,20 @@
                     <a href="https://www.facebook.com/sharer/sharer.php?u={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_facebook') }}</a>
                     <a href="https://twitter.com/intent/tweet?text={{ $encodedShareTitle }}&url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_x') }}</a>
                     <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_linkedin') }}</a>
+                    <button type="button" data-copy-share-link="{{ $shareUrl }}" data-copy-share-link-success="{{ __('messages.properties.share_link_copied') }}" data-copy-share-link-error="{{ __('messages.properties.share_link_copy_failed') }}">{{ __('messages.properties.share_instagram') }}</button>
+                    <button type="button" data-copy-share-link="{{ $shareUrl }}" data-copy-share-link-success="{{ __('messages.properties.share_link_copied') }}" data-copy-share-link-error="{{ __('messages.properties.share_link_copy_failed') }}">{{ __('messages.properties.share_tiktok') }}</button>
                 </div>
+                <p class="form-help" data-copy-share-link-status aria-live="polite" hidden></p>
             </div>
             <div class="property-show-layout">
                 <div class="gallery-panel">
                     @php
                         $images = $property->images;
-                        $galleryImages = $images->map(fn ($image) => ['url' => asset($image->file_path), 'tag' => $image->room_tag])->values();
+                        $galleryImages = $images->values()->map(fn ($image, $index) => [
+                            'url' => asset($image->file_path),
+                            'tag' => $image->room_tag,
+                            'alt' => __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $index + 1]),
+                        ]);
                         $coverImage = $images->firstWhere('is_cover', true) ?? $images->first();
                         $cover = $coverImage ? asset($coverImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
                         $coverIndex = $coverImage ? $images->search(fn ($image) => $image->id === $coverImage->id) : 0;
@@ -77,7 +106,7 @@
                         @if ($galleryImages->count() > 1)
                             <button type="button" class="gallery-control gallery-prev" data-gallery-prev aria-label="{{ __('messages.properties.previous_photo') }}">&#8592;</button>
                         @endif
-                        <img src="{{ $cover }}" alt="{{ $property->name }}" class="main-image" data-gallery-image>
+                        <img src="{{ $cover }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => 1]) }}" class="main-image" data-gallery-image>
                         @if ($coverImage?->room_tag)
                             <span class="gallery-tag" data-gallery-tag>{{ $coverImage->room_tag }}</span>
                         @endif
@@ -90,21 +119,46 @@
                         @foreach ($images as $image)
                             @php $src = $image->file_path ? asset($image->file_path) : $cover; @endphp
                             <button type="button" class="gallery-thumb" data-gallery-thumb="{{ $loop->index }}" aria-label="{{ __('messages.properties.view_photo', ['number' => $loop->iteration]) }}">
-                                <img src="{{ $src }}" alt="{{ $property->name }} photo" class="thumb-image">
+                                <img src="{{ $src }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $loop->iteration]) }}" class="thumb-image">
                             </button>
                         @endforeach
                     </div>
+                    @if (!empty($property->video_urls))
+                        <div class="property-video-list">
+                            <h2>{{ __('messages.properties.videos') }}</h2>
+                            @foreach ($property->video_urls as $videoUrl)
+                                @php
+                                    $youtubeId = null;
+                                    if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/', $videoUrl, $matches)) {
+                                        $youtubeId = $matches[1];
+                                    }
+                                    $vimeoId = preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $matches) ? $matches[1] : null;
+                                @endphp
+                                <div class="property-video-frame">
+                                    @if ($youtubeId)
+                                        <iframe src="https://www.youtube.com/embed/{{ $youtubeId }}" title="{{ __('messages.properties.video_title') }}" loading="lazy" allowfullscreen></iframe>
+                                    @elseif ($vimeoId)
+                                        <iframe src="https://player.vimeo.com/video/{{ $vimeoId }}" title="{{ __('messages.properties.video_title') }}" loading="lazy" allowfullscreen></iframe>
+                                    @else
+                                        <video controls preload="metadata" src="{{ $videoUrl }}"></video>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <aside class="booking-panel">
                     <div class="booking-card">
-                        <div class="price-row">
-                            <span>{{ __('messages.properties.from') }}</span>
-                            <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' ')]) }}</strong>
-                        </div>
-                        <div class="price-row muted-row">
-                            <span>≈</span>
-                            <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
+                        <div class="price-summary">
+                            <div class="price-row">
+                                <span class="price-label">{{ __('messages.properties.from') }}</span>
+                                <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' ')]) }}</strong>
+                            </div>
+                            <div class="price-row muted-row">
+                                <span>≈</span>
+                                <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
+                            </div>
                         </div>
 
                         @if (auth()->user()?->role === 'customer' && $property->establishment)
@@ -128,14 +182,16 @@
 
                         <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}">
                             @csrf
-                            <div class="input-group">
-                                <label for="full_name">{{ __('messages.properties.full_name') }}</label>
-                                <input id="full_name" name="full_name" type="text" value="{{ old('full_name') }}" required>
-                            </div>
-                            <div class="input-group">
-                                <label for="email">{{ __('messages.common.email') }}</label>
-                                <input id="email" name="email" type="email" value="{{ old('email') }}" required>
-                            </div>
+                            @guest
+                                <div class="input-group">
+                                    <label for="full_name">{{ __('messages.properties.full_name') }}</label>
+                                    <input id="full_name" name="full_name" type="text" value="{{ old('full_name') }}" required>
+                                </div>
+                                <div class="input-group">
+                                    <label for="email">{{ __('messages.common.email') }}</label>
+                                    <input id="email" name="email" type="email" value="{{ old('email') }}" required>
+                                </div>
+                            @endguest
                             <div class="grid-two compact-grid">
                                 <div class="input-group">
                                     <label for="check_in">{{ __('messages.properties.check_in') }}</label>
@@ -204,6 +260,12 @@
                                 <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
                                 <p class="form-help" data-availability-result role="status" aria-live="polite"></p>
                                 <button type="submit" class="btn btn-primary btn-full">{{ __('messages.properties.request_reservation') }}</button>
+                                @guest
+                                    <label class="account-choice">
+                                        <input type="checkbox" name="create_account" value="1" @checked(old('create_account', true))>
+                                        <span>{{ __('messages.properties.create_account_during_reservation') }}</span>
+                                    </label>
+                                @endguest
                             </div>
                         </form>
                     </div>
@@ -230,6 +292,22 @@
                     </div>
                 </div>
 
+                @php
+                    $availabilityBlockedRanges = $property->availabilityBlocks->map(fn ($block) => [$block->start_date->toDateString(), $block->end_date->toDateString()])->values();
+                    $availabilityReservedRanges = collect($property->reservations->where('status', '!=', 'cancelled')->map(fn ($reservation) => [$reservation->check_in->toDateString(), $reservation->check_out->toDateString()])->all());
+                    $availabilityReservedRanges = $availabilityReservedRanges->merge($property->calendarFeeds->where('is_enabled', true)->flatMap(fn ($feed) => $feed->events->map(fn ($event) => [$event->start_date->toDateString(), $event->end_date->toDateString()])))->values();
+                @endphp
+                <div class="detail-card property-availability-card">
+                    <div class="detail-card-heading">
+                        <h2>{{ __('messages.properties.availability') }}</h2>
+                        <button type="button" class="btn btn-ghost btn-small" data-toggle-availability data-show-label="{{ __('messages.properties.show_availability') }}" data-hide-label="{{ __('messages.properties.hide_availability') }}" aria-expanded="false" aria-controls="property-availability-calendar">{{ __('messages.properties.show_availability') }}</button>
+                    </div>
+                    <div id="property-availability-calendar" class="property-availability-content" data-availability-content hidden>
+                        <div class="availability-legend"><span class="availability-key availability-available">{{ __('messages.admin.available') }}</span><span class="availability-key availability-blocked">{{ __('messages.admin.blocked_reserved') }}</span><span class="availability-key availability-past">{{ __('messages.admin.past') }}</span></div>
+                        <div class="availability-calendar" data-availability-calendar data-blocked="{{ $availabilityBlockedRanges->toJson() }}" data-reserved="{{ $availabilityReservedRanges->toJson() }}" data-external="[]"></div>
+                    </div>
+                </div>
+
                 @if ($property->amenities->isNotEmpty())
                     <div class="detail-card">
                         <h2>{{ __('messages.properties.included_services') }}</h2>
@@ -242,7 +320,22 @@
                 @endif
 
                 <div class="detail-card">
-                    <h2>{{ __('messages.properties.reviews') }}</h2>
+                    @php
+                        $reviewSourceLinks = array_filter([
+                            'Booking.com' => \App\Support\BrandSettings::get('review_source_booking_url'),
+                            'Google' => \App\Support\BrandSettings::get('review_source_google_url'),
+                        ], fn ($url) => ! empty(trim((string) $url)));
+                    @endphp
+                    <div class="detail-card-heading">
+                        <h2>{{ __('messages.properties.reviews') }}</h2>
+                        @if (! empty($reviewSourceLinks))
+                            <div class="review-summary-links property-review-links">
+                                @foreach ($reviewSourceLinks as $source => $url)
+                                    <a href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $source }}</a>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                     @if ($reviews->isNotEmpty())
                         <div class="review-grid property-review-grid">
                             @foreach ($reviews as $review)
@@ -262,8 +355,9 @@
             <div class="content-column">
             <div class="detail-card sticky-card">
                 <h2>{{ __('messages.properties.stay_sheet') }}</h2>
-                <div class="info-row"><span>{{ __('messages.properties.city') }}</span><strong>{{ $property->city }}</strong></div>
-                <div class="info-row"><span>{{ __('messages.properties.address') }}</span><strong>{{ $property->address }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.address') }}</span><strong>{{ $locationAddress }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.city') }}</span><strong>{{ $locationCity }}</strong></div>
+                <div class="info-row"><span>{{ __('messages.properties.country') }}</span><strong>{{ $locationCountry }}</strong></div>
                 <div class="info-row"><span>{{ __('messages.properties.minimum_stay') }}</span><strong>{{ __('messages.properties.nights', ['count' => $property->minimum_stay]) }}</strong></div>
                 <div class="info-row"><span>{{ __('messages.properties.currency') }}</span><strong>{{ $property->currency }}</strong></div>
             </div>

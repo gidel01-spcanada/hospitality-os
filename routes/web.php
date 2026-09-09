@@ -39,6 +39,7 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
+Route::middleware(['auth', 'active', 'locale'])->get('/reservation/resume', [PublicPropertyController::class, 'resume'])->name('reservation.resume');
 
 Route::middleware(['guest', 'locale'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/account/security', [AuthController::class, 'updatePassword'])->name('account.security.update');
     Route::post('/dashboard/preferences', [AuthController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/dashboard/reservations/{reservation}', [AuthController::class, 'reservationDetail'])->name('dashboard.reservations.show');
+    Route::get('/reservations/{reservation}/receipt', [\App\Http\Controllers\ReceiptController::class, 'download'])->name('reservations.receipt');
     Route::post('/properties/{property}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('properties.favorite.toggle');
     Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
     Route::post('/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
@@ -80,6 +82,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
         Route::post('/admin/reservations/{reservation}/payment-link', [AdminReservationController::class, 'sendPaymentLink'])->name('admin.reservations.payment-link.send');
+        Route::post('/admin/reservations/{reservation}/confirm-offline-payment', [\App\Http\Controllers\ReceiptController::class, 'confirmOfflinePayment'])->name('admin.reservations.confirm-offline-payment');
         Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
         Route::post('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'reply'])->name('admin.messages.reply');
@@ -175,7 +178,7 @@ Route::get('/sitemap.xml', function () {
         $urls = $urls->merge(Property::query()->published()->pluck('slug')->map(fn ($slug) => route('properties.show', ['property' => $slug])));
     }
 
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">";
     foreach ($urls->unique() as $url) {
         $xml .= '<url><loc>' . e($url) . '</loc></url>';
     }

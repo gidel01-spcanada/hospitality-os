@@ -34,6 +34,7 @@ class Property extends Model
         'summary',
         'description',
         'cover_image',
+        'video_urls',
         'minimum_stay',
         'metadata',
         'calendar_export_token',
@@ -44,6 +45,7 @@ class Property extends Model
         'is_published' => 'boolean',
         'nightly_rate_xof' => 'decimal:2',
         'nightly_rate_eur' => 'decimal:2',
+        'video_urls' => 'array',
     ];
 
     protected static function booted(): void

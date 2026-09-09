@@ -35,6 +35,9 @@
                             <label><span>{{ __('messages.admin.nightly_rate_eur') }}</span><input type="number" step="0.01" name="nightly_rate_eur" value="{{ old('nightly_rate_eur', $property->nightly_rate_eur) }}" required></label>
                             <label><span>{{ __('messages.admin.minimum_stay') }}</span><input type="number" name="minimum_stay" min="1" value="{{ old('minimum_stay', $property->minimum_stay) }}" required></label>
                             <label><span>{{ __('messages.admin.maximum_guests') }}</span><input type="number" name="max_guests" min="1" value="{{ old('max_guests', $property->max_guests) }}" required></label>
+                            <label><span>{{ __('messages.admin.bedrooms') }}</span><input type="number" name="bedrooms" min="0" value="{{ old('bedrooms', $property->bedrooms) }}" required></label>
+                            <label><span>{{ __('messages.admin.bathrooms') }}</span><input type="number" name="bathrooms" min="0" value="{{ old('bathrooms', $property->bathrooms) }}" required></label>
+                            <label><span>{{ __('messages.admin.beds') }}</span><input type="number" name="beds" min="0" value="{{ old('beds', $property->beds) }}" required></label>
                             <label><span>{{ __('messages.admin.status') }}</span><select name="status"><option value="draft" @selected(old('status', $property->status) === 'draft')>{{ __('messages.admin.draft') }}</option><option value="published" @selected(old('status', $property->status) === 'published')>{{ __('messages.admin.published') }}</option><option value="archived" @selected(old('status', $property->status) === 'archived')>{{ __('messages.admin.archived') }}</option></select></label>
                         </div>
                         <div class="language-editor">
@@ -54,6 +57,11 @@
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
+                        <div class="property-media-editor">
+                            <h3>{{ __('messages.admin.video_media') }}</h3>
+                            <label class="full-width"><span>{{ __('messages.admin.video_urls') }}</span><textarea name="video_urls" rows="4" placeholder="https://cdn.example.com/property-tour.mp4&#10;https://www.youtube.com/watch?v=...">{{ old('video_urls', implode("\n", $property->video_urls ?? [])) }}</textarea></label>
+                            <p class="form-help">{{ __('messages.admin.video_urls_help') }}</p>
                         </div>
                         <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_general') }}</button></div>
                     </form>

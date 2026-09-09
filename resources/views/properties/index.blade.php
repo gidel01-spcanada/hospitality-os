@@ -45,6 +45,14 @@
                         <input id="bedrooms" name="bedrooms" type="number" min="1" inputmode="numeric" value="{{ $filters['bedrooms'] ?? '' }}">
                     </div>
                     <div class="filter-field">
+                        <label for="check_in">{{ __('messages.home.arrival') }}</label>
+                        <input id="check_in" name="check_in" type="date" value="{{ $filters['check_in'] ?? '' }}">
+                    </div>
+                    <div class="filter-field">
+                        <label for="check_out">{{ __('messages.home.departure') }}</label>
+                        <input id="check_out" name="check_out" type="date" value="{{ $filters['check_out'] ?? '' }}">
+                    </div>
+                    <div class="filter-field">
                         <label for="min_price">{{ __('messages.properties.min_price') }}</label>
                         <input id="min_price" name="min_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['min_price'] ?? '' }}">
                     </div>
@@ -66,7 +74,11 @@
             <div class="property-grid property-grid-large">
                 @forelse ($properties as $property)
                     @php
-                        $galleryImages = $property->images->map(fn ($image) => ['url' => asset($image->file_path), 'tag' => $image->room_tag])->values();
+                        $galleryImages = $property->images->values()->map(fn ($image, $index) => [
+                            'url' => asset($image->file_path),
+                            'tag' => $image->room_tag,
+                            'alt' => __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $index + 1]),
+                        ]);
                         $coverImage = $property->images->firstWhere('is_cover', true) ?? $property->images->first();
                         $coverUrl = $coverImage ? asset($coverImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
                         $coverIndex = $coverImage ? $property->images->search(fn ($image) => $image->id === $coverImage->id) : 0;
@@ -86,7 +98,7 @@
                             </a>
                         @endauth
                         <div class="property-gallery" data-gallery='@json($galleryImages)' data-gallery-start="{{ $coverIndex === false ? 0 : $coverIndex }}">
-                            <div class="property-image" style="background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("{{ $coverUrl }}");"></div>
+                            <img src="{{ $coverUrl }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $coverIndex === false ? 1 : $coverIndex + 1]) }}" class="property-image" data-gallery-image loading="lazy">
                             @if ($coverImage?->room_tag)
                                 <span class="gallery-tag" data-gallery-tag>{{ $coverImage->room_tag }}</span>
                             @endif

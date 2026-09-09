@@ -131,6 +131,56 @@ class PaymentWorkflowTest extends TestCase
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
     }
 
+    public function test_customer_cannot_simulate_offline_payment_verification_outside_dev_environment(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::query()->create([
+            'full_name' => 'Bob Roe',
+            'email' => 'bob@example.com',
+            'metadata' => ['source' => 'test'],
+        ]);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-PAY-002',
+            'status' => 'pending',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => 'bob@example.com',
+            'subtotal' => 40000,
+            'fees' => 4000,
+            'taxes' => 2000,
+            'total_amount' => 46000,
+            'source' => 'website',
+        ]);
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->app->instance('env', 'production');
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertDontSee(__('messages.checkout.simulate'));
+
+        $this->post($checkoutUrl, ['provider' => 'pay_later'])->assertRedirect($checkoutUrl);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertDontSee(__('messages.checkout.simulate'))
+            ->assertSee(__('messages.checkout.simulate_unavailable'));
+
+        $completeUrl = route('checkout.complete', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $this->post($completeUrl)->assertForbidden();
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
+        $this->assertDatabaseMissing('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
+    }
+
     public function test_checkout_uses_establishment_payment_methods(): void
     {
         $this->seed(DatabaseSeeder::class);

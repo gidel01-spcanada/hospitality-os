@@ -172,7 +172,8 @@ class MobileApiController extends Controller
         return array_filter([
             'id' => $property->id, 'slug' => $property->slug, 'name' => $property->name, 'city' => $property->city,
             'currency' => $property->currency, 'nightly_rate_xof' => $property->nightly_rate_xof, 'max_guests' => $property->max_guests,
-            'bedrooms' => $property->bedrooms, 'cover_image' => $property->cover_image, 'establishment' => $property->establishment?->only(['id', 'name', 'city']),
+            'bedrooms' => $property->bedrooms, 'bathrooms' => $property->bathrooms, 'beds' => $property->beds,
+            'minimum_stay' => $property->minimum_stay, 'cover_image' => $property->cover_image, 'establishment' => $property->establishment?->only(['id', 'name', 'city']),
             'images' => $detail ? $property->images?->map(fn ($image) => $image->only(['id', 'file_path', 'room_tag', 'is_cover'])) : null,
             'description' => $detail ? $property->description : null,
             'amenities' => $detail ? $property->amenities?->pluck('name') : null,

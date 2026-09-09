@@ -90,6 +90,11 @@ class Reservation extends Model
         return $this->hasMany(PaymentAttempt::class);
     }
 
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class);
+    }
+
     public function canSendPaymentLink(): bool
     {
         return $this->status !== 'confirmed'

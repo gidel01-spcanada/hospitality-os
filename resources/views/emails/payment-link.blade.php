@@ -5,5 +5,6 @@
     <p>{{ __('messages.payment_link.email_intro', ['reference' => $reservation_ref, 'property' => $property_name]) }}</p>
     <p>{{ __('messages.payment_link.email_amount', ['amount' => number_format((float) $total_amount, 0, ',', ' '), 'currency' => $currency]) }}</p>
     <p><a href="{{ $checkout_url }}">{{ __('messages.payment_link.email_action') }}</a></p>
+    <p><a href="{{ $register_url }}">{{ __('messages.payment_link.create_account') }}</a></p>
 </body>
 </html>

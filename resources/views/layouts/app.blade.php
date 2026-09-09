@@ -53,6 +53,11 @@
                     <a href="{{ route('home') }}#experience">{{ __('messages.nav.experience') }}</a>
                     <a href="#contact">{{ __('messages.nav.contact') }}</a>
                 </nav>
+                <button type="button" class="mobile-menu-toggle" data-mobile-menu-toggle aria-expanded="false" aria-controls="mobile-nav-actions" aria-label="Menu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </button>
                 <div class="nav-actions">
                     @guest
                         @if ($alternateLocale)
@@ -66,7 +71,6 @@
                     @auth
                         @if (auth()->user()->canManageReservations())
                             <a class="btn btn-ghost" href="{{ route('admin.dashboard') }}">{{ __('messages.nav.admin') }}</a>
-                            <a class="btn btn-ghost" href="{{ route('admin.settings') }}">{{ __('messages.nav.settings') }}</a>
                         @endif
                         <a class="btn btn-ghost" href="{{ route('account.settings') }}">{{ __('messages.nav.account') }}</a>
                         <form method="POST" action="{{ route('logout') }}">

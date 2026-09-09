@@ -27,6 +27,8 @@ The response contains a bearer `token` and the authenticated `user`. Tokens are 
 | GET | `/properties/{slug}` | Published property detail. |
 | POST | `/properties/{slug}/availability` | Availability check with `check_in` and `check_out` ISO dates. |
 
+Property catalogue and detail responses include `max_guests`, `bedrooms`, `bathrooms`, `beds`, and `minimum_stay`, in addition to pricing, images, and establishment data.
+
 ## Customer
 
 Customer tokens can access `GET /me`, `PUT /me`, `GET /customer/reservations`, `GET /customer/reservations/{id}`, and `POST /customer/properties/{id}/favorite`.
