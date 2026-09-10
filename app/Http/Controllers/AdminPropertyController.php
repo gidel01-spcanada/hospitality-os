@@ -129,7 +129,10 @@ class AdminPropertyController extends Controller
         $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
         $property->fill($validated);
         $property->save();
-        $property->amenities()->sync($amenityIds);
+
+        if ($request->has('amenity_ids')) {
+            $property->amenities()->sync($amenityIds);
+        }
 
         foreach (['fr', 'en'] as $locale) {
             $content = $validated['translations'][$locale] ?? [];
@@ -139,6 +142,18 @@ class AdminPropertyController extends Controller
         }
 
         return $this->editorRedirect($property, $request, __('messages.flash.property_updated'));
+    }
+
+    public function updateAmenities(Request $request, Property $property): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amenity_ids' => ['nullable', 'array'],
+            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
+        ]);
+
+        $property->amenities()->sync($validated['amenity_ids'] ?? []);
+
+        return $this->editorRedirect($property, $request, __('messages.flash.property_updated'), 'amenities');
     }
 
     public function updateImages(Request $request, Property $property): RedirectResponse
@@ -358,7 +373,7 @@ class AdminPropertyController extends Controller
 
     private function editorRedirect(Property $property, Request $request, string $message, string $fallbackTab = 'general'): RedirectResponse
     {
-        $tab = in_array($request->input('active_tab'), ['general', 'photos', 'rules', 'features', 'availability', 'calendars'], true)
+        $tab = in_array($request->input('active_tab'), ['general', 'photos', 'amenities', 'rules', 'features', 'availability', 'calendars'], true)
             ? $request->input('active_tab')
             : $fallbackTab;
 

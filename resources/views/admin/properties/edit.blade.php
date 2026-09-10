@@ -14,7 +14,7 @@
 
         <div class="property-editor-tabs" data-property-tabs>
             <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.property_editor_sections') }}">
-                @foreach (['general' => __('messages.admin.general_information'), 'photos' => __('messages.admin.photos'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
+                @foreach (['general' => __('messages.admin.general_information'), 'photos' => __('messages.admin.photos'), 'amenities' => __('messages.admin.amenities'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="property-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
             </div>
@@ -82,8 +82,34 @@
                 </div>
             </div>
 
-            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>
-                <div class="admin-panel"><h2>{{ __('messages.admin.pricing_rules') }}</h2><form method="POST" action="{{ route('admin.properties.price-rules.store', $property) }}">@csrf<div class="admin-form-grid compact"><label><span>{{ __('messages.admin.start') }}</span><input type="date" name="effective_from" required></label><label><span>{{ __('messages.admin.end') }}</span><input type="date" name="effective_to"></label><label><span>{{ __('messages.admin.rate_xof') }}</span><input type="number" step="0.01" name="nightly_rate_xof" value="{{ $property->nightly_rate_xof }}" required></label><label><span>{{ __('messages.admin.rate_eur') }}</span><input type="number" step="0.01" name="nightly_rate_eur" value="{{ $property->nightly_rate_eur }}" required></label><label><span>{{ __('messages.admin.minimum_stay') }}</span><input type="number" name="minimum_stay" min="1" value="{{ $property->minimum_stay }}" required></label><label><span>{{ __('messages.admin.rule_type') }}</span><input name="rule_type" value="standard" required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_rule') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
+            <div id="property-panel-amenities" class="property-tab-panel" role="tabpanel" data-property-panel="amenities" hidden>
+                <div class="admin-panel">
+                    <h2>{{ __('messages.admin.amenities') }}</h2>
+                    <form method="POST" action="{{ route('admin.properties.amenities.update', $property) }}" data-property-editor-form>
+                        @csrf @method('PUT')
+                        @php $selectedAmenityIds = old('amenity_ids', $property->amenities->pluck('id')->all()); @endphp
+                        @forelse ($amenities->groupBy(fn ($amenity) => $amenity->category?->id) as $groupedAmenities)
+                            @php $category = $groupedAmenities->first()->category; @endphp
+                            <fieldset class="amenity-picker-group">
+                                <legend>{{ $category ? (app()->getLocale() === 'fr' ? $category->name_fr : $category->name_en) : __('messages.admin.amenities') }}</legend>
+                                <div class="amenity-picker-options">
+                                    @foreach ($groupedAmenities as $amenity)
+                                        <label class="checkbox-field">
+                                            <input type="checkbox" name="amenity_ids[]" value="{{ $amenity->id }}" @checked(in_array($amenity->id, array_map('intval', (array) $selectedAmenityIds), true))>
+                                            <span>{{ $amenity->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @empty
+                            <p class="form-help">{{ __('messages.admin.no_amenities') }}</p>
+                        @endforelse
+                        <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_amenities') }}</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>                <div class="admin-panel"><h2>{{ __('messages.admin.pricing_rules') }}</h2><form method="POST" action="{{ route('admin.properties.price-rules.store', $property) }}">@csrf<div class="admin-form-grid compact"><label><span>{{ __('messages.admin.start') }}</span><input type="date" name="effective_from" required></label><label><span>{{ __('messages.admin.end') }}</span><input type="date" name="effective_to"></label><label><span>{{ __('messages.admin.rate_xof') }}</span><input type="number" step="0.01" name="nightly_rate_xof" value="{{ $property->nightly_rate_xof }}" required></label><label><span>{{ __('messages.admin.rate_eur') }}</span><input type="number" step="0.01" name="nightly_rate_eur" value="{{ $property->nightly_rate_eur }}" required></label><label><span>{{ __('messages.admin.minimum_stay') }}</span><input type="number" name="minimum_stay" min="1" value="{{ $property->minimum_stay }}" required></label><label><span>{{ __('messages.admin.rule_type') }}</span><input name="rule_type" value="standard" required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_rule') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
             </div>
 
             <div id="property-panel-features" class="property-tab-panel" role="tabpanel" data-property-panel="features" hidden>

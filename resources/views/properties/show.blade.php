@@ -300,10 +300,11 @@
                         </ul>
                     @endif
 
-                    @if ($property->features->isNotEmpty())
+                    @php $visibleFeatures = $property->features->where('is_active', true); @endphp
+                    @if ($visibleFeatures->isNotEmpty())
                         <h3 class="characteristics-subtitle">{{ __('messages.properties.extra_options') }}</h3>
                         <ul class="feature-list">
-                            @foreach ($property->features as $feature)
+                            @foreach ($visibleFeatures as $feature)
                                 <li>
                                     <div>
                                         <strong>{{ $feature->name }}</strong>

@@ -130,6 +130,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'store'])->name('admin.properties.store');
         Route::get('/admin/properties/{property}/edit', [\App\Http\Controllers\AdminPropertyController::class, 'edit'])->name('admin.properties.edit');
         Route::put('/admin/properties/{property}', [\App\Http\Controllers\AdminPropertyController::class, 'update'])->name('admin.properties.update');
+        Route::put('/admin/properties/{property}/amenities', [\App\Http\Controllers\AdminPropertyController::class, 'updateAmenities'])->name('admin.properties.amenities.update');
         Route::put('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'updateImages'])->name('admin.properties.images.update');
         Route::post('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'uploadImages'])->name('admin.properties.images.upload');
         Route::post('/admin/properties/{property}/price-rules', [\App\Http\Controllers\AdminPropertyController::class, 'storePriceRule'])->name('admin.properties.price-rules.store');
