@@ -115,10 +115,22 @@ class CheckoutController extends Controller
 
         $reservation->update(['status' => 'cancelled']);
 
+        $cancellationFee = $reservation->property?->establishment?->cancellationFeeFor($reservation) ?? 0.0;
+
+        if ($cancellationFee > 0) {
+            $reservation->priceLines()->create([
+                'label' => __('messages.checkout.cancellation_fee'),
+                'amount' => $cancellationFee,
+                'currency' => $reservation->currency,
+            ]);
+        }
+
         $emailService->queueStatusUpdate($reservation, 'cancelled');
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
-            ->with('status', __('messages.checkout.cancelled'));
+            ->with('status', $cancellationFee > 0
+                ? __('messages.checkout.cancelled_with_fee', ['amount' => number_format($cancellationFee, 0, ',', ' '), 'currency' => $reservation->currency])
+                : __('messages.checkout.cancelled'));
     }
 
     public function return(Request $request, Reservation $reservation, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService): RedirectResponse

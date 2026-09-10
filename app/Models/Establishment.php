@@ -26,6 +26,8 @@ class Establishment extends Model
         'google_maps_url',
         'features',
         'payment_methods',
+        'cancellation_fee_percent',
+        'cancellation_fee_days',
         'email',
         'phone',
         'metadata',
@@ -37,6 +39,8 @@ class Establishment extends Model
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
         'payment_methods' => 'array',
+        'cancellation_fee_percent' => 'decimal:2',
+        'cancellation_fee_days' => 'integer',
     ];
 
     public function properties(): HasMany
@@ -55,5 +59,21 @@ class Establishment extends Model
         $translation = $this->translations->firstWhere('locale', $locale);
 
         return $translation?->{$field} ?: $this->{$field};
+    }
+
+    /** Non-refundable fee charged when a stay is cancelled inside the configured window. */
+    public function cancellationFeeFor(Reservation $reservation): float
+    {
+        $percent = (float) $this->cancellation_fee_percent;
+
+        if ($percent <= 0 || ! $reservation->check_in) {
+            return 0.0;
+        }
+
+        if (now()->startOfDay()->diffInDays($reservation->check_in->startOfDay(), false) >= (int) $this->cancellation_fee_days) {
+            return 0.0;
+        }
+
+        return round((float) $reservation->total_amount * $percent / 100, 2);
     }
 }

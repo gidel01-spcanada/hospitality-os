@@ -44,6 +44,8 @@ class AdminEstablishmentController extends Controller
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? []);
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
+        $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
+        $validated['cancellation_fee_days'] = (int) ($validated['cancellation_fee_days'] ?? 0);
         $establishment = Establishment::create($validated);
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -58,6 +60,8 @@ class AdminEstablishmentController extends Controller
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? $establishment->payment_methods ?? []);
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
+        $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
+        $validated['cancellation_fee_days'] = (int) ($validated['cancellation_fee_days'] ?? 0);
         $establishment->fill($validated)->save();
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -94,6 +98,8 @@ class AdminEstablishmentController extends Controller
             'payment_methods.*.enabled' => ['nullable', 'boolean'],
             'payment_methods.*.mode' => ['nullable', 'in:sandbox,production'],
             'payment_methods.*.instructions' => ['nullable', 'string', 'max:500'],
+            'cancellation_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'cancellation_fee_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'features' => ['nullable', 'array'],
             'features.*' => ['nullable', 'string', 'max:100'],
             'translations' => ['nullable', 'array'],

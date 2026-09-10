@@ -266,4 +266,53 @@ class PaymentWorkflowTest extends TestCase
         $reservation->update(['status' => 'confirmed']);
         $this->post($cancelUrl)->assertStatus(422);
     }
+
+    public function test_cancellation_fee_applies_inside_the_establishment_window(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->forceFill([
+            'cancellation_fee_percent' => 30,
+            'cancellation_fee_days' => 7,
+        ])->save();
+
+        $guest = ReservationGuest::create([
+            'full_name' => 'Late Canceller',
+            'email' => 'late-cancel@example.com',
+        ]);
+
+        $makeReservation = fn (string $ref, int $daysBeforeCheckIn) => Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => $ref,
+            'status' => 'pending',
+            'check_in' => now()->addDays($daysBeforeCheckIn)->toDateString(),
+            'check_out' => now()->addDays($daysBeforeCheckIn + 2)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 100000,
+            'fees' => 0,
+            'taxes' => 0,
+            'total_amount' => 100000,
+            'source' => 'website',
+        ]);
+
+        $insideWindow = $makeReservation('AFK-CANCEL-FEE-001', 3);
+        $this->post(route('checkout.cancel', ['reservation' => $insideWindow, 'token' => $insideWindow->checkout_token]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('reservation_price_lines', [
+            'reservation_id' => $insideWindow->id,
+            'amount' => '30000.00',
+        ]);
+
+        $outsideWindow = $makeReservation('AFK-CANCEL-FEE-002', 30);
+        $this->post(route('checkout.cancel', ['reservation' => $outsideWindow, 'token' => $outsideWindow->checkout_token]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('reservation_price_lines', ['reservation_id' => $outsideWindow->id]);
+    }
 }
