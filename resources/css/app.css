@@ -3304,6 +3304,25 @@ main #home-location {
     accent-color: var(--afrik-emerald);
 }
 
+.amenity-picker-group {
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(15, 91, 76, 0.14);
+    border-radius: 14px;
+}
+
+.amenity-picker-group legend {
+    padding: 0 0.4rem;
+    color: var(--afrik-emerald);
+    font-weight: 700;
+}
+
+.amenity-picker-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem 1rem;
+}
+
 .full-width {
     grid-column: 1 / -1;
 }
