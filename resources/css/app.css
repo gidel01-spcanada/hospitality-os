@@ -1625,6 +1625,47 @@ main #home-location {
     overflow-wrap: anywhere;
 }
 
+.characteristics-subtitle {
+    margin: 1.25rem 0 0.6rem;
+    font-size: 1rem;
+    color: var(--afrik-text);
+}
+
+.feature-list {
+    display: grid;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(19, 31, 35, 0.06);
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.feature-list span {
+    display: block;
+    color: var(--afrik-muted);
+    font-size: 0.88rem;
+}
+
+.feature-list em {
+    color: var(--afrik-emerald);
+    font-style: normal;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .sticky-card {
     height: fit-content;
 }

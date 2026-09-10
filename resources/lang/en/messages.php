@@ -568,6 +568,7 @@ return [
     'properties.availability_available' => 'These dates are available.',
     'properties.availability_unavailable' => 'These dates are not available.',
     'properties.characteristics' => 'Characteristics',
+    'properties.bedrooms_count' => 'Number of bedrooms',
     'properties.bathrooms' => 'Bathrooms',
     'properties.beds' => 'Beds',
     'properties.included_services' => 'Included services',
