@@ -286,10 +286,36 @@
                     <h2>{{ __('messages.properties.characteristics') }}</h2>
                     <div class="stat-list">
                         <div class="stat-item"><span>{{ __('messages.home.travelers') }}</span><strong>{{ $property->max_guests }}</strong></div>
-                        <div class="stat-item"><span>{{ __('messages.properties.bedrooms') }}</span><strong>{{ $property->bedrooms }}</strong></div>
+                        <div class="stat-item"><span>{{ __('messages.properties.bedrooms_count') }}</span><strong>{{ $property->bedrooms }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.bathrooms') }}</span><strong>{{ $property->bathrooms }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.beds') }}</span><strong>{{ $property->beds }}</strong></div>
                     </div>
+
+                    @if ($property->amenities->isNotEmpty())
+                        <h3 class="characteristics-subtitle">{{ __('messages.properties.included_services') }}</h3>
+                        <ul class="amenity-list">
+                            @foreach ($property->amenities as $amenity)
+                                <li>{{ $amenity->name }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if ($property->features->isNotEmpty())
+                        <h3 class="characteristics-subtitle">{{ __('messages.properties.extra_options') }}</h3>
+                        <ul class="feature-list">
+                            @foreach ($property->features as $feature)
+                                <li>
+                                    <div>
+                                        <strong>{{ $feature->name }}</strong>
+                                        @if ($feature->description)
+                                            <span>{{ $feature->description }}</span>
+                                        @endif
+                                    </div>
+                                    <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} XOF</em>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
 
                 @php
@@ -307,17 +333,6 @@
                         <div class="availability-calendar" data-availability-calendar data-blocked="{{ $availabilityBlockedRanges->toJson() }}" data-reserved="{{ $availabilityReservedRanges->toJson() }}" data-external="[]"></div>
                     </div>
                 </div>
-
-                @if ($property->amenities->isNotEmpty())
-                    <div class="detail-card">
-                        <h2>{{ __('messages.properties.included_services') }}</h2>
-                        <ul class="amenity-list">
-                            @foreach($property->amenities as $amenity)
-                                <li>{{ $amenity->name }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
 
                 <div class="detail-card">
                     @php
