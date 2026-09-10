@@ -24,16 +24,14 @@
             </ul>
 
             @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
-                <div class="form-actions">
+                <div class="form-actions reservation-detail-actions">
                     <a class="btn btn-primary" href="{{ route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}">{{ __('messages.checkout.pay_now') }}</a>
-                </div>
 
-                <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
-                    @csrf
-                    <div class="form-actions">
+                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                        @csrf
                         <button type="submit" class="btn btn-ghost">{{ __('messages.checkout.cancel_reservation') }}</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             @endif
         </div>
 
