@@ -14,6 +14,17 @@
     <section class="container">
         <div class="reservation-grid-header">
             <h2>{{ __('messages.dashboard.reservations') }}</h2>
+            <form method="GET" action="{{ route('dashboard') }}" class="reservation-filter">
+                <label for="reservation-status-filter">{{ __('messages.dashboard.filter_status') }}</label>
+                <select id="reservation-status-filter" name="status" onchange="this.form.submit();">
+                    <option value="active" @selected($statusFilter === 'active')>{{ __('messages.dashboard.filter_active') }}</option>
+                    <option value="all" @selected($statusFilter === 'all')>{{ __('messages.dashboard.filter_all') }}</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status }}" @selected($statusFilter === $status)>{{ __('messages.admin.status_' . $status) }}</option>
+                    @endforeach
+                </select>
+                <noscript><button type="submit" class="btn btn-ghost">{{ __('messages.dashboard.filter_apply') }}</button></noscript>
+            </form>
             <a class="btn btn-ghost" href="{{ route('properties.index') }}">{{ __('messages.dashboard.explore') }}</a>
         </div>
 
