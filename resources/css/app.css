@@ -345,6 +345,7 @@ button, input, select {
 
 .btn:hover {
     transform: translateY(-1px);
+    text-decoration: none;
 }
 
 .btn-primary {
@@ -353,8 +354,21 @@ button, input, select {
     box-shadow: 0 14px 24px rgba(15, 91, 76, 0.2);
 }
 
+/* Keeps anchor buttons readable against the global a:hover colour rule. */
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background: linear-gradient(135deg, var(--afrik-emerald-strong), var(--afrik-emerald-strong));
+    color: white;
+}
+
 .btn-ghost {
     background: rgba(15, 91, 76, 0.08);
+    color: var(--afrik-emerald);
+}
+
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+    background: rgba(15, 91, 76, 0.14);
     color: var(--afrik-emerald);
 }
 
@@ -2171,6 +2185,17 @@ main #home-location {
 }
 
 .reservation-card-actions form {
+    margin: 0;
+}
+
+.reservation-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reservation-detail-actions form {
     margin: 0;
 }
 
