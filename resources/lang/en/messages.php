@@ -766,6 +766,7 @@ return [
     'checkout.cancel_confirmation' => 'Are you sure you want to cancel this reservation?',
     'checkout.cancelled' => 'Your reservation has been cancelled.',
     'checkout.cancellation_fee' => 'Cancellation fee (non-refundable)',
+    'checkout.cancellation_fee_warning' => 'Warning: cancelling now incurs a non-refundable fee of :amount :currency.',
     'checkout.cancelled_with_fee' => 'Your reservation has been cancelled. A non-refundable cancellation fee of :amount :currency applies.',
     'checkout.cancellation_unavailable' => 'This reservation can no longer be cancelled.',
     'brand.default_name' => 'Afrik Appart',

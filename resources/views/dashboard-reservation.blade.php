@@ -24,6 +24,10 @@
             </ul>
 
             @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                @php $cancellationFee = $reservation->property?->establishment?->cancellationFeeFor($reservation) ?? 0.0; @endphp
+                @if ($cancellationFee > 0)
+                    <p class="cancellation-policy-note">{{ __('messages.checkout.cancellation_fee_warning', ['amount' => number_format($cancellationFee, 0, ',', ' '), 'currency' => $reservation->currency]) }}</p>
+                @endif
                 <div class="form-actions reservation-detail-actions">
                     <a class="btn btn-primary" href="{{ route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}">{{ __('messages.checkout.pay_now') }}</a>
 
