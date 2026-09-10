@@ -285,9 +285,9 @@ class CustomerDashboardTest extends TestCase
             ->assertSee('Préférences');
 
         $this->actingAs($user)
-            ->get('/account/settings')
+            ->get('/account/security')
             ->assertOk()
-            ->assertSee('Paramètres du compte');
+            ->assertSee('Sécurité du compte');
 
         $this->actingAs($user)
             ->post('/account/security', [

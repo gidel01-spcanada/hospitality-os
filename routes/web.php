@@ -58,7 +58,6 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::get('/account', [AuthController::class, 'accountProfile'])->name('account.profile');
-    Route::get('/account/settings', [AuthController::class, 'accountSettings'])->name('account.settings');
     Route::post('/account', [AuthController::class, 'updateProfile'])->name('account.profile.update');
     Route::get('/account/preferences', [AuthController::class, 'accountPreferences'])->name('account.preferences');
     Route::get('/account/security', [AuthController::class, 'accountSecurity'])->name('account.security');

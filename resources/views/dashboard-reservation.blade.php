@@ -19,10 +19,15 @@
                 <li><strong>{{ __('messages.reservation.status') }}</strong><span>{{ __('messages.admin.status_' . $reservation->status) }}</span></li>
                 <li><strong>{{ __('messages.reservation.dates') }}</strong><span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span></li>
                 <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</span></li>
+                <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
                 <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
             </ul>
 
             @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                <div class="form-actions">
+                    <a class="btn btn-primary" href="{{ route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}">{{ __('messages.checkout.pay_now') }}</a>
+                </div>
+
                 <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
                     @csrf
                     <div class="form-actions">
@@ -42,16 +47,7 @@
             </div>
         @endif
 
-        <div class="summary-card">
-            <h2>{{ __('messages.reservation.contact') }}</h2>
-            <ul>
-                <li><strong>{{ __('messages.common.email') }}</strong><span>{{ $reservation->email }}</span></li>
-                <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
-                <li><strong>{{ __('messages.reservation.country') }}</strong><span>{{ $reservation->guest?->country ?? '—' }}</span></li>
-            </ul>
-        </div>
-
-        <div class="summary-card">
+        <div class="summary-card full-width">
             <h2>{{ __('messages.reservation.amounts') }}</h2>
             <ul>
                 @foreach($reservation->priceLines as $line)

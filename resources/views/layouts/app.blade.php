@@ -72,7 +72,7 @@
                         @if (auth()->user()->canManageReservations())
                             <a class="btn btn-ghost" href="{{ route('admin.dashboard') }}">{{ __('messages.nav.admin') }}</a>
                         @endif
-                        <a class="btn btn-ghost" href="{{ route('account.settings') }}">{{ __('messages.nav.account') }}</a>
+                        <a class="btn btn-ghost" href="{{ route('account.profile') }}">{{ __('messages.nav.account') }}</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="btn btn-primary">{{ __('messages.nav.logout') }}</button>

@@ -47,8 +47,8 @@
                     </button>
                     
                     <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); min-width: 200px; box-shadow: var(--shadow-md); z-index: var(--z-dropdown);">
-                        <a href="{{ route('account.settings') }}" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
-                            {{ __('messages.profile.tabs.settings') }}
+                        <a href="{{ route('account.profile') }}" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
+                            {{ __('messages.profile.tabs.profile') }}
                         </a>
                         <form method="POST" action="/logout" style="display: inline;">
                             @csrf
