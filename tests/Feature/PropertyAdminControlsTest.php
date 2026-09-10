@@ -77,6 +77,44 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertDatabaseMissing('admin_availability_blocks', ['id' => $block->id]);
     }
 
+    public function test_admin_can_manage_amenities_from_their_own_editor_tab(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        $amenityIds = Amenity::query()->limit(3)->pluck('id')->all();
+        sort($amenityIds);
+
+        $this->actingAs($admin)
+            ->get('/admin/properties/' . $property->id . '/edit')
+            ->assertOk()
+            ->assertSee('data-property-tab="amenities"', false);
+
+        $this->actingAs($admin)
+            ->put('/admin/properties/' . $property->id . '/amenities', [
+                'amenity_ids' => $amenityIds,
+                'active_tab' => 'amenities',
+            ])
+            ->assertRedirect('/admin/properties/' . $property->id . '/edit#amenities');
+
+        $this->assertSame($amenityIds, $property->fresh()->amenities()->pluck('amenities.id')->sort()->values()->all());
+
+        $this->actingAs($admin)
+            ->put('/admin/properties/' . $property->id, [
+                'name' => $property->name,
+                'slug' => $property->slug,
+                'nightly_rate_xof' => $property->nightly_rate_xof,
+                'nightly_rate_eur' => $property->nightly_rate_eur,
+                'minimum_stay' => $property->minimum_stay,
+                'max_guests' => $property->max_guests,
+                'status' => 'published',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame($amenityIds, $property->fresh()->amenities()->pluck('amenities.id')->sort()->values()->all());
+    }
+
     public function test_customer_can_select_property_feature_addons_during_booking(): void
     {
         $this->seed(DatabaseSeeder::class);
