@@ -11,41 +11,67 @@
         </div>
     </section>
 
-    <section class="container dashboard-grid">
-        <div class="summary-card">
-            <h2>{{ __('messages.dashboard.summary') }}</h2>
-            <ul>
-                <li><strong>{{ __('messages.dashboard.email') }}</strong><span>{{ $user->email }}</span></li>
-                <li><strong>{{ __('messages.dashboard.role') }}</strong><span>{{ $user->role }}</span></li>
-                <li><strong>{{ __('messages.dashboard.status') }}</strong><span>{{ $user->email_verified_at ? __('messages.dashboard.verified') : __('messages.dashboard.pending_verification') }}</span></li>
-            </ul>
+    <section class="container">
+        <div class="reservation-grid-header">
+            <h2>{{ __('messages.dashboard.reservations') }}</h2>
+            <a class="btn btn-ghost" href="{{ route('properties.index') }}">{{ __('messages.dashboard.explore') }}</a>
         </div>
 
-        <div class="summary-card">
-            <h2>{{ __('messages.dashboard.reservations') }}</h2>
-            @if($reservations->isEmpty())
+        @if($reservations->isEmpty())
+            <div class="summary-card full-width">
                 <p>{{ __('messages.dashboard.empty_history') }}</p>
-                <a class="btn btn-ghost" href="{{ route('properties.index') }}">{{ __('messages.dashboard.explore') }}</a>
-            @else
-                <ul class="reservation-list">
-                    @foreach($reservations as $reservation)
-                        <li>
+            </div>
+        @else
+            <div class="reservation-grid">
+                @foreach($reservations as $reservation)
+                    <article class="reservation-card">
+                        <header class="reservation-card-header">
                             <div>
                                 <strong>{{ $reservation->reservation_ref }}</strong>
                                 <span>{{ $reservation->property?->name ?? __('messages.checkout.property') }}</span>
                             </div>
-                            <div class="reservation-meta">
-                                <span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span>
-                                <span>{{ __('messages.admin.status_' . $reservation->status) }}</span>
-                            </div>
-                            <a href="{{ route('dashboard.reservations.show', $reservation) }}">{{ __('messages.dashboard.view') }}</a>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
+                            <span class="badge badge-emerald">{{ __('messages.admin.status_' . $reservation->status) }}</span>
+                        </header>
 
-        <div class="summary-card">
+                        <dl class="reservation-card-facts">
+                            <div>
+                                <dt>{{ __('messages.reservation.dates') }}</dt>
+                                <dd>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('messages.dashboard.guests') }}</dt>
+                                <dd>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('messages.reservation.total') }}</dt>
+                                <dd>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</dd>
+                            </div>
+                        </dl>
+
+                        <footer class="reservation-card-actions">
+                            <a class="btn btn-primary" href="{{ route('dashboard.reservations.show', $reservation) }}">{{ __('messages.reservation.details') }}</a>
+
+                            @if ($reservation->receipts->isNotEmpty())
+                                <a class="btn btn-ghost" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.dashboard.receipt') }}</a>
+                            @endif
+
+                            @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                                <a class="btn btn-primary" href="{{ route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}">{{ __('messages.checkout.pay_now') }}</a>
+
+                                <form method="POST" action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-ghost">{{ __('messages.checkout.cancel_reservation') }}</button>
+                                </form>
+                            @endif
+                        </footer>
+                    </article>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
+    <section class="container dashboard-grid">
+        <div class="summary-card full-width">
             <h2>{{ __('messages.favorites.title') }}</h2>
             @if ($favoriteProperties->isEmpty())
                 <p>{{ __('messages.favorites.empty') }}</p>

@@ -100,7 +100,7 @@ class AuthController extends Controller
                 $query->where('user_id', $user->id)
                     ->orWhereRaw('LOWER(email) = ?', [strtolower($user->email)]);
             })
-            ->with('property')
+            ->with(['property', 'receipts'])
             ->orderByDesc('created_at')
             ->get();
         $favoriteProperties = $user->favoriteProperties()
@@ -122,18 +122,6 @@ class AuthController extends Controller
         session()->put('locale', $locale);
 
         return view('account.profile', compact('user'));
-    }
-
-    public function accountSettings(): View
-    {
-        $user = Auth::user();
-
-        abort_unless($user, 403);
-        $locale = $user->locale ?? session('locale', config('app.locale'));
-        app()->setLocale($locale);
-        session()->put('locale', $locale);
-
-        return view('account.settings', compact('user'));
     }
 
     public function accountPreferences(): View

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use App\Services\Payments\PaymentGatewayManager;
+use App\Services\ReservationEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -78,7 +79,7 @@ class CheckoutController extends Controller
         })->all();
     }
 
-    public function complete(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
+    public function complete(Request $request, Reservation $reservation, PaymentGatewayManager $manager, ReservationEmailService $emailService): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
@@ -102,21 +103,25 @@ class CheckoutController extends Controller
             'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified and reservation confirmed.'),
         ]);
 
+        $emailService->queueStatusUpdate($reservation, 'confirmed');
+
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
     }
 
-    public function cancel(Request $request, Reservation $reservation): RedirectResponse
+    public function cancel(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
         abort_unless(in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true), 422, __('messages.checkout.cancellation_unavailable'));
 
         $reservation->update(['status' => 'cancelled']);
 
+        $emailService->queueStatusUpdate($reservation, 'cancelled');
+
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
             ->with('status', __('messages.checkout.cancelled'));
     }
 
-    public function return(Request $request, Reservation $reservation, string $provider, PaymentGatewayManager $manager): RedirectResponse
+    public function return(Request $request, Reservation $reservation, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->where('provider', $provider)->latest()->firstOrFail();
@@ -124,13 +129,15 @@ class CheckoutController extends Controller
 
         if (in_array($attempt->status, ['paid', 'completed'], true)) {
             $reservation->update(['status' => 'confirmed']);
+            $emailService->queueStatusUpdate($reservation, 'confirmed');
+
             return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
         }
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('error', 'Payment is awaiting confirmation.');
     }
 
-    public function webhook(Request $request, string $provider, PaymentGatewayManager $manager)
+    public function webhook(Request $request, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService)
     {
         abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa'], true), 404, 'Unsupported payment provider.');
 
@@ -148,8 +155,10 @@ class CheckoutController extends Controller
         if ($attempt && $attempt->reservation) {
             if (in_array($attempt->status, ['paid', 'completed'], true)) {
                 $attempt->reservation->update(['status' => 'confirmed']);
+                $emailService->queueStatusUpdate($attempt->reservation, 'confirmed');
             } elseif (in_array($attempt->status, ['failed', 'cancelled'], true) && $attempt->reservation->status !== 'confirmed') {
                 $attempt->reservation->update(['status' => 'payment_failed']);
+                $emailService->queueStatusUpdate($attempt->reservation, 'payment_failed');
             }
         }
 

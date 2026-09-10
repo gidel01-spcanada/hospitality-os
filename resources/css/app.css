@@ -2077,6 +2077,103 @@ main #home-location {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.reservation-grid-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+.reservation-grid-header h2 {
+    margin: 0;
+}
+
+.reservation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.reservation-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(19, 31, 35, 0.06);
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(19, 31, 35, 0.06);
+    padding: 1.25rem;
+}
+
+.reservation-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.reservation-card-header strong {
+    display: block;
+    font-size: 1.02rem;
+}
+
+.reservation-card-header span {
+    color: var(--afrik-muted);
+    font-size: 0.9rem;
+}
+
+.reservation-card-facts {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+}
+
+.reservation-card-facts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(19, 31, 35, 0.06);
+}
+
+.reservation-card-facts > div:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.reservation-card-facts dt {
+    color: var(--afrik-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.reservation-card-facts dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+}
+
+.reservation-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.35rem;
+}
+
+.reservation-card-actions .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+}
+
+.reservation-card-actions form {
+    margin: 0;
+}
+
 .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
