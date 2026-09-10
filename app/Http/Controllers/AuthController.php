@@ -86,7 +86,7 @@ class AuthController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function dashboard(): View
+    public function dashboard(Request $request): View
     {
         $user = Auth::user();
 
@@ -95,11 +95,20 @@ class AuthController extends Controller
         app()->setLocale($locale);
         session()->put('locale', $locale);
 
+        $statuses = ['pending', 'pending_payment', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
+        $statusFilter = $request->string('status')->toString();
+
+        if (! in_array($statusFilter, [...$statuses, 'all'], true)) {
+            $statusFilter = 'active';
+        }
+
         $reservations = Reservation::query()
             ->where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)
                     ->orWhereRaw('LOWER(email) = ?', [strtolower($user->email)]);
             })
+            ->when($statusFilter === 'active', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
+            ->when(in_array($statusFilter, $statuses, true), fn ($query) => $query->where('status', $statusFilter))
             ->with(['property', 'receipts'])
             ->orderByDesc('created_at')
             ->get();
@@ -109,7 +118,7 @@ class AuthController extends Controller
             ->orderByDesc('property_favorites.created_at')
             ->get();
 
-        return view('dashboard', compact('user', 'reservations', 'favoriteProperties'));
+        return view('dashboard', compact('user', 'reservations', 'favoriteProperties', 'statuses', 'statusFilter'));
     }
 
     public function accountProfile(): View
