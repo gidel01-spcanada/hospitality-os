@@ -256,6 +256,16 @@
                                 </div>
                             @endif
 
+                            @php $cancellationPolicy = $property->establishment; @endphp
+                            @if ((float) ($cancellationPolicy?->cancellation_fee_percent ?? 0) > 0)
+                                <p class="cancellation-policy-note">
+                                    {{ __('messages.properties.cancellation_fee_note', [
+                                        'percent' => rtrim(rtrim(number_format((float) $cancellationPolicy->cancellation_fee_percent, 2, ',', ' '), '0'), ','),
+                                        'days' => (int) $cancellationPolicy->cancellation_fee_days,
+                                    ]) }}
+                                </p>
+                            @endif
+
                             <div class="form-actions">
                                 <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
                                 <p class="form-help" data-availability-result role="status" aria-live="polite"></p>

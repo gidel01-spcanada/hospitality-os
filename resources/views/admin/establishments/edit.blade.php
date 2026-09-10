@@ -98,6 +98,20 @@
                         @endforeach
                     </div>
                     </div>
+                    <div class="payment-method-editor">
+                        <h2>{{ __('messages.admin.cancellation_policy') }}</h2>
+                        <div class="form-grid">
+                            <div>
+                                <label for="cancellation_fee_percent">{{ __('messages.admin.cancellation_fee_percent') }}</label>
+                                <input id="cancellation_fee_percent" type="number" step="0.01" min="0" max="100" name="cancellation_fee_percent" value="{{ old('cancellation_fee_percent', $establishment->cancellation_fee_percent ?? 0) }}">
+                            </div>
+                            <div>
+                                <label for="cancellation_fee_days">{{ __('messages.admin.cancellation_fee_days') }}</label>
+                                <input id="cancellation_fee_days" type="number" min="0" max="365" name="cancellation_fee_days" value="{{ old('cancellation_fee_days', $establishment->cancellation_fee_days ?? 0) }}">
+                            </div>
+                            <p class="form-help full-width">{{ __('messages.admin.cancellation_policy_help') }}</p>
+                        </div>
+                    </div>
                 </div>
                 <div id="establishment-panel-translations" class="property-tab-panel" role="tabpanel" data-property-panel="translations" hidden>
                     <div class="language-editor">
