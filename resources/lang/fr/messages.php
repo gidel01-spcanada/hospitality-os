@@ -766,6 +766,7 @@ return [
     'checkout.cancel_confirmation' => 'Voulez-vous vraiment annuler cette réservation ?',
     'checkout.cancelled' => 'Votre réservation a été annulée.',
     'checkout.cancellation_fee' => 'Frais d’annulation (non remboursables)',
+    'checkout.cancellation_fee_warning' => 'Attention : annuler maintenant entraîne des frais non remboursables de :amount :currency.',
     'checkout.cancelled_with_fee' => 'Votre réservation a été annulée. Des frais d’annulation non remboursables de :amount :currency s’appliquent.',
     'checkout.cancellation_unavailable' => 'Cette réservation ne peut plus être annulée.',
     'brand.default_name' => 'Afrik Appart',
