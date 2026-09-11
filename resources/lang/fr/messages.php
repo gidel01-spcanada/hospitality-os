@@ -12,6 +12,7 @@ return [
     'nav.settings' => 'Paramètres',
     'nav.logout' => 'Déconnexion',
     'forms.optional' => '(facultatif)',
+    'reviews.negative_note' => 'À noter : :comment',
         'admin.general_information' => 'Informations générales',
         'admin.photos' => 'Photos',
         'admin.amenities' => 'Équipements',
