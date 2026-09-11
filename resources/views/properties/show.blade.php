@@ -295,6 +295,8 @@
                 <div class="detail-card">
                     <h2>{{ __('messages.properties.characteristics') }}</h2>
                     <div class="stat-list">
+                        <div class="stat-item stat-item-text"><span>{{ __('messages.admin.establishment') }}</span><strong>{{ $property->establishment?->localized('name') ?? '—' }}</strong></div>
+                        <div class="stat-item stat-item-text"><span>{{ __('messages.admin.property_type') }}</span><strong>{{ __('messages.admin.type_' . ($property->property_type ?: 'apartment')) }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.home.travelers') }}</span><strong>{{ $property->max_guests }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.bedrooms_count') }}</span><strong>{{ $property->bedrooms }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.bathrooms') }}</span><strong>{{ $property->bathrooms }}</strong></div>

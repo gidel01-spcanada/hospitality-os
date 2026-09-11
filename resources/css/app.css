@@ -1607,6 +1607,12 @@ main #home-location {
     font-size: 1.4rem;
 }
 
+.stat-item-text strong {
+    font-size: 1.05rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
 .amenity-list {
     display: flex;
     flex-wrap: wrap;
