@@ -3143,6 +3143,8 @@ main #home-location {
 .availability-legend {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
     gap: 0.6rem;
     margin-bottom: 1rem;
 }
@@ -3150,7 +3152,9 @@ main #home-location {
 .availability-key {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
+    text-align: center;
     color: var(--afrik-muted);
     font-size: 0.8rem;
     font-weight: 700;
