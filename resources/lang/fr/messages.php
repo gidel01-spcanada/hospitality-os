@@ -15,6 +15,7 @@ return [
         'admin.general_information' => 'Informations générales',
         'admin.photos' => 'Photos',
         'admin.amenities' => 'Équipements',
+        'admin.view_site' => 'Voir le site',
         'admin.cancellation_policy' => 'Politique d’annulation',
         'admin.cancellation_fee_percent' => 'Frais d’annulation (% du séjour)',
         'admin.cancellation_fee_days' => 'Jours avant l’arrivée',
