@@ -11,6 +11,11 @@ class StaticPageController extends Controller
         return view('contact');
     }
 
+    public function faq(): View
+    {
+        return view('faq');
+    }
+
     public function privacy(): View
     {
         return view('legal.privacy');

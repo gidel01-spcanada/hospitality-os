@@ -159,6 +159,7 @@ Route::middleware('locale')->group(function () {
     Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->name('properties.availability');
     Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->name('properties.reserve');
     Route::get('/contact', [\App\Http\Controllers\StaticPageController::class, 'contact'])->name('contact');
+    Route::get('/faq', [\App\Http\Controllers\StaticPageController::class, 'faq'])->name('faq');
     Route::get('/privacy', [\App\Http\Controllers\StaticPageController::class, 'privacy'])->name('privacy');
     Route::get('/terms', [\App\Http\Controllers\StaticPageController::class, 'terms'])->name('terms');
     Route::get('/cookies', [\App\Http\Controllers\StaticPageController::class, 'cookies'])->name('cookies');
@@ -169,6 +170,7 @@ Route::get('/sitemap.xml', function () {
         route('home'),
         route('properties.index'),
         route('contact'),
+        route('faq'),
         route('privacy'),
         route('terms'),
         route('cookies'),

@@ -117,6 +117,7 @@
                     <h3>{{ __('messages.brand.contact') }}</h3>
                     <p>{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}</p>
                     <p>{{ $brand['support_phone'] ?? '+229 00 00 00 00' }}</p>
+                    <p><a href="{{ route('faq') }}">{{ __('messages.faq.title') }}</a></p>
                 </div>
                 <div>
                     <h3>{{ __('messages.legal.title') }}</h3>
