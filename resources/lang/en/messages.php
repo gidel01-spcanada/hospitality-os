@@ -12,6 +12,7 @@ return [
     'nav.settings' => 'Settings',
     'nav.logout' => 'Log out',
     'forms.optional' => '(optional)',
+    'reviews.negative_note' => 'Note: :comment',
         'admin.general_information' => 'General information',
         'admin.photos' => 'Photos',
         'admin.amenities' => 'Amenities',

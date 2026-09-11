@@ -208,6 +208,39 @@ class CustomerDashboardTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Amina D.');
     }
 
+    public function test_admin_can_import_booking_reviews_from_csv(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $csv = implode("\n", [
+            '"Date du commentaire","Nom du client","Numéro de réservation","Titre du commentaire","Commentaire positif","Commentaire négatif","Note des commentaires"',
+            '"2026-09-09 15:17:26","KOFFI","6659892745","","Très propre","","10"',
+            '"2026-09-07 01:34:33","Sesede","5227705165","Exceptional","Feels like home","","9"',
+        ]);
+        $path = storage_path('framework/testing-booking-reviews.csv');
+        file_put_contents($path, $csv);
+
+        $this->artisan('reviews:import-booking-csv', ['path' => $path])
+            ->expectsOutput('Import complete. Inserted: 2; updated: 0; skipped: 0.')
+            ->assertExitCode(0);
+
+        $this->artisan('reviews:import-booking-csv', ['path' => $path])
+            ->expectsOutput('Import complete. Inserted: 0; updated: 2; skipped: 0.')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('site_reviews', [
+            'source' => 'booking',
+            'reviewer_name' => 'KOFFI',
+            'rating' => 5,
+            'review_text' => 'Très propre',
+            'source_url' => null,
+            'is_active' => true,
+        ]);
+        $this->assertSame(2, SiteReview::query()->where('source', 'booking')->count());
+
+        @unlink($path);
+    }
+
     public function test_admin_can_update_and_delete_reviews(): void
     {
         $this->seed(DatabaseSeeder::class);
