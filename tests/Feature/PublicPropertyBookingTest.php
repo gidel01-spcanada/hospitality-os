@@ -415,8 +415,8 @@ class PublicPropertyBookingTest extends TestCase
             ->assertDontSee('>BJ<', false)
             ->assertSee('google')
             ->assertSee('booking')
-            ->assertSee('https://www.booking.com/hotel/example', false)
-            ->assertSee('https://maps.google.com/?cid=example', false)
+            ->assertDontSee('https://www.booking.com/hotel/example', false)
+            ->assertDontSee('https://maps.google.com/?cid=example', false)
             ->assertSee('location-map', false)
             ->assertSee('property="og:image"', false)
             ->assertSee('facebook.com/sharer', false);
