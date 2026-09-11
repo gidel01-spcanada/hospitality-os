@@ -104,15 +104,7 @@
         </div>
     </section>
 
-    @php
-        $reviewSources = [
-            'booking' => \App\Support\BrandSettings::get('review_source_booking_url'),
-            'google' => \App\Support\BrandSettings::get('review_source_google_url'),
-        ];
-        $reviewLinks = array_filter($reviewSources, fn ($url) => ! empty(trim((string) $url)));
-        @endphp
-
-        @if ($reviews->isNotEmpty() || ! empty($reviewLinks))
+        @if ($reviews->isNotEmpty())
             <section class="section" id="reviews">
                 <div class="container">
                     <div class="section-head">
@@ -127,76 +119,32 @@
                         $averageRating = $reviewCount > 0 ? round((float) $reviews->avg('rating'), 1) : null;
                     @endphp
 
-                    @if ($reviewCount > 0 || ! empty($reviewLinks))
-                        <div class="review-summary">
-                            <div class="review-summary-score">
-                                <strong>{{ $averageRating ?? '4.9' }}</strong>
-                                <span>/ 5</span>
-                                <div class="review-summary-stars">★★★★★</div>
-                            </div>
-                            <div class="review-summary-copy">
-                                <h3>{{ $reviewCount > 0 ? __('messages.home.verified_reviews') : __('messages.home.platform_reviews') }}</h3>
-                                <p>{{ $reviewCount > 0 ? __('messages.home.review_count', ['count' => $reviewCount]) : __('messages.home.review_platforms') }}</p>
-                            </div>
-                            @if (! empty($reviewLinks))
-                                <div class="review-summary-links">
-                                    @foreach ($reviewLinks as $platform => $url)
-                                        <a href="{{ $url }}" target="_blank" rel="noopener noreferrer">
-                                            {{ $platform === 'booking' ? 'Booking.com' : 'Google' }}
-                                        </a>
-                                    @endforeach
+                    <div class="review-summary">
+                        <div class="review-summary-score">
+                            <strong>{{ $averageRating }}</strong>
+                            <span>/ 5</span>
+                            <div class="review-summary-stars">★★★★★</div>
+                        </div>
+                        <div class="review-summary-copy">
+                            <h3>{{ __('messages.home.verified_reviews') }}</h3>
+                            <p>{{ __('messages.home.review_count', ['count' => $reviewCount]) }}</p>
+                        </div>
+                    </div>
+
+                    <div class="review-grid">
+                        @foreach($reviews as $review)
+                            <article class="review-card">
+                                <div class="review-topline">
+                                    <span class="review-source">{{ ucfirst($review->source) }}</span>
+                                    <span class="review-stars" aria-label="{{ __('messages.home.rating_stars', ['rating' => $review->rating]) }}">{{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}</span>
                                 </div>
-                            @endif
-                        </div>
-                    @endif
-
-                    @if($reviews->isNotEmpty())
-                        <div class="review-grid">
-                            @foreach($reviews as $review)
-                                <article class="review-card">
-                                    <div class="review-topline">
-                                        <span class="review-source">{{ ucfirst($review->source) }}</span>
-                                        <span class="review-stars" aria-label="{{ __('messages.home.rating_stars', ['rating' => $review->rating]) }}">{{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}</span>
-                                    </div>
-                                    <h3>{{ $review->reviewer_name }}</h3>
-                                    @if($review->review_text)
-                                        <p class="review-quote">“{{ $review->review_text }}”</p>
-                                    @endif
-                                    @if($review->source_url)
-                                        <a class="review-link" href="{{ $review->source_url }}" target="_blank" rel="noopener noreferrer">{{ __('messages.home.view_source') }}</a>
-                                    @endif
-                                </article>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if (! empty($reviewLinks))
-                        <div class="review-grid review-grid-secondary" style="margin-top: 1.5rem;">
-                            @if (! empty($reviewLinks['booking']))
-                                <article class="review-card review-card-alt">
-                                    <div class="review-topline">
-                                        <span class="review-source">Booking.com</span>
-                                        <span class="review-stars">★★★★★</span>
-                                    </div>
-                                    <h3>{{ __('messages.home.happy_guests') }}</h3>
-                                    <p class="review-quote">{{ __('messages.home.booking_reviews') }}</p>
-                                    <a class="review-link" href="{{ $reviewLinks['booking'] }}" target="_blank" rel="noopener noreferrer">{{ __('messages.home.read_reviews') }}</a>
-                                </article>
-                            @endif
-
-                            @if (! empty($reviewLinks['google']))
-                                <article class="review-card review-card-alt">
-                                    <div class="review-topline">
-                                        <span class="review-source">Google</span>
-                                        <span class="review-stars">★★★★★</span>
-                                    </div>
-                                    <h3>{{ __('messages.home.verified_experience') }}</h3>
-                                    <p class="review-quote">{{ __('messages.home.google_reviews') }}</p>
-                                    <a class="review-link" href="{{ $reviewLinks['google'] }}" target="_blank" rel="noopener noreferrer">{{ __('messages.home.read_reviews') }}</a>
-                                </article>
-                            @endif
-                        </div>
-                    @endif
+                                <h3>{{ $review->reviewer_name }}</h3>
+                                @if($review->review_text)
+                                    <p class="review-quote">“{{ $review->review_text }}”</p>
+                                @endif
+                            </article>
+                        @endforeach
+                    </div>
                 </div>
             </section>
         @endif

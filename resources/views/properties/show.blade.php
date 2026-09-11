@@ -348,21 +348,8 @@
                 </div>
 
                 <div class="detail-card">
-                    @php
-                        $reviewSourceLinks = array_filter([
-                            'Booking.com' => \App\Support\BrandSettings::get('review_source_booking_url'),
-                            'Google' => \App\Support\BrandSettings::get('review_source_google_url'),
-                        ], fn ($url) => ! empty(trim((string) $url)));
-                    @endphp
                     <div class="detail-card-heading">
                         <h2>{{ __('messages.properties.reviews') }}</h2>
-                        @if (! empty($reviewSourceLinks))
-                            <div class="review-summary-links property-review-links">
-                                @foreach ($reviewSourceLinks as $source => $url)
-                                    <a href="{{ $url }}" target="_blank" rel="noopener noreferrer">{{ $source }}</a>
-                                @endforeach
-                            </div>
-                        @endif
                     </div>
                     @if ($reviews->isNotEmpty())
                         <div class="review-grid property-review-grid">
