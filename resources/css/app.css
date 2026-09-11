@@ -3153,7 +3153,10 @@ main #home-location {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
+    min-height: 32px;
+    min-width: 112px;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
     text-align: center;
     color: var(--afrik-muted);
     font-size: 0.8rem;
@@ -3161,16 +3164,13 @@ main #home-location {
 }
 
 .availability-key::before {
-    width: 12px;
-    height: 12px;
-    border-radius: 4px;
-    content: '';
+    display: none;
 }
 
-.availability-available::before { background: #d9f0e5; }
-.availability-blocked::before { background: #f4d4cf; }
-.availability-external::before { background: #f6dfb4; }
-.availability-past::before { background: #d9dde0; }
+.availability-available { background: #d9f0e5; }
+.availability-blocked { background: #f4d4cf; }
+.availability-external { background: #f6dfb4; }
+.availability-past { background: #d9dde0; }
 
 .availability-calendar {
     margin-bottom: 1.5rem;
