@@ -1647,6 +1647,42 @@ main #home-location {
     font-size: 0.88rem;
 }
 
+.faq-item {
+    padding: 0.9rem 0;
+    border-bottom: 1px solid rgba(19, 31, 35, 0.08);
+}
+
+.faq-item summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--afrik-emerald);
+    list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::before {
+    content: '+';
+    display: inline-block;
+    width: 1.1rem;
+    font-weight: 700;
+}
+
+.faq-item[open] summary::before {
+    content: '\2212';
+}
+
+.faq-item p {
+    margin: 0.6rem 0 0 1.1rem;
+    color: var(--afrik-muted);
+}
+
+.faq-contact {
+    margin-top: 1.2rem;
+}
+
 .feature-list {
     display: grid;
     gap: 0.5rem;
