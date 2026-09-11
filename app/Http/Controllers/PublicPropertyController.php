@@ -58,16 +58,16 @@ class PublicPropertyController extends Controller
                 $query
                     ->whereDoesntHave('reservations', fn ($reservationQuery) => $reservationQuery
                         ->where('status', '!=', 'cancelled')
-                        ->where('check_in', '<', $checkOut)
-                        ->where('check_out', '>', $checkIn))
+                        ->whereDate('check_in', '<', $checkOut)
+                        ->whereDate('check_out', '>', $checkIn))
                     ->whereDoesntHave('availabilityBlocks', fn ($blockQuery) => $blockQuery
-                        ->where('start_date', '<', $checkOut)
-                        ->where('end_date', '>', $checkIn))
+                        ->whereDate('start_date', '<', $checkOut)
+                        ->whereDate('end_date', '>', $checkIn))
                     ->whereDoesntHave('calendarFeeds', fn ($feedQuery) => $feedQuery
                         ->where('is_enabled', true)
                         ->whereHas('events', fn ($eventQuery) => $eventQuery
-                            ->where('start_date', '<', $checkOut)
-                            ->where('end_date', '>', $checkIn)));
+                            ->whereDate('start_date', '<', $checkOut)
+                            ->whereDate('end_date', '>', $checkIn)));
             })
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))

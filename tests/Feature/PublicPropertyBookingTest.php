@@ -275,18 +275,22 @@ class PublicPropertyBookingTest extends TestCase
             'feed_id' => $feed->id,
             'uid' => 'external-conflict-1',
             'summary' => 'External booking',
-            'start_date' => '2026-10-10',
-            'end_date' => '2026-10-13',
+            'start_date' => '2031-10-10',
+            'end_date' => '2031-10-13',
         ]);
 
-        $this->get('/properties?check_in=2026-10-11&check_out=2026-10-12')
+        $this->get('/properties?check_in=2031-10-11&check_out=2031-10-12')
             ->assertOk()
             ->assertDontSee('Appartement 401');
+
+        $this->get('/properties?check_in=2031-10-13&check_out=2031-10-14')
+            ->assertOk()
+            ->assertSee('Appartement 401');
 
         $this->get('/properties/appartement-401')
             ->assertOk()
             ->assertSee('data-external="[]"', false)
-            ->assertSee('2026-10-10', false)
+            ->assertSee('2031-10-10', false)
             ->assertDontSee(__('messages.admin.external_bookings'));
     }
 
@@ -304,20 +308,25 @@ class PublicPropertyBookingTest extends TestCase
             'feed_id' => $feed->id,
             'uid' => 'external-api-conflict-1',
             'summary' => 'External booking',
-            'start_date' => '2026-12-10',
-            'end_date' => '2026-12-13',
+            'start_date' => '2031-12-10',
+            'end_date' => '2031-12-13',
         ]);
 
         $this->postJson('/properties/' . $property->slug . '/availability', [
-            'check_in' => '2026-12-11',
-            'check_out' => '2026-12-12',
+            'check_in' => '2031-12-11',
+            'check_out' => '2031-12-12',
         ])->assertOk()->assertJson(['available' => false]);
+
+        $this->postJson('/properties/' . $property->slug . '/availability', [
+            'check_in' => '2031-12-13',
+            'check_out' => '2031-12-14',
+        ])->assertOk()->assertJson(['available' => true]);
 
         $feed->update(['is_enabled' => false]);
 
         $this->postJson('/properties/' . $property->slug . '/availability', [
-            'check_in' => '2026-12-11',
-            'check_out' => '2026-12-12',
+            'check_in' => '2031-12-11',
+            'check_out' => '2031-12-12',
         ])->assertOk()->assertJson(['available' => true]);
     }
 

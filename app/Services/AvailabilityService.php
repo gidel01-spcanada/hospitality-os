@@ -20,8 +20,8 @@ class AvailabilityService
             ->where('property_id', $property->id)
             ->where('status', '!=', 'cancelled')
             ->when($ignoreReservationId, fn ($query) => $query->where('id', '!=', $ignoreReservationId))
-            ->where('check_in', '<', $checkOut->toDateString())
-            ->where('check_out', '>', $checkIn->toDateString())
+            ->whereDate('check_in', '<', $checkOut->toDateString())
+            ->whereDate('check_out', '>', $checkIn->toDateString())
             ->exists();
 
         if ($conflicts) {
@@ -30,8 +30,8 @@ class AvailabilityService
 
         $externalConflicts = ExternalCalendarEvent::query()
             ->whereHas('feed', fn ($query) => $query->where('property_id', $property->id)->where('is_enabled', true))
-            ->where('start_date', '<', $checkOut->toDateString())
-            ->where('end_date', '>', $checkIn->toDateString())
+            ->whereDate('start_date', '<', $checkOut->toDateString())
+            ->whereDate('end_date', '>', $checkIn->toDateString())
             ->exists();
 
         if ($externalConflicts) {
@@ -40,8 +40,8 @@ class AvailabilityService
 
         return ! AdminAvailabilityBlock::query()
             ->where('property_id', $property->id)
-            ->where('start_date', '<=', $checkOut->toDateString())
-            ->where('end_date', '>=', $checkIn->toDateString())
+            ->whereDate('start_date', '<', $checkOut->toDateString())
+            ->whereDate('end_date', '>', $checkIn->toDateString())
             ->exists();
     }
 }

@@ -387,7 +387,7 @@ document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => 
 	const external = parseRanges(calendar.dataset.external);
 	const today = new Date();
 	let displayedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-	const inRange = (date, ranges) => ranges.some(([start, end]) => date >= start && date <= end);
+	const inRange = (date, ranges) => ranges.some(([start, end]) => date >= start && date < end);
 	const headings = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 	const renderMonth = (monthDate) => {
