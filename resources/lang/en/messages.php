@@ -15,6 +15,7 @@ return [
         'admin.general_information' => 'General information',
         'admin.photos' => 'Photos',
         'admin.amenities' => 'Amenities',
+        'admin.view_site' => 'View site',
         'admin.cancellation_policy' => 'Cancellation policy',
         'admin.cancellation_fee_percent' => 'Cancellation fee (% of stay)',
         'admin.cancellation_fee_days' => 'Days before check-in',
