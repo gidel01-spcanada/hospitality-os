@@ -2343,6 +2343,38 @@ main #home-location {
     margin-bottom: 2.5rem;
 }
 
+.legal-document {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    padding: 2.2rem;
+}
+
+.legal-article h2 {
+    margin-top: 0;
+    margin-bottom: 0.65rem;
+    font-size: 1.25rem;
+    color: var(--afrik-emerald);
+}
+
+.legal-article p {
+    margin-bottom: 0.5rem;
+    color: var(--afrik-text);
+    line-height: 1.75;
+}
+
+.legal-article ul {
+    margin: 0.6rem 0 0 1.25rem;
+    padding: 0;
+    list-style-type: disc;
+    color: var(--afrik-muted);
+}
+
+.legal-article li {
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+}
+
 .dashboard-grid,
 .stats-grid {
     display: grid;
