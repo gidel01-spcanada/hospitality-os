@@ -146,6 +146,18 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	render(false);
 });
 
+document.querySelectorAll('[data-video-embed]').forEach((button) => {
+	button.addEventListener('click', () => {
+		const iframe = document.createElement('iframe');
+		iframe.src = button.dataset.videoEmbed;
+		iframe.title = button.dataset.videoTitle || 'Property video';
+		iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+		iframe.allowFullscreen = true;
+		iframe.loading = 'lazy';
+		button.replaceWith(iframe);
+	});
+});
+
 document.querySelectorAll('[data-language-tab]').forEach((tab) => {
 	tab.addEventListener('click', () => {
 		const editor = tab.closest('.language-editor');
