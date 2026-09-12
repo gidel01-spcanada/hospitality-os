@@ -5,14 +5,14 @@
 
 @section('content')
 <section class="page-hero compact-hero">
-    <div class="container narrow">
+    <div class="container">
         <span class="badge badge-emerald">{{ __('messages.home.guest_reviews') }}</span>
         <h1>{{ __('messages.reviews.title') }}</h1>
         <p>{{ __('messages.reviews.subtitle') }}</p>
     </div>
 </section>
 
-<section class="container auth-panel">
+<section class="container page-content">
     @if ($reviews->isNotEmpty())
         <div class="review-summary">
             <div class="review-summary-score">

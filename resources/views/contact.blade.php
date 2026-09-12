@@ -5,7 +5,7 @@
 
 @section('content')
 <section class="page-hero compact-hero">
-    <div class="container narrow">
+    <div class="container">
         <span class="badge badge-emerald">Support</span>
         <h1>{{ __('messages.contact.title') }}</h1>
         <p>{{ __('messages.contact.subtitle') }}</p>

@@ -5,14 +5,14 @@
 
 @section('content')
 <section class="page-hero compact-hero">
-    <div class="container narrow">
+    <div class="container">
         <span class="badge badge-emerald">{{ __('messages.faq.badge') }}</span>
         <h1>{{ __('messages.faq.title') }}</h1>
         <p>{{ __('messages.faq.subtitle') }}</p>
     </div>
 </section>
 
-<section class="container auth-panel">
+<section class="container page-content">
     <div class="summary-card full-width faq-list">
         @foreach (['booking', 'payment', 'cancellation', 'checkin', 'amenities', 'support'] as $topic)
             <details class="faq-item">
