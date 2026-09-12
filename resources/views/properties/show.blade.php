@@ -376,7 +376,7 @@
                                     <div class="review-topline"><strong>{{ $review->reviewer_name }}</strong><span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span></div>
                                     @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
                                     @if ($review->review_text)<p class="review-quote">{{ $review->review_text }}</p>@endif
-                                    <small>{{ $review->source }}</small>
+                                    <small>{{ $review->source_label }}</small>
                                 </article>
                             @endforeach
                         </div>

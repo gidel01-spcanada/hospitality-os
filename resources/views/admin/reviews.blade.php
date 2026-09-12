@@ -79,7 +79,7 @@
                         <article class="feature-card review-admin-card">
                             <div class="icon">★</div>
                             <h3>{{ $review->reviewer_name }}</h3>
-                            <p>{{ $review->source }}</p>
+                            <p>{{ $review->source_label }}</p>
                             <strong>{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</strong>
                             @if($review->review_text)
                                 <p>{{ $review->review_text }}</p>

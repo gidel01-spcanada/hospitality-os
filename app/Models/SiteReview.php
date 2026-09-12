@@ -33,4 +33,13 @@ class SiteReview extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function getSourceLabelAttribute(): string
+    {
+        return match ($this->source) {
+            'booking' => 'Booking.com',
+            'google' => 'Google',
+            default => ucfirst((string) $this->source),
+        };
+    }
 }

@@ -435,7 +435,7 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('Bénin')
             ->assertDontSee('>BJ<', false)
             ->assertSee('google')
-            ->assertSee('booking')
+            ->assertSee('Booking.com')
             ->assertDontSee('https://www.booking.com/hotel/example', false)
             ->assertDontSee('https://maps.google.com/?cid=example', false)
             ->assertSee('location-map', false)
@@ -447,6 +447,7 @@ class PublicPropertyBookingTest extends TestCase
                 ->assertSee('Tous les avis voyageurs')
                 ->assertSee('Awa')
                 ->assertSee('Moussa')
+                ->assertSee('Booking.com')
                 ->assertSee('Fatou')
                 ->assertSee('Jean')
                 ->assertSee('Basé sur 4 avis ajoutés à la plateforme.');
