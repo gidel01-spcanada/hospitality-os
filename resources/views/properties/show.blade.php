@@ -136,11 +136,15 @@
                                 @endphp
                                 <div class="property-video-frame">
                                     @if ($youtubeId)
-                                        <iframe src="https://www.youtube.com/embed/{{ $youtubeId }}" title="{{ __('messages.properties.video_title') }}" loading="lazy" allowfullscreen></iframe>
+                                        <button type="button" class="property-video-load" data-video-embed="https://www.youtube.com/embed/{{ $youtubeId }}?autoplay=1&rel=0" data-video-title="{{ __('messages.properties.video_title') }}" style="background-image: url('https://img.youtube.com/vi/{{ $youtubeId }}/hqdefault.jpg');">
+                                            <span>{{ __('messages.properties.play_video') }}</span>
+                                        </button>
                                     @elseif ($vimeoId)
-                                        <iframe src="https://player.vimeo.com/video/{{ $vimeoId }}" title="{{ __('messages.properties.video_title') }}" loading="lazy" allowfullscreen></iframe>
+                                        <button type="button" class="property-video-load" data-video-embed="https://player.vimeo.com/video/{{ $vimeoId }}?autoplay=1" data-video-title="{{ __('messages.properties.video_title') }}">
+                                            <span>{{ __('messages.properties.play_video') }}</span>
+                                        </button>
                                     @else
-                                        <video controls preload="metadata" src="{{ $videoUrl }}"></video>
+                                        <video controls preload="none" playsinline src="{{ $videoUrl }}"></video>
                                     @endif
                                 </div>
                             @endforeach

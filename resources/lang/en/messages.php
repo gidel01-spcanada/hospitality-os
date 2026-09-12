@@ -558,6 +558,7 @@ return [
     'properties.nightly_price' => ':price XOF / night',
     'properties.videos' => 'Video tour',
     'properties.video_title' => 'Property video',
+    'properties.play_video' => 'Play video',
     'errors.invalid_video_urls' => 'Video links must be valid HTTP(S) URLs: :urls',
     'properties.full_name' => 'Full name',
     'properties.check_in' => 'Check-in',
