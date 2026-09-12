@@ -2,7 +2,9 @@ param(
     # Credentials stay one level above the repo (in the workspace root) so they're never inside version control.
     [string]$CredentialsPath = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) '.bluehost-credentials.json'),
     [string]$ReleaseRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) 'release'),
-    [switch]$CleanRemoteDevelopmentTrees
+    [switch]$CleanRemoteDevelopmentTrees,
+    [switch]$Force,
+    [switch]$SkipVendor
 )
 
 $ErrorActionPreference = 'Stop'
@@ -127,14 +129,82 @@ function Remove-FtpDirectoryFromLocalTree([string]$localRoot, [string]$remoteRoo
     try { $response = $request.GetResponse(); $response.Dispose() } catch [System.Net.WebException] { }
 }
 
+function Get-FtpFileText([string]$remotePath) {
+    $request = [System.Net.FtpWebRequest]::Create((Get-FtpUri $remotePath))
+    $request.Method = [System.Net.WebRequestMethods+Ftp]::DownloadFile
+    $request.Credentials = [System.Net.NetworkCredential]::new($config.username, $config.password)
+    $request.EnableSsl = [bool]$config.useTls
+    $request.UsePassive = $true
+    try {
+        $response = $request.GetResponse()
+        $reader = [System.IO.StreamReader]::new($response.GetResponseStream(), [System.Text.Encoding]::UTF8)
+        $text = $reader.ReadToEnd()
+        $reader.Close()
+        $response.Close()
+        return $text
+    } catch {
+        return $null
+    }
+}
+
+function Get-FileHashSha256([string]$filePath) {
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::Open($filePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try {
+        $hashBytes = $sha256.ComputeHash($stream)
+        return [System.BitConverter]::ToString($hashBytes).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $stream.Close()
+        $sha256.Dispose()
+    }
+}
+
+$remoteManifest = @{}
+$manifestRemotePath = "$($config.appPath)/.deploy-manifest.json"
+
+if (-not $Force) {
+    Write-Host "Fetching deployment manifest from Bluehost..."
+    $manifestText = Get-FtpFileText $manifestRemotePath
+    if ($manifestText) {
+        try {
+            $jsonObj = ConvertFrom-Json $manifestText
+            if ($jsonObj) {
+                foreach ($prop in $jsonObj.psobject.Properties) {
+                    $remoteManifest[$prop.Name] = [string]$prop.Value
+                }
+            }
+            Write-Host "Loaded deployment manifest ($($remoteManifest.Keys.Count) files previously tracked)."
+        } catch {
+            Write-Warning "Could not parse existing remote manifest; performing full deployment."
+        }
+    } else {
+        Write-Host "No existing deployment manifest found on remote; initial deployment will track all files."
+    }
+} else {
+    Write-Host "Force switch specified; re-uploading all files."
+}
+
+$createdDirectories = @{}
+$uploadedCount = 0
+$skippedCount = 0
+
 function Publish-Directory([string]$localRoot, [string]$remoteRoot) {
-    Invoke-FtpDirectory $remoteRoot
+    if (-not $createdDirectories.ContainsKey($remoteRoot)) {
+        Invoke-FtpDirectory $remoteRoot
+        $createdDirectories[$remoteRoot] = $true
+    }
+
     $items = Get-ChildItem $localRoot -Recurse -Force
     foreach ($item in $items) {
         if ($item.Name -in @('.git', '.gitignore')) {
             continue
         }
         $relative = $item.FullName.Substring($localRoot.Length).TrimStart('\', '/')
+
+        if ($SkipVendor -and ($relative -eq 'vendor' -or $relative.StartsWith('vendor\') -or $relative.StartsWith('vendor/'))) {
+            continue
+        }
+
         if ($relative -match '^vendor[\\/]nesbot[\\/]carbon[\\/]src[\\/]Carbon[\\/]Lang[\\/]' -and $item.Name -notin @('en.php', 'fr.php')) {
             continue
         }
@@ -144,11 +214,41 @@ function Publish-Directory([string]$localRoot, [string]$remoteRoot) {
         if ($localRoot -like '*\\release\\app' -and ($relative -eq 'public' -or $relative.StartsWith('public\\'))) {
             continue
         }
+
         $remotePath = "$remoteRoot/$($relative.Replace('\', '/'))"
+
         if ($item.PSIsContainer) {
-            Invoke-FtpDirectory $remotePath
+            if (-not $createdDirectories.ContainsKey($remotePath)) {
+                Invoke-FtpDirectory $remotePath
+                $createdDirectories[$remotePath] = $true
+            }
         } else {
+            $hash = Get-FileHashSha256 $item.FullName
+
+            if (-not $Force -and $remoteManifest.ContainsKey($remotePath) -and $remoteManifest[$remotePath] -eq $hash) {
+                $script:skippedCount++
+                continue
+            }
+
+            # Ensure parent directory exists on remote before uploading file
+            $relativeDir = [System.IO.Path]::GetDirectoryName($relative)
+            if ($relativeDir) {
+                $dirSegments = $relativeDir.Replace('\', '/').Split('/')
+                $currentDir = $remoteRoot
+                foreach ($segment in $dirSegments) {
+                    if ($segment) {
+                        $currentDir = "$currentDir/$segment"
+                        if (-not $createdDirectories.ContainsKey($currentDir)) {
+                            Invoke-FtpDirectory $currentDir
+                            $createdDirectories[$currentDir] = $true
+                        }
+                    }
+                }
+            }
+
             Send-FtpFile $item.FullName $remotePath
+            $remoteManifest[$remotePath] = $hash
+            $script:uploadedCount++
             Write-Host "Uploaded $relative"
         }
     }
@@ -224,4 +324,17 @@ try {
 } finally {
     Remove-Item $publicUploadRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
-Write-Host 'Bluehost deployment completed without uploading .env files.'
+
+# Upload updated deployment manifest to remote server
+$tempManifestPath = [System.IO.Path]::GetTempFileName()
+try {
+    $remoteManifest | ConvertTo-Json -Depth 10 | Set-Content -Path $tempManifestPath -Encoding UTF8
+    Send-FtpFile $tempManifestPath $manifestRemotePath
+    Write-Host "Saved deployment manifest on Bluehost ($($remoteManifest.Keys.Count) files tracked)."
+} catch {
+    Write-Warning "Could not update remote deployment manifest: $($_.Exception.Message)"
+} finally {
+    Remove-Item $tempManifestPath -Force -ErrorAction SilentlyContinue
+}
+
+Write-Host "Bluehost deployment completed: $uploadedCount file(s) uploaded, $skippedCount file(s) skipped (unchanged)."

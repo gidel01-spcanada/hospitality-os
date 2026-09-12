@@ -76,6 +76,14 @@ On Windows with Scoop PHP 8.5, run `php artisan config:cache` before `php artisa
 - `php artisan test`
 - `curl http://127.0.0.1:8000/health`
 
+## Bluehost deployment & optimization
+
+Deployments are incremental by default: `scripts/deploy-bluehost.ps1` maintains a SHA256 checksum manifest (`.deploy-manifest.json`) on the remote server and uploads **only changed files**, skipping unchanged vendor dependencies and assets.
+
+- **Fast / Incremental deployment (default)**: `.\scripts\deploy-bluehost.ps1`
+- **Ultra-fast deployment (skips `vendor/` check)**: `.\scripts\deploy-bluehost.ps1 -SkipVendor`
+- **Force full re-upload**: `.\scripts\deploy-bluehost.ps1 -Force`
+
 ## Project status
 
 The Laravel application includes the public property catalog and booking flow, payment integrations, reservation emails, message notifications, property media and calendar management, and a role-protected admin workspace.
