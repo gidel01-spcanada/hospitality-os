@@ -392,28 +392,29 @@
             </div>
 
             <div class="content-column">
-            <div class="detail-card sticky-card">
-                <h2>{{ __('messages.properties.stay_sheet') }}</h2>
-                <div class="info-row"><span>{{ __('messages.properties.address') }}</span><strong>{{ $locationAddress }}</strong></div>
-                <div class="info-row"><span>{{ __('messages.properties.city') }}</span><strong>{{ $locationCity }}</strong></div>
-                <div class="info-row"><span>{{ __('messages.properties.country') }}</span><strong>{{ $locationCountry }}</strong></div>
-                <div class="info-row"><span>{{ __('messages.properties.minimum_stay') }}</span><strong>{{ __('messages.properties.nights', ['count' => $property->minimum_stay]) }}</strong></div>
-                <div class="info-row"><span>{{ __('messages.properties.currency') }}</span><strong>{{ $property->currency }}</strong></div>
-            </div>
-            @if ($property->establishment && ($property->establishment->latitude || $property->establishment->longitude || $property->establishment->google_maps_url))
-                <div class="detail-card">
-                    <h2>{{ __('messages.properties.location') }}</h2>
-                    @if ($property->establishment->address || $property->establishment->city)
-                        <p>{{ $property->establishment->address ?: $property->establishment->city }}</p>
-                    @endif
-                    @if ($property->establishment->latitude && $property->establishment->longitude)
-                        <iframe class="location-map" title="{{ __('messages.properties.location') }}" src="https://www.google.com/maps?q={{ $property->establishment->latitude }},{{ $property->establishment->longitude }}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                    @endif
-                    @if ($property->establishment->google_maps_url)
-                        <a class="inline-link" href="{{ $property->establishment->google_maps_url }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.view_map') }} →</a>
+                <div class="detail-card sticky-card">
+                    <h2>{{ __('messages.properties.stay_sheet') }}</h2>
+                    <div class="info-row"><span>{{ __('messages.properties.address') }}</span><strong>{{ $locationAddress }}</strong></div>
+                    <div class="info-row"><span>{{ __('messages.properties.city') }}</span><strong>{{ $locationCity }}</strong></div>
+                    <div class="info-row"><span>{{ __('messages.properties.country') }}</span><strong>{{ $locationCountry }}</strong></div>
+                    <div class="info-row"><span>{{ __('messages.properties.minimum_stay') }}</span><strong>{{ __('messages.properties.nights', ['count' => $property->minimum_stay]) }}</strong></div>
+                    <div class="info-row"><span>{{ __('messages.properties.currency') }}</span><strong>{{ $property->currency }}</strong></div>
+
+                    @if ($property->establishment && ($property->establishment->latitude || $property->establishment->longitude || $property->establishment->google_maps_url))
+                        <div class="property-location-section">
+                            <h3>{{ __('messages.properties.location') }}</h3>
+                            @if ($property->establishment->address || $property->establishment->city)
+                                <p>{{ $property->establishment->address ?: $property->establishment->city }}</p>
+                            @endif
+                            @if ($property->establishment->latitude && $property->establishment->longitude)
+                                <iframe class="location-map" title="{{ __('messages.properties.location') }}" src="https://www.google.com/maps?q={{ $property->establishment->latitude }},{{ $property->establishment->longitude }}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            @endif
+                            @if ($property->establishment->google_maps_url)
+                                <a class="inline-link" href="{{ $property->establishment->google_maps_url }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.view_map') }} →</a>
+                            @endif
+                        </div>
                     @endif
                 </div>
-            @endif
             </div>
         </div>
     </section>
