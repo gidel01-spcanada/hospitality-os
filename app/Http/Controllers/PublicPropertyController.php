@@ -94,11 +94,14 @@ class PublicPropertyController extends Controller
         $reviews = SiteReview::query()
             ->active()
             ->when($property->establishment?->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
-            ->orderByDesc('reviewed_at')
-            ->limit(6)
-            ->get();
+            ->orderByDesc('reviewed_at');
+        $reviewStats = [
+            'count' => (clone $reviews)->count(),
+            'average' => round((float) (clone $reviews)->avg('rating'), 1),
+        ];
+        $reviews = $reviews->limit(6)->get();
 
-        return view('properties.show', compact('property', 'reviews'));
+        return view('properties.show', compact('property', 'reviews', 'reviewStats'));
     }
 
     public function resume(Request $request, ReservationEmailService $emailService): RedirectResponse

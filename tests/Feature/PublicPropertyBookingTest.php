@@ -391,7 +391,7 @@ class PublicPropertyBookingTest extends TestCase
             'rating' => 5,
             'review_text' => 'Wonderful stay',
             'is_active' => true,
-            'reviewed_at' => now(),
+            'reviewed_at' => '2026-09-11 10:00:00',
         ]);
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
@@ -400,7 +400,25 @@ class PublicPropertyBookingTest extends TestCase
             'rating' => 4,
             'review_text' => 'Excellent location',
             'is_active' => true,
-            'reviewed_at' => now()->subDay(),
+            'reviewed_at' => '2026-09-10 10:00:00',
+        ]);
+        SiteReview::create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'source' => 'booking',
+            'reviewer_name' => 'Fatou',
+            'rating' => 5,
+            'review_text' => 'Très propre',
+            'is_active' => true,
+            'reviewed_at' => '2026-09-09 10:00:00',
+        ]);
+        SiteReview::create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'source' => 'google',
+            'reviewer_name' => 'Jean',
+            'rating' => 3,
+            'review_text' => 'Bon séjour',
+            'is_active' => true,
+            'reviewed_at' => '2026-09-08 10:00:00',
         ]);
         BrandSettings::set([
             'review_source_booking_url' => 'https://www.booking.com/hotel/example',
@@ -411,6 +429,9 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('Wonderful stay')
             ->assertSee('Excellent location')
+            ->assertSee('11/09/2026')
+            ->assertSee('Basé sur 4 avis ajoutés à la plateforme.')
+            ->assertSee('Voir tous les avis')
             ->assertSee('Bénin')
             ->assertDontSee('>BJ<', false)
             ->assertSee('google')
@@ -420,6 +441,15 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('location-map', false)
             ->assertSee('property="og:image"', false)
             ->assertSee('facebook.com/sharer', false);
+
+            $this->get('/reviews')
+                ->assertOk()
+                ->assertSee('Tous les avis voyageurs')
+                ->assertSee('Awa')
+                ->assertSee('Moussa')
+                ->assertSee('Fatou')
+                ->assertSee('Jean')
+                ->assertSee('Basé sur 4 avis ajoutés à la plateforme.');
     }
 
     public function test_property_detail_uses_establishment_location_information(): void
