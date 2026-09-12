@@ -1624,6 +1624,18 @@ button, input, select {
     border-radius: 16px;
 }
 
+.property-location-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(19, 31, 35, 0.06);
+}
+
+.property-location-section h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+}
+
 .location-copy {
     margin: -0.75rem 0 1rem;
     color: var(--afrik-muted);
