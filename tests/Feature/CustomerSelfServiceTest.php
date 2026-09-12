@@ -44,6 +44,7 @@ class CustomerSelfServiceTest extends TestCase
         ]);
 
         $this->get('/contact')->assertOk()->assertSee('Contactez-nous');
+        $this->get('/about')->assertOk()->assertSee('À propos');
         $this->get('/privacy')->assertOk()->assertSee('Politique de confidentialité');
         $this->get('/terms')->assertOk()->assertSee('Conditions générales');
         $this->get('/cookies')->assertOk()->assertSee('Politique relative aux cookies');
