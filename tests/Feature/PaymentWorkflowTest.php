@@ -219,6 +219,8 @@ class PaymentWorkflowTest extends TestCase
         $this->get($checkoutUrl)
             ->assertOk()
             ->assertSee('FedaPay sandbox')
+            ->assertSee('type="hidden" name="provider" value="fedapay"', false)
+            ->assertDontSee('id="provider"', false)
             ->assertDontSee('Paiement différé');
 
         $this->post($checkoutUrl, ['provider' => 'pay_later'])
