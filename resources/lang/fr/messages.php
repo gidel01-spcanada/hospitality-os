@@ -847,6 +847,7 @@ return [
     'reservation.amounts' => 'Montants',
     'checkout.title' => 'Finaliser la réservation',
     'checkout.badge' => 'Paiement',
+    'checkout.paypal_smart_buttons_heading' => 'Payer par PayPal ou Carte bancaire :',
     'checkout.pay_now' => 'Payer maintenant',
     'checkout.reference' => 'Référence',
     'checkout.property' => 'Logement',

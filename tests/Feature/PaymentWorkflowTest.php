@@ -315,4 +315,56 @@ class PaymentWorkflowTest extends TestCase
 
         $this->assertDatabaseMissing('reservation_price_lines', ['reservation_id' => $outsideWindow->id]);
     }
+
+    public function test_paypal_smart_buttons_create_and_capture_order(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->forceFill([
+            'payment_methods' => [
+                'pay_later' => ['enabled' => true, 'mode' => 'production'],
+                'paypal' => ['enabled' => true, 'mode' => 'sandbox'],
+            ],
+        ])->save();
+
+        $guest = ReservationGuest::create([
+            'full_name' => 'PayPal Guest',
+            'email' => 'paypal@example.com',
+        ]);
+
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-PAYPAL-001',
+            'status' => 'pending',
+            'check_in' => now()->addDays(5)->toDateString(),
+            'check_out' => now()->addDays(8)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 100000,
+            'fees' => 10000,
+            'taxes' => 5000,
+            'total_amount' => 115000,
+            'source' => 'website',
+        ]);
+
+        $createUrl = route('checkout.paypal.create', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $captureUrl = route('checkout.paypal.capture', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $response = $this->postJson($createUrl);
+        $response->assertOk()->assertJsonStructure(['orderID', 'attempt_id']);
+        $orderID = $response->json('orderID');
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'provider_reference' => $orderID]);
+
+        $captureResponse = $this->postJson($captureUrl, ['orderID' => $orderID]);
+        $captureResponse->assertOk()->assertJson(['status' => 'COMPLETED']);
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'status' => 'paid']);
+    }
 }

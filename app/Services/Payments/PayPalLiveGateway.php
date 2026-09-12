@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentAttempt;
 use App\Models\Reservation;
+use App\Support\BrandSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -20,6 +21,10 @@ class PayPalLiveGateway implements PaymentGateway
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
         $token = $this->accessToken();
+        $xofPerEur = (float) BrandSettings::get('eur_to_xof_rate', 655.957);
+        $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
+        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $reservation->total_amount / $xofPerEur, 2) : (float) $reservation->total_amount;
+
         $response = Http::acceptJson()
             ->withToken($token)
             ->withHeaders(['PayPal-Request-Id' => $context['idempotency_key'] ?? Str::uuid()->toString(), 'Prefer' => 'return=representation'])
@@ -27,27 +32,19 @@ class PayPalLiveGateway implements PaymentGateway
                 'intent' => 'CAPTURE',
                 'purchase_units' => [[
                     'reference_id' => $reservation->reservation_ref,
-                    'amount' => ['currency_code' => $reservation->currency, 'value' => number_format((float) $reservation->total_amount, 2, '.', '')],
+                    'amount' => ['currency_code' => $paypalCurrency, 'value' => number_format($paypalAmount, 2, '.', '')],
                 ]],
-                'payment_source' => ['paypal' => ['experience_context' => [
-                    'return_url' => $context['return_url'],
-                    'cancel_url' => $context['cancel_url'],
-                    'user_action' => 'PAY_NOW',
-                ]]],
             ]);
         $response->throw();
         $order = $response->json();
         $approvalUrl = collect($order['links'] ?? [])->first(fn ($link) => in_array($link['rel'] ?? '', ['payer-action', 'approve'], true))['href'] ?? null;
-        if (! $approvalUrl) {
-            throw new RuntimeException('PayPal did not return an approval URL.');
-        }
 
         return PaymentAttempt::query()->create([
             'reservation_id' => $reservation->id,
             'provider' => $this->name(),
             'provider_reference' => $order['id'],
-            'currency' => $reservation->currency,
-            'amount' => $reservation->total_amount,
+            'currency' => $paypalCurrency,
+            'amount' => $paypalAmount,
             'status' => 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => ['mode' => 'production', 'redirect_url' => $approvalUrl, 'order_status' => $order['status'] ?? null],
@@ -58,9 +55,21 @@ class PayPalLiveGateway implements PaymentGateway
     {
         $response = Http::acceptJson()->withToken($this->accessToken())
             ->post($this->baseUrl().'/v2/checkout/orders/'.$attempt->provider_reference.'/capture', []);
-        $response->throw();
-        $order = $response->json();
-        $attempt->update(['status' => ($order['status'] ?? null) === 'COMPLETED' ? 'paid' : 'pending', 'payload' => array_merge((array) $attempt->payload, ['capture' => $order])]);
+
+        if ($response->successful()) {
+            $order = $response->json();
+            $status = ($order['status'] ?? null) === 'COMPLETED' ? 'paid' : 'pending';
+            $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['capture' => $order])]);
+        } else {
+            $checkResponse = Http::acceptJson()->withToken($this->accessToken())
+                ->get($this->baseUrl().'/v2/checkout/orders/'.$attempt->provider_reference);
+            if ($checkResponse->successful()) {
+                $order = $checkResponse->json();
+                $status = ($order['status'] ?? null) === 'COMPLETED' ? 'paid' : $attempt->status;
+                $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['check' => $order])]);
+            }
+        }
+
         return $attempt->fresh();
     }
 

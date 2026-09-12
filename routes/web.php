@@ -204,6 +204,8 @@ Route::get('/calendar/{property:slug}/{token}.ics', [\App\Http\Controllers\Admin
 Route::middleware('locale')->group(function () {
     Route::get('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->name('checkout.start');
+    Route::post('/reservations/{reservation}/checkout/paypal/create', [\App\Http\Controllers\CheckoutController::class, 'createPayPalOrder'])->name('checkout.paypal.create');
+    Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->name('checkout.paypal.capture');
     Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->name('checkout.complete');
     Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->name('checkout.cancel');
     Route::get('/reservations/{reservation}/checkout/{provider}/return', [\App\Http\Controllers\CheckoutController::class, 'return'])->name('checkout.return');
