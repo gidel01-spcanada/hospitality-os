@@ -30,7 +30,7 @@
             @foreach ($reviews as $review)
                 <article class="review-card">
                     <div class="review-topline">
-                        <span class="review-source">{{ ucfirst($review->source) }}</span>
+                        <span class="review-source">{{ $review->source_label }}</span>
                         <span class="review-stars" aria-label="{{ __('messages.home.rating_stars', ['rating' => $review->rating]) }}">{{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}</span>
                     </div>
                     <h3>{{ $review->reviewer_name }}</h3>
