@@ -1119,8 +1119,16 @@ button, input, select {
 
 .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.85rem 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1rem 1.25rem;
+    align-items: end;
+}
+
+.filter-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    min-width: 0;
     align-items: end;
 }
 
@@ -2190,7 +2198,13 @@ main #home-location {
     }
 
     .filter-grid {
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .filter-group {
+        grid-template-columns: 1fr;
     }
 }
 
