@@ -78,6 +78,13 @@
                             {{ __('messages.checkout.start') }}
                         </button>
                     </form>
+
+                    @if (isset($paymentMethods['paypal']))
+                        <div class="mt-6 border-t border-slate-200 pt-4">
+                            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('messages.checkout.paypal_smart_buttons_heading') }}</p>
+                            <div id="paypal-button-container"></div>
+                        </div>
+                    @endif
                 @endif
 
                 @if (in_array('pay_later', array_keys($paymentMethods), true) && $reservation->status === 'pending')
@@ -130,5 +137,69 @@
             </aside>
         </div>
     </div>
+
+    @if (isset($paymentMethods['paypal']) && $reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
+        @php
+            $paypalClientId = config('services.paypal.client_id') ?: 'test';
+            $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
+        @endphp
+        <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $paypalCurrency }}&components=buttons,funding-eligibility"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const container = document.getElementById('paypal-button-container');
+                if (container && typeof paypal !== 'undefined') {
+                    paypal.Buttons({
+                        style: {
+                            layout: 'vertical',
+                            color: 'gold',
+                            shape: 'rect',
+                            label: 'paypal'
+                        },
+                        createOrder: function () {
+                            return fetch('{{ route("checkout.paypal.create", ["reservation" => $reservation, "token" => $token]) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                }
+                            })
+                            .then(function (res) {
+                                if (!res.ok) {
+                                    throw new Error('Failed to create PayPal order');
+                                }
+                                return res.json();
+                            })
+                            .then(function (data) {
+                                return data.orderID;
+                            });
+                        },
+                        onApprove: function (data) {
+                            return fetch('{{ route("checkout.paypal.capture", ["reservation" => $reservation, "token" => $token]) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ orderID: data.orderID })
+                            })
+                            .then(function (res) {
+                                return res.json();
+                            })
+                            .then(function (details) {
+                                if (details.redirect_url) {
+                                    window.location.href = details.redirect_url;
+                                } else {
+                                    window.location.reload();
+                                }
+                            });
+                        },
+                        onError: function (err) {
+                            console.error('PayPal SDK error:', err);
+                        }
+                    }).render('#paypal-button-container');
+                }
+            });
+        </script>
+    @endif
 </body>
 </html>

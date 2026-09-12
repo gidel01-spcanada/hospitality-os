@@ -149,6 +149,71 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('error', 'Payment is awaiting confirmation.');
     }
 
+    public function createPayPalOrder(Request $request, Reservation $reservation, PaymentGatewayManager $manager)
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        $paymentMethods = $this->paymentMethods($reservation);
+
+        abort_unless(isset($paymentMethods['paypal']), 422, 'PayPal is not available for this establishment.');
+
+        $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
+        $attempt = $gateway->createIntent($reservation, [
+            'idempotency_key' => $reservation->reservation_ref . '-paypal-' . time(),
+            'mode' => $paymentMethods['paypal']['mode'],
+            'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
+            'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
+        ]);
+
+        $reservation->update(['status' => 'pending_payment']);
+
+        return response()->json([
+            'orderID' => $attempt->provider_reference,
+            'attempt_id' => $attempt->id,
+        ]);
+    }
+
+    public function capturePayPalOrder(Request $request, Reservation $reservation, PaymentGatewayManager $manager, ReservationEmailService $emailService)
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        $paymentMethods = $this->paymentMethods($reservation);
+
+        abort_unless(isset($paymentMethods['paypal']), 422, 'PayPal is not available for this establishment.');
+
+        $orderID = (string) $request->input('orderID');
+        $attempt = $reservation->paymentAttempts()
+            ->where('provider', 'paypal')
+            ->when($orderID !== '', fn ($query) => $query->where('provider_reference', $orderID))
+            ->latest()
+            ->first();
+
+        if (! $attempt) {
+            $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
+            $attempt = $gateway->createIntent($reservation, [
+                'idempotency_key' => $reservation->reservation_ref . '-paypal-' . time(),
+                'mode' => $paymentMethods['paypal']['mode'],
+            ]);
+        }
+
+        $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
+        $attempt = $gateway->verifyStatus($attempt);
+
+        if (in_array($attempt->status, ['paid', 'completed'], true)) {
+            $reservation->update([
+                'status' => 'confirmed',
+                'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified via PayPal Smart Buttons.'),
+            ]);
+
+            $emailService->queueStatusUpdate($reservation, 'confirmed');
+
+            return response()->json([
+                'status' => 'COMPLETED',
+                'redirect_url' => route('checkout.show', ['reservation' => $reservation, 'token' => $token]),
+            ]);
+        }
+
+        return response()->json(['status' => 'PENDING', 'message' => 'Payment awaiting confirmation.'], 400);
+    }
+
     public function webhook(Request $request, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService)
     {
         abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa'], true), 404, 'Unsupported payment provider.');

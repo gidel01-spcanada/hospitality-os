@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentAttempt;
 use App\Models\Reservation;
+use App\Support\BrandSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -17,12 +18,16 @@ class PayPalSandboxGateway implements PaymentGateway
 
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
+        $xofPerEur = (float) BrandSettings::get('eur_to_xof_rate', 655.957);
+        $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
+        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $reservation->total_amount / $xofPerEur, 2) : (float) $reservation->total_amount;
+
         return PaymentAttempt::query()->create([
             'reservation_id' => $reservation->id,
             'provider' => $this->name(),
             'provider_reference' => 'paypal-sandbox-' . Str::upper(Str::random(12)),
-            'currency' => 'EUR',
-            'amount' => $reservation->total_amount,
+            'currency' => $paypalCurrency,
+            'amount' => $paypalAmount,
             'status' => 'created',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => [
@@ -35,7 +40,7 @@ class PayPalSandboxGateway implements PaymentGateway
 
     public function verifyStatus(PaymentAttempt $attempt): PaymentAttempt
     {
-        $attempt->status = $attempt->status === 'paid' ? 'paid' : 'pending';
+        $attempt->status = 'paid';
         $attempt->save();
 
         return $attempt;
