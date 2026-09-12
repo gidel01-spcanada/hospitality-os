@@ -65,14 +65,25 @@
                 @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
                     <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
                         @csrf
-                        <div>
-                            <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
-                            <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
-                                @foreach ($paymentMethods as $provider => $method)
-                                    <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @if (count($paymentMethods) === 1)
+                            @php $singleProvider = array_key_first($paymentMethods); @endphp
+                            <input type="hidden" name="provider" value="{{ $singleProvider }}">
+                            <div>
+                                <span class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</span>
+                                <div class="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
+                                    {{ __('messages.checkout.' . $singleProvider) }}
+                                </div>
+                            </div>
+                        @else
+                            <div>
+                                <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
+                                <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
+                                    @foreach ($paymentMethods as $provider => $method)
+                                        <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
 
                         <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
                             {{ __('messages.checkout.start') }}
