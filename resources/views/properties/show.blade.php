@@ -372,11 +372,16 @@
                         </div>
                         <div class="review-grid property-review-grid">
                             @foreach ($reviews as $review)
-                                <article class="review-card">
-                                    <div class="review-topline"><strong>{{ $review->reviewer_name }}</strong><span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span></div>
-                                    @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
+                                <article class="review-card property-review-bubble">
+                                    <div class="property-review-meta">
+                                        <strong>{{ $review->reviewer_name }}</strong>
+                                        <span class="review-source">{{ $review->source_label }}</span>
+                                    </div>
                                     @if ($review->review_text)<p class="review-quote">{{ $review->review_text }}</p>@endif
-                                    <small>{{ $review->source_label }}</small>
+                                    <div class="property-review-footer">
+                                        <span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span>
+                                        @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
+                                    </div>
                                 </article>
                             @endforeach
                         </div>
