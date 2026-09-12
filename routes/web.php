@@ -165,6 +165,7 @@ Route::middleware('locale')->group(function () {
     Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->name('properties.availability');
     Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->name('properties.reserve');
     Route::get('/contact', [\App\Http\Controllers\StaticPageController::class, 'contact'])->name('contact');
+    Route::get('/about', [\App\Http\Controllers\StaticPageController::class, 'about'])->name('about');
     Route::get('/reviews', [\App\Http\Controllers\StaticPageController::class, 'reviews'])->name('reviews');
     Route::get('/faq', [\App\Http\Controllers\StaticPageController::class, 'faq'])->name('faq');
     Route::get('/privacy', [\App\Http\Controllers\StaticPageController::class, 'privacy'])->name('privacy');
@@ -176,6 +177,7 @@ Route::get('/sitemap.xml', function () {
     $urls = collect([
         route('home'),
         route('properties.index'),
+        route('about'),
         route('contact'),
         route('reviews'),
         route('faq'),

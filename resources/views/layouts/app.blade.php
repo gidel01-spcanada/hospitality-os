@@ -112,6 +112,7 @@
                         <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
                     </div>
                     <p>{{ $brand['site_tagline'] ?? __('messages.brand.default_tagline') }}</p>
+                    <p><a href="{{ route('about') }}">{{ __('messages.about.badge') }}</a></p>
                 </div>
                 <div>
                     <h3>{{ __('messages.brand.contact') }}</h3>
