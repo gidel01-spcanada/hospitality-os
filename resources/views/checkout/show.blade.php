@@ -63,35 +63,41 @@
 
             <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
-                    <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
-                        @csrf
-                        @if (count($paymentMethods) === 1)
-                            @php $singleProvider = array_key_first($paymentMethods); @endphp
-                            <input type="hidden" name="provider" value="{{ $singleProvider }}">
-                            <div>
-                                <span class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</span>
-                                <div class="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
-                                    {{ __('messages.checkout.' . $singleProvider) }}
-                                </div>
-                            </div>
-                        @else
-                            <div>
-                                <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
-                                <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
-                                    @foreach ($paymentMethods as $provider => $method)
-                                        <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                    @php
+                        $nonPaypalMethods = collect($paymentMethods)->except('paypal')->all();
+                    @endphp
 
-                        <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
-                            {{ __('messages.checkout.start') }}
-                        </button>
-                    </form>
+                    @if (count($nonPaypalMethods) > 0)
+                        <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
+                            @csrf
+                            @if (count($nonPaypalMethods) === 1)
+                                @php $singleProvider = array_key_first($nonPaypalMethods); @endphp
+                                <input type="hidden" name="provider" value="{{ $singleProvider }}">
+                                <div>
+                                    <span class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</span>
+                                    <div class="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
+                                        {{ __('messages.checkout.' . $singleProvider) }}
+                                    </div>
+                                </div>
+                            @else
+                                <div>
+                                    <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
+                                    <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
+                                        @foreach ($nonPaypalMethods as $provider => $method)
+                                            <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
+                                {{ __('messages.checkout.start') }}
+                            </button>
+                        </form>
+                    @endif
 
                     @if (isset($paymentMethods['paypal']))
-                        <div class="mt-6 border-t border-slate-200 pt-4">
+                        <div class="@if(count($nonPaypalMethods) > 0) mt-6 border-t border-slate-200 pt-4 @endif">
                             <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('messages.checkout.paypal_smart_buttons_heading') }}</p>
                             <div id="paypal-button-container"></div>
                         </div>
