@@ -114,20 +114,18 @@
                         </div>
                     </div>
 
-                    @php
-                        $reviewCount = $reviews->count();
-                        $averageRating = $reviewCount > 0 ? round((float) $reviews->avg('rating'), 1) : null;
-                    @endphp
-
                     <div class="review-summary">
                         <div class="review-summary-score">
-                            <strong>{{ $averageRating }}</strong>
+                            <strong>{{ $reviewStats['average'] }}</strong>
                             <span>/ 5</span>
                             <div class="review-summary-stars">★★★★★</div>
                         </div>
                         <div class="review-summary-copy">
                             <h3>{{ __('messages.home.verified_reviews') }}</h3>
-                            <p>{{ __('messages.home.review_count', ['count' => $reviewCount]) }}</p>
+                            <p>{{ __('messages.home.review_count', ['count' => $reviewStats['count']]) }}</p>
+                        </div>
+                        <div class="review-summary-links">
+                            <a href="{{ route('reviews') }}">{{ __('messages.reviews.view_all') }}</a>
                         </div>
                     </div>
 
@@ -139,6 +137,9 @@
                                     <span class="review-stars" aria-label="{{ __('messages.home.rating_stars', ['rating' => $review->rating]) }}">{{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}</span>
                                 </div>
                                 <h3>{{ $review->reviewer_name }}</h3>
+                                @if($review->reviewed_at)
+                                    <time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>
+                                @endif
                                 @if($review->review_text)
                                     <p class="review-quote">“{{ $review->review_text }}”</p>
                                 @endif

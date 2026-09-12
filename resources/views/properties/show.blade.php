@@ -354,12 +354,27 @@
                 <div class="detail-card">
                     <div class="detail-card-heading">
                         <h2>{{ __('messages.properties.reviews') }}</h2>
+                        @if ($reviewStats['count'] > 0)
+                            <a class="inline-link" href="{{ route('reviews') }}">{{ __('messages.reviews.view_all') }}</a>
+                        @endif
                     </div>
                     @if ($reviews->isNotEmpty())
+                        <div class="review-summary property-review-summary">
+                            <div class="review-summary-score">
+                                <strong>{{ $reviewStats['average'] }}</strong>
+                                <span>/ 5</span>
+                                <div class="review-summary-stars">★★★★★</div>
+                            </div>
+                            <div class="review-summary-copy">
+                                <h3>{{ __('messages.home.verified_reviews') }}</h3>
+                                <p>{{ __('messages.home.review_count', ['count' => $reviewStats['count']]) }}</p>
+                            </div>
+                        </div>
                         <div class="review-grid property-review-grid">
                             @foreach ($reviews as $review)
                                 <article class="review-card">
                                     <div class="review-topline"><strong>{{ $review->reviewer_name }}</strong><span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span></div>
+                                    @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
                                     @if ($review->review_text)<p class="review-quote">{{ $review->review_text }}</p>@endif
                                     <small>{{ $review->source }}</small>
                                 </article>

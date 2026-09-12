@@ -15,6 +15,7 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
     $properties = collect();
     $establishments = collect();
     $reviews = collect();
+    $reviewStats = ['count' => 0, 'average' => null];
     $destinations = collect();
 
     if (Schema::hasTable('properties')) {
@@ -32,10 +33,15 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
             $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
 
     if (Schema::hasTable('site_reviews')) {
-        $reviews = \App\Models\SiteReview::query()->where('is_active', true)->orderByDesc('reviewed_at')->limit(3)->get();
+        $reviewQuery = \App\Models\SiteReview::query()->where('is_active', true);
+        $reviewStats = [
+            'count' => (clone $reviewQuery)->count(),
+            'average' => round((float) (clone $reviewQuery)->avg('rating'), 1),
+        ];
+        $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
-    return view('home', compact('properties', 'establishments', 'reviews', 'destinations', 'favoritePropertyIds'));
+    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
@@ -159,6 +165,7 @@ Route::middleware('locale')->group(function () {
     Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->name('properties.availability');
     Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->name('properties.reserve');
     Route::get('/contact', [\App\Http\Controllers\StaticPageController::class, 'contact'])->name('contact');
+    Route::get('/reviews', [\App\Http\Controllers\StaticPageController::class, 'reviews'])->name('reviews');
     Route::get('/faq', [\App\Http\Controllers\StaticPageController::class, 'faq'])->name('faq');
     Route::get('/privacy', [\App\Http\Controllers\StaticPageController::class, 'privacy'])->name('privacy');
     Route::get('/terms', [\App\Http\Controllers\StaticPageController::class, 'terms'])->name('terms');
@@ -170,6 +177,7 @@ Route::get('/sitemap.xml', function () {
         route('home'),
         route('properties.index'),
         route('contact'),
+        route('reviews'),
         route('faq'),
         route('privacy'),
         route('terms'),

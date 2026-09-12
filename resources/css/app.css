@@ -788,6 +788,14 @@ button, input, select {
     font-size: 1.24rem;
 }
 
+.review-date {
+    display: block;
+    margin: -0.25rem 0 0.75rem;
+    color: var(--afrik-muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
 .review-quote {
     margin: 0 0 1rem;
     color: var(--afrik-muted);
@@ -1529,6 +1537,15 @@ button, input, select {
 
 .property-review-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.property-review-summary {
+    grid-template-columns: auto 1fr;
+    margin-bottom: 1rem;
+}
+
+.all-reviews-grid {
+    margin-bottom: 1.5rem;
 }
 
 .property-review-grid .review-card {
