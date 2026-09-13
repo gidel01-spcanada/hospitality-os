@@ -353,8 +353,8 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
             ->assertSee('value="3"', false)
-            ->assertSee('id="check_in" name="check_in" type="date" value="2026-10-01"', false)
-            ->assertSee('id="check_out" name="check_out" type="date" value="2026-10-03"', false);
+            ->assertSee('name="check_in" value="2026-10-01" data-date-range-start', false)
+            ->assertSee('name="check_out" value="2026-10-03" data-date-range-end', false);
 
         // Legacy links that still use the "city" parameter must keep working.
         $this->get('/properties?city=Cotonou')

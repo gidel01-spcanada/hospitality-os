@@ -504,6 +504,112 @@ button, input, select {
     gap: 0.9rem;
 }
 
+.date-range-picker {
+    position: relative;
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.date-range-picker > span,
+.date-range-picker > label {
+    color: var(--afrik-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.date-range-trigger {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--afrik-line);
+    border-radius: 12px;
+    background: white;
+    color: var(--afrik-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.date-range-trigger:focus-visible {
+    outline: 2px solid rgba(15, 91, 76, 0.35);
+    outline-offset: 1px;
+}
+
+.date-range-popover {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 20;
+    width: min(330px, calc(100vw - 32px));
+    padding: 0.9rem;
+    border: 1px solid rgba(15, 91, 76, 0.14);
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 18px 40px rgba(20, 29, 32, 0.16);
+}
+
+.date-range-header,
+.date-range-weekdays,
+.date-range-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.25rem;
+}
+
+.date-range-header {
+    grid-template-columns: 32px 1fr 32px;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.date-range-header button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(15, 91, 76, 0.08);
+    color: var(--afrik-emerald);
+    cursor: pointer;
+}
+
+.date-range-weekdays {
+    margin-bottom: 0.35rem;
+    color: var(--afrik-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.date-range-day,
+.date-range-empty {
+    min-height: 34px;
+}
+
+.date-range-day {
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--afrik-text);
+    cursor: pointer;
+}
+
+.date-range-day:hover,
+.date-range-day.is-in-range {
+    background: rgba(15, 91, 76, 0.1);
+}
+
+.date-range-day.is-selected {
+    background: var(--afrik-emerald);
+    color: white;
+    font-weight: 700;
+}
+
 .search-form label {
     display: grid;
     gap: 0.45rem;

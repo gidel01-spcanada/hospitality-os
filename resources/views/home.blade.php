@@ -45,15 +45,14 @@
                                 @endforeach
                             </select>
                         </label>
-                        <div class="grid-two">
-                            <label>
-                                <span>{{ __('messages.home.arrival') }}</span>
-                                <input type="date" name="check_in" value="{{ request('check_in') }}" aria-label="{{ __('messages.home.arrival') }}" />
-                            </label>
-                            <label>
-                                <span>{{ __('messages.home.departure') }}</span>
-                                <input type="date" name="check_out" value="{{ request('check_out') }}" aria-label="{{ __('messages.home.departure') }}" />
-                            </label>
+                        <div class="date-range-picker" data-date-range-picker data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                            <span>{{ __('messages.home.dates') }}</span>
+                            <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
+                                <span data-date-range-label>{{ request('check_in') && request('check_out') ? request('check_in') . ' → ' . request('check_out') : __('messages.home.select_dates') }}</span>
+                            </button>
+                            <input type="hidden" name="check_in" value="{{ request('check_in') }}" data-date-range-start>
+                            <input type="hidden" name="check_out" value="{{ request('check_out') }}" data-date-range-end>
+                            <div class="date-range-popover" data-date-range-popover hidden></div>
                         </div>
                         <label>
                             <span>{{ __('messages.home.travelers') }}</span>

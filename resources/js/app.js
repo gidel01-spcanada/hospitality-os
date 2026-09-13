@@ -158,6 +158,69 @@ document.querySelectorAll('[data-video-embed]').forEach((button) => {
 	});
 });
 
+document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
+	const trigger = picker.querySelector('[data-date-range-trigger]');
+	const popover = picker.querySelector('[data-date-range-popover]');
+	const label = picker.querySelector('[data-date-range-label]');
+	const startInput = picker.querySelector('[data-date-range-start]');
+	const endInput = picker.querySelector('[data-date-range-end]');
+	let start = startInput.value || '';
+	let end = endInput.value || '';
+	let visibleMonth = start ? new Date(`${start}T12:00:00`) : new Date();
+	visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+
+	const formatDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+	const displayDate = (value) => value ? new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+	const render = () => {
+		const year = visibleMonth.getFullYear();
+		const month = visibleMonth.getMonth();
+		const firstDay = new Date(year, month, 1);
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		const cells = [];
+		for (let blank = 0; blank < firstDay.getDay(); blank += 1) cells.push('<span class="date-range-empty"></span>');
+		for (let day = 1; day <= daysInMonth; day += 1) {
+			const value = formatDate(new Date(year, month, day));
+			const selected = value === start || value === end;
+			const inRange = start && end && value > start && value < end;
+			cells.push(`<button type="button" class="date-range-day${selected ? ' is-selected' : ''}${inRange ? ' is-in-range' : ''}" data-date-value="${value}">${day}</button>`);
+		}
+		popover.innerHTML = `<div class="date-range-header"><button type="button" data-date-prev aria-label="Previous month">&larr;</button><strong>${visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</strong><button type="button" data-date-next aria-label="Next month">&rarr;</button></div><div class="date-range-weekdays">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => `<span>${day}</span>`).join('')}</div><div class="date-range-days">${cells.join('')}</div>`;
+		popover.querySelector('[data-date-prev]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render(); });
+		popover.querySelector('[data-date-next]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() + 1); render(); });
+		popover.querySelectorAll('[data-date-value]').forEach((dayButton) => {
+			dayButton.addEventListener('click', () => {
+				const value = dayButton.dataset.dateValue;
+				if (!start || (start && end) || value < start) {
+					start = value;
+					end = '';
+				} else {
+					end = value;
+				}
+				startInput.value = start;
+				endInput.value = end;
+				label.textContent = start && end ? `${displayDate(start)} → ${displayDate(end)}` : start ? `${displayDate(start)} → ${picker.dataset.endLabel}` : picker.dataset.placeholder;
+				if (start && end) {
+					popover.hidden = true;
+					trigger.setAttribute('aria-expanded', 'false');
+				}
+				render();
+			});
+		});
+	};
+
+	trigger.addEventListener('click', () => {
+		popover.hidden = !popover.hidden;
+		trigger.setAttribute('aria-expanded', String(!popover.hidden));
+		if (!popover.hidden) render();
+	});
+	document.addEventListener('click', (event) => {
+		if (!picker.contains(event.target)) {
+			popover.hidden = true;
+			trigger.setAttribute('aria-expanded', 'false');
+		}
+	});
+});
+
 document.querySelectorAll('[data-language-tab]').forEach((tab) => {
 	tab.addEventListener('click', () => {
 		const editor = tab.closest('.language-editor');

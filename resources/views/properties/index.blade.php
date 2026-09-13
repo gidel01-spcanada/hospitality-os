@@ -39,14 +39,15 @@
                             </div>
                         </div>
 
-                        <div class="filter-group">
+                        <div class="filter-group date-range-picker" data-date-range-picker data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
                             <div class="filter-field">
-                                <label for="check_in">{{ __('messages.home.arrival') }}</label>
-                                <input id="check_in" name="check_in" type="date" value="{{ $filters['check_in'] ?? '' }}">
-                            </div>
-                            <div class="filter-field">
-                                <label for="check_out">{{ __('messages.home.departure') }}</label>
-                                <input id="check_out" name="check_out" type="date" value="{{ $filters['check_out'] ?? '' }}">
+                                <label for="property-date-range-trigger">{{ __('messages.home.dates') }}</label>
+                                <button type="button" id="property-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
+                                    <span data-date-range-label>{{ ($filters['check_in'] ?? null) && ($filters['check_out'] ?? null) ? $filters['check_in'] . ' → ' . $filters['check_out'] : __('messages.home.select_dates') }}</span>
+                                </button>
+                                <input type="hidden" name="check_in" value="{{ $filters['check_in'] ?? '' }}" data-date-range-start>
+                                <input type="hidden" name="check_out" value="{{ $filters['check_out'] ?? '' }}" data-date-range-end>
+                                <div class="date-range-popover" data-date-range-popover hidden></div>
                             </div>
                         </div>
 
