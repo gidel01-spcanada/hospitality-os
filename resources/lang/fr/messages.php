@@ -858,6 +858,7 @@ return [
     'reservation.title' => 'Détail de réservation',
     'reservation.badge' => 'Réservation',
     'reservation.details' => 'Détails',
+    'reservation.actions' => 'Paiement et annulation',
     'reservation.status' => 'Statut',
     'reservation.dates' => 'Dates',
     'reservation.travelers' => 'Voyageurs',

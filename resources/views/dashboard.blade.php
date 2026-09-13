@@ -60,7 +60,7 @@
                         </dl>
 
                         <footer class="reservation-card-actions">
-                            <a class="btn btn-primary" href="{{ route('dashboard.reservations.show', $reservation) }}">{{ __('messages.reservation.details') }}</a>
+                            <a class="btn btn-ghost" href="{{ route('dashboard.reservations.show', $reservation) }}">{{ __('messages.reservation.details') }}</a>
 
                             @if ($reservation->receipts->isNotEmpty())
                                 <a class="btn btn-ghost" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.dashboard.receipt') }}</a>
