@@ -28,7 +28,6 @@ class AdminPropertyController extends Controller
         return view('admin.properties.create', [
             'establishments' => Establishment::query()->orderBy('name')->get(),
             'amenities' => Amenity::query()->with('category')->orderBy('sort_order')->get(),
-            'xofPerEur' => (float) \App\Support\BrandSettings::get('eur_to_xof_rate', 655.957),
         ]);
     }
 
@@ -40,7 +39,6 @@ class AdminPropertyController extends Controller
             'property_type' => ['required', 'in:apartment,house,villa,studio,room,other'],
             'slug' => ['required', 'string', 'max:255', 'unique:properties,slug'],
             'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
-            'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
             'video_urls' => ['nullable', 'string', 'max:10000'],
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
@@ -92,9 +90,7 @@ class AdminPropertyController extends Controller
 
         $establishments = Establishment::query()->orderBy('name')->get();
         $amenities = Amenity::query()->with('category')->orderBy('sort_order')->get();
-        $xofPerEur = (float) \App\Support\BrandSettings::get('eur_to_xof_rate', 655.957);
-
-        return view('admin.properties.edit', compact('property', 'establishments', 'amenities', 'xofPerEur'));
+        return view('admin.properties.edit', compact('property', 'establishments', 'amenities'));
     }
 
     public function update(Request $request, Property $property): RedirectResponse
@@ -104,7 +100,6 @@ class AdminPropertyController extends Controller
             'property_type' => ['sometimes', 'in:apartment,house,villa,studio,room,other'],
             'slug' => ['required', 'string', 'max:255', 'unique:properties,slug,' . $property->id],
             'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
-            'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
             'video_urls' => ['nullable', 'string', 'max:10000'],
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'max_guests' => ['required', 'integer', 'min:1'],
@@ -307,7 +302,6 @@ class AdminPropertyController extends Controller
             'effective_from' => ['required', 'date'],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'nightly_rate_xof' => ['required', 'numeric', 'min:0'],
-            'nightly_rate_eur' => ['required', 'numeric', 'min:0'],
             'minimum_stay' => ['required', 'integer', 'min:1'],
             'rule_type' => ['required', 'string', 'max:50'],
         ]);

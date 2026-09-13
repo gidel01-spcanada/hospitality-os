@@ -321,21 +321,6 @@ document.querySelectorAll('[data-property-tabs]').forEach((editor) => {
 	});
 });
 
-document.querySelectorAll('[data-currency-pair]').forEach((input) => {
-	input.addEventListener('input', () => {
-		const pair = input.dataset.currencyPair;
-		const rate = Number(input.dataset.xofPerEur);
-		const value = Number(input.value);
-		const target = document.querySelector(`[data-currency-pair="${pair}"][data-currency-input="${input.dataset.currencyInput === 'xof' ? 'eur' : 'xof'}"]`);
-
-		if (!target || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(value)) {
-			return;
-		}
-
-		target.value = (input.dataset.currencyInput === 'xof' ? value / rate : value * rate).toFixed(2);
-	});
-});
-
 document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 	const form = list.closest('form');
 	const status = form?.querySelector('[data-photo-order-status]');
