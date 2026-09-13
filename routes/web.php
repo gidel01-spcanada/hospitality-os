@@ -70,6 +70,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/account/security', [AuthController::class, 'updatePassword'])->name('account.security.update');
     Route::post('/dashboard/preferences', [AuthController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/dashboard/reservations/{reservation}', [AuthController::class, 'reservationDetail'])->name('dashboard.reservations.show');
+    Route::put('/dashboard/reservations/{reservation}', [AuthController::class, 'updateReservation'])->name('dashboard.reservations.update');
     Route::get('/reservations/{reservation}/receipt', [\App\Http\Controllers\ReceiptController::class, 'download'])->name('reservations.receipt');
     Route::post('/properties/{property}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('properties.favorite.toggle');
     Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');

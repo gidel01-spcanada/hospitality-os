@@ -94,6 +94,57 @@ class CustomerDashboardTest extends TestCase
             ->assertSee('Confirmée');
     }
 
+    public function test_customer_can_modify_reservation_dates_and_guests(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::factory()->create([
+            'name' => 'Reservation Customer',
+            'email' => 'modify@example.com',
+            'role' => 'customer',
+        ]);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => $user->name, 'email' => $user->email]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'user_id' => $user->id,
+            'reservation_ref' => 'AFK-MODIFY-001',
+            'status' => 'confirmed',
+            'check_in' => now()->addDays(30)->toDateString(),
+            'check_out' => now()->addDays(33)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $user->email,
+            'subtotal' => 75000,
+            'fees' => 7500,
+            'taxes' => 3750,
+            'total_amount' => 86250,
+            'source' => 'website',
+        ]);
+        $newCheckIn = now()->addDays(40)->toDateString();
+        $newCheckOut = now()->addDays(44)->toDateString();
+
+        $this->actingAs($user)
+            ->put(route('dashboard.reservations.update', $reservation), [
+                'check_in' => $newCheckIn,
+                'check_out' => $newCheckOut,
+                'adults' => 1,
+                'children' => 1,
+                'infants' => 0,
+            ])
+            ->assertRedirect(route('dashboard.reservations.show', $reservation));
+
+        $updated = $reservation->fresh();
+    $this->assertSame($newCheckIn, $updated->check_in?->toDateString());
+        $this->assertSame(1, $updated->adults);
+        $this->assertSame(1, $updated->children);
+        $this->assertSame('pending_payment', $updated->status);
+        $this->assertDatabaseHas('reservation_price_lines', ['reservation_id' => $reservation->id, 'label' => 'Nuit(s) x 4']);
+    }
+
     public function test_customer_can_update_language_and_email_preferences(): void
     {
         $this->seed(DatabaseSeeder::class);

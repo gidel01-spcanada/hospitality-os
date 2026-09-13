@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\EmailOutbox;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Services\AvailabilityService;
+use App\Services\PricingCalculator;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -201,9 +203,75 @@ class AuthController extends Controller
             __('messages.errors.reservation_access')
         );
 
-        $reservation->load(['property.establishment', 'guest', 'priceLines', 'receipts']);
+        $reservation->load(['property.establishment', 'property.features', 'guest', 'priceLines', 'receipts']);
+        $selectedFeatureIds = $reservation->property->features
+            ->filter(fn ($feature) => $reservation->priceLines->contains('label', 'Option: ' . $feature->name))
+            ->pluck('id')
+            ->all();
 
-        return view('dashboard-reservation', compact('user', 'reservation'));
+        return view('dashboard-reservation', compact('user', 'reservation', 'selectedFeatureIds'));
+    }
+
+    public function updateReservation(Request $request, Reservation $reservation, AvailabilityService $availabilityService): RedirectResponse
+    {
+        $user = Auth::user();
+
+        abort_unless($user, 403);
+        abort_unless(
+            $reservation->user_id === $user->id || strtolower((string) $reservation->email) === strtolower((string) $user->email),
+            403,
+            __('messages.errors.reservation_access')
+        );
+        abort_unless($reservation->status !== 'cancelled' && $reservation->status !== 'completed', 422, __('messages.reservation.modification_unavailable'));
+
+        $validated = $request->validate([
+            'check_in' => ['required', 'date', 'after_or_equal:today'],
+            'check_out' => ['required', 'date', 'after:check_in'],
+            'adults' => ['required', 'integer', 'min:1', 'max:8'],
+            'children' => ['nullable', 'integer', 'min:0', 'max:8'],
+            'infants' => ['nullable', 'integer', 'min:0', 'max:4'],
+            'selected_features' => ['nullable', 'array'],
+            'selected_features.*' => ['integer', Rule::exists('property_features', 'id')->where(fn ($query) => $query->where('property_id', $reservation->property_id)->where('is_active', true))],
+        ]);
+
+        $property = $reservation->property()->with('establishment')->firstOrFail();
+        $checkIn = now()->parse($validated['check_in']);
+        $checkOut = now()->parse($validated['check_out']);
+        $adults = (int) $validated['adults'];
+        $children = (int) ($validated['children'] ?? 0);
+        $infants = (int) ($validated['infants'] ?? 0);
+        $nights = $checkIn->diffInDays($checkOut);
+
+        abort_unless($nights >= (int) ($property->minimum_stay ?? 1), 422, __('messages.reservation.modification_minimum_stay'));
+        abort_unless($property->max_guests >= $adults + $children, 422, __('messages.reservation.modification_capacity'));
+        abort_unless($availabilityService->isAvailable($property, $checkIn, $checkOut, $reservation->id), 422, __('messages.reservation.modification_unavailable_dates'));
+
+        $selectedFeatures = $property->features()->whereIn('id', $validated['selected_features'] ?? [])->where('is_active', true)->get();
+        $pricing = PricingCalculator::calculate($property, $checkIn, $checkOut, $adults, $children, $selectedFeatures);
+        $amountChanged = round((float) $reservation->total_amount, 2) !== round((float) $pricing['total_amount'], 2);
+
+        $reservation->update([
+            'check_in' => $checkIn->toDateString(),
+            'check_out' => $checkOut->toDateString(),
+            'adults' => $adults,
+            'children' => $children,
+            'infants' => $infants,
+            'subtotal' => $pricing['subtotal'],
+            'fees' => $pricing['fees'],
+            'taxes' => $pricing['taxes'],
+            'total_amount' => $pricing['total_amount'],
+            'status' => $amountChanged ? 'pending_payment' : $reservation->status,
+            'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Reservation modified by customer.' . ($amountChanged ? ' Payment authorization must be updated.' : '')),
+        ]);
+
+        $reservation->priceLines()->delete();
+        $lines = array_map(function (array $line) use ($reservation): array {
+            return array_merge($line, ['reservation_id' => $reservation->id, 'created_at' => now(), 'updated_at' => now()]);
+        }, $pricing['price_lines']);
+        \App\Models\ReservationPriceLine::query()->insert($lines);
+
+        return redirect()->route('dashboard.reservations.show', $reservation)
+            ->with('status', $amountChanged ? __('messages.reservation.modification_payment_required') : __('messages.reservation.modified'));
     }
 
     public function switchLanguage(Request $request, string $locale): RedirectResponse
