@@ -159,10 +159,6 @@
                                 <span class="price-label">{{ __('messages.properties.from') }}</span>
                                 <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
                             </div>
-                            <div class="price-row muted-row">
-                                <span>≈</span>
-                                <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
-                            </div>
                             @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                 <div class="price-row muted-row">
                                     <span>≈</span>
@@ -202,15 +198,14 @@
                                     <input id="email" name="email" type="email" value="{{ old('email') }}" required>
                                 </div>
                             @endif
-                            <div class="grid-two compact-grid">
-                                <div class="input-group">
-                                    <label for="check_in">{{ __('messages.properties.check_in') }}</label>
-                                    <input id="check_in" name="check_in" type="date" value="{{ old('check_in', now()->toDateString()) }}" required>
-                                </div>
-                                <div class="input-group">
-                                    <label for="check_out">{{ __('messages.properties.check_out') }}</label>
-                                    <input id="check_out" name="check_out" type="date" value="{{ old('check_out', now()->addDay()->toDateString()) }}" required>
-                                </div>
+                            <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                                <span>{{ __('messages.properties.check_in') }} / {{ __('messages.properties.check_out') }}</span>
+                                <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
+                                    <span data-date-range-label>{{ old('check_in', now()->toDateString()) }} → {{ old('check_out', now()->addDay()->toDateString()) }}</span>
+                                </button>
+                                <input type="hidden" name="check_in" value="{{ old('check_in', now()->toDateString()) }}" data-date-range-start required>
+                                <input type="hidden" name="check_out" value="{{ old('check_out', now()->addDay()->toDateString()) }}" data-date-range-end required>
+                                <div class="date-range-popover" data-date-range-popover hidden></div>
                             </div>
                             <div class="grid-two compact-grid">
                                 <div class="input-group">
@@ -320,12 +315,14 @@
                     </div>
 
                     @if ($property->amenities->isNotEmpty())
-                        <h3 class="characteristics-subtitle">{{ __('messages.properties.included_services') }}</h3>
-                        <ul class="amenity-list">
-                            @foreach ($property->amenities as $amenity)
-                                <li>{{ $amenity->name }}</li>
-                            @endforeach
-                        </ul>
+                        <details class="included-services-details">
+                            <summary>{{ __('messages.properties.included_services') }}</summary>
+                            <ul class="amenity-list">
+                                @foreach ($property->amenities as $amenity)
+                                    <li>{{ $amenity->name }}</li>
+                                @endforeach
+                            </ul>
+                        </details>
                     @endif
 
                     @php $visibleFeatures = $property->features->where('is_active', true); @endphp

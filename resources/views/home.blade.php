@@ -216,10 +216,18 @@
                             <div class="property-copy">
                                 <div class="meta-row">
                                     <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
-                                    <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
                                 </div>
                                 <h3>{{ $property->localized('summary') ?: $property->localized('name') }}</h3>
                                 <p>{{ $property->max_guests }} voyageurs · {{ $property->bedrooms }} chambre(s) · {{ $property->bathrooms }} salle(s) de bain</p>
+                                <div class="property-card-footer">
+                                    <span class="inline-link">{{ __('messages.properties.view_details') }} →</span>
+                                    <div class="property-price-footer">
+                                        <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
+                                        @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
+                                            <span>≈ {{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </a>
                     </article>

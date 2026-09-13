@@ -1087,6 +1087,75 @@ button, input, select {
     min-width: 0;
 }
 
+.property-card-footer {
+    display: grid;
+    justify-items: end;
+    gap: 0.35rem;
+    margin-top: 0.8rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(19, 31, 35, 0.08);
+}
+
+.property-price-footer {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: 100%;
+    justify-items: end;
+    color: var(--afrik-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-align: right;
+}
+
+.property-price-footer strong {
+    color: var(--afrik-text);
+    font-size: 0.82rem;
+}
+
+.property-price-footer span {
+    white-space: nowrap;
+}
+
+.included-services-details {
+    margin-top: 1.2rem;
+    border-top: 1px solid rgba(19, 31, 35, 0.08);
+    padding-top: 0.9rem;
+}
+
+.included-services-details summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--afrik-text);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 800;
+    list-style: none;
+}
+
+.included-services-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.included-services-details summary::after {
+    content: '+';
+    color: var(--afrik-emerald);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.included-services-details[open] summary::after {
+    content: '−';
+}
+
+.included-services-details .amenity-list {
+    margin-top: 0.9rem;
+}
+
 .site-footer {
     margin-top: 72px;
     border-top: 1px solid rgba(19, 31, 35, 0.08);
@@ -1241,6 +1310,10 @@ button, input, select {
     gap: 0.75rem;
     min-width: 0;
     align-items: end;
+}
+
+.filter-group.date-range-picker {
+    grid-template-columns: 1fr;
 }
 
 .filter-field {
