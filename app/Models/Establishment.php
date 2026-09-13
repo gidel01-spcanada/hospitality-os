@@ -18,6 +18,9 @@ class Establishment extends Model
         'country_code',
         'city',
         'currency',
+        'is_active',
+        'secondary_currency',
+        'secondary_currency_rate',
         'description',
         'cover_image',
         'address',
@@ -53,6 +56,8 @@ class Establishment extends Model
         'city_tax_amount' => 'decimal:2',
         'service_fee_percent' => 'decimal:2',
         'electricity_billed_separately' => 'boolean',
+        'is_active' => 'boolean',
+        'secondary_currency_rate' => 'decimal:6',
     ];
 
     public function properties(): HasMany
@@ -71,6 +76,15 @@ class Establishment extends Model
         $translation = $this->translations->firstWhere('locale', $locale);
 
         return $translation?->{$field} ?: $this->{$field};
+    }
+
+    public function secondaryDisplayAmount(float $amount): ?float
+    {
+        if (! $this->secondary_currency || ! $this->secondary_currency_rate) {
+            return null;
+        }
+
+        return round($amount * (float) $this->secondary_currency_rate, 2);
     }
 
     /** Non-refundable fee charged when a stay is cancelled inside the configured window. */

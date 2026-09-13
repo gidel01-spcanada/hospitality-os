@@ -19,12 +19,12 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
     $destinations = collect();
 
     if (Schema::hasTable('properties')) {
-        $establishments = Establishment::query()->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
+        $establishments = Establishment::query()->where('is_active', true)->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
         $properties = Property::query()
             ->published()
             ->when($request->integer('establishment'), fn ($query, $id) => $query->where('establishment_id', $id))
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment'])
             ->orderBy('nightly_rate_xof')
             ->limit(3)
             ->get();

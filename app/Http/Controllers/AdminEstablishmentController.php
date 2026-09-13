@@ -42,6 +42,9 @@ class AdminEstablishmentController extends Controller
         $validated['cover_image'] = $this->storeCoverImage($request, $validated['cover_image'] ?? null, null);
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? []);
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+        $validated['secondary_currency'] = $validated['secondary_currency'] ?? null;
+        $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? 1) : null;
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
         $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
@@ -66,6 +69,9 @@ class AdminEstablishmentController extends Controller
         $validated['cover_image'] = $this->storeCoverImage($request, $validated['cover_image'] ?? $establishment->cover_image, $establishment);
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? $establishment->payment_methods ?? []);
+        $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : (bool) $establishment->is_active;
+        $validated['secondary_currency'] = $request->has('secondary_currency') ? ($validated['secondary_currency'] ?? null) : $establishment->secondary_currency;
+        $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? $establishment->secondary_currency_rate ?? 1) : null;
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
         $validated['cancellation_fee_percent'] = $request->has('cancellation_fee_percent') ? (float) $validated['cancellation_fee_percent'] : (float) $establishment->cancellation_fee_percent;
@@ -102,6 +108,9 @@ class AdminEstablishmentController extends Controller
             'city' => ['nullable', 'string', 'max:120'],
             'address' => ['nullable', 'string', 'max:255'],
             'currency' => ['required', 'string', 'size:3'],
+            'is_active' => ['sometimes', 'boolean'],
+            'secondary_currency' => ['nullable', 'string', 'size:3', 'different:currency'],
+            'secondary_currency_rate' => ['nullable', 'numeric', 'gt:0'],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'string', 'max:2048'],
             'cover_image_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],

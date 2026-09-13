@@ -39,6 +39,7 @@
                             <label><span>{{ __('messages.admin.bathrooms') }}</span><input type="number" name="bathrooms" min="0" value="{{ old('bathrooms', $property->bathrooms) }}" required></label>
                             <label><span>{{ __('messages.admin.beds') }}</span><input type="number" name="beds" min="0" value="{{ old('beds', $property->beds) }}" required></label>
                             <label><span>{{ __('messages.admin.status') }}</span><select name="status"><option value="draft" @selected(old('status', $property->status) === 'draft')>{{ __('messages.admin.draft') }}</option><option value="published" @selected(old('status', $property->status) === 'published')>{{ __('messages.admin.published') }}</option><option value="archived" @selected(old('status', $property->status) === 'archived')>{{ __('messages.admin.archived') }}</option></select></label>
+                            <label class="checkbox-field"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $property->is_active ?? true))><span>{{ __('messages.admin.property_active') }}</span></label>
                         </div>
                         <div class="language-editor">
                             <h3>{{ __('messages.admin.translated_content_heading') }}</h3>

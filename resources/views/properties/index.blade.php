@@ -126,6 +126,9 @@
                                 <div class="meta-row">
                                     <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
                                     <strong>{{ __('messages.properties.nightly', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
+                                    @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
+                                        <small class="secondary-price">≈ {{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</small>
+                                    @endif
                                 </div>
                                 <h3>{{ $property->localized('summary') ?: $property->localized('name') }}</h3>
                                 <p>{{ __('messages.properties.guest_summary', ['guests' => $property->max_guests, 'bedrooms' => $property->bedrooms, 'bathrooms' => $property->bathrooms]) }}</p>
