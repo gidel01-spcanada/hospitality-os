@@ -42,6 +42,63 @@
             </div>
         @endif
 
+        @if (! in_array($reservation->status, ['cancelled', 'completed'], true))
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.reservation.modify') }}</h2>
+                <form method="POST" action="{{ route('dashboard.reservations.update', $reservation) }}" class="reservation-modification-form">
+                    @csrf
+                    @method('PUT')
+                    <div class="form-grid">
+                        <div>
+                            <label for="modification_check_in">{{ __('messages.properties.check_in') }}</label>
+                            <input id="modification_check_in" name="check_in" type="date" value="{{ old('check_in', $reservation->check_in?->toDateString()) }}" min="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div>
+                            <label for="modification_check_out">{{ __('messages.properties.check_out') }}</label>
+                            <input id="modification_check_out" name="check_out" type="date" value="{{ old('check_out', $reservation->check_out?->toDateString()) }}" min="{{ now()->addDay()->toDateString() }}" required>
+                        </div>
+                        <div>
+                            <label for="modification_adults">{{ __('messages.properties.adults') }}</label>
+                            <select id="modification_adults" name="adults" required>
+                                @for ($count = 1; $count <= min(8, (int) $reservation->property->max_guests); $count++)
+                                    <option value="{{ $count }}" @selected(old('adults', $reservation->adults) == $count)>{{ $count }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label for="modification_children">{{ __('messages.properties.children') }}</label>
+                            <input id="modification_children" name="children" type="number" min="0" max="8" value="{{ old('children', $reservation->children) }}">
+                        </div>
+                        <div>
+                            <label for="modification_infants">{{ __('messages.properties.infants') }}</label>
+                            <input id="modification_infants" name="infants" type="number" min="0" max="4" value="{{ old('infants', $reservation->infants) }}">
+                        </div>
+                    </div>
+
+                    @if ($reservation->property->features->isNotEmpty())
+                        <fieldset class="feature-choice-box">
+                            <legend>{{ __('messages.properties.extra_options') }}</legend>
+                            @foreach ($reservation->property->features->where('is_active', true) as $feature)
+                                <label class="feature-choice-item">
+                                    <input type="checkbox" name="selected_features[]" value="{{ $feature->id }}" @checked(in_array($feature->id, (array) old('selected_features', $selectedFeatureIds), true))>
+                                    <div class="feature-choice-copy">
+                                        <strong>{{ $feature->name }}</strong>
+                                        @if ($feature->description)<span>{{ $feature->description }}</span>@endif
+                                    </div>
+                                    <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} XOF</em>
+                                </label>
+                            @endforeach
+                        </fieldset>
+                    @endif
+
+                    <p class="form-help">{{ __('messages.reservation.modification_help') }}</p>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">{{ __('messages.reservation.save_modification') }}</button>
+                    </div>
+                </form>
+            </div>
+        @endif
+
 
         @if ($reservation->receipts->isNotEmpty())
             <div class="summary-card full-width">
