@@ -156,6 +156,7 @@ class CheckoutController extends Controller
         ]);
 
         $emailService->queueStatusUpdate($reservation, 'confirmed');
+        $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
     }
@@ -194,6 +195,7 @@ class CheckoutController extends Controller
         if (in_array($attempt->status, ['paid', 'completed'], true)) {
             $reservation->update(['status' => 'confirmed']);
             $emailService->queueStatusUpdate($reservation, 'confirmed');
+            $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
 
             return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
         }
@@ -285,6 +287,7 @@ class CheckoutController extends Controller
                 ]);
 
                 $emailService->queueStatusUpdate($reservation, 'confirmed');
+                $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
             }
 
             return response()->json([
@@ -315,6 +318,7 @@ class CheckoutController extends Controller
             if (in_array($attempt->status, ['paid', 'completed'], true)) {
                 $attempt->reservation->update(['status' => 'confirmed']);
                 $emailService->queueStatusUpdate($attempt->reservation, 'confirmed');
+                $emailService->issueReceiptAndQueueEmail($attempt->reservation, $attempt);
             } elseif (in_array($attempt->status, ['failed', 'cancelled'], true) && $attempt->reservation->status !== 'confirmed') {
                 $attempt->reservation->update(['status' => 'payment_failed']);
                 $emailService->queueStatusUpdate($attempt->reservation, 'payment_failed');

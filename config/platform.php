@@ -8,4 +8,6 @@ return [
     'brand_name' => env('PLATFORM_MODE') === 'cloud'
         ? 'Hospitality OS'
         : env('APP_BRAND_NAME'),
+
+    'checkout_completion_grace_hours' => (int) env('CHECKOUT_COMPLETION_GRACE_HOURS', 6),
 ];

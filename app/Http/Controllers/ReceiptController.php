@@ -35,9 +35,8 @@ class ReceiptController extends Controller
             'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Offline payment confirmed by admin.'),
         ]);
 
-        $receipt = $this->receiptFor($reservation, $attempt);
+        $receipt = $emailService->issueReceiptAndQueueEmail($reservation, $attempt, auth()->user()?->email);
         $emailService->queueStatusUpdate($reservation, 'confirmed');
-        $emailService->queueReceipt($receipt);
 
         return back()->with('status', __('messages.receipts.confirmed_and_sent'));
     }
@@ -50,20 +49,6 @@ class ReceiptController extends Controller
 
         return Pdf::loadView('receipts.show', compact('receipt', 'reservation'))
             ->download($receipt->receipt_number . '.pdf');
-    }
-
-    private function receiptFor(Reservation $reservation, PaymentAttempt $attempt): Receipt
-    {
-        return $reservation->receipts()->firstOrCreate(
-            ['payment_attempt_id' => $attempt->id],
-            [
-                'receipt_number' => 'RC-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8)),
-                'amount' => $attempt->amount,
-                'currency' => $attempt->currency,
-                'issued_at' => now(),
-                'issued_by' => auth()->user()?->email,
-            ]
-        );
     }
 
     private function authorizeReservation(Request $request, Reservation $reservation): void

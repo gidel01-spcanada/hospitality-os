@@ -18,3 +18,10 @@ Schedule::call(function () {
         app(CalendarFeedSyncService::class)->sync($feed);
     }
 })->hourly();
+
+Schedule::job(new \App\Jobs\CompletePastReservations())->hourly();
+
+Artisan::command('reservations:complete-past', function (): void {
+    dispatch_sync(new \App\Jobs\CompletePastReservations());
+    $this->info('Past reservations completed.');
+})->purpose('Complete reservations after the checkout date');
