@@ -90,4 +90,6 @@ The Laravel application includes the public property catalog and booking flow, p
 
 Queued new-message email notifications can be delivered with `php artisan messages:send-email-notifications`. Run this command from a scheduler or deployment cron using the configured Laravel mailer.
 
+Reservation lifecycle automation is available with `php artisan reservations:complete-past`. It moves confirmed or checked-in reservations to `completed` after their checkout date, using `CHECKOUT_COMPLETION_GRACE_HOURS` (default: 6), and queues a status email. On Bluehost, schedule this command hourly and schedule `php artisan messages:send-email-notifications --limit=50` every few minutes to process queued emails.
+
 The admin workspace supports dashboard metrics, reservation filtering and CRUD, user management, property and establishment management, reviews, site parameters, and user preferences. Run the full test suite with `php artisan test` before deploying changes.

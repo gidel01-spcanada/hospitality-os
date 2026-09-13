@@ -6,6 +6,7 @@ use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\User;
+use App\Jobs\CompletePastReservations;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -140,5 +141,75 @@ class ReservationWorkflowAndEmailTest extends TestCase
         $this->actingAs($admin)
             ->post('/admin/reservations/' . $reservation->id . '/payment-link')
             ->assertForbidden();
+    }
+
+    public function test_confirmed_payment_automatically_creates_and_emails_receipt(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'Receipt Guest', 'email' => 'receipt@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-RECEIPT-001',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDays(5)->toDateString(),
+            'check_out' => now()->addDays(8)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 75000,
+            'fees' => 7500,
+            'taxes' => 3750,
+            'total_amount' => 86250,
+            'source' => 'website',
+        ]);
+        $attempt = $reservation->paymentAttempts()->create([
+            'provider' => 'pay_later',
+            'provider_reference' => 'receipt-payment-001',
+            'currency' => 'XOF',
+            'amount' => 86250,
+            'status' => 'paid',
+            'idempotency_key' => 'receipt-payment-001',
+        ]);
+
+        app(\App\Services\ReservationEmailService::class)->issueReceiptAndQueueEmail($reservation, $attempt);
+        app(\App\Services\ReservationEmailService::class)->issueReceiptAndQueueEmail($reservation, $attempt);
+
+        $this->assertDatabaseHas('receipts', ['reservation_id' => $reservation->id, 'payment_attempt_id' => $attempt->id, 'amount' => '86250.00']);
+        $this->assertSame(1, $reservation->receipts()->count());
+        $this->assertSame(1, \App\Models\EmailOutbox::query()->where('template', 'receipt_issued')->where('recipient_email', $guest->email)->count());
+    }
+
+    public function test_past_confirmed_reservations_are_completed_by_job_and_email_status_update(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'Past Stay Guest', 'email' => 'past-stay@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-COMPLETE-001',
+            'status' => 'confirmed',
+            'check_in' => now()->subDays(4)->toDateString(),
+            'check_out' => now()->subDays(2)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 50000,
+            'fees' => 5000,
+            'taxes' => 2500,
+            'total_amount' => 57500,
+            'source' => 'website',
+        ]);
+
+        dispatch_sync(new CompletePastReservations());
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'completed']);
+        $this->assertDatabaseHas('email_outbox', ['recipient_email' => $guest->email, 'template' => 'reservation_status_updated', 'status' => 'queued']);
     }
 }

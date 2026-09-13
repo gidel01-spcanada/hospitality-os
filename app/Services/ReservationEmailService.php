@@ -5,9 +5,31 @@ namespace App\Services;
 use App\Models\EmailOutbox;
 use App\Models\Receipt;
 use App\Models\Reservation;
+use App\Models\PaymentAttempt;
+use Illuminate\Support\Str;
 
 class ReservationEmailService
 {
+    public function issueReceiptAndQueueEmail(Reservation $reservation, PaymentAttempt $attempt, ?string $issuedBy = null): Receipt
+    {
+        $receipt = $reservation->receipts()->firstOrCreate(
+            ['payment_attempt_id' => $attempt->id],
+            [
+                'receipt_number' => 'RC-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8)),
+                'amount' => $attempt->amount,
+                'currency' => $attempt->currency,
+                'issued_at' => now(),
+                'issued_by' => $issuedBy,
+            ]
+        );
+
+        if ($receipt->wasRecentlyCreated) {
+            $this->queueReceipt($receipt);
+        }
+
+        return $receipt;
+    }
+
     public function queueForReservation(Reservation $reservation, string $template, ?string $subject = null): void
     {
         $reservation->loadMissing('priceLines');
@@ -67,7 +89,7 @@ class ReservationEmailService
 
     public function queueReceipt(Receipt $receipt): void
     {
-        $reservation = $receipt->reservation()->with('property')->firstOrFail();
+        $reservation = $receipt->reservation()->with(['property', 'priceLines'])->firstOrFail();
 
         EmailOutbox::query()->create([
             'template' => 'receipt_issued',
@@ -81,6 +103,11 @@ class ReservationEmailService
                 'currency' => $receipt->currency,
                 'receipt_url' => route('reservations.receipt', ['reservation' => $reservation]),
                 'subject' => __('messages.receipts.email_subject', ['reference' => $reservation->reservation_ref]),
+                'price_lines' => $reservation->priceLines->map(fn ($line) => [
+                    'label' => $line->label,
+                    'amount' => (string) $line->amount,
+                    'currency' => $line->currency,
+                ])->toArray(),
             ],
         ]);
     }
