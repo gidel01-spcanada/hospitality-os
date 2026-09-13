@@ -22,8 +22,11 @@
                 <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
                 <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
             </ul>
+        </div>
 
-            @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+        @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.reservation.actions') }}</h2>
                 @php $cancellationFee = $reservation->property?->establishment?->cancellationFeeFor($reservation) ?? 0.0; @endphp
                 @if ($cancellationFee > 0)
                     <p class="cancellation-policy-note">{{ __('messages.checkout.cancellation_fee_warning', ['amount' => number_format($cancellationFee, 0, ',', ' '), 'currency' => $reservation->currency]) }}</p>
@@ -36,8 +39,8 @@
                         <button type="submit" class="btn btn-ghost">{{ __('messages.checkout.cancel_reservation') }}</button>
                     </form>
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
 
 
         @if ($reservation->receipts->isNotEmpty())
