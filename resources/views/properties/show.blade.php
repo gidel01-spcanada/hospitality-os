@@ -163,6 +163,12 @@
                                 <span>≈</span>
                                 <strong>{{ number_format((float) $property->nightly_rate_eur, 2, ',', ' ') }} EUR</strong>
                             </div>
+                            @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
+                                <div class="price-row muted-row">
+                                    <span>≈</span>
+                                    <strong>{{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</strong>
+                                </div>
+                            @endif
                         </div>
 
                         @if (auth()->user()?->role === 'customer' && $property->establishment)

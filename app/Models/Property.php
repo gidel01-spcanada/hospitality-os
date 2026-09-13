@@ -19,6 +19,7 @@ class Property extends Model
         'slug',
         'status',
         'is_published',
+        'is_active',
         'currency',
         'nightly_rate_xof',
         'nightly_rate_eur',
@@ -43,6 +44,7 @@ class Property extends Model
     protected $casts = [
         'metadata' => 'array',
         'is_published' => 'boolean',
+        'is_active' => 'boolean',
         'nightly_rate_xof' => 'decimal:2',
         'nightly_rate_eur' => 'decimal:2',
         'video_urls' => 'array',
@@ -62,7 +64,9 @@ class Property extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where('status', 'published')
+            ->where('is_active', true)
+            ->whereHas('establishment', fn (Builder $establishmentQuery) => $establishmentQuery->where('is_active', true));
     }
 
     /**

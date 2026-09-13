@@ -48,6 +48,7 @@ class AdminPropertyController extends Controller
             'bathrooms' => ['required', 'integer', 'min:0'],
             'beds' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published,archived'],
+            'is_active' => ['sometimes', 'boolean'],
             'amenity_ids' => ['nullable', 'array'],
             'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
         ]);
@@ -111,6 +112,7 @@ class AdminPropertyController extends Controller
             'bathrooms' => ['sometimes', 'integer', 'min:0'],
             'beds' => ['sometimes', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published,archived'],
+            'is_active' => ['sometimes', 'boolean'],
             'establishment_id' => ['sometimes', 'integer', $this->establishmentExistsRule()],
             'amenity_ids' => ['nullable', 'array'],
             'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
@@ -126,6 +128,9 @@ class AdminPropertyController extends Controller
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
+        if ($request->has('is_active')) {
+            $validated['is_active'] = $request->boolean('is_active');
+        }
         $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
         $property->fill($validated);
         $property->save();

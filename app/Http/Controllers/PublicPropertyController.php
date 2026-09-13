@@ -73,7 +73,7 @@ class PublicPropertyController extends Controller
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
             ->when($favoritesOnly && auth()->check(), fn ($query) => $query->whereIn('id', $favoritePropertyIds))
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment'])
             ->when($favoritePropertyIds, fn ($query) => $query->orderByRaw('CASE WHEN id IN (' . implode(',', array_fill(0, count($favoritePropertyIds), '?')) . ') THEN 0 ELSE 1 END', $favoritePropertyIds))
             ->orderBy('nightly_rate_xof')
             ->get();
@@ -82,7 +82,7 @@ class PublicPropertyController extends Controller
             $filters['destination'] = $destination;
         }
 
-        $establishments = Establishment::query()->with('translations')->orderBy('name')->get();
+        $establishments = Establishment::query()->where('is_active', true)->with('translations')->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
 
         return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds'));
@@ -90,7 +90,7 @@ class PublicPropertyController extends Controller
 
     public function show(Property $property): View
     {
-        abort_unless($property->status === 'published', 404);
+        abort_unless($property->status === 'published' && $property->is_active && $property->establishment?->is_active, 404);
         $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
         $reviews = SiteReview::query()
             ->active()
@@ -111,7 +111,7 @@ class PublicPropertyController extends Controller
         abort_unless(is_array($pending) && ! empty($pending['property_id']), 404);
 
         $property = Property::query()->with('establishment')->findOrFail($pending['property_id']);
-        abort_unless($property->status === 'published', 404);
+        abort_unless($property->status === 'published' && $property->is_active && $property->establishment?->is_active, 404);
         $request->merge($pending['data'] ?? []);
 
         return $this->reserve($request, $property, $emailService);
@@ -119,7 +119,7 @@ class PublicPropertyController extends Controller
 
     public function availability(Request $request, Property $property, AvailabilityService $availabilityService)
     {
-        abort_unless($property->status === 'published', 404);
+        abort_unless($property->status === 'published' && $property->is_active && $property->establishment?->is_active, 404);
 
         $validated = $request->validate([
             'check_in' => ['required', 'date', 'after_or_equal:today'],
