@@ -16,13 +16,16 @@ class FedaPayLiveGateway implements PaymentGateway
 
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
+
         $transactionResponse = Http::acceptJson()->withToken((string) config('services.fedapay.secret_key'))
             ->post($this->baseUrl().'/transactions', [
-                'description' => 'Reservation '.$reservation->reservation_ref,
-                'amount' => (int) round((float) $reservation->total_amount),
+                'description' => $isGuarantee ? 'Garantie d\'annulation '.$reservation->reservation_ref : 'Reservation '.$reservation->reservation_ref,
+                'amount' => (int) round((float) $rawAmount),
                 'currency' => ['iso' => 'XOF'],
                 'callback_url' => $context['webhook_url'],
-                'custom_metadata' => ['reservation_id' => $reservation->id, 'reservation_ref' => $reservation->reservation_ref],
+                'custom_metadata' => ['reservation_id' => $reservation->id, 'reservation_ref' => $reservation->reservation_ref, 'is_guarantee' => $isGuarantee],
             ]);
         $transactionResponse->throw();
         $transaction = $transactionResponse->json();
@@ -39,9 +42,9 @@ class FedaPayLiveGateway implements PaymentGateway
             'reservation_id' => $reservation->id,
             'provider' => $this->name(),
             'provider_reference' => (string) ($transaction['reference'] ?? $transactionId),
-            'currency' => 'XOF', 'amount' => $reservation->total_amount, 'status' => 'pending',
+            'currency' => 'XOF', 'amount' => $rawAmount, 'status' => $isGuarantee ? 'authorized' : 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
-            'payload' => ['mode' => 'production', 'transaction_id' => $transactionId, 'redirect_url' => $paymentUrl],
+            'payload' => ['mode' => 'production', 'transaction_id' => $transactionId, 'redirect_url' => $paymentUrl, 'is_guarantee' => $isGuarantee],
         ]);
     }
 

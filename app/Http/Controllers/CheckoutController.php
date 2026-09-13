@@ -27,11 +27,63 @@ class CheckoutController extends Controller
         $token = $this->authorizeCheckout($request, $reservation);
         $validated = $request->validate([
             'provider' => ['required', 'string', 'in:pay_later,fedapay,paypal,cinetpay,mpesa'],
+            'guarantee_provider' => ['nullable', 'string', 'in:fedapay,paypal,cinetpay,mpesa'],
         ]);
 
         $provider = $validated['provider'];
         $paymentMethods = $this->paymentMethods($reservation);
         abort_unless(in_array($provider, array_keys($paymentMethods), true), 422, 'This payment method is not available for this establishment.');
+
+        $establishment = $reservation->property?->establishment;
+        $cancellationFeePercent = (float) ($establishment?->cancellation_fee_percent ?? 0);
+        $cancellationFeeHoldAmount = $establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
+        $onlineMethods = collect($paymentMethods)->except('pay_later')->all();
+
+        if ($provider === 'pay_later' && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && ! empty($onlineMethods)) {
+            $guaranteeProvider = $validated['guarantee_provider'] ?? array_key_first($onlineMethods);
+            abort_unless(in_array($guaranteeProvider, array_keys($onlineMethods), true), 422, 'An online guarantee payment method is required for on-site payment.');
+
+            $guaranteeGateway = $manager->resolve($guaranteeProvider, $onlineMethods[$guaranteeProvider]['mode']);
+            $guaranteeAttempt = $guaranteeGateway->createIntent($reservation, [
+                'idempotency_key' => $reservation->reservation_ref . '-guarantee-' . $guaranteeProvider . '-' . time(),
+                'mode' => $onlineMethods[$guaranteeProvider]['mode'],
+                'is_guarantee' => true,
+                'amount' => $cancellationFeeHoldAmount,
+                'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => $guaranteeProvider, 'token' => $token]),
+                'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => $guaranteeProvider, 'token' => $token]),
+                'webhook_url' => route('checkout.webhook', ['provider' => $guaranteeProvider]),
+            ]);
+
+            $payLaterGateway = $manager->resolve('pay_later');
+            $attempt = $payLaterGateway->createIntent($reservation, [
+                'idempotency_key' => $reservation->reservation_ref . '-pay_later-' . time(),
+                'mode' => 'production',
+            ]);
+
+            $attempt->update([
+                'payload' => array_merge((array) $attempt->payload, [
+                    'guarantee_provider' => $guaranteeProvider,
+                    'guarantee_amount' => $cancellationFeeHoldAmount,
+                    'guarantee_attempt_id' => $guaranteeAttempt->id,
+                    'guarantee_status' => $guaranteeAttempt->status,
+                ]),
+            ]);
+
+            $reservation->update(['status' => 'pending_payment']);
+
+            if ($redirectUrl = $guaranteeAttempt->payload['redirect_url'] ?? null) {
+                return redirect()->away($redirectUrl);
+            }
+
+            return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with(
+                'status',
+                __('messages.checkout.pay_later_guarantee_authorized', [
+                    'amount' => number_format($cancellationFeeHoldAmount, 0, ',', ' '),
+                    'currency' => $reservation->currency,
+                ])
+            );
+        }
+
         $gateway = $manager->resolve($provider, $paymentMethods[$provider]['mode']);
         $attempt = $gateway->createIntent($reservation, [
             'idempotency_key' => $reservation->reservation_ref . '-' . $provider,
@@ -156,10 +208,16 @@ class CheckoutController extends Controller
 
         abort_unless(isset($paymentMethods['paypal']), 422, 'PayPal is not available for this establishment.');
 
+        $isGuarantee = $request->boolean('is_guarantee');
+        $establishment = $reservation->property?->establishment;
+        $amount = $isGuarantee ? ($establishment?->cancellationFeeHoldAmount($reservation) ?? $reservation->total_amount) : $reservation->total_amount;
+
         $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
         $attempt = $gateway->createIntent($reservation, [
-            'idempotency_key' => $reservation->reservation_ref . '-paypal-' . time(),
+            'idempotency_key' => $reservation->reservation_ref . '-paypal-' . ($isGuarantee ? 'guarantee-' : '') . time(),
             'mode' => $paymentMethods['paypal']['mode'],
+            'is_guarantee' => $isGuarantee,
+            'amount' => $amount,
             'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
             'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
         ]);
@@ -169,6 +227,7 @@ class CheckoutController extends Controller
         return response()->json([
             'orderID' => $attempt->provider_reference,
             'attempt_id' => $attempt->id,
+            'is_guarantee' => $isGuarantee,
         ]);
     }
 
@@ -197,13 +256,36 @@ class CheckoutController extends Controller
         $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
         $attempt = $gateway->verifyStatus($attempt);
 
-        if (in_array($attempt->status, ['paid', 'completed'], true)) {
-            $reservation->update([
-                'status' => 'confirmed',
-                'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified via PayPal Smart Buttons.'),
-            ]);
+        if (in_array($attempt->status, ['paid', 'completed', 'authorized'], true)) {
+            $isGuarantee = (bool) ($attempt->payload['is_guarantee'] ?? false);
 
-            $emailService->queueStatusUpdate($reservation, 'confirmed');
+            if ($isGuarantee) {
+                $payLaterGateway = $manager->resolve('pay_later');
+                $payLaterAttempt = $payLaterGateway->createIntent($reservation, [
+                    'idempotency_key' => $reservation->reservation_ref . '-pay_later-' . time(),
+                    'mode' => 'production',
+                ]);
+                $payLaterAttempt->update([
+                    'payload' => array_merge((array) $payLaterAttempt->payload, [
+                        'guarantee_provider' => 'paypal',
+                        'guarantee_amount' => $attempt->amount,
+                        'guarantee_attempt_id' => $attempt->id,
+                        'guarantee_status' => $attempt->status,
+                    ]),
+                ]);
+
+                $reservation->update([
+                    'status' => 'pending_payment',
+                    'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Cancellation guarantee hold authorized via PayPal Smart Buttons.'),
+                ]);
+            } else {
+                $reservation->update([
+                    'status' => 'confirmed',
+                    'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified via PayPal Smart Buttons.'),
+                ]);
+
+                $emailService->queueStatusUpdate($reservation, 'confirmed');
+            }
 
             return response()->json([
                 'status' => 'COMPLETED',

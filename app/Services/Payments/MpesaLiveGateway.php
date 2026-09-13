@@ -28,6 +28,8 @@ class MpesaLiveGateway implements PaymentGateway
             throw new RuntimeException('A valid Kenyan mobile number is required for M-Pesa.');
         }
 
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
         $timestamp = now()->format('YmdHis');
         $shortcode = (string) config('services.mpesa.shortcode');
         $password = base64_encode($shortcode . config('services.mpesa.passkey') . $timestamp);
@@ -37,13 +39,13 @@ class MpesaLiveGateway implements PaymentGateway
                 'Password' => $password,
                 'Timestamp' => $timestamp,
                 'TransactionType' => 'CustomerPayBillOnline',
-                'Amount' => (int) round((float) $reservation->total_amount),
+                'Amount' => (int) round((float) $rawAmount),
                 'PartyA' => $phone,
                 'PartyB' => $shortcode,
                 'PhoneNumber' => $phone,
                 'CallBackURL' => $context['webhook_url'],
                 'AccountReference' => $reservation->reservation_ref,
-                'TransactionDesc' => 'Reservation '.$reservation->reservation_ref,
+                'TransactionDesc' => $isGuarantee ? 'Garantie d\'annulation '.$reservation->reservation_ref : 'Reservation '.$reservation->reservation_ref,
             ]);
         $response->throw();
         $payload = $response->json();
@@ -57,7 +59,12 @@ class MpesaLiveGateway implements PaymentGateway
             'provider' => $this->name(),
             'provider_reference' => $checkoutRequestId,
             'currency' => 'KES',
-            'amount' => $reservation->total_amount,
+            'amount' => $rawAmount,
+            'status' => $isGuarantee ? 'authorized' : 'pending',
+            'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
+            'payload' => ['mode' => 'production', 'is_guarantee' => $isGuarantee],
+        ]);
+    }
             'status' => 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => ['mode' => 'production', 'merchant_request_id' => $payload['MerchantRequestID'] ?? null, 'phone' => $phone],

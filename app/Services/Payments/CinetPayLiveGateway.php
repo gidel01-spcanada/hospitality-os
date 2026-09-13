@@ -23,14 +23,16 @@ class CinetPayLiveGateway implements PaymentGateway
             throw new RuntimeException('CinetPay is available only for XOF and XAF payments.');
         }
 
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
         $transactionId = Str::upper($reservation->reservation_ref . '-' . Str::random(10));
         $response = Http::acceptJson()->post($this->baseUrl().'/payment', [
             'apikey' => config('services.cinetpay.api_key'),
             'site_id' => config('services.cinetpay.site_id'),
             'transaction_id' => $transactionId,
-            'amount' => (int) round((float) $reservation->total_amount),
+            'amount' => (int) round((float) $rawAmount),
             'currency' => $reservation->currency,
-            'description' => 'Reservation '.$reservation->reservation_ref,
+            'description' => $isGuarantee ? 'Garantie d\'annulation '.$reservation->reservation_ref : 'Reservation '.$reservation->reservation_ref,
             'return_url' => $context['return_url'],
             'notify_url' => $context['webhook_url'],
             'customer_email' => $reservation->email,
@@ -48,6 +50,14 @@ class CinetPayLiveGateway implements PaymentGateway
         return PaymentAttempt::query()->create([
             'reservation_id' => $reservation->id,
             'provider' => $this->name(),
+            'provider_reference' => (string) $transactionId,
+            'currency' => $reservation->currency,
+            'amount' => $rawAmount,
+            'status' => $isGuarantee ? 'authorized' : 'pending',
+            'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
+            'payload' => ['mode' => 'production', 'redirect_url' => $paymentUrl, 'is_guarantee' => $isGuarantee],
+        ]);
+    }
             'provider_reference' => $transactionId,
             'currency' => $reservation->currency,
             'amount' => $reservation->total_amount,

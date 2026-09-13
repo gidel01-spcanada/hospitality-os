@@ -369,4 +369,64 @@ class PaymentWorkflowTest extends TestCase
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'status' => 'paid']);
     }
+
+    public function test_pay_later_requires_and_creates_guarantee_hold_when_cancellation_fee_configured(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->forceFill([
+            'cancellation_fee_percent' => 30,
+            'cancellation_fee_days' => 7,
+            'payment_methods' => [
+                'pay_later' => ['enabled' => true, 'mode' => 'production'],
+                'fedapay' => ['enabled' => true, 'mode' => 'sandbox'],
+            ],
+        ])->save();
+
+        $guest = ReservationGuest::create([
+            'full_name' => 'Pay On Site Guest',
+            'email' => 'onsite@example.com',
+        ]);
+
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-GUARANTEE-001',
+            'status' => 'pending',
+            'check_in' => now()->addDays(5)->toDateString(),
+            'check_out' => now()->addDays(8)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 100000,
+            'fees' => 0,
+            'taxes' => 0,
+            'total_amount' => 100000,
+            'source' => 'website',
+        ]);
+
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee('Garantie d’annulation requise');
+
+        $this->post($checkoutUrl, [
+            'provider' => 'pay_later',
+            'guarantee_provider' => 'fedapay',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('payment_attempts', [
+            'reservation_id' => $reservation->id,
+            'provider' => 'fedapay',
+            'amount' => '30000.00',
+            'status' => 'authorized',
+        ]);
+        $this->assertDatabaseHas('payment_attempts', [
+            'reservation_id' => $reservation->id,
+            'provider' => 'pay_later',
+        ]);
+    }
 }
