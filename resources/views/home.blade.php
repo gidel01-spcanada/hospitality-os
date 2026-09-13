@@ -45,7 +45,7 @@
                                 @endforeach
                             </select>
                         </label>
-                        <div class="date-range-picker" data-date-range-picker data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                        <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
                             <span>{{ __('messages.home.dates') }}</span>
                             <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
                                 <span data-date-range-label>{{ request('check_in') && request('check_out') ? request('check_in') . ' → ' . request('check_out') : __('messages.home.select_dates') }}</span>

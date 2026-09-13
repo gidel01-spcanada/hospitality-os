@@ -39,7 +39,7 @@
                             </div>
                         </div>
 
-                        <div class="filter-group date-range-picker" data-date-range-picker data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                        <div class="filter-group date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
                             <div class="filter-field">
                                 <label for="property-date-range-trigger">{{ __('messages.home.dates') }}</label>
                                 <button type="button" id="property-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false">

@@ -213,6 +213,17 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 		trigger.setAttribute('aria-expanded', String(!popover.hidden));
 		if (!popover.hidden) render();
 	});
+	const form = picker.closest('form');
+	form?.addEventListener('submit', (event) => {
+		if ((start && !end) || (!start && end)) {
+			event.preventDefault();
+			trigger.setAttribute('aria-invalid', 'true');
+			label.textContent = picker.dataset.incompleteMessage;
+			popover.hidden = false;
+			trigger.setAttribute('aria-expanded', 'true');
+			render();
+		}
+	});
 	document.addEventListener('click', (event) => {
 		if (!picker.contains(event.target)) {
 			popover.hidden = true;
