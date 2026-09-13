@@ -33,6 +33,8 @@ class Establishment extends Model
         'city_tax_type',
         'city_tax_amount',
         'service_fee_percent',
+        'electricity_billed_separately',
+        'electricity_policy_note',
         'email',
         'phone',
         'metadata',
@@ -50,6 +52,7 @@ class Establishment extends Model
         'vat_included' => 'boolean',
         'city_tax_amount' => 'decimal:2',
         'service_fee_percent' => 'decimal:2',
+        'electricity_billed_separately' => 'boolean',
     ];
 
     public function properties(): HasMany

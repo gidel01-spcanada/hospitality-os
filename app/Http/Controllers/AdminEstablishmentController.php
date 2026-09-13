@@ -51,6 +51,8 @@ class AdminEstablishmentController extends Controller
         $validated['city_tax_type'] = in_array($validated['city_tax_type'] ?? 'percent', ['none', 'per_night', 'per_guest_night', 'percent'], true) ? ($validated['city_tax_type'] ?? 'percent') : 'percent';
         $validated['city_tax_amount'] = (float) ($validated['city_tax_amount'] ?? 5.00);
         $validated['service_fee_percent'] = (float) ($validated['service_fee_percent'] ?? 10.00);
+        $validated['electricity_billed_separately'] = $request->boolean('electricity_billed_separately');
+        $validated['electricity_policy_note'] = $validated['electricity_policy_note'] ?? null;
         $establishment = Establishment::create($validated);
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -73,6 +75,8 @@ class AdminEstablishmentController extends Controller
         $validated['city_tax_type'] = $request->has('city_tax_type') && in_array($cityTaxTypeInput, ['none', 'per_night', 'per_guest_night', 'percent'], true) ? $cityTaxTypeInput : $establishment->city_tax_type;
         $validated['city_tax_amount'] = $request->has('city_tax_amount') ? (float) $validated['city_tax_amount'] : (float) $establishment->city_tax_amount;
         $validated['service_fee_percent'] = $request->has('service_fee_percent') ? (float) $validated['service_fee_percent'] : (float) $establishment->service_fee_percent;
+        $validated['electricity_billed_separately'] = $request->has('electricity_billed_separately') || $request->has('vat_percent') ? $request->boolean('electricity_billed_separately') : (bool) $establishment->electricity_billed_separately;
+        $validated['electricity_policy_note'] = $request->has('electricity_policy_note') ? ($validated['electricity_policy_note'] ?? null) : $establishment->electricity_policy_note;
         $establishment->fill($validated)->save();
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -116,6 +120,8 @@ class AdminEstablishmentController extends Controller
             'city_tax_type' => ['nullable', 'string', 'in:none,per_night,per_guest_night,percent'],
             'city_tax_amount' => ['nullable', 'numeric', 'min:0'],
             'service_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'electricity_billed_separately' => ['sometimes', 'boolean'],
+            'electricity_policy_note' => ['nullable', 'string', 'max:1000'],
             'features' => ['nullable', 'array'],
             'features.*' => ['nullable', 'string', 'max:100'],
             'translations' => ['nullable', 'array'],

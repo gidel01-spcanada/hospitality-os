@@ -118,8 +118,22 @@
                             </div>
                             <p class="form-help full-width">{{ __('messages.admin.taxes_help') }}</p>
                         </div>
-                    </div>
-                </div>
+                    </div>                    <div class="payment-method-editor" style="margin-top: 1.5rem;">
+                        <h2>{{ __('messages.admin.electricity_heading') }}</h2>
+                        <div class="form-grid">
+                            <div class="full-width">
+                                <label class="checkbox-field">
+                                    <input type="checkbox" name="electricity_billed_separately" value="1" @checked(old('electricity_billed_separately', $establishment->electricity_billed_separately ?? false))>
+                                    <span>{{ __('messages.admin.electricity_billed_separately') }}</span>
+                                </label>
+                            </div>
+                            <div class="full-width">
+                                <label for="electricity_policy_note">{{ __('messages.admin.electricity_policy_note') }}</label>
+                                <textarea id="electricity_policy_note" name="electricity_policy_note" rows="3" placeholder="{{ __('messages.properties.electricity_note') }}">{{ old('electricity_policy_note', $establishment->electricity_policy_note) }}</textarea>
+                            </div>
+                            <p class="form-help full-width">{{ __('messages.admin.electricity_policy_help') }}</p>
+                        </div>
+                    </div>                </div>
                 <div id="establishment-panel-payments" class="property-tab-panel" role="tabpanel" data-property-panel="payments" hidden>
                     <div class="payment-method-editor">
                     <h2>{{ __('messages.admin.payment_methods_heading') }}</h2>
