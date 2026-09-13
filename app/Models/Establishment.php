@@ -28,6 +28,11 @@ class Establishment extends Model
         'payment_methods',
         'cancellation_fee_percent',
         'cancellation_fee_days',
+        'vat_percent',
+        'vat_included',
+        'city_tax_type',
+        'city_tax_amount',
+        'service_fee_percent',
         'email',
         'phone',
         'metadata',
@@ -41,6 +46,10 @@ class Establishment extends Model
         'payment_methods' => 'array',
         'cancellation_fee_percent' => 'decimal:2',
         'cancellation_fee_days' => 'integer',
+        'vat_percent' => 'decimal:2',
+        'vat_included' => 'boolean',
+        'city_tax_amount' => 'decimal:2',
+        'service_fee_percent' => 'decimal:2',
     ];
 
     public function properties(): HasMany

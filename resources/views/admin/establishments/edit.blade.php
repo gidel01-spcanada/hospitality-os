@@ -36,7 +36,7 @@
         @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
         <div class="property-editor-tabs" data-property-tabs>
             <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.establishment_editor_sections') }}">
-                @foreach (['general' => __('messages.admin.general_information'), 'online' => __('messages.admin.online_information'), 'translations' => __('messages.admin.translations'), 'payments' => __('messages.admin.payment_methods_heading')] as $tab => $label)
+                @foreach (['general' => __('messages.admin.general_information'), 'online' => __('messages.admin.online_information'), 'taxes' => __('messages.admin.taxes_heading'), 'translations' => __('messages.admin.translations'), 'payments' => __('messages.admin.payment_methods_heading')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="establishment-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
             </div>
@@ -83,6 +83,41 @@
                         <div><label for="latitude">{{ __('messages.admin.latitude') }}</label><input id="latitude" type="number" step="any" name="latitude" value="{{ old('latitude', $establishment->latitude) }}"></div>
                         <div><label for="longitude">{{ __('messages.admin.longitude') }}</label><input id="longitude" type="number" step="any" name="longitude" value="{{ old('longitude', $establishment->longitude) }}"></div>
                         <div class="full-width"><label for="google_maps_url">{{ __('messages.admin.google_maps_url') }}</label><input id="google_maps_url" type="url" name="google_maps_url" value="{{ old('google_maps_url', $establishment->google_maps_url) }}" placeholder="https://maps.google.com/..."></div>
+                    </div>
+                </div>
+                <div id="establishment-panel-taxes" class="property-tab-panel" role="tabpanel" data-property-panel="taxes" hidden>
+                    <div class="payment-method-editor">
+                        <h2>{{ __('messages.admin.taxes_heading') }}</h2>
+                        <div class="form-grid">
+                            <div>
+                                <label for="vat_percent">{{ __('messages.admin.vat_percent') }}</label>
+                                <input id="vat_percent" type="number" step="0.01" min="0" max="100" name="vat_percent" value="{{ old('vat_percent', $establishment->vat_percent ?? 18) }}">
+                            </div>
+                            <div class="field-group" style="align-self: center;">
+                                <label class="checkbox-field" style="margin-top: 1.2rem;">
+                                    <input type="checkbox" name="vat_included" value="1" @checked(old('vat_included', $establishment->vat_included ?? true))>
+                                    <span>{{ __('messages.admin.vat_included') }}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <label for="service_fee_percent">{{ __('messages.admin.service_fee_percent') }}</label>
+                                <input id="service_fee_percent" type="number" step="0.01" min="0" max="100" name="service_fee_percent" value="{{ old('service_fee_percent', $establishment->service_fee_percent ?? 10) }}">
+                            </div>
+                            <div>
+                                <label for="city_tax_type">{{ __('messages.admin.city_tax_type') }}</label>
+                                <select id="city_tax_type" name="city_tax_type">
+                                    <option value="none" @selected(old('city_tax_type', $establishment->city_tax_type ?? 'percent') === 'none')>{{ __('messages.admin.city_tax_type_none') }}</option>
+                                    <option value="per_night" @selected(old('city_tax_type', $establishment->city_tax_type ?? 'percent') === 'per_night')>{{ __('messages.admin.city_tax_type_per_night') }}</option>
+                                    <option value="per_guest_night" @selected(old('city_tax_type', $establishment->city_tax_type ?? 'percent') === 'per_guest_night')>{{ __('messages.admin.city_tax_type_per_guest_night') }}</option>
+                                    <option value="percent" @selected(old('city_tax_type', $establishment->city_tax_type ?? 'percent') === 'percent')>{{ __('messages.admin.city_tax_type_percent') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="city_tax_amount">{{ __('messages.admin.city_tax_amount') }}</label>
+                                <input id="city_tax_amount" type="number" step="0.01" min="0" name="city_tax_amount" value="{{ old('city_tax_amount', $establishment->city_tax_amount ?? 5) }}">
+                            </div>
+                            <p class="form-help full-width">{{ __('messages.admin.taxes_help') }}</p>
+                        </div>
                     </div>
                 </div>
                 <div id="establishment-panel-payments" class="property-tab-panel" role="tabpanel" data-property-panel="payments" hidden>

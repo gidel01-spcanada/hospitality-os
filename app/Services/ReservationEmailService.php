@@ -10,6 +10,8 @@ class ReservationEmailService
 {
     public function queueForReservation(Reservation $reservation, string $template, ?string $subject = null): void
     {
+        $reservation->loadMissing('priceLines');
+
         EmailOutbox::query()->create([
             'template' => $template,
             'recipient_email' => $reservation->email,
@@ -24,12 +26,19 @@ class ReservationEmailService
                 'total_amount' => (string) $reservation->total_amount,
                 'currency' => $reservation->currency,
                 'status' => $reservation->status,
+                'price_lines' => $reservation->priceLines->map(fn ($line) => [
+                    'label' => $line->label,
+                    'amount' => (string) $line->amount,
+                    'currency' => $line->currency,
+                ])->toArray(),
             ],
         ]);
     }
 
     public function queuePaymentLink(Reservation $reservation): void
     {
+        $reservation->loadMissing('priceLines');
+
         EmailOutbox::query()->create([
             'template' => 'payment_link',
             'recipient_email' => $reservation->email,
@@ -42,6 +51,11 @@ class ReservationEmailService
                 'register_url' => route('register', ['email' => $reservation->email]),
                 'total_amount' => (string) $reservation->total_amount,
                 'currency' => $reservation->currency,
+                'price_lines' => $reservation->priceLines->map(fn ($line) => [
+                    'label' => $line->label,
+                    'amount' => (string) $line->amount,
+                    'currency' => $line->currency,
+                ])->toArray(),
             ],
         ]);
     }

@@ -7,6 +7,7 @@ use App\Models\ReservationGuest;
 use App\Models\ReservationPriceLine;
 use App\Models\Property;
 use App\Services\AvailabilityService;
+use App\Services\PricingCalculator;
 use App\Services\ReservationEmailService;
 use App\Support\CurrentTenant;
 use Carbon\Carbon;
@@ -69,7 +70,7 @@ class AdminReservationController extends Controller
             'country' => $validated['country'] ?? null,
         ])->save();
 
-        $pricing = $this->calculatePricing($property, $checkIn, $checkOut);
+        $pricing = $this->calculatePricing($property, $checkIn, $checkOut, (int) $validated['adults'], (int) ($validated['children'] ?? 0));
 
         DB::transaction(function () use ($reservation, $property, $guest, $validated, $checkIn, $checkOut, $pricing): void {
             $reservation->update([
@@ -80,6 +81,7 @@ class AdminReservationController extends Controller
                 'adults' => $validated['adults'],
                 'children' => $validated['children'] ?? 0,
                 'infants' => $validated['infants'] ?? 0,
+                'currency' => $pricing['currency'],
                 'email' => strtolower($validated['email']),
                 'subtotal' => $pricing['subtotal'],
                 'fees' => $pricing['fees'],
@@ -208,17 +210,13 @@ class AdminReservationController extends Controller
 
     private function persistReservation(array $validated, Property $property, Carbon $checkIn, Carbon $checkOut): Reservation
     {
-        $pricing = $this->calculatePricing($property, $checkIn, $checkOut);
-        $nights = $pricing['nights'];
-        $subtotal = $pricing['subtotal'];
-        $fees = $pricing['fees'];
-        $taxes = $pricing['taxes'];
+        $pricing = $this->calculatePricing($property, $checkIn, $checkOut, (int) $validated['adults'], (int) ($validated['children'] ?? 0));
         $guest = ReservationGuest::query()->firstOrCreate(
             ['email' => strtolower($validated['email'])],
             ['full_name' => $validated['full_name'], 'phone' => $validated['phone'] ?? null, 'country' => $validated['country'] ?? null]
         );
 
-        return DB::transaction(function () use ($validated, $property, $checkIn, $checkOut, $guest, $subtotal, $fees, $taxes, $nights): Reservation {
+        return DB::transaction(function () use ($validated, $property, $checkIn, $checkOut, $guest, $pricing): Reservation {
             $reservation = Reservation::query()->create([
                 'property_id' => $property->id,
                 'guest_id' => $guest->id,
@@ -230,12 +228,12 @@ class AdminReservationController extends Controller
                 'adults' => $validated['adults'],
                 'children' => $validated['children'] ?? 0,
                 'infants' => $validated['infants'] ?? 0,
-                'currency' => 'XOF',
+                'currency' => $pricing['currency'],
                 'email' => strtolower($validated['email']),
-                'subtotal' => $subtotal,
-                'fees' => $fees,
-                'taxes' => $taxes,
-                'total_amount' => $subtotal + $fees + $taxes,
+                'subtotal' => $pricing['subtotal'],
+                'fees' => $pricing['fees'],
+                'taxes' => $pricing['taxes'],
+                'total_amount' => $pricing['total_amount'],
                 'source' => 'admin',
                 'notes' => $validated['notes'] ?? null,
             ]);
@@ -246,30 +244,21 @@ class AdminReservationController extends Controller
         });
     }
 
-    private function calculatePricing(Property $property, Carbon $checkIn, Carbon $checkOut): array
+    private function calculatePricing(Property $property, Carbon $checkIn, Carbon $checkOut, int $adults = 1, int $children = 0): array
     {
-        $nights = $checkIn->diffInDays($checkOut);
-        $subtotal = round((float) $property->nightly_rate_xof * $nights, 2);
-        $fees = round($subtotal * 0.10, 2);
-        $taxes = round($subtotal * 0.05, 2);
-
-        return [
-            'nights' => $nights,
-            'subtotal' => $subtotal,
-            'fees' => $fees,
-            'taxes' => $taxes,
-            'total_amount' => round($subtotal + $fees + $taxes, 2),
-        ];
+        return PricingCalculator::calculate($property, $checkIn, $checkOut, $adults, $children);
     }
 
     private function priceLines(Reservation $reservation, array $pricing): array
     {
         $timestamp = now();
 
-        return [
-            ['reservation_id' => $reservation->id, 'label' => 'Nuit(s) x ' . $pricing['nights'], 'amount' => $pricing['subtotal'], 'currency' => 'XOF', 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['reservation_id' => $reservation->id, 'label' => 'Frais de service', 'amount' => $pricing['fees'], 'currency' => 'XOF', 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['reservation_id' => $reservation->id, 'label' => 'Taxes', 'amount' => $pricing['taxes'], 'currency' => 'XOF', 'created_at' => $timestamp, 'updated_at' => $timestamp],
-        ];
+        return array_map(function (array $line) use ($reservation, $timestamp): array {
+            return array_merge($line, [
+                'reservation_id' => $reservation->id,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]);
+        }, $pricing['price_lines']);
     }
 }
