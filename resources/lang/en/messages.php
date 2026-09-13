@@ -642,6 +642,8 @@ return [
     'home.destination' => 'Destination',
     'home.arrival' => 'Check-in',
     'home.departure' => 'Check-out',
+    'home.dates' => 'Stay dates',
+    'home.select_dates' => 'Select dates',
     'home.travelers' => 'Travelers',
     'home.search' => 'Search',
     'home.why_us' => 'Why us',

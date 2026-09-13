@@ -642,6 +642,8 @@ return [
     'home.destination' => 'Destination',
     'home.arrival' => 'Arrivée',
     'home.departure' => 'Départ',
+    'home.dates' => 'Dates du séjour',
+    'home.select_dates' => 'Choisir les dates',
     'home.travelers' => 'Voyageurs',
     'home.search' => 'Rechercher',
     'home.why_us' => 'Pourquoi nous',
