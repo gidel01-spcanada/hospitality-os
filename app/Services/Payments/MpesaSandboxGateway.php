@@ -14,15 +14,18 @@ class MpesaSandboxGateway implements PaymentGateway
 
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
+
         return PaymentAttempt::query()->create([
             'reservation_id' => $reservation->id,
             'provider' => $this->name(),
             'provider_reference' => 'mpesa-sandbox-'.Str::upper(Str::random(12)),
             'currency' => $reservation->currency,
-            'amount' => $reservation->total_amount,
-            'status' => 'created',
+            'amount' => $rawAmount,
+            'status' => $isGuarantee ? 'authorized' : 'created',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
-            'payload' => ['environment' => config('services.mpesa.environment', 'sandbox'), 'mode' => 'sandbox', 'reservation_ref' => $reservation->reservation_ref],
+            'payload' => ['environment' => config('services.mpesa.environment', 'sandbox'), 'mode' => 'sandbox', 'reservation_ref' => $reservation->reservation_ref, 'is_guarantee' => $isGuarantee],
         ]);
     }
 

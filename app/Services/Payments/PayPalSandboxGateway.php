@@ -19,8 +19,10 @@ class PayPalSandboxGateway implements PaymentGateway
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
         $xofPerEur = (float) BrandSettings::get('eur_to_xof_rate', 655.957);
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
         $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
-        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $reservation->total_amount / $xofPerEur, 2) : (float) $reservation->total_amount;
+        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $rawAmount / $xofPerEur, 2) : (float) $rawAmount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
 
         return PaymentAttempt::query()->create([
             'reservation_id' => $reservation->id,
@@ -28,12 +30,13 @@ class PayPalSandboxGateway implements PaymentGateway
             'provider_reference' => 'paypal-sandbox-' . Str::upper(Str::random(12)),
             'currency' => $paypalCurrency,
             'amount' => $paypalAmount,
-            'status' => 'created',
+            'status' => $isGuarantee ? 'authorized' : 'created',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
             'payload' => [
                 'environment' => config('services.paypal.environment', 'sandbox'),
                 'mode' => $context['mode'] ?? 'sandbox',
                 'reservation_ref' => $reservation->reservation_ref,
+                'is_guarantee' => $isGuarantee,
             ],
         ]);
     }

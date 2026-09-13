@@ -65,7 +65,21 @@
                 @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
                     @php
                         $nonPaypalMethods = collect($paymentMethods)->except('paypal')->all();
+                        $cancellationFeePercent = (float) ($reservation->property?->establishment?->cancellation_fee_percent ?? 0);
+                        $cancellationFeeHoldAmount = $reservation->property?->establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
+                        $onlineMethods = collect($paymentMethods)->except('pay_later')->all();
                     @endphp
+
+                    @if (isset($paymentMethods['pay_later']) && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && count($onlineMethods) > 0)
+                        <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                            <p class="font-semibold">{{ __('messages.checkout.pay_later_guarantee_title') }}</p>
+                            <p class="mt-1">{{ __('messages.checkout.pay_later_guarantee_notice', [
+                                'amount' => number_format($cancellationFeeHoldAmount, 0, ',', ' '),
+                                'currency' => $reservation->currency,
+                                'percent' => rtrim(rtrim(number_format($cancellationFeePercent, 2, ',', ' '), '0'), ','),
+                            ]) }}</p>
+                        </div>
+                    @endif
 
                     @if (count($nonPaypalMethods) > 0)
                         <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
@@ -85,6 +99,17 @@
                                     <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
                                         @foreach ($nonPaypalMethods as $provider => $method)
                                             <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            @if (isset($paymentMethods['pay_later']) && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && count($onlineMethods) > 1)
+                                <div>
+                                    <label for="guarantee_provider" class="mb-1 block text-xs font-medium text-slate-700">{{ __('messages.checkout.guarantee_provider_label') }}</label>
+                                    <select id="guarantee_provider" name="guarantee_provider" class="w-full rounded-md border border-slate-300 px-3 py-2 text-xs focus:border-amber-500 focus:outline-none">
+                                        @foreach ($onlineMethods as $onlineProvider => $method)
+                                            <option value="{{ $onlineProvider }}">{{ __('messages.checkout.' . $onlineProvider) }}</option>
                                         @endforeach
                                     </select>
                                 </div>

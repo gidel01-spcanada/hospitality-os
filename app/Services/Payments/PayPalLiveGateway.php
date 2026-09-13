@@ -22,14 +22,17 @@ class PayPalLiveGateway implements PaymentGateway
     {
         $token = $this->accessToken();
         $xofPerEur = (float) BrandSettings::get('eur_to_xof_rate', 655.957);
+        $rawAmount = $context['amount'] ?? $reservation->total_amount;
         $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
-        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $reservation->total_amount / $xofPerEur, 2) : (float) $reservation->total_amount;
+        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $rawAmount / $xofPerEur, 2) : (float) $rawAmount;
+        $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
+        $intent = $isGuarantee ? 'AUTHORIZE' : 'CAPTURE';
 
         $response = Http::acceptJson()
             ->withToken($token)
             ->withHeaders(['PayPal-Request-Id' => $context['idempotency_key'] ?? Str::uuid()->toString(), 'Prefer' => 'return=representation'])
             ->post($this->baseUrl().'/v2/checkout/orders', [
-                'intent' => 'CAPTURE',
+                'intent' => $intent,
                 'purchase_units' => [[
                     'reference_id' => $reservation->reservation_ref,
                     'amount' => ['currency_code' => $paypalCurrency, 'value' => number_format($paypalAmount, 2, '.', '')],
@@ -45,9 +48,14 @@ class PayPalLiveGateway implements PaymentGateway
             'provider_reference' => $order['id'],
             'currency' => $paypalCurrency,
             'amount' => $paypalAmount,
-            'status' => 'pending',
+            'status' => $isGuarantee ? 'authorized' : 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
-            'payload' => ['mode' => 'production', 'redirect_url' => $approvalUrl, 'order_status' => $order['status'] ?? null],
+            'payload' => [
+                'mode' => 'production',
+                'redirect_url' => $approvalUrl,
+                'order_status' => $order['status'] ?? null,
+                'is_guarantee' => $isGuarantee,
+            ],
         ]);
     }
 

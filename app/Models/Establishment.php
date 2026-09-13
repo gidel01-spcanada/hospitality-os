@@ -76,4 +76,16 @@ class Establishment extends Model
 
         return round((float) $reservation->total_amount * $percent / 100, 2);
     }
+
+    /** Guarantee amount required to be held in reserve when paying on site. */
+    public function cancellationFeeHoldAmount(Reservation $reservation): float
+    {
+        $percent = (float) $this->cancellation_fee_percent;
+
+        if ($percent <= 0 || ! $reservation->total_amount) {
+            return 0.0;
+        }
+
+        return round((float) $reservation->total_amount * $percent / 100, 2);
+    }
 }
