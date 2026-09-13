@@ -51,6 +51,20 @@
                     </div>
                 </dl>
 
+                @if ($reservation->priceLines->isNotEmpty())
+                    <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <h3 class="text-md font-semibold text-slate-900">{{ __('messages.reservation.amounts') }}</h3>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            @foreach ($reservation->priceLines as $line)
+                                <li class="flex items-center justify-between border-b border-slate-200/60 pb-1.5 last:border-b-0 last:pb-0">
+                                    <span>{{ $line->label }}</span>
+                                    <span class="font-medium">{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <h3 class="text-lg font-semibold">{{ __('messages.checkout.methods') }}</h3>
                     <ul class="mt-3 space-y-2 text-sm text-slate-700">

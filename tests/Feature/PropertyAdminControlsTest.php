@@ -115,6 +115,48 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertSame($amenityIds, $property->fresh()->amenities()->pluck('amenities.id')->sort()->values()->all());
     }
 
+    public function test_admin_can_configure_establishment_taxes_and_pricing_calculator_propagates_them(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $this->actingAs($admin)
+            ->put('/admin/establishments/' . $establishment->id, [
+                'name' => $establishment->name,
+                'slug' => $establishment->slug,
+                'country_code' => $establishment->country_code,
+                'currency' => 'XOF',
+                'vat_percent' => 18,
+                'vat_included' => '0', // Excluded VAT
+                'service_fee_percent' => 10,
+                'city_tax_type' => 'per_night',
+                'city_tax_amount' => 1000,
+                'active_tab' => 'taxes',
+            ])
+            ->assertRedirect('/admin/establishments/' . $establishment->id . '/edit#taxes');
+
+        $establishment->refresh();
+        $this->assertEquals('18.00', $establishment->vat_percent);
+        $this->assertFalse($establishment->vat_included);
+        $this->assertEquals('per_night', $establishment->city_tax_type);
+        $this->assertEquals('1000.00', $establishment->city_tax_amount);
+
+        $property = $establishment->properties()->firstOrFail();
+        $checkIn = \Carbon\Carbon::parse('2026-10-01');
+        $checkOut = \Carbon\Carbon::parse('2026-10-03'); // 2 nights
+        $property->update(['nightly_rate_xof' => 50000]);
+
+        $pricing = \App\Services\PricingCalculator::calculate($property, $checkIn, $checkOut, 2, 0);
+
+        // Subtotal = 100 000, Service Fee 10% = 10 000, VAT 18% on (100 000 + 10 000) = 19 800, Local Tax = 2000 (1000 * 2)
+        $this->assertEquals(100000, $pricing['subtotal']);
+        $this->assertEquals(10000, $pricing['fees']);
+        $this->assertEquals(21800, $pricing['taxes']); // 19 800 + 2 000
+        $this->assertEquals(131800, $pricing['total_amount']);
+    }
+
     public function test_customer_can_select_property_feature_addons_during_booking(): void
     {
         $this->seed(DatabaseSeeder::class);

@@ -46,6 +46,11 @@ class AdminEstablishmentController extends Controller
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
         $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
         $validated['cancellation_fee_days'] = (int) ($validated['cancellation_fee_days'] ?? 0);
+        $validated['vat_percent'] = (float) ($validated['vat_percent'] ?? 18.00);
+        $validated['vat_included'] = $request->has('vat_included') ? $request->boolean('vat_included') : true;
+        $validated['city_tax_type'] = in_array($validated['city_tax_type'] ?? 'percent', ['none', 'per_night', 'per_guest_night', 'percent'], true) ? ($validated['city_tax_type'] ?? 'percent') : 'percent';
+        $validated['city_tax_amount'] = (float) ($validated['city_tax_amount'] ?? 5.00);
+        $validated['service_fee_percent'] = (float) ($validated['service_fee_percent'] ?? 10.00);
         $establishment = Establishment::create($validated);
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -60,8 +65,14 @@ class AdminEstablishmentController extends Controller
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? $establishment->payment_methods ?? []);
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
-        $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
-        $validated['cancellation_fee_days'] = (int) ($validated['cancellation_fee_days'] ?? 0);
+        $validated['cancellation_fee_percent'] = $request->has('cancellation_fee_percent') ? (float) $validated['cancellation_fee_percent'] : (float) $establishment->cancellation_fee_percent;
+        $validated['cancellation_fee_days'] = $request->has('cancellation_fee_days') ? (int) $validated['cancellation_fee_days'] : (int) $establishment->cancellation_fee_days;
+        $validated['vat_percent'] = $request->has('vat_percent') ? (float) $validated['vat_percent'] : (float) $establishment->vat_percent;
+        $validated['vat_included'] = $request->has('vat_percent') || $request->has('vat_included') ? $request->boolean('vat_included') : (bool) $establishment->vat_included;
+        $cityTaxTypeInput = $validated['city_tax_type'] ?? null;
+        $validated['city_tax_type'] = $request->has('city_tax_type') && in_array($cityTaxTypeInput, ['none', 'per_night', 'per_guest_night', 'percent'], true) ? $cityTaxTypeInput : $establishment->city_tax_type;
+        $validated['city_tax_amount'] = $request->has('city_tax_amount') ? (float) $validated['city_tax_amount'] : (float) $establishment->city_tax_amount;
+        $validated['service_fee_percent'] = $request->has('service_fee_percent') ? (float) $validated['service_fee_percent'] : (float) $establishment->service_fee_percent;
         $establishment->fill($validated)->save();
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
@@ -71,7 +82,7 @@ class AdminEstablishmentController extends Controller
 
     private function activeTab(Request $request): string
     {
-        return in_array($request->input('active_tab'), ['general', 'online', 'translations', 'payments'], true)
+        return in_array($request->input('active_tab'), ['general', 'online', 'taxes', 'translations', 'payments'], true)
             ? $request->input('active_tab')
             : 'general';
     }
@@ -100,6 +111,11 @@ class AdminEstablishmentController extends Controller
             'payment_methods.*.instructions' => ['nullable', 'string', 'max:500'],
             'cancellation_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'cancellation_fee_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'vat_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'vat_included' => ['sometimes', 'boolean'],
+            'city_tax_type' => ['nullable', 'string', 'in:none,per_night,per_guest_night,percent'],
+            'city_tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'service_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'features' => ['nullable', 'array'],
             'features.*' => ['nullable', 'string', 'max:100'],
             'translations' => ['nullable', 'array'],

@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use App\Services\AvailabilityService;
+use App\Services\PricingCalculator;
 
 class PublicPropertyController extends Controller
 {
@@ -197,14 +198,16 @@ class PublicPropertyController extends Controller
 
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
-        $nights = max(1, $checkIn->diffInDays($checkOut));
-        $baseRate = (float) $property->nightly_rate_xof;
         $selectedFeatures = $property->features()->whereIn('id', $validated['selected_features'] ?? [])->where('is_active', true)->get();
-        $extrasTotal = (float) $selectedFeatures->sum('cost_xof');
-        $subtotal = round(($baseRate * $nights) + $extrasTotal, 2);
-        $fees = round($subtotal * 0.10, 2);
-        $taxes = round($subtotal * 0.05, 2);
-        $totalAmount = round($subtotal + $fees + $taxes, 2);
+
+        $pricing = PricingCalculator::calculate(
+            $property,
+            $checkIn,
+            $checkOut,
+            (int) $validated['adults'],
+            (int) ($validated['children'] ?? 0),
+            $selectedFeatures
+        );
 
         $guest = ReservationGuest::query()->firstOrCreate(
             ['email' => $email],
@@ -214,7 +217,7 @@ class PublicPropertyController extends Controller
                 'country' => $validated['country'] ?? null,
                 'metadata' => [
                     'source' => 'website',
-                    'guest_count' => (int) $validated['adults'] + (int) ($validated['children'] ?? 0),
+                    'guest_count' => $pricing['guests'],
                 ],
             ]
         );
@@ -251,32 +254,23 @@ class PublicPropertyController extends Controller
             'adults' => (int) $validated['adults'],
             'children' => (int) ($validated['children'] ?? 0),
             'infants' => (int) ($validated['infants'] ?? 0),
-            'currency' => 'XOF',
+            'currency' => $pricing['currency'],
             'email' => $email,
-            'subtotal' => $subtotal,
-            'fees' => $fees,
-            'taxes' => $taxes,
-            'total_amount' => $totalAmount,
+            'subtotal' => $pricing['subtotal'],
+            'fees' => $pricing['fees'],
+            'taxes' => $pricing['taxes'],
+            'total_amount' => $pricing['total_amount'],
             'source' => 'website',
             'notes' => 'Reservation placed from public booking form.' . ($selectedFeatures->isNotEmpty() ? ' Extras: ' . $selectedFeatures->pluck('name')->implode(', ') : ''),
         ]);
 
-        $priceLines = [
-            ['reservation_id' => $reservation->id, 'label' => 'Nuit(s) x ' . $nights, 'amount' => round($baseRate * $nights, 2), 'currency' => 'XOF', 'created_at' => now(), 'updated_at' => now()],
-            ['reservation_id' => $reservation->id, 'label' => 'Frais de service', 'amount' => $fees, 'currency' => 'XOF', 'created_at' => now(), 'updated_at' => now()],
-            ['reservation_id' => $reservation->id, 'label' => 'Taxes', 'amount' => $taxes, 'currency' => 'XOF', 'created_at' => now(), 'updated_at' => now()],
-        ];
-
-        foreach ($selectedFeatures as $feature) {
-            $priceLines[] = [
+        $priceLines = array_map(function (array $line) use ($reservation): array {
+            return array_merge($line, [
                 'reservation_id' => $reservation->id,
-                'label' => 'Option: ' . $feature->name,
-                'amount' => (float) $feature->cost_xof,
-                'currency' => 'XOF',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
-        }
+            ]);
+        }, $pricing['price_lines']);
 
         ReservationPriceLine::query()->insert($priceLines);
 
