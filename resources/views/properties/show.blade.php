@@ -270,6 +270,18 @@
                                 </p>
                             @endif
 
+                            @if ($property->establishment?->electricity_billed_separately)
+                                <p class="cancellation-policy-note electricity-policy-note">
+                                    ⚡ {{ $property->establishment->electricity_policy_note ?: __('messages.properties.electricity_note') }}
+                                </p>
+                            @endif
+
+                            @if ($property->establishment?->electricity_billed_separately)
+                                <p class="cancellation-policy-note electricity-policy-note">
+                                    ⚡ {{ $property->establishment->electricity_policy_note ?: __('messages.properties.electricity_note') }}
+                                </p>
+                            @endif
+
                             <div class="form-actions">
                                 <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
                                 <p class="form-help" data-availability-result role="status" aria-live="polite"></p>
