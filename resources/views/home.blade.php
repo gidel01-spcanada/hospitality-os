@@ -216,7 +216,7 @@
                             <div class="property-copy">
                                 <div class="meta-row">
                                     <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
-                                    <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} XOF / nuit</strong>
+                                    <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
                                 </div>
                                 <h3>{{ $property->localized('summary') ?: $property->localized('name') }}</h3>
                                 <p>{{ $property->max_guests }} voyageurs · {{ $property->bedrooms }} chambre(s) · {{ $property->bathrooms }} salle(s) de bain</p>

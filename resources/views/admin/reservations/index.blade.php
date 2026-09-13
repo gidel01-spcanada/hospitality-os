@@ -23,7 +23,7 @@
                             <td>{{ $reservation->property?->name ?? '—' }}</td>
                             <td>{{ $reservation->guest?->full_name ?? $reservation->email }}</td>
                             <td>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</td>
-                            <td>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} XOF</td>
+                            <td>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</td>
                             <td><x-badge variant="warning" size="sm">{{ __('messages.admin.status_' . $reservation->status) }}</x-badge></td>
                             <td><a class="inline-link" href="{{ route('admin.reservations.show', $reservation) }}">{{ __('messages.admin.view') }}</a>
                             </td>

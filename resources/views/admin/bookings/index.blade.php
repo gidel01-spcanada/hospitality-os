@@ -86,7 +86,7 @@
                     <td>{{ $booking->check_in->translatedFormat('d M Y') }}</td>
                     <td>{{ $booking->check_out->translatedFormat('d M Y') }}</td>
                     <td class="text-center">{{ $booking->check_out->diffInDays($booking->check_in) }}</td>
-                    <td class="font-semibold">{{ $booking->total_amount !== null ? number_format((float) $booking->total_amount, 2) . ' ' . ($booking->currency ?: 'XOF') : __('messages.common.to_be_announced') }}</td>
+                    <td class="font-semibold">{{ $booking->total_amount !== null ? number_format((float) $booking->total_amount, 2) . ' ' . ($booking->currency ?: $booking->property?->currency ?? 'XOF') : __('messages.common.to_be_announced') }}</td>
                     <td>
                         @php
                             $statusColors = [

@@ -54,6 +54,7 @@ class AdminEstablishmentController extends Controller
         $validated['electricity_billed_separately'] = $request->boolean('electricity_billed_separately');
         $validated['electricity_policy_note'] = $validated['electricity_policy_note'] ?? null;
         $establishment = Establishment::create($validated);
+        $establishment->properties()->update(['currency' => $establishment->currency]);
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
         return redirect()->route('admin.establishments.index')->with('success', __('messages.flash.establishment_created'));
@@ -78,6 +79,7 @@ class AdminEstablishmentController extends Controller
         $validated['electricity_billed_separately'] = $request->has('electricity_billed_separately') || $request->has('vat_percent') ? $request->boolean('electricity_billed_separately') : (bool) $establishment->electricity_billed_separately;
         $validated['electricity_policy_note'] = $request->has('electricity_policy_note') ? ($validated['electricity_policy_note'] ?? null) : $establishment->electricity_policy_note;
         $establishment->fill($validated)->save();
+        $establishment->properties()->update(['currency' => $establishment->currency]);
         $this->saveTranslations($establishment, $validated['translations'] ?? []);
 
         return redirect()->to(route('admin.establishments.edit', $establishment) . '#' . $this->activeTab($request))

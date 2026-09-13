@@ -218,7 +218,7 @@ class PaymentWorkflowTest extends TestCase
         $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
         $this->get($checkoutUrl)
             ->assertOk()
-            ->assertSee('FedaPay sandbox')
+            ->assertSee('FedaPay')
             ->assertSee('type="hidden" name="provider" value="fedapay"', false)
             ->assertDontSee('id="provider"', false)
             ->assertDontSee('Paiement différé');

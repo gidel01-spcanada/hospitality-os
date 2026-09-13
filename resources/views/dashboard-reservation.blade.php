@@ -113,7 +113,7 @@
             <h2>{{ __('messages.reservation.amounts') }}</h2>
             <ul>
                 @foreach($reservation->priceLines as $line)
-                    <li><strong>{{ $line->label }}</strong><span>{{ number_format((float) $line->amount, 0, ',', ' ') }} XOF</span></li>
+                                    <li><strong>{{ $line->label }}</strong><span>{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency ?: $reservation->currency }}</span></li>
                 @endforeach
             </ul>
         </div>
