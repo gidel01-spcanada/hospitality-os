@@ -49,7 +49,7 @@
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.admin.total') }}</dt>
-                        <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} XOF</dd>
+                        <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</dd>
                     </div>
                 </dl>
 
@@ -59,7 +59,7 @@
                         @foreach($reservation->priceLines as $line)
                             <li>
                                 <span>{{ $line->label }}</span>
-                                <span>{{ number_format((float) $line->amount, 0, ',', ' ') }} XOF</span>
+                                <span>{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency ?: $reservation->currency }}</span>
                             </li>
                         @endforeach
                     </ul>

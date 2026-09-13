@@ -157,7 +157,7 @@
                         <div class="price-summary">
                             <div class="price-row">
                                 <span class="price-label">{{ __('messages.properties.from') }}</span>
-                                <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' ')]) }}</strong>
+                                <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
                             </div>
                             <div class="price-row muted-row">
                                 <span>≈</span>
@@ -244,7 +244,7 @@
                                                     <span>{{ $feature->description }}</span>
                                                 @endif
                                             </div>
-                                            <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} XOF</em>
+                                            <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} {{ $property->currency }}</em>
                                         </label>
                                     @endforeach
                                 </div>
@@ -334,7 +334,7 @@
                                             <span>{{ $feature->description }}</span>
                                         @endif
                                     </div>
-                                    <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} XOF</em>
+                                    <em>{{ number_format((float) $feature->cost_xof, 0, ',', ' ') }} {{ $property->currency }}</em>
                                 </li>
                             @endforeach
                         </ul>

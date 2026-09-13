@@ -157,6 +157,27 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertEquals(131800, $pricing['total_amount']);
     }
 
+    public function test_establishment_currency_change_propagates_to_existing_properties(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+        $property = $establishment->properties()->firstOrFail();
+
+        $this->actingAs($admin)
+            ->put('/admin/establishments/' . $establishment->id, [
+                'name' => $establishment->name,
+                'slug' => $establishment->slug,
+                'country_code' => $establishment->country_code,
+                'currency' => 'XAF',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('XAF', $establishment->fresh()->currency);
+        $this->assertSame('XAF', $property->fresh()->currency);
+    }
+
     public function test_customer_can_select_property_feature_addons_during_booking(): void
     {
         $this->seed(DatabaseSeeder::class);

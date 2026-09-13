@@ -55,8 +55,8 @@ class AdminPropertyController extends Controller
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
         $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
+        $validated['currency'] = Establishment::query()->findOrFail($validated['establishment_id'])->currency;
         $property = Property::query()->create($validated + [
-            'currency' => 'XOF',
             'is_published' => $validated['status'] === 'published',
         ]);
         $property->amenities()->sync($amenityIds);

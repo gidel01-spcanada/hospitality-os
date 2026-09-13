@@ -116,7 +116,7 @@ class CheckoutController extends Controller
             'mpesa' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
         ];
 
-        return collect($defaults)->mapWithKeys(function (array $default, string $provider) use ($configured) {
+        return collect($defaults)->mapWithKeys(function (array $default, string $provider) use ($configured, $reservation) {
             $method = array_merge($default, $configured[$provider] ?? []);
 
             if (! $method['enabled']) {
@@ -124,6 +124,10 @@ class CheckoutController extends Controller
             }
 
             if ($provider === 'mpesa' && $reservation->currency !== 'KES') {
+                return [];
+            }
+
+            if ($provider === 'fedapay' && $reservation->currency !== 'XOF') {
                 return [];
             }
 
