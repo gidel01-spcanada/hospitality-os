@@ -644,6 +644,7 @@ return [
     'home.departure' => 'Départ',
     'home.dates' => 'Dates du séjour',
     'home.select_dates' => 'Choisir les dates',
+    'home.select_both_dates' => 'Sélectionnez une date d’arrivée et une date de départ.',
     'home.travelers' => 'Voyageurs',
     'home.search' => 'Rechercher',
     'home.why_us' => 'Pourquoi nous',

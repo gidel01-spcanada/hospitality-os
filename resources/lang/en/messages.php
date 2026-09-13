@@ -644,6 +644,7 @@ return [
     'home.departure' => 'Check-out',
     'home.dates' => 'Stay dates',
     'home.select_dates' => 'Select dates',
+    'home.select_both_dates' => 'Select both an arrival and a departure date.',
     'home.travelers' => 'Travelers',
     'home.search' => 'Search',
     'home.why_us' => 'Why us',

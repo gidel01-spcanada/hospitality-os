@@ -538,6 +538,11 @@ button, input, select {
     outline-offset: 1px;
 }
 
+.date-range-trigger[aria-invalid="true"] {
+    border-color: #b42318;
+    color: #b42318;
+}
+
 .date-range-popover {
     position: absolute;
     top: calc(100% + 0.5rem);
