@@ -186,7 +186,7 @@
                             </div>
                         @endif
 
-                        <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}">
+                        <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}" data-availability-minimum-stay="{{ __('messages.properties.minimum_stay_error', ['nights' => $property->minimum_stay]) }}">
                             @csrf
                             @if (! auth()->check() || auth()->user()->role !== 'customer')
                                 <div class="input-group">
@@ -278,6 +278,7 @@
                             @endif
 
                             <div class="form-actions">
+                                @include('partials.recaptcha')
                                 <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
                                 <p class="form-help" data-availability-result role="status" aria-live="polite"></p>
                                 <button type="submit" class="btn btn-primary btn-full">{{ __('messages.properties.request_reservation') }}</button>
@@ -312,6 +313,12 @@
                         <div class="stat-item"><span>{{ __('messages.properties.bedrooms_count') }}</span><strong>{{ $property->bedrooms }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.bathrooms') }}</span><strong>{{ $property->bathrooms }}</strong></div>
                         <div class="stat-item"><span>{{ __('messages.properties.beds') }}</span><strong>{{ $property->beds }}</strong></div>
+                        @if ($property->area !== null)
+                            <div class="stat-item"><span>{{ __('messages.properties.area') }}</span><strong>{{ number_format((float) $property->area, 2, ',', ' ') }} {{ $property->area_unit === 'ft2' ? 'ft²' : 'm²' }}</strong></div>
+                        @endif
+                        @if ($property->property_type === 'apartment' && $property->floor !== null)
+                            <div class="stat-item"><span>{{ __('messages.properties.floor') }}</span><strong>{{ $property->floor }}</strong></div>
+                        @endif
                     </div>
 
                     @if ($property->amenities->isNotEmpty())

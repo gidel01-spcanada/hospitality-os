@@ -124,6 +124,9 @@ class AdminEstablishmentController extends Controller
             'payment_methods.*.enabled' => ['nullable', 'boolean'],
             'payment_methods.*.mode' => ['nullable', 'in:sandbox,production'],
             'payment_methods.*.instructions' => ['nullable', 'string', 'max:500'],
+            'payment_methods.*.email' => ['nullable', 'email', 'max:255'],
+            'payment_methods.*.security_question' => ['nullable', 'string', 'max:255'],
+            'payment_methods.*.security_answer' => ['nullable', 'string', 'max:255'],
             'cancellation_fee_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'cancellation_fee_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'vat_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -194,7 +197,7 @@ class AdminEstablishmentController extends Controller
 
     private function normalizePaymentMethods(array $methods): array
     {
-        return collect(['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa'])->mapWithKeys(function (string $provider) use ($methods) {
+        return collect(['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa', 'interac', 'wise', 'revolut'])->mapWithKeys(function (string $provider) use ($methods) {
             $method = $methods[$provider] ?? [];
             $enabled = filter_var($method['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $mode = $method['mode'] ?? 'sandbox';
@@ -209,6 +212,9 @@ class AdminEstablishmentController extends Controller
                 'enabled' => $enabled,
                 'mode' => $mode,
                 'instructions' => trim((string) ($method['instructions'] ?? '')),
+                'email' => trim((string) ($method['email'] ?? '')),
+                'security_question' => trim((string) ($method['security_question'] ?? '')),
+                'security_answer' => trim((string) ($method['security_answer'] ?? '')),
             ]];
         })->all();
     }

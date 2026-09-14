@@ -6,6 +6,9 @@
     <div class="admin-page-header">
         <h1 class="admin-page-title">{{ $property->name }}</h1>
         <p class="admin-page-description">{{ __('messages.admin.editor_description') }}</p>
+        <div class="admin-page-actions">
+            <a class="btn btn-primary" href="{{ route('admin.reservations.create', ['property_id' => $property->id]) }}">{{ __('messages.admin.create_reservation_for_property') }}</a>
+        </div>
     </div>
 
     <x-card>
@@ -37,6 +40,9 @@
                             <label><span>{{ __('messages.admin.bedrooms') }}</span><input type="number" name="bedrooms" min="0" value="{{ old('bedrooms', $property->bedrooms) }}" required></label>
                             <label><span>{{ __('messages.admin.bathrooms') }}</span><input type="number" name="bathrooms" min="0" value="{{ old('bathrooms', $property->bathrooms) }}" required></label>
                             <label><span>{{ __('messages.admin.beds') }}</span><input type="number" name="beds" min="0" value="{{ old('beds', $property->beds) }}" required></label>
+                            <label><span>{{ __('messages.admin.area') }}</span><input type="number" step="0.01" min="0" name="area" value="{{ old('area', $property->area) }}"></label>
+                            <label><span>{{ __('messages.admin.area_unit') }}</span><select name="area_unit"><option value="m2" @selected(old('area_unit', $property->area_unit ?: 'm2') === 'm2')>m²</option><option value="ft2" @selected(old('area_unit', $property->area_unit) === 'ft2')>ft²</option></select></label>
+                            <label><span>{{ __('messages.admin.floor') }}</span><input type="number" name="floor" min="0" max="200" value="{{ old('floor', $property->floor) }}"></label>
                             <label><span>{{ __('messages.admin.status') }}</span><select name="status"><option value="draft" @selected(old('status', $property->status) === 'draft')>{{ __('messages.admin.draft') }}</option><option value="published" @selected(old('status', $property->status) === 'published')>{{ __('messages.admin.published') }}</option><option value="archived" @selected(old('status', $property->status) === 'archived')>{{ __('messages.admin.archived') }}</option></select></label>
                             <label class="checkbox-field"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $property->is_active ?? true))><span>{{ __('messages.admin.property_active') }}</span></label>
                         </div>

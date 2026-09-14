@@ -259,6 +259,9 @@ document.querySelectorAll('[data-check-availability]').forEach((button) => {
 		const payload = new FormData();
 		payload.append('check_in', form.elements.check_in.value);
 		payload.append('check_out', form.elements.check_out.value);
+		payload.append('adults', form.elements.adults?.value || '1');
+		payload.append('children', form.elements.children?.value || '0');
+		form.querySelectorAll('input[name="selected_features[]"]:checked').forEach((feature) => payload.append('selected_features[]', feature.value));
 		button.disabled = true;
 		result.textContent = '';
 
@@ -272,7 +275,7 @@ document.querySelectorAll('[data-check-availability]').forEach((button) => {
 				throw new Error('Availability request failed');
 			}
 			const data = await response.json();
-			result.textContent = data.available ? form.dataset.availabilityAvailable : form.dataset.availabilityUnavailable;
+			result.textContent = data.reason === 'minimum_stay' ? form.dataset.availabilityMinimumStay : (data.available ? (data.message || form.dataset.availabilityAvailable) : form.dataset.availabilityUnavailable);
 		} catch {
 			result.textContent = form.dataset.availabilityUnavailable;
 		} finally {
@@ -423,6 +426,19 @@ document.querySelectorAll('[data-copy-payment-link]').forEach((button) => {
 				status.hidden = false;
 			}
 		}
+	});
+});
+
+document.querySelectorAll('[data-copy-text]').forEach((button) => {
+	button.addEventListener('click', async () => {
+		const originalLabel = button.textContent;
+		try {
+			await navigator.clipboard.writeText(button.dataset.copyText ?? '');
+			button.textContent = 'OK';
+		} catch {
+			button.textContent = '—';
+		}
+		window.setTimeout(() => { button.textContent = originalLabel; }, 1600);
 	});
 });
 

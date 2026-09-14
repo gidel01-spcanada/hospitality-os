@@ -44,6 +44,9 @@
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.reservation.total') }}</dt>
                         <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</dd>
+                        @if ($reservation->property?->establishment?->secondary_currency && $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount) !== null)
+                            <dd class="mt-1 text-sm text-slate-500">≈ {{ number_format($reservation->property->establishment->secondaryDisplayAmount((float) $reservation->total_amount), 2, ',', ' ') }} {{ $reservation->property->establishment->secondary_currency }}</dd>
+                        @endif
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.client') }}</dt>
@@ -69,7 +72,20 @@
                     <h3 class="text-lg font-semibold">{{ __('messages.checkout.methods') }}</h3>
                     <ul class="mt-3 space-y-2 text-sm text-slate-700">
                         @foreach ($paymentMethods as $provider => $method)
-                            <li>• {{ __('messages.checkout.' . $provider) }}@if ($method['instructions']) — {{ $method['instructions'] }}@endif</li>
+                            <li>• {{ __('messages.checkout.' . $provider) }}@if ($method['instructions']) — {{ $method['instructions'] }}@endif
+                                @if (in_array($provider, ['interac', 'wise', 'revolut'], true))
+                                    @php
+                                        $internationalAmount = $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount);
+                                        $interacAmount = app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $reservation->property?->establishment?->secondary_currency);
+                                    @endphp
+                                    @if ($interacAmount !== null)
+                                        <div class="ml-4 mt-1 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($interacAmount, 2, ',', ' '), 'currency' => $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($interacAmount, 2, '.', '') }} {{ $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency }}">{{ __('messages.checkout.copy') }}</button></div>
+                                    @endif
+                                    @if (!empty($method['email']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_email', ['email' => $method['email']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['email'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
+                                    @if ($provider === 'interac' && !empty($method['security_question']))<div class="ml-4 text-xs">{{ __('messages.checkout.interac_question', ['question' => $method['security_question']]) }}</div>@endif
+                                    @if ($provider === 'interac' && !empty($method['security_answer']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.interac_answer', ['answer' => $method['security_answer']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['security_answer'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
+                                @endif
+                            </li>
                         @endforeach
                     </ul>
                 </div>
@@ -81,7 +97,7 @@
                         $nonPaypalMethods = collect($paymentMethods)->except('paypal')->all();
                         $cancellationFeePercent = (float) ($reservation->property?->establishment?->cancellation_fee_percent ?? 0);
                         $cancellationFeeHoldAmount = $reservation->property?->establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
-                        $onlineMethods = collect($paymentMethods)->except('pay_later')->all();
+                        $onlineMethods = collect($paymentMethods)->except(['pay_later', 'interac'])->all();
                     @endphp
 
                     @if (isset($paymentMethods['pay_later']) && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && count($onlineMethods) > 0)
@@ -172,7 +188,7 @@
                             {{ __('messages.checkout.simulate') }}
                         </button>
                     </form>
-                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt?->provider === 'pay_later' && ! $isDevEnvironment)
+                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && in_array($latestAttempt?->provider, ['pay_later', 'interac'], true) && ! $isDevEnvironment)
                     <p class="mt-6 text-center text-sm text-slate-500">{{ __('messages.checkout.simulate_unavailable') }}</p>
                 @endif
 
@@ -197,7 +213,13 @@
     @if (isset($paymentMethods['paypal']) && $reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
         @php
             $paypalClientId = config('services.paypal.client_id') ?: 'test';
-            $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
+            $supportedPaypalCurrencies = ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'];
+            $paypalCurrency = in_array($reservation->currency, $supportedPaypalCurrencies, true)
+                ? $reservation->currency
+                : ($reservation->property?->establishment?->secondary_currency ?? 'EUR');
+            if (! in_array($paypalCurrency, $supportedPaypalCurrencies, true)) {
+                $paypalCurrency = 'EUR';
+            }
         @endphp
         <script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency={{ $paypalCurrency }}&components=buttons,funding-eligibility"></script>
         <script>

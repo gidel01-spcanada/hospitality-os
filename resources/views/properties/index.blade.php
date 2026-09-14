@@ -64,11 +64,11 @@
 
                         <div class="filter-group">
                             <div class="filter-field">
-                                <label for="min_price">{{ __('messages.properties.min_price') }}</label>
+                                <label for="min_price">{{ __('messages.properties.min_price', ['currency' => $filterCurrency]) }}</label>
                                 <input id="min_price" name="min_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['min_price'] ?? '' }}">
                             </div>
                             <div class="filter-field">
-                                <label for="max_price">{{ __('messages.properties.max_price') }}</label>
+                                <label for="max_price">{{ __('messages.properties.max_price', ['currency' => $filterCurrency]) }}</label>
                                 <input id="max_price" name="max_price" type="number" min="0" step="1000" inputmode="numeric" value="{{ $filters['max_price'] ?? '' }}">
                             </div>
                         </div>

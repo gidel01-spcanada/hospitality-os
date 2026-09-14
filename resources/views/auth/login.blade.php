@@ -32,6 +32,8 @@
                     <input type="password" name="password" autocomplete="current-password" required>
                 </label>
 
+                @include('partials.recaptcha')
+
                 <a class="inline-link" href="{{ route('password.request') }}">{{ __('messages.auth.forgot_password') }}</a>
 
                 <label class="checkbox-row" for="remember">

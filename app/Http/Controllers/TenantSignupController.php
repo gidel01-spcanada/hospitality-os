@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class TenantSignupController extends Controller
 {
@@ -21,7 +22,7 @@ class TenantSignupController extends Controller
         return view('auth.host-register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, \App\Services\GoogleRecaptchaVerifier $recaptcha): RedirectResponse
     {
         abort_unless(config('platform.mode') === 'cloud', 404);
 
@@ -32,7 +33,11 @@ class TenantSignupController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'locale' => ['sometimes', 'in:fr,en'],
+            'g-recaptcha-response' => ['nullable', 'string'],
         ]);
+        if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
+            throw ValidationException::withMessages(['email' => __('messages.security.captcha_failed')]);
+        }
 
         $locale = $validated['locale'] ?? session('locale', config('app.locale'));
 

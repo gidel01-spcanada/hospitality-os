@@ -50,6 +50,8 @@
                     <input type="password" name="password_confirmation" autocomplete="new-password" required>
                 </label>
 
+                @include('partials.recaptcha')
+
                 <button class="btn btn-primary auth-submit" type="submit">{{ __('messages.auth.create_account') }}</button>
             </form>
 

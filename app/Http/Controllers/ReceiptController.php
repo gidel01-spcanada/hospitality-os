@@ -20,15 +20,24 @@ class ReceiptController extends Controller
             'provider_reference' => ['nullable', 'string', 'max:120'],
         ]);
 
-        $attempt = $reservation->paymentAttempts()->create([
-            'provider' => 'offline',
-            'provider_reference' => $validated['provider_reference'] ?? 'offline-' . Str::lower(Str::random(12)),
-            'currency' => $reservation->currency,
-            'amount' => $reservation->total_amount,
-            'status' => 'paid',
-            'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
-            'payload' => ['confirmed_by' => auth()->id()],
-        ]);
+        $attempt = $reservation->paymentAttempts()->whereIn('provider', ['interac', 'wise', 'revolut'])->latest()->first();
+        if ($attempt) {
+            $attempt->update([
+                'provider_reference' => $validated['provider_reference'] ?: $attempt->provider_reference,
+                'status' => 'paid',
+                'payload' => array_merge((array) $attempt->payload, ['confirmed_by' => auth()->id(), 'confirmed_at' => now()->toIso8601String()]),
+            ]);
+        } else {
+            $attempt = $reservation->paymentAttempts()->create([
+                'provider' => 'offline',
+                'provider_reference' => $validated['provider_reference'] ?? 'offline-' . Str::lower(Str::random(12)),
+                'currency' => $reservation->currency,
+                'amount' => $reservation->total_amount,
+                'status' => 'paid',
+                'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'payload' => ['confirmed_by' => auth()->id()],
+            ]);
+        }
 
         $reservation->update([
             'status' => 'confirmed',

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
@@ -84,8 +85,10 @@ class PublicPropertyController extends Controller
 
         $establishments = Establishment::query()->where('is_active', true)->with('translations')->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
+        $selectedEstablishment = $establishments->firstWhere('id', $filters['establishment'] ?? null);
+        $filterCurrency = $selectedEstablishment?->currency ?: ($properties->first()?->currency ?: 'XOF');
 
-        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds'));
+        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds', 'filterCurrency'));
     }
 
     public function show(Property $property): View
@@ -105,7 +108,7 @@ class PublicPropertyController extends Controller
         return view('properties.show', compact('property', 'reviews', 'reviewStats'));
     }
 
-    public function resume(Request $request, ReservationEmailService $emailService): RedirectResponse
+    public function resume(Request $request, AvailabilityService $availabilityService, ReservationEmailService $emailService, \App\Services\GoogleRecaptchaVerifier $recaptcha): RedirectResponse
     {
         $pending = $request->session()->pull('pending_public_reservation');
         abort_unless(is_array($pending) && ! empty($pending['property_id']), 404);
@@ -114,7 +117,7 @@ class PublicPropertyController extends Controller
         abort_unless($property->status === 'published' && $property->is_active && $property->establishment?->is_active, 404);
         $request->merge($pending['data'] ?? []);
 
-        return $this->reserve($request, $property, $emailService);
+        return $this->reserve($request, $property, $availabilityService, $emailService, $recaptcha);
     }
 
     public function availability(Request $request, Property $property, AvailabilityService $availabilityService)
@@ -124,14 +127,45 @@ class PublicPropertyController extends Controller
         $validated = $request->validate([
             'check_in' => ['required', 'date', 'after_or_equal:today'],
             'check_out' => ['required', 'date', 'after:check_in'],
+            'adults' => ['nullable', 'integer', 'min:1', 'max:8'],
+            'children' => ['nullable', 'integer', 'min:0', 'max:8'],
+            'selected_features' => ['nullable', 'array'],
+            'selected_features.*' => ['integer', Rule::exists('property_features', 'id')->where(fn ($query) => $query->where('property_id', $property->id)->where('is_active', true))],
         ]);
 
+        $checkIn = Carbon::parse($validated['check_in']);
+        $checkOut = Carbon::parse($validated['check_out']);
+        $nights = $checkIn->diffInDays($checkOut);
+        if ($nights < max(1, (int) $property->minimum_stay)) {
+            return response()->json([
+                'available' => false,
+                'reason' => 'minimum_stay',
+                'minimum_stay' => (int) $property->minimum_stay,
+            ]);
+        }
+
+        $selectedFeatures = $property->features()->whereIn('id', $validated['selected_features'] ?? [])->where('is_active', true)->get();
+        $pricing = PricingCalculator::calculate(
+            $property,
+            $checkIn,
+            $checkOut,
+            (int) ($validated['adults'] ?? 1),
+            (int) ($validated['children'] ?? 0),
+            $selectedFeatures
+        );
+
         return response()->json([
-            'available' => $availabilityService->isAvailable($property, Carbon::parse($validated['check_in']), Carbon::parse($validated['check_out'])),
+            'available' => $availabilityService->isAvailable($property, $checkIn, $checkOut),
+            'estimated_total' => $pricing['total_amount'],
+            'currency' => $pricing['currency'],
+            'message' => __('messages.properties.availability_available_amount', [
+                'amount' => number_format($pricing['total_amount'], 0, ',', ' '),
+                'currency' => $pricing['currency'],
+            ]),
         ]);
     }
 
-    public function reserve(Request $request, Property $property, ReservationEmailService $emailService): RedirectResponse
+    public function reserve(Request $request, Property $property, AvailabilityService $availabilityService, ReservationEmailService $emailService, \App\Services\GoogleRecaptchaVerifier $recaptcha): RedirectResponse
     {
         $authenticatedUser = $request->user()?->role === 'customer' ? $request->user() : null;
         $validated = $request->validate([
@@ -147,10 +181,28 @@ class PublicPropertyController extends Controller
             'selected_features' => ['nullable', 'array'],
             'selected_features.*' => ['integer', Rule::exists('property_features', 'id')->where(fn ($query) => $query->where('property_id', $property->id)->where('is_active', true))],
             'create_account' => ['sometimes', 'boolean'],
+            'g-recaptcha-response' => ['nullable', 'string'],
         ], [
             'check_in.after_or_equal' => 'La date d’arrivée doit être aujourd’hui ou plus tard.',
             'check_out.after' => 'La date de départ doit être après la date d’arrivée.',
         ]);
+
+        if (! $authenticatedUser && ! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
+            throw ValidationException::withMessages(['email' => __('messages.security.captcha_failed')]);
+        }
+
+        $checkIn = Carbon::parse($validated['check_in']);
+        $checkOut = Carbon::parse($validated['check_out']);
+        if ($checkIn->diffInDays($checkOut) < max(1, (int) $property->minimum_stay)) {
+            return back()->withInput()->withErrors([
+                'check_in' => __('messages.properties.minimum_stay_error', ['nights' => (int) $property->minimum_stay]),
+            ]);
+        }
+        if (! $availabilityService->isAvailable($property, $checkIn, $checkOut)) {
+            return back()->withInput()->withErrors([
+                'check_in' => __('messages.properties.availability_unavailable'),
+            ]);
+        }
 
         if ($authenticatedUser) {
             $validated['full_name'] = $authenticatedUser->name;
@@ -193,11 +245,11 @@ class PublicPropertyController extends Controller
                 'data' => $validated,
             ]);
 
-            return redirect()->route('login')->with('status', __('messages.auth.existing_account_login'));
+            return redirect()->route('login')
+                ->withInput(['email' => $email])
+                ->with('status', __('messages.auth.existing_account_login'));
         }
 
-        $checkIn = Carbon::parse($validated['check_in']);
-        $checkOut = Carbon::parse($validated['check_out']);
         $selectedFeatures = $property->features()->whereIn('id', $validated['selected_features'] ?? [])->where('is_active', true)->get();
 
         $pricing = PricingCalculator::calculate(
