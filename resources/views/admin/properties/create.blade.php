@@ -41,6 +41,15 @@
             <x-input name="bedrooms" label="{{ __('messages.admin.bedrooms') }}" type="number" min="0" required value="{{ old('bedrooms', 0) }}" />
             <x-input name="bathrooms" label="{{ __('messages.admin.bathrooms') }}" type="number" min="0" required value="{{ old('bathrooms', 0) }}" />
             <x-input name="beds" label="{{ __('messages.admin.beds') }}" type="number" min="0" required value="{{ old('beds', 0) }}" />
+            <x-input name="area" label="{{ __('messages.admin.area') }}" type="number" min="0" step="0.01" value="{{ old('area') }}" />
+            <div>
+                <label for="area_unit">{{ __('messages.admin.area_unit') }}</label>
+                <select id="area_unit" name="area_unit" class="input-md">
+                    <option value="m2" @selected(old('area_unit', 'm2') === 'm2')>m²</option>
+                    <option value="ft2" @selected(old('area_unit') === 'ft2')>ft²</option>
+                </select>
+            </div>
+            <x-input name="floor" label="{{ __('messages.admin.floor') }}" type="number" min="0" max="200" value="{{ old('floor') }}" />
             <div>
                 <label for="status">{{ __('messages.admin.status') }} <span class="required">*</span></label>
                 <select id="status" name="status" class="input-md" required>

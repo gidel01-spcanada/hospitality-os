@@ -88,6 +88,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
         Route::post('/admin/reservations/{reservation}/payment-link', [AdminReservationController::class, 'sendPaymentLink'])->name('admin.reservations.payment-link.send');
+        Route::post('/admin/reservations/{reservation}/payment-proof', [AdminReservationController::class, 'uploadPaymentProof'])->name('admin.reservations.payment-proof.upload');
         Route::post('/admin/reservations/{reservation}/confirm-offline-payment', [\App\Http\Controllers\ReceiptController::class, 'confirmOfflinePayment'])->name('admin.reservations.confirm-offline-payment');
         Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');

@@ -15,14 +15,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 class AdminReservationController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        $propertyId = $request->integer('property_id');
+        $property = $propertyId ? $this->ownedProperty($propertyId) : null;
+
         return view('admin.reservations.form', [
-            'reservation' => new Reservation(['adults' => 1, 'children' => 0, 'infants' => 0]),
+            'reservation' => new Reservation(['property_id' => $property?->id, 'adults' => 1, 'children' => 0, 'infants' => 0]),
             'properties' => $this->tenantProperties(),
         ]);
     }
@@ -129,6 +134,53 @@ class AdminReservationController extends Controller
         return view('admin.reservations.show', compact('reservation'));
     }
 
+    public function uploadPaymentProof(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        $validated = $request->validate([
+            'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+        ]);
+
+        /** @var UploadedFile $file */
+        $file = $validated['payment_proof'];
+        $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'reservations' . DIRECTORY_SEPARATOR . $reservation->id;
+        File::ensureDirectoryExists($directory);
+
+        $attempt = $reservation->paymentAttempts()->latest()->first();
+        if (! $attempt) {
+            $attempt = $reservation->paymentAttempts()->create([
+                'provider' => 'offline',
+                'provider_reference' => 'offline-' . Str::lower(Str::random(12)),
+                'currency' => $reservation->currency,
+                'amount' => $reservation->total_amount,
+                'status' => 'created',
+                'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'payload' => [],
+            ]);
+        }
+
+        $oldPath = data_get($attempt->payload, 'payment_proof.path');
+        if ($oldPath && File::exists(public_path($oldPath))) {
+            File::delete(public_path($oldPath));
+        }
+
+        $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . strtolower($file->getClientOriginalExtension());
+        $file->move($directory, $filename);
+        $relativePath = 'uploads/reservations/' . $reservation->id . '/' . $filename;
+        $attempt->update([
+            'payload' => array_merge((array) $attempt->payload, [
+                'payment_proof' => [
+                    'path' => $relativePath,
+                    'original_name' => $file->getClientOriginalName(),
+                    'uploaded_by' => auth()->id(),
+                    'uploaded_at' => now()->toIso8601String(),
+                ],
+            ]),
+        ]);
+
+        return back()->with('status', __('messages.receipts.proof_uploaded'));
+    }
+
     public function updateStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
     {
         $validated = $request->validate([
@@ -180,6 +232,13 @@ class AdminReservationController extends Controller
             ->whereKey($propertyId)
             ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
             ->firstOrFail();
+    }
+
+    private function ownedReservation(Reservation $reservation): Reservation
+    {
+        abort_unless($reservation->property?->establishment?->tenant_id === app(CurrentTenant::class)->id(), 404);
+
+        return $reservation;
     }
 
     private function validateReservation(Request $request, ?Reservation $reservation = null): array

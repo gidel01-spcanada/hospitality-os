@@ -102,6 +102,22 @@
                 @endif
 
                 <div class="payment-link-actions" style="margin-top: 1rem;">
+                    @php
+                        $latestPaymentAttempt = $reservation->paymentAttempts->sortByDesc('created_at')->first();
+                        $paymentProof = data_get($latestPaymentAttempt?->payload, 'payment_proof');
+                    @endphp
+                    <form action="{{ route('admin.reservations.payment-proof.upload', $reservation) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <label for="payment_proof">{{ __('messages.receipts.payment_proof') }}</label>
+                        <input id="payment_proof" name="payment_proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required>
+                        <button type="submit" class="btn btn-ghost btn-full">{{ __('messages.receipts.upload_proof') }}</button>
+                    </form>
+                    @if ($paymentProof && data_get($paymentProof, 'path'))
+                        <p class="form-help"><a class="inline-link" href="{{ asset(data_get($paymentProof, 'path')) }}" target="_blank" rel="noopener">{{ __('messages.receipts.view_proof') }}</a></p>
+                    @endif
+                </div>
+
+                <div class="payment-link-actions" style="margin-top: 1rem;">
                     <form action="{{ route('admin.reservations.confirm-offline-payment', $reservation) }}" method="POST">
                         @csrf
                         <input name="provider_reference" type="text" placeholder="{{ __('messages.receipts.reference_placeholder') }}">

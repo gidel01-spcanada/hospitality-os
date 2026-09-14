@@ -314,19 +314,19 @@ class PublicPropertyBookingTest extends TestCase
 
         $this->postJson('/properties/' . $property->slug . '/availability', [
             'check_in' => '2031-12-11',
-            'check_out' => '2031-12-12',
+            'check_out' => '2031-12-13',
         ])->assertOk()->assertJson(['available' => false]);
 
         $this->postJson('/properties/' . $property->slug . '/availability', [
             'check_in' => '2031-12-13',
-            'check_out' => '2031-12-14',
+            'check_out' => '2031-12-15',
         ])->assertOk()->assertJson(['available' => true]);
 
         $feed->update(['is_enabled' => false]);
 
         $this->postJson('/properties/' . $property->slug . '/availability', [
             'check_in' => '2031-12-11',
-            'check_out' => '2031-12-12',
+            'check_out' => '2031-12-13',
         ])->assertOk()->assertJson(['available' => true]);
     }
 

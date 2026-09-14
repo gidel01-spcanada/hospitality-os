@@ -12,7 +12,7 @@ class AvailabilityService
 {
     public function isAvailable(Property $property, Carbon $checkIn, Carbon $checkOut, ?int $ignoreReservationId = null): bool
     {
-        if ($checkOut->lte($checkIn)) {
+        if ($checkOut->lte($checkIn) || $checkIn->diffInDays($checkOut) < max(1, (int) $property->minimum_stay)) {
             return false;
         }
 

@@ -5,7 +5,6 @@ namespace App\Services\Payments;
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentAttempt;
 use App\Models\Reservation;
-use App\Support\BrandSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -18,10 +17,9 @@ class PayPalSandboxGateway implements PaymentGateway
 
     public function createIntent(Reservation $reservation, array $context = []): PaymentAttempt
     {
-        $xofPerEur = (float) BrandSettings::get('eur_to_xof_rate', 655.957);
         $rawAmount = $context['amount'] ?? $reservation->total_amount;
-        $paypalCurrency = in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR';
-        $paypalAmount = $reservation->currency === 'XOF' ? round((float) $rawAmount / $xofPerEur, 2) : (float) $rawAmount;
+        $paypalCurrency = $context['currency'] ?? (in_array($reservation->currency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true) ? $reservation->currency : 'EUR');
+        $paypalAmount = (float) $rawAmount;
         $isGuarantee = (bool) ($context['is_guarantee'] ?? false);
 
         return PaymentAttempt::query()->create([

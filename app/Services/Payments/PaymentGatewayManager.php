@@ -17,6 +17,9 @@ class PaymentGatewayManager
             'paypal' => $mode === 'production' ? app(PayPalLiveGateway::class) : app(PayPalSandboxGateway::class),
             'cinetpay' => $mode === 'production' ? app(CinetPayLiveGateway::class) : app(CinetPaySandboxGateway::class),
             'mpesa' => $mode === 'production' ? app(MpesaLiveGateway::class) : app(MpesaSandboxGateway::class),
+            'interac' => app(InteracGateway::class),
+            'wise' => app(WiseGateway::class),
+            'revolut' => app(RevolutGateway::class),
             'pay_later' => app(PayLaterGateway::class),
             default => app(PayLaterGateway::class),
         };

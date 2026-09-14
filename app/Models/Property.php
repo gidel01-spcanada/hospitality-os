@@ -27,6 +27,9 @@ class Property extends Model
         'bedrooms',
         'bathrooms',
         'beds',
+        'area',
+        'area_unit',
+        'floor',
         'address',
         'city',
         'country',
@@ -47,6 +50,8 @@ class Property extends Model
         'is_active' => 'boolean',
         'nightly_rate_xof' => 'decimal:2',
         'nightly_rate_eur' => 'decimal:2',
+        'area' => 'decimal:2',
+        'floor' => 'integer',
         'video_urls' => 'array',
     ];
 

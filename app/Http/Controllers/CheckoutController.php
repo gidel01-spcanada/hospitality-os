@@ -26,7 +26,7 @@ class CheckoutController extends Controller
     {
         $token = $this->authorizeCheckout($request, $reservation);
         $validated = $request->validate([
-            'provider' => ['required', 'string', 'in:pay_later,fedapay,paypal,cinetpay,mpesa'],
+            'provider' => ['required', 'string', 'in:pay_later,fedapay,paypal,cinetpay,mpesa,interac,wise,revolut'],
             'guarantee_provider' => ['nullable', 'string', 'in:fedapay,paypal,cinetpay,mpesa'],
         ]);
 
@@ -37,7 +37,7 @@ class CheckoutController extends Controller
         $establishment = $reservation->property?->establishment;
         $cancellationFeePercent = (float) ($establishment?->cancellation_fee_percent ?? 0);
         $cancellationFeeHoldAmount = $establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
-        $onlineMethods = collect($paymentMethods)->except('pay_later')->all();
+        $onlineMethods = collect($paymentMethods)->except(['pay_later', 'interac', 'wise', 'revolut'])->all();
 
         if ($provider === 'pay_later' && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && ! empty($onlineMethods)) {
             $guaranteeProvider = $validated['guarantee_provider'] ?? array_key_first($onlineMethods);
@@ -85,13 +85,25 @@ class CheckoutController extends Controller
         }
 
         $gateway = $manager->resolve($provider, $paymentMethods[$provider]['mode']);
-        $attempt = $gateway->createIntent($reservation, [
+        $intentContext = [
             'idempotency_key' => $reservation->reservation_ref . '-' . $provider,
             'mode' => $paymentMethods[$provider]['mode'],
             'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => $provider, 'token' => $token]),
             'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => $provider, 'token' => $token]),
             'webhook_url' => route('checkout.webhook', ['provider' => $provider]),
-        ]);
+        ];
+        if ($provider === 'paypal' && $establishment?->secondary_currency && $establishment->secondaryDisplayAmount((float) $reservation->total_amount) !== null) {
+            $intentContext['amount'] = $establishment->secondaryDisplayAmount((float) $reservation->total_amount);
+            $intentContext['currency'] = $establishment->secondary_currency;
+        }
+        if (in_array($provider, ['interac', 'wise', 'revolut'], true)) {
+            $internationalAmount = $establishment->secondaryDisplayAmount((float) $reservation->total_amount);
+            $intentContext['amount'] = $provider === 'interac'
+                ? app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $establishment->secondary_currency)
+                : $internationalAmount;
+            $intentContext['currency'] = $provider === 'interac' ? 'CAD' : $establishment->secondary_currency;
+        }
+        $attempt = $gateway->createIntent($reservation, $intentContext);
 
         $reservation->update(['status' => 'pending_payment']);
 
@@ -114,6 +126,9 @@ class CheckoutController extends Controller
             'paypal' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
             'cinetpay' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
             'mpesa' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
+            'interac' => ['enabled' => false, 'mode' => 'manual', 'instructions' => '', 'email' => '', 'security_question' => '', 'security_answer' => ''],
+            'wise' => ['enabled' => false, 'mode' => 'manual', 'instructions' => '', 'email' => ''],
+            'revolut' => ['enabled' => false, 'mode' => 'manual', 'instructions' => '', 'email' => ''],
         ];
 
         return collect($defaults)->mapWithKeys(function (array $default, string $provider) use ($configured, $reservation) {
@@ -131,6 +146,14 @@ class CheckoutController extends Controller
                 return [];
             }
 
+            if ($provider === 'interac' && (! $reservation->property?->establishment?->secondary_currency || ! $reservation->property?->establishment?->secondary_currency_rate || app(\App\Services\InternationalCurrencyConverter::class)->toCad(1, $reservation->property?->establishment?->secondary_currency) === null)) {
+                return [];
+            }
+
+            if (in_array($provider, ['wise', 'revolut'], true) && (! $reservation->property?->establishment?->secondary_currency || ! $reservation->property?->establishment?->secondary_currency_rate)) {
+                return [];
+            }
+
             return [$provider => $method];
         })->all();
     }
@@ -140,7 +163,7 @@ class CheckoutController extends Controller
         $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
         // Offline (pay_later) has no external status to verify; only an admin-confirmed receipt marks it paid outside dev.
-        abort_if($attempt->provider === 'pay_later' && ! app()->environment(['local', 'testing']), 403, __('messages.checkout.simulate_unavailable'));
+        abort_if(in_array($attempt->provider, ['pay_later', 'interac', 'wise', 'revolut'], true) && ! app()->environment(['local', 'testing']), 403, __('messages.checkout.simulate_unavailable'));
         $gateway = $manager->resolve($attempt->provider, $attempt->payload['mode'] ?? 'sandbox');
         $attempt = $gateway->verifyStatus($attempt);
 
@@ -217,6 +240,13 @@ class CheckoutController extends Controller
         $isGuarantee = $request->boolean('is_guarantee');
         $establishment = $reservation->property?->establishment;
         $amount = $isGuarantee ? ($establishment?->cancellationFeeHoldAmount($reservation) ?? $reservation->total_amount) : $reservation->total_amount;
+        $paypalCurrency = $reservation->currency;
+        if (! in_array($paypalCurrency, ['EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF'], true)) {
+            $paypalCurrency = $establishment?->secondary_currency;
+            if ($paypalCurrency && $establishment->secondaryDisplayAmount((float) $amount) !== null) {
+                $amount = $establishment->secondaryDisplayAmount((float) $amount);
+            }
+        }
 
         $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
         $attempt = $gateway->createIntent($reservation, [
@@ -224,6 +254,7 @@ class CheckoutController extends Controller
             'mode' => $paymentMethods['paypal']['mode'],
             'is_guarantee' => $isGuarantee,
             'amount' => $amount,
+            'currency' => $paypalCurrency,
             'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
             'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
         ]);
@@ -305,7 +336,7 @@ class CheckoutController extends Controller
 
     public function webhook(Request $request, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService)
     {
-        abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa'], true), 404, 'Unsupported payment provider.');
+        abort_unless(in_array($provider, ['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa', 'interac', 'wise', 'revolut'], true), 404, 'Unsupported payment provider.');
 
         abort_unless($this->validWebhookSignature($request, $provider), 403, 'Invalid webhook signature.');
 

@@ -141,11 +141,32 @@
                     <div class="payment-method-editor">
                     <h2>{{ __('messages.admin.payment_methods_heading') }}</h2>
                     <div class="form-grid">
-                        @foreach (['pay_later' => __('messages.admin.deferred_payment'), 'fedapay' => __('messages.admin.fedapay_sandbox'), 'paypal' => __('messages.admin.paypal_sandbox')] as $provider => $label)
+                        @foreach (['pay_later' => __('messages.admin.deferred_payment'), 'fedapay' => __('messages.admin.fedapay_sandbox'), 'paypal' => __('messages.admin.paypal_sandbox'), 'interac' => __('messages.admin.interac'), 'wise' => __('messages.admin.wise'), 'revolut' => __('messages.admin.revolut')] as $provider => $label)
                             @php $method = $establishment->payment_methods[$provider] ?? []; @endphp
                             <div class="payment-method-card">
                                 <label class="checkbox-field"><input type="checkbox" name="payment_methods[{{ $provider }}][enabled]" value="1" @checked(old('payment_methods.' . $provider . '.enabled', $method['enabled'] ?? $provider === 'pay_later'))><span>{{ $label }}</span></label>
+                                @if (array_key_exists($provider, $paymentProviderReadiness))
+                                    @php
+                                        $productionReady = $paymentProviderReadiness[$provider]['production_ready'] ?? false;
+                                        $selectedMode = old('payment_methods.' . $provider . '.mode', $method['mode'] ?? 'sandbox');
+                                    @endphp
+                                    <label><span>{{ __('messages.admin.payment_mode') }}</span><select name="payment_methods[{{ $provider }}][mode]">
+                                        <option value="sandbox" @selected($selectedMode === 'sandbox')>{{ __('messages.admin.payment_mode_sandbox') }}</option>
+                                        <option value="production" @selected($selectedMode === 'production') @disabled(! $productionReady)>{{ __('messages.admin.payment_mode_production') }}{{ $productionReady ? '' : ' — ' . __('messages.admin.payment_production_unavailable') }}</option>
+                                    </select></label>
+                                @endif
                                 <label><span>{{ __('messages.admin.instructions') }}</span><input name="payment_methods[{{ $provider }}][instructions]" value="{{ old('payment_methods.' . $provider . '.instructions', $method['instructions'] ?? '') }}" placeholder="{{ __('messages.admin.optional_customer_instructions') }}"></label>
+                                @if ($provider === 'interac')
+                                    <label><span>{{ __('messages.admin.interac_email') }}</span><input type="email" name="payment_methods[interac][email]" value="{{ old('payment_methods.interac.email', $method['email'] ?? '') }}"></label>
+                                    <label><span>{{ __('messages.admin.interac_security_question') }}</span><input name="payment_methods[interac][security_question]" value="{{ old('payment_methods.interac.security_question', $method['security_question'] ?? '') }}"></label>
+                                    <label><span>{{ __('messages.admin.interac_security_answer') }}</span><input name="payment_methods[interac][security_answer]" value="{{ old('payment_methods.interac.security_answer', $method['security_answer'] ?? '') }}"></label>
+                                @endif
+                                @if ($provider === 'wise')
+                                    <label><span>{{ __('messages.admin.wise_email') }}</span><input type="email" name="payment_methods[wise][email]" value="{{ old('payment_methods.wise.email', $method['email'] ?? '') }}"></label>
+                                @endif
+                                @if ($provider === 'revolut')
+                                    <label><span>{{ __('messages.admin.revolut_email') }}</span><input type="email" name="payment_methods[revolut][email]" value="{{ old('payment_methods.revolut.email', $method['email'] ?? '') }}"></label>
+                                @endif
                             </div>
                         @endforeach
                     </div>
