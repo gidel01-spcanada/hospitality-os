@@ -14,6 +14,8 @@ class AdminCalendarController extends Controller
 {
     public function index(Property $property)
     {
+        $this->authorizeProperty($property);
+
         $feeds = $property->calendarFeeds()->latest()->get();
 
         return view('admin.properties.calendar', compact('property', 'feeds'));
@@ -21,6 +23,8 @@ class AdminCalendarController extends Controller
 
     public function storeFeed(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'url' => ['required', 'url', 'max:2048'],
@@ -40,6 +44,7 @@ class AdminCalendarController extends Controller
 
     public function syncFeed(Property $property, ExternalCalendarFeed $feed, CalendarFeedSyncService $service): RedirectResponse
     {
+        $this->authorizeProperty($property);
         abort_unless($feed->property_id === $property->id, 404);
 
         $service->sync($feed);
@@ -49,6 +54,7 @@ class AdminCalendarController extends Controller
 
     public function updateFeed(Request $request, Property $property, ExternalCalendarFeed $feed): RedirectResponse
     {
+        $this->authorizeProperty($property);
         abort_unless($feed->property_id === $property->id, 404);
 
         $validated = $request->validate([
@@ -69,6 +75,7 @@ class AdminCalendarController extends Controller
 
     public function deleteFeed(Property $property, ExternalCalendarFeed $feed): RedirectResponse
     {
+        $this->authorizeProperty($property);
         abort_unless($feed->property_id === $property->id, 404);
         $feed->events()->delete();
         $feed->delete();
@@ -77,6 +84,20 @@ class AdminCalendarController extends Controller
     }
 
     public function export(Property $property)
+    {
+        $this->authorizeProperty($property);
+
+        return $this->buildCalendarResponse($property);
+    }
+
+    public function publicExport(Property $property, string $token)
+    {
+        abort_unless($property->calendar_export_token && hash_equals($property->calendar_export_token, $token), 404);
+
+        return $this->buildCalendarResponse($property);
+    }
+
+    private function buildCalendarResponse(Property $property)
     {
         $events = $property->reservations()->where('status', 'confirmed')->get()->map(function ($reservation) {
             return [
@@ -110,10 +131,8 @@ class AdminCalendarController extends Controller
         ]);
     }
 
-    public function publicExport(Property $property, string $token)
+    private function authorizeProperty(Property $property): void
     {
-        abort_unless($property->calendar_export_token && hash_equals($property->calendar_export_token, $token), 404);
-
-        return $this->export($property);
+        abort_unless(auth()->user()?->managesEstablishment($property->establishment_id), 403, __('messages.errors.establishment_manager_required'));
     }
 }

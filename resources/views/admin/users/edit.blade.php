@@ -14,8 +14,17 @@
                 <div class="form-grid">
                     <div><label for="name">{{ __('messages.admin.name') }}</label><input id="name" name="name" value="{{ old('name', $managedUser->name) }}" required></div>
                     <div><label for="email">{{ __('messages.common.email') }}</label><input id="email" type="email" name="email" value="{{ old('email', $managedUser->email) }}" required></div>
-                    <div><label for="role">{{ __('messages.admin.role') }}</label><select id="role" name="role"><option value="customer" @selected(old('role', $managedUser->role) === 'customer')>{{ __('messages.admin.customer') }}</option><option value="concierge" @selected(old('role', $managedUser->role) === 'concierge')>{{ __('messages.admin.concierge') }}</option><option value="admin" @selected(old('role', $managedUser->role) === 'admin')>{{ __('messages.admin.administrator') }}</option></select></div>
+                    <div><label for="role">{{ __('messages.admin.role') }}</label><select id="role" name="role"><option value="customer" @selected(old('role', $managedUser->role) === 'customer')>{{ __('messages.admin.customer') }}</option><option value="concierge" @selected(old('role', $managedUser->role) === 'concierge')>{{ __('messages.admin.concierge') }}</option><option value="host" @selected(old('role', $managedUser->role) === 'host')>{{ __('messages.admin.host') }}</option><option value="admin" @selected(old('role', $managedUser->role) === 'admin')>{{ __('messages.admin.administrator') }}</option></select></div>
                     <div><label for="locale">{{ __('messages.admin.language') }}</label><select id="locale" name="locale"><option value="fr" @selected(old('locale', $managedUser->locale) === 'fr')>Français</option><option value="en" @selected(old('locale', $managedUser->locale) === 'en')>English</option></select></div>
+                    <div class="full-width">
+                        <label for="establishments">{{ __('messages.admin.host_establishments') }}</label>
+                        <select id="establishments" name="establishments[]" multiple size="5">
+                            @foreach ($establishments as $establishment)
+                                <option value="{{ $establishment->id }}" @selected(in_array($establishment->id, old('establishments', $assignedEstablishmentIds)))>{{ $establishment->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="form-help">{{ __('messages.admin.host_establishments_help') }}</p>
+                    </div>
                     @if (! $managedUser->exists)
                         <div><label for="password">{{ __('messages.admin.initial_password') }}</label><input id="password" type="password" name="password" required></div>
                         <div><label for="password_confirmation">{{ __('messages.common.confirm_password') }}</label><input id="password_confirmation" type="password" name="password_confirmation" required></div>

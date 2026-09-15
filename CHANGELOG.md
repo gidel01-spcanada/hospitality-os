@@ -1,3 +1,20 @@
+## M16 — Host role with scoped admin access
+
+- Added a new `host` user role that can manage establishments, properties, reservations, and messages, but has no access to site-wide settings, user management, the amenity catalog, or the global reviews page.
+- Split the `admin` middleware group into `admin` (site configuration) and `establishment-manager` (establishment/property operations, granted to both `admin` and `host`), with matching nav/dashboard visibility changes.
+- Added an `establishment_host` assignment table so hosts only see and manage the specific establishment(s) (and their properties, calendars, and price rules) assigned to them by an admin; only admins can create new establishments.
+- Let hosts invite and remove additional hosts on the establishments they manage, from a new "Hosts" tab on the establishment editor, without needing user-management access.
+- Restricted the reservations and messages admin lists (and individual reservation/thread access) to a host's assigned establishments, while leaving admin and concierge access tenant-wide as before.
+- Added a sample seeded host user, scoped to the first establishment, for local testing.
+- Verified the new role's access boundaries and per-establishment scoping with feature tests covering allowed, forbidden, and cross-establishment admin routes.
+
+## M15 — Establishment review import
+
+- Added a per-establishment "Avis" tab for managing customer reviews, alongside the existing global reviews admin page.
+- Added multi-format CSV review import (Booking.com, Airbnb, Google, and a generic format) via a shared `ReviewImportService`, with header-based column mapping for Airbnb/Google exports.
+- Scoped reviews to their establishment via a new `establishment_id` column while keeping the existing global review management flow working.
+- Verified the new tab, manual review CRUD, and all four import formats with feature tests.
+
 ## M14 — Customer self-service and support pages
 
 - Added password reset request and reset flows using the Laravel password broker and email outbox pattern.

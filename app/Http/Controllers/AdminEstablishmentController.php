@@ -8,36 +8,54 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use App\Models\SiteReview;
+use App\Services\ReviewImportService;
 
 class AdminEstablishmentController extends Controller
 {
     public function index(): View
     {
-        $establishments = Establishment::query()->withCount('properties')->orderBy('name')->get();
+        $user = auth()->user();
+
+        $establishments = Establishment::query()
+            ->when($user && $user->isHost(), fn ($query) => $query->whereIn('id', $user->establishments()->pluck('establishments.id')))
+            ->withCount('properties')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.establishments.index', compact('establishments'));
     }
 
     public function edit(Establishment $establishment): View
     {
-        $establishment->load(['translations', 'properties.images']);
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $establishment->load(['translations', 'properties.images', 'hosts']);
 
         $paymentProviderReadiness = $this->paymentProviderReadiness();
+        $reviews = $establishment->exists
+            ? $establishment->reviews()->orderByDesc('reviewed_at')->get()
+            : collect();
 
-        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness'));
+        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness', 'reviews'));
     }
 
     public function create(): View
     {
+        abort_unless(auth()->user()?->isAdmin(), 403, __('messages.errors.admin_required'));
+
         $establishment = new Establishment(['country_code' => 'BJ', 'currency' => 'XOF']);
         $establishment->setRelation('properties', collect());
         $paymentProviderReadiness = $this->paymentProviderReadiness();
+        $reviews = collect();
 
-        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness'));
+        return view('admin.establishments.edit', compact('establishment', 'paymentProviderReadiness', 'reviews'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(auth()->user()?->isAdmin(), 403, __('messages.errors.admin_required'));
+
         $validated = $this->validatedData($request);
         $validated['cover_image'] = $this->storeCoverImage($request, $validated['cover_image'] ?? null, null);
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
@@ -65,6 +83,8 @@ class AdminEstablishmentController extends Controller
 
     public function update(Request $request, Establishment $establishment): RedirectResponse
     {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
         $validated = $this->validatedData($request, $establishment);
         $validated['cover_image'] = $this->storeCoverImage($request, $validated['cover_image'] ?? $establishment->cover_image, $establishment);
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
@@ -94,9 +114,149 @@ class AdminEstablishmentController extends Controller
 
     private function activeTab(Request $request): string
     {
-        return in_array($request->input('active_tab'), ['general', 'online', 'taxes', 'translations', 'payments'], true)
+        return in_array($request->input('active_tab'), ['general', 'online', 'taxes', 'translations', 'payments', 'reviews', 'hosts'], true)
             ? $request->input('active_tab')
             : 'general';
+    }
+
+    public function storeReview(Request $request, Establishment $establishment): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $validated = $request->validate([
+            'source' => ['required', 'in:booking,google,airbnb'],
+            'reviewer_name' => ['required', 'string', 'max:255'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'review_text' => ['nullable', 'string', 'max:2000'],
+            'source_url' => ['nullable', 'url', 'max:2048'],
+            'reviewed_at' => ['nullable', 'date'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $establishment->reviews()->create([
+            'source' => $validated['source'],
+            'reviewer_name' => $validated['reviewer_name'],
+            'rating' => $validated['rating'],
+            'review_text' => $validated['review_text'] ?? null,
+            'source_url' => $validated['source_url'] ?? null,
+            'reviewed_at' => $validated['reviewed_at'] ?? now(),
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#reviews')
+            ->with('success', __('messages.flash.review_saved'));
+    }
+
+    public function updateReview(Request $request, Establishment $establishment, SiteReview $review): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $validated = $request->validate([
+            'source' => ['required', 'in:booking,google,airbnb'],
+            'reviewer_name' => ['required', 'string', 'max:255'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'review_text' => ['nullable', 'string', 'max:2000'],
+            'source_url' => ['nullable', 'url', 'max:2048'],
+            'reviewed_at' => ['nullable', 'date'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $review->update([
+            'source' => $validated['source'],
+            'reviewer_name' => $validated['reviewer_name'],
+            'rating' => $validated['rating'],
+            'review_text' => $validated['review_text'] ?? null,
+            'source_url' => $validated['source_url'] ?? null,
+            'reviewed_at' => $validated['reviewed_at'] ?? $review->reviewed_at ?? now(),
+            'is_active' => $request->boolean('is_active', $review->is_active),
+        ]);
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#reviews')
+            ->with('success', __('messages.flash.review_updated'));
+    }
+
+    public function destroyReview(Establishment $establishment, SiteReview $review): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $review->delete();
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#reviews')
+            ->with('success', __('messages.flash.review_deleted'));
+    }
+
+    public function importReviews(Request $request, Establishment $establishment): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $validated = $request->validate([
+            'format' => ['required', 'in:' . implode(',', ReviewImportService::FORMATS)],
+            'import_file' => ['nullable', 'file', 'mimes:csv,txt', 'max:5120'],
+            'csv' => ['nullable', 'string'],
+        ]);
+
+        $csv = $request->hasFile('import_file')
+            ? file_get_contents($request->file('import_file')->getRealPath())
+            : trim((string) ($validated['csv'] ?? ''));
+
+        if (! $csv) {
+            return back()->withErrors(['import_file' => __('messages.errors.review_import_file_required')]);
+        }
+
+        $importer = app(ReviewImportService::class);
+
+        if ($validated['format'] === 'booking') {
+            $result = $importer->importBookingCsv($csv, null, $establishment->id);
+            $status = __('messages.flash.reviews_imported_detailed', $result);
+        } else {
+            $inserted = match ($validated['format']) {
+                'airbnb' => $importer->importAirbnbCsv($csv, null, $establishment->id),
+                'google' => $importer->importGoogleCsv($csv, null, $establishment->id),
+                default => $importer->importGenericCsv($csv, null, $establishment->id),
+            };
+            $status = __('messages.flash.reviews_imported', ['count' => $inserted]);
+        }
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#reviews')
+            ->with('success', $status);
+    }
+
+    public function storeHost(Request $request, Establishment $establishment): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $host = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+            'role' => 'host',
+            'is_admin' => false,
+            'tenant_id' => $establishment->tenant_id,
+            'locale' => app()->getLocale(),
+            'is_active' => true,
+        ]);
+
+        $host->establishments()->attach($establishment->id);
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#hosts')
+            ->with('success', __('messages.flash.host_added'));
+    }
+
+    public function destroyHost(Establishment $establishment, \App\Models\User $host): RedirectResponse
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+
+        $establishment->hosts()->findOrFail($host->id);
+        $establishment->hosts()->detach($host->id);
+
+        return redirect()->to(route('admin.establishments.edit', $establishment) . '#hosts')
+            ->with('success', __('messages.flash.host_removed'));
     }
 
     private function validatedData(Request $request, ?Establishment $establishment = null): array

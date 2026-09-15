@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Amenity;
 use App\Models\Establishment;
 use App\Models\Property;
+use App\Models\SiteReview;
 use App\Models\AdminAvailabilityBlock;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
@@ -445,6 +446,182 @@ class PropertyAdminControlsTest extends TestCase
             ->assertSee('value="USD"', false)
             ->assertSee('value="GBP"', false)
             ->assertSee('value="CAD"', false);
+    }
+
+    public function test_establishment_editor_has_a_reviews_tab(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.establishments.edit', $establishment))
+            ->assertOk()
+            ->assertSee('data-property-tab="reviews"', false)
+            ->assertSee('data-property-panel="reviews"', false);
+    }
+
+    public function test_admin_can_add_a_review_scoped_to_an_establishment(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.store', $establishment), [
+                'source' => 'google',
+                'reviewer_name' => 'Chidi O.',
+                'rating' => 5,
+                'review_text' => 'Superbe séjour.',
+                'reviewed_at' => now()->toDateString(),
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'reviewer_name' => 'Chidi O.',
+            'source' => 'google',
+            'rating' => 5,
+        ]);
+    }
+
+    public function test_admin_can_update_and_delete_a_review_scoped_to_an_establishment(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        // Stamp tenant_id explicitly since this bypasses the request-scoped CurrentTenant middleware.
+        $review = $establishment->reviews()->create([
+            'tenant_id' => $establishment->tenant_id,
+            'source' => 'booking',
+            'reviewer_name' => 'Amina D.',
+            'rating' => 5,
+            'reviewed_at' => now(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.establishments.reviews.update', [$establishment, $review]), [
+                'source' => 'airbnb',
+                'reviewer_name' => 'Amina D. Modifiée',
+                'rating' => 4,
+                'reviewed_at' => now()->toDateString(),
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'id' => $review->id,
+            'source' => 'airbnb',
+            'reviewer_name' => 'Amina D. Modifiée',
+            'rating' => 4,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.establishments.reviews.destroy', [$establishment, $review]))
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseMissing('site_reviews', ['id' => $review->id]);
+    }
+
+    public function test_admin_can_import_reviews_for_an_establishment_in_multiple_formats(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $genericCsv = implode("\n", [
+            'reviewer_name,source,rating,review_text,source_url',
+            'Kofi A.,google,5,Très bien,https://maps.google.com/1',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'generic',
+                'csv' => $genericCsv,
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'reviewer_name' => 'Kofi A.',
+            'source' => 'google',
+        ]);
+
+        $bookingCsv = implode("\n", [
+            '"Date","Nom du client","Numéro","Titre","Positif","Négatif","Note"',
+            '"2026-09-09 15:17:26","KOFFI","6659892745","","Très propre","","10"',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'booking',
+                'csv' => $bookingCsv,
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'reviewer_name' => 'KOFFI',
+            'source' => 'booking',
+            'rating' => 5,
+        ]);
+
+        $airbnbCsv = implode("\n", [
+            'Date,Reviewer,Overall rating,Public review',
+            'Jan 1 2026,Jane Doe,5,Great stay',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'airbnb',
+                'csv' => $airbnbCsv,
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'reviewer_name' => 'Jane Doe',
+            'source' => 'airbnb',
+            'rating' => 5,
+        ]);
+
+        $googleCsv = implode("\n", [
+            'Review Date,Reviewer Name,Star Rating,Comment',
+            '2026-01-02,John Smith,4,Nice place',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'google',
+                'csv' => $googleCsv,
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'reviewer_name' => 'John Smith',
+            'source' => 'google',
+            'rating' => 4,
+        ]);
+
+        $this->assertSame(4, SiteReview::query()->where('establishment_id', $establishment->id)->count());
+    }
+
+    public function test_establishment_review_import_requires_csv_content(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'generic',
+                'csv' => '',
+            ])
+            ->assertSessionHasErrors('import_file');
     }
 
     public function test_google_maps_link_populates_missing_establishment_coordinates(): void

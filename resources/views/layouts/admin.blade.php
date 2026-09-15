@@ -121,7 +121,7 @@
                         </a>
                     </div>
 
-                    @if (auth()->user()->isAdmin())
+                    @if (auth()->user()->isEstablishmentManager())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.properties.index') }}" class="admin-nav-link {{ request()->is('admin/properties*') ? 'is-active' : '' }}">
                             <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@
                     </div>
                     @endif
 
-                    @if (auth()->user()->isAdmin())
+                    @if (auth()->user()->isEstablishmentManager())
                         <div class="admin-nav-item">
                             <a href="{{ route('admin.establishments.index') }}" class="admin-nav-link {{ request()->is('admin/establishments*') ? 'is-active' : '' }}">
                                 <svg class="icon" fill="currentColor" viewBox="0 0 24 24">

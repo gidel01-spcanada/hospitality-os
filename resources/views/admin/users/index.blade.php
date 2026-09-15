@@ -37,6 +37,7 @@
                 <select name="role" id="role" class="input-md" style="min-width: 150px;">
                     <option value="">{{ __('messages.admin.all_roles') }}</option>
                     <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>{{ __('messages.admin.administrator') }}</option>
+                    <option value="host" {{ request('role') === 'host' ? 'selected' : '' }}>{{ __('messages.admin.host') }}</option>
                     <option value="concierge" {{ request('role') === 'concierge' ? 'selected' : '' }}>{{ __('messages.admin.concierge') }}</option>
                     <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>{{ __('messages.admin.customer') }}</option>
                 </select>

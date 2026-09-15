@@ -76,12 +76,20 @@ class AdminController extends Controller
 
     public function editUser(User $managedUser): View
     {
-        return view('admin.users.edit', ['managedUser' => $managedUser]);
+        return view('admin.users.edit', [
+            'managedUser' => $managedUser,
+            'establishments' => Establishment::query()->orderBy('name')->get(),
+            'assignedEstablishmentIds' => $managedUser->exists ? $managedUser->establishments()->pluck('establishments.id')->all() : [],
+        ]);
     }
 
     public function createUser(): View
     {
-        return view('admin.users.edit', ['managedUser' => new User(['role' => 'customer', 'locale' => 'fr'])]);
+        return view('admin.users.edit', [
+            'managedUser' => new User(['role' => 'customer', 'locale' => 'fr']),
+            'establishments' => Establishment::query()->orderBy('name')->get(),
+            'assignedEstablishmentIds' => [],
+        ]);
     }
 
     public function storeUser(Request $request): RedirectResponse
@@ -90,7 +98,7 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'in:customer,admin,concierge'],
+            'role' => ['required', 'in:customer,admin,concierge,host'],
             'locale' => ['required', 'in:fr,en'],
             'email_booking_updates' => ['nullable', 'boolean'],
             'email_message_updates' => ['nullable', 'boolean'],
@@ -98,9 +106,11 @@ class AdminController extends Controller
             'email_newsletter' => ['nullable', 'boolean'],
             'email_verified' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'establishments' => ['nullable', 'array'],
+            'establishments.*' => ['integer', 'exists:establishments,id'],
         ]);
 
-        User::create([
+        $managedUser = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
@@ -117,6 +127,10 @@ class AdminController extends Controller
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
         ]);
 
+        if ($validated['role'] === 'host') {
+            $managedUser->establishments()->sync($validated['establishments'] ?? []);
+        }
+
         return redirect()->route('admin.users.index')->with('status', __('messages.flash.user_created'));
     }
 
@@ -125,7 +139,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $managedUser->id],
-            'role' => ['required', 'in:customer,admin,concierge'],
+            'role' => ['required', 'in:customer,admin,concierge,host'],
             'locale' => ['required', 'in:fr,en'],
             'email_booking_updates' => ['nullable', 'boolean'],
             'email_message_updates' => ['nullable', 'boolean'],
@@ -133,6 +147,8 @@ class AdminController extends Controller
             'email_newsletter' => ['nullable', 'boolean'],
             'email_verified' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'establishments' => ['nullable', 'array'],
+            'establishments.*' => ['integer', 'exists:establishments,id'],
         ]);
 
         if ($managedUser->is($request->user()) && $validated['role'] !== 'admin') {
@@ -160,6 +176,8 @@ class AdminController extends Controller
             'email_verified_at' => $request->boolean('email_verified') ? ($managedUser->email_verified_at ?? now()) : null,
             'is_active' => $isActive,
         ])->save();
+
+        $managedUser->establishments()->sync($validated['role'] === 'host' ? ($validated['establishments'] ?? []) : []);
 
         return redirect()->route('admin.users.index')->with('status', __('messages.flash.user_updated'));
     }
@@ -233,7 +251,7 @@ class AdminController extends Controller
         abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
 
         $validated = $request->validate([
-            'source' => ['required', 'in:booking,google'],
+            'source' => ['required', 'in:booking,google,airbnb'],
             'reviewer_name' => ['required', 'string', 'max:255'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'review_text' => ['nullable', 'string', 'max:2000'],
@@ -262,7 +280,7 @@ class AdminController extends Controller
         abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
 
         $validated = $request->validate([
-            'source' => ['required', 'in:booking,google'],
+            'source' => ['required', 'in:booking,google,airbnb'],
             'reviewer_name' => ['required', 'string', 'max:255'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'review_text' => ['nullable', 'string', 'max:2000'],
@@ -306,41 +324,7 @@ class AdminController extends Controller
             return back()->withErrors(['csv' => 'Le contenu CSV est requis.']);
         }
 
-        $rows = str_getcsv($csv, "\n");
-        $inserted = 0;
-
-        foreach ($rows as $lineIndex => $line) {
-            if ($lineIndex === 0 && stripos($line, 'reviewer_name') !== false) {
-                continue;
-            }
-
-            $fields = str_getcsv($line, ',');
-            if (count($fields) < 5) {
-                continue;
-            }
-
-            $reviewerName = trim((string) ($fields[0] ?? ''));
-            $source = trim((string) ($fields[1] ?? 'google'));
-            $rating = (int) trim((string) ($fields[2] ?? 5));
-            $reviewText = trim((string) ($fields[3] ?? ''));
-            $sourceUrl = trim((string) ($fields[4] ?? ''));
-
-            if ($reviewerName === '') {
-                continue;
-            }
-
-            SiteReview::query()->create([
-                'source' => in_array($source, ['booking', 'google'], true) ? $source : 'google',
-                'reviewer_name' => $reviewerName,
-                'rating' => max(1, min(5, $rating)),
-                'review_text' => $reviewText !== '' ? $reviewText : null,
-                'source_url' => $sourceUrl !== '' ? $sourceUrl : null,
-                'reviewed_at' => now(),
-                'is_active' => true,
-            ]);
-
-            $inserted++;
-        }
+        $inserted = app(\App\Services\ReviewImportService::class)->importGenericCsv($csv, null, null);
 
         return redirect()->route('admin.reviews')->with('status', __('messages.flash.reviews_imported', ['count' => $inserted]));
     }

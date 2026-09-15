@@ -26,7 +26,7 @@ class AdminPropertyController extends Controller
     public function create(): View
     {
         return view('admin.properties.create', [
-            'establishments' => Establishment::query()->orderBy('name')->get(),
+            'establishments' => $this->manageableEstablishments(),
             'amenities' => Amenity::query()->with('category')->orderBy('sort_order')->get(),
         ]);
     }
@@ -57,6 +57,7 @@ class AdminPropertyController extends Controller
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
         $validated['video_urls'] = $this->normalizeVideoUrls($validated['video_urls'] ?? null);
+        abort_unless(auth()->user()?->managesEstablishment((int) $validated['establishment_id']), 403, __('messages.errors.establishment_manager_required'));
         $validated['currency'] = Establishment::query()->findOrFail($validated['establishment_id'])->currency;
         $property = Property::query()->create($validated + [
             'is_published' => $validated['status'] === 'published',
@@ -68,16 +69,18 @@ class AdminPropertyController extends Controller
 
     public function index(Request $request): View
     {
-        $establishments = Establishment::query()->orderBy('name')->get();
+        $establishments = $this->manageableEstablishments();
         $filters = $request->validate([
             'establishment' => ['nullable', 'integer', $this->establishmentExistsRule()],
             'status' => ['nullable', 'in:draft,published,archived'],
         ]);
         $establishmentId = $filters['establishment'] ?? null;
+        $user = auth()->user();
 
         // Property has no tenant_id of its own, so it's scoped here through its establishment.
         $properties = Property::query()
             ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user && $user->isHost(), fn ($query) => $query->whereIn('establishment_id', $establishments->pluck('id')))
             ->when($establishmentId, fn ($query) => $query->where('establishment_id', $establishmentId))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->with('establishment')
@@ -89,15 +92,19 @@ class AdminPropertyController extends Controller
 
     public function edit(Property $property): View
     {
+        $this->authorizeProperty($property);
+
         $property->load(['images', 'amenities', 'features', 'translations', 'rateRules', 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
 
-        $establishments = Establishment::query()->orderBy('name')->get();
+        $establishments = $this->manageableEstablishments();
         $amenities = Amenity::query()->with('category')->orderBy('sort_order')->get();
         return view('admin.properties.edit', compact('property', 'establishments', 'amenities'));
     }
 
     public function update(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'property_type' => ['sometimes', 'in:apartment,house,villa,studio,room,other'],
@@ -152,6 +159,8 @@ class AdminPropertyController extends Controller
 
     public function updateAmenities(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'amenity_ids' => ['nullable', 'array'],
             'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
@@ -164,6 +173,8 @@ class AdminPropertyController extends Controller
 
     public function updateImages(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         if ($request->filled('remove_image_id')) {
             $image = $property->images()->findOrFail((int) $request->input('remove_image_id'));
             $wasCover = $image->is_cover;
@@ -218,6 +229,8 @@ class AdminPropertyController extends Controller
 
     public function uploadImages(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'photos' => ['required', 'array', 'min:1'],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp'],
@@ -304,6 +317,8 @@ class AdminPropertyController extends Controller
 
     public function storePriceRule(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'effective_from' => ['required', 'date'],
             'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
@@ -319,6 +334,8 @@ class AdminPropertyController extends Controller
 
     public function storeAvailabilityBlock(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
@@ -337,6 +354,7 @@ class AdminPropertyController extends Controller
 
     public function deleteAvailabilityBlock(Request $request, Property $property, AdminAvailabilityBlock $block): RedirectResponse
     {
+        $this->authorizeProperty($property);
         abort_unless($block->property_id === $property->id, 404);
         $block->delete();
 
@@ -345,6 +363,8 @@ class AdminPropertyController extends Controller
 
     public function storePropertyFeature(Request $request, Property $property): RedirectResponse
     {
+        $this->authorizeProperty($property);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -364,6 +384,8 @@ class AdminPropertyController extends Controller
 
     public function availabilityCheck(Property $property, Request $request, AvailabilityService $availabilityService): RedirectResponse|View
     {
+        $this->authorizeProperty($property);
+
         $request->validate([
             'check_in' => ['required', 'date'],
             'check_out' => ['required', 'date', 'after:check_in'],
@@ -416,5 +438,20 @@ class AdminPropertyController extends Controller
     private function establishmentExistsRule(): \Illuminate\Validation\Rules\Exists
     {
         return Rule::exists('establishments', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()));
+    }
+
+    private function authorizeProperty(Property $property): void
+    {
+        abort_unless(auth()->user()?->managesEstablishment($property->establishment_id), 403, __('messages.errors.establishment_manager_required'));
+    }
+
+    /** Admins see every establishment in the tenant; hosts only the ones assigned to them. */
+    private function manageableEstablishments(): \Illuminate\Support\Collection
+    {
+        $user = auth()->user();
+
+        return $user && $user->isHost()
+            ? $user->establishments()->orderBy('name')->get()
+            : Establishment::query()->orderBy('name')->get();
     }
 }

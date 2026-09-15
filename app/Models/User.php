@@ -76,6 +76,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Property::class, 'property_favorites')->withTimestamps();
     }
 
+    public function establishments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Establishment::class, 'establishment_host')->withTimestamps();
+    }
+
     public function isPlatformAdmin(): bool
     {
         return (bool) $this->is_platform_admin;
@@ -91,9 +96,30 @@ class User extends Authenticatable
         return $this->role === 'concierge';
     }
 
+    public function isHost(): bool
+    {
+        return $this->role === 'host';
+    }
+
+    /** Manages establishments but not site-wide settings, users, or the amenity catalog. */
+    public function isEstablishmentManager(): bool
+    {
+        return $this->isAdmin() || $this->isHost();
+    }
+
+    /** Admins manage every establishment in their tenant; hosts only their assigned ones. */
+    public function managesEstablishment(?int $establishmentId): bool
+    {
+        if (! $establishmentId) {
+            return false;
+        }
+
+        return $this->isAdmin() || ($this->isHost() && $this->establishments()->whereKey($establishmentId)->exists());
+    }
+
     public function canManageReservations(): bool
     {
-        return $this->isAdmin() || $this->isConcierge();
+        return $this->isAdmin() || $this->isConcierge() || $this->isHost();
     }
 
     /**

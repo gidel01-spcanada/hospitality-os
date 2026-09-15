@@ -83,6 +83,34 @@
         </div>
     </x-card>
 </div>
+@elseif ($user->isEstablishmentManager())
+<div style="margin-top: var(--space-8);">
+    <x-card>
+        <div class="card-header">
+            <h3>{{ __('messages.admin.key_activities') }}</h3>
+            <p style="margin: var(--space-2) 0 0 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ __('messages.admin.host_responsibilities') }}</p>
+        </div>
+
+        <div class="card-body">
+            <ul style="margin: 0; padding: 0; list-style: none;">
+                <li style="padding: var(--space-4); border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{ __('messages.admin.validate_property_listings') }}</strong>
+                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.validate_property_listings_help') }}</p>
+                    </div>
+                    <x-button tag="a" href="/admin/properties" variant="secondary" size="sm">{{ __('messages.admin.manage') }}</x-button>
+                </li>
+                <li style="padding: var(--space-4); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{ __('messages.admin.monitor_bookings') }}</strong>
+                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.monitor_bookings_help') }}</p>
+                    </div>
+                    <x-button tag="a" href="/admin/bookings" variant="secondary" size="sm">{{ __('messages.admin.view') }}</x-button>
+                </li>
+            </ul>
+        </div>
+    </x-card>
+</div>
 @else
 <div style="margin-top: var(--space-8);">
     <x-card variant="outlined">
@@ -124,7 +152,7 @@
         </x-card>
         @endif
 
-        @if ($user->isAdmin())
+        @if ($user->isEstablishmentManager())
         <x-card clickable href="{{ route('admin.properties.index') }}">
             <div style="padding: var(--space-4); text-align: center;">
                 <svg class="icon icon-lg" style="margin-bottom: var(--space-3); color: var(--theme-primary);" fill="currentColor" viewBox="0 0 24 24">

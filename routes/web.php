@@ -101,38 +101,24 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/bookings/{reservation}', [AdminReservationController::class, 'show'])->name('admin.bookings.show');
     });
 
-    Route::middleware('admin')->group(function () {
+    Route::middleware('establishment-manager')->group(function () {
         Route::get('/admin/profile', [AdminPreferencesController::class, 'index'])->name('admin.profile');
         Route::get('/admin/preferences', [AdminPreferencesController::class, 'index'])->name('admin.preferences');
         Route::put('/admin/preferences/profile', [AdminPreferencesController::class, 'updateProfile'])->name('admin.preferences.profile.update');
         Route::put('/admin/preferences/locale', [AdminPreferencesController::class, 'updateLocale'])->name('admin.preferences.locale.update');
         Route::put('/admin/preferences/theme', [AdminPreferencesController::class, 'updateTheme'])->name('admin.preferences.theme.update');
         Route::put('/admin/preferences/password', [AdminPreferencesController::class, 'updatePassword'])->name('admin.preferences.password.update');
-        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
-        Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
-        Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
-        Route::get('/admin/users/{managedUser}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
-        Route::put('/admin/users/{managedUser}', [AdminController::class, 'updateUser'])->name('admin.users.update');
-        Route::delete('/admin/users/{managedUser}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
         Route::get('/admin/establishments', [AdminEstablishmentController::class, 'index'])->name('admin.establishments.index');
         Route::get('/admin/establishments/create', [AdminEstablishmentController::class, 'create'])->name('admin.establishments.create');
         Route::get('/admin/establishments/{establishment}/edit', [AdminEstablishmentController::class, 'edit'])->name('admin.establishments.edit');
         Route::post('/admin/establishments', [AdminEstablishmentController::class, 'store'])->name('admin.establishments.store');
         Route::put('/admin/establishments/{establishment}', [AdminEstablishmentController::class, 'update'])->name('admin.establishments.update');
-        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
-        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
-        Route::get('/admin/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'index'])->name('admin.amenities.index');
-        Route::post('/admin/amenities/categories', [\App\Http\Controllers\AdminAmenityController::class, 'storeCategory'])->name('admin.amenities.categories.store');
-        Route::put('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'updateCategory'])->name('admin.amenities.categories.update');
-        Route::delete('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyCategory'])->name('admin.amenities.categories.destroy');
-        Route::post('/admin/amenities/categories/{amenityCategory}/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'storeAmenity'])->name('admin.amenities.store');
-        Route::put('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'updateAmenity'])->name('admin.amenities.update');
-        Route::delete('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyAmenity'])->name('admin.amenities.destroy');
-        Route::get('/admin/reviews', [AdminController::class, 'reviews'])->name('admin.reviews');
-        Route::post('/admin/reviews', [AdminController::class, 'storeReview'])->name('admin.reviews.store');
-        Route::put('/admin/reviews/{review}', [AdminController::class, 'updateReview'])->name('admin.reviews.update');
-        Route::delete('/admin/reviews/{review}', [AdminController::class, 'deleteReview'])->name('admin.reviews.destroy');
-        Route::post('/admin/reviews/import', [AdminController::class, 'importReviews'])->name('admin.reviews.import');
+        Route::post('/admin/establishments/{establishment}/reviews', [AdminEstablishmentController::class, 'storeReview'])->name('admin.establishments.reviews.store');
+        Route::put('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'updateReview'])->name('admin.establishments.reviews.update');
+        Route::delete('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'destroyReview'])->name('admin.establishments.reviews.destroy');
+        Route::post('/admin/establishments/{establishment}/reviews/import', [AdminEstablishmentController::class, 'importReviews'])->name('admin.establishments.reviews.import');
+        Route::post('/admin/establishments/{establishment}/hosts', [AdminEstablishmentController::class, 'storeHost'])->name('admin.establishments.hosts.store');
+        Route::delete('/admin/establishments/{establishment}/hosts/{host}', [AdminEstablishmentController::class, 'destroyHost'])->name('admin.establishments.hosts.destroy');
         Route::get('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'index'])->name('admin.properties.index');
         Route::get('/admin/properties/create', [\App\Http\Controllers\AdminPropertyController::class, 'create'])->name('admin.properties.create');
         Route::post('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'store'])->name('admin.properties.store');
@@ -152,6 +138,29 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::delete('/admin/properties/{property}/calendar/feeds/{feed}', [\App\Http\Controllers\AdminCalendarController::class, 'deleteFeed'])->name('admin.properties.calendar.destroy');
         Route::post('/admin/properties/{property}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\AdminCalendarController::class, 'syncFeed'])->name('admin.properties.calendar.sync');
         Route::get('/admin/properties/{property}/calendar/export.ics', [\App\Http\Controllers\AdminCalendarController::class, 'export'])->name('admin.properties.calendar.export');
+    });
+
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
+        Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
+        Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+        Route::get('/admin/users/{managedUser}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
+        Route::put('/admin/users/{managedUser}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/admin/users/{managedUser}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
+        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+        Route::get('/admin/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'index'])->name('admin.amenities.index');
+        Route::post('/admin/amenities/categories', [\App\Http\Controllers\AdminAmenityController::class, 'storeCategory'])->name('admin.amenities.categories.store');
+        Route::put('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'updateCategory'])->name('admin.amenities.categories.update');
+        Route::delete('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyCategory'])->name('admin.amenities.categories.destroy');
+        Route::post('/admin/amenities/categories/{amenityCategory}/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'storeAmenity'])->name('admin.amenities.store');
+        Route::put('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'updateAmenity'])->name('admin.amenities.update');
+        Route::delete('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyAmenity'])->name('admin.amenities.destroy');
+        Route::get('/admin/reviews', [AdminController::class, 'reviews'])->name('admin.reviews');
+        Route::post('/admin/reviews', [AdminController::class, 'storeReview'])->name('admin.reviews.store');
+        Route::put('/admin/reviews/{review}', [AdminController::class, 'updateReview'])->name('admin.reviews.update');
+        Route::delete('/admin/reviews/{review}', [AdminController::class, 'deleteReview'])->name('admin.reviews.destroy');
+        Route::post('/admin/reviews/import', [AdminController::class, 'importReviews'])->name('admin.reviews.import');
     });
 
     Route::middleware('platform-admin')->group(function () {

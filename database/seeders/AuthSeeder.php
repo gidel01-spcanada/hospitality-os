@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Establishment;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -71,5 +72,27 @@ class AuthSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        $host = User::query()->updateOrCreate(
+            ['email' => 'host@afrikappart.test'],
+            [
+                'name' => 'Afrik Appart Host',
+                'password' => Hash::make($guestPassword),
+                'role' => 'host',
+                'is_admin' => false,
+                'tenant_id' => $tenantId,
+                'is_platform_admin' => false,
+                'locale' => 'fr',
+                'email_booking_updates' => true,
+                'email_marketing' => false,
+                'email_newsletter' => false,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        // Sample host only manages the first establishment, to demonstrate scoped access.
+        if ($establishmentId = Establishment::query()->where('tenant_id', $tenantId)->orderBy('id')->value('id')) {
+            $host->establishments()->sync([$establishmentId]);
+        }
     }
 }
