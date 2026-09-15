@@ -42,11 +42,21 @@ class AdminMessageController extends Controller
 
     private function tenantThreads()
     {
-        return MessageThread::query()->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()));
+        $user = auth()->user();
+
+        return MessageThread::query()
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user && $user->isHost(), fn ($query) => $query->whereHas('establishment', fn ($q) => $q->whereIn('establishments.id', $user->establishments()->pluck('establishments.id'))));
     }
 
     private function belongsToCurrentTenant(MessageThread $thread): bool
     {
-        return $thread->establishment()->where('tenant_id', app(CurrentTenant::class)->id())->exists();
+        if (! $thread->establishment()->where('tenant_id', app(CurrentTenant::class)->id())->exists()) {
+            return false;
+        }
+
+        $user = auth()->user();
+
+        return ! ($user && $user->isHost()) || $user->managesEstablishment($thread->establishment_id);
     }
 }

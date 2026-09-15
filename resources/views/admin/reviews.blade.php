@@ -24,6 +24,7 @@
                         <span>Source</span>
                         <select name="source">
                             <option value="booking">Booking.com</option>
+                            <option value="airbnb">Airbnb</option>
                             <option value="google">Google</option>
                         </select>
                     </label>
@@ -96,6 +97,7 @@
                                     <span>Source</span>
                                     <select name="source">
                                         <option value="booking" {{ $review->source === 'booking' ? 'selected' : '' }}>Booking.com</option>
+                                        <option value="airbnb" {{ $review->source === 'airbnb' ? 'selected' : '' }}>Airbnb</option>
                                         <option value="google" {{ $review->source === 'google' ? 'selected' : '' }}>Google</option>
                                     </select>
                                 </label>

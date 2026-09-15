@@ -9,7 +9,9 @@
                 <h1 class="admin-page-title">{{ __('messages.admin.establishments') }}</h1>
                 <p class="admin-page-description">{{ __('messages.admin.establishments_description') }}</p>
             </div>
-            <x-button tag="a" href="{{ route('admin.establishments.create') }}" variant="primary">{{ __('messages.admin.add_establishment') }}</x-button>
+            @if (auth()->user()->isAdmin())
+                <x-button tag="a" href="{{ route('admin.establishments.create') }}" variant="primary">{{ __('messages.admin.add_establishment') }}</x-button>
+            @endif
         </div>
     </div>
 

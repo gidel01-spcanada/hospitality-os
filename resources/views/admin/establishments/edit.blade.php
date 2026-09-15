@@ -36,7 +36,7 @@
         @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
         <div class="property-editor-tabs" data-property-tabs>
             <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.establishment_editor_sections') }}">
-                @foreach (['general' => __('messages.admin.general_information'), 'online' => __('messages.admin.online_information'), 'taxes' => __('messages.admin.taxes_heading'), 'translations' => __('messages.admin.translations'), 'payments' => __('messages.admin.payment_methods_heading')] as $tab => $label)
+                @foreach (['general' => __('messages.admin.general_information'), 'online' => __('messages.admin.online_information'), 'taxes' => __('messages.admin.taxes_heading'), 'translations' => __('messages.admin.translations'), 'payments' => __('messages.admin.payment_methods_heading'), 'reviews' => __('messages.admin.reviews_tab'), 'hosts' => __('messages.admin.hosts_tab')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="establishment-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
             </div>
@@ -208,6 +208,197 @@
                 </div>
                 <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save') }}</button><a class="btn btn-ghost" href="{{ route('admin.establishments.index') }}">{{ __('messages.admin.back') }}</a></div>
             </form>
+
+            @if ($establishment->exists)
+                <div id="establishment-panel-reviews" class="property-tab-panel" role="tabpanel" data-property-panel="reviews" hidden>
+                    <h2>{{ __('messages.admin.reviews_tab') }}</h2>
+                    <p class="form-help">{{ __('messages.admin.reviews_tab_description') }}</p>
+
+                    <h3 class="stacked-title">{{ __('messages.admin.add_review') }}</h3>
+                    <form method="POST" action="{{ route('admin.establishments.reviews.store', $establishment) }}">
+                        @csrf
+                        <div class="admin-form-grid compact">
+                            <label>
+                                <span>{{ __('messages.admin.source') }}</span>
+                                <select name="source">
+                                    <option value="booking">Booking.com</option>
+                                    <option value="airbnb">Airbnb</option>
+                                    <option value="google">Google</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.reviewer') }}</span>
+                                <input type="text" name="reviewer_name" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.rating') }}</span>
+                                <input type="number" name="rating" min="1" max="5" value="5" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.review_date') }}</span>
+                                <input type="date" name="reviewed_at" value="{{ now()->toDateString() }}">
+                            </label>
+                            <label class="full-width">
+                                <span>{{ __('messages.admin.review_text') }}</span>
+                                <textarea name="review_text" rows="3"></textarea>
+                            </label>
+                            <label class="full-width">
+                                <span>{{ __('messages.admin.source_url') }}</span>
+                                <input type="url" name="source_url" placeholder="https://...">
+                            </label>
+                            <label class="checkbox-field">
+                                <input type="checkbox" name="is_active" value="1" checked>
+                                <span>{{ __('messages.admin.show_home') }}</span>
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_review') }}</button>
+                        </div>
+                    </form>
+
+                    <h3 class="stacked-title">{{ __('messages.admin.import_csv') }}</h3>
+                    <form method="POST" enctype="multipart/form-data" action="{{ route('admin.establishments.reviews.import', $establishment) }}">
+                        @csrf
+                        <div class="form-grid">
+                            <div>
+                                <label for="import-format">{{ __('messages.admin.import_format') }}</label>
+                                <select id="import-format" name="format" required>
+                                    <option value="booking">{{ __('messages.admin.import_format_booking') }}</option>
+                                    <option value="airbnb">{{ __('messages.admin.import_format_airbnb') }}</option>
+                                    <option value="google">{{ __('messages.admin.import_format_google') }}</option>
+                                    <option value="generic">{{ __('messages.admin.import_format_generic') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="import-file">{{ __('messages.admin.import_file') }}</label>
+                                <input id="import-file" type="file" name="import_file" accept=".csv,text/csv,text/plain">
+                            </div>
+                            <div class="full-width">
+                                <label for="import-csv">{{ __('messages.admin.import_or_paste_csv') }}</label>
+                                <textarea id="import-csv" name="csv" rows="4"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-ghost">{{ __('messages.admin.import') }}</button>
+                        </div>
+                    </form>
+
+                    <h3 class="stacked-title">{{ __('messages.admin.saved_reviews') }}</h3>
+                    @if ($reviews->isEmpty())
+                        <p>{{ __('messages.admin.no_reviews') }}</p>
+                    @else
+                        <div class="feature-grid review-admin-grid">
+                            @foreach ($reviews as $review)
+                                <article class="feature-card review-admin-card">
+                                    <div class="icon">★</div>
+                                    <h4>{{ $review->reviewer_name }}</h4>
+                                    <p>{{ $review->source_label }}</p>
+                                    <strong>{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</strong>
+                                    @if ($review->review_text)<p>{{ $review->review_text }}</p>@endif
+
+                                    <form method="POST" action="{{ route('admin.establishments.reviews.update', [$establishment, $review]) }}" class="review-admin-form">
+                                        @csrf
+                                        @method('PUT')
+                                        <label>
+                                            <span>{{ __('messages.admin.source') }}</span>
+                                            <select name="source">
+                                                <option value="booking" @selected($review->source === 'booking')>Booking.com</option>
+                                                <option value="airbnb" @selected($review->source === 'airbnb')>Airbnb</option>
+                                                <option value="google" @selected($review->source === 'google')>Google</option>
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.reviewer') }}</span>
+                                            <input type="text" name="reviewer_name" value="{{ $review->reviewer_name }}" required>
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.rating') }}</span>
+                                            <input type="number" name="rating" min="1" max="5" value="{{ $review->rating }}" required>
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.review_date') }}</span>
+                                            <input type="date" name="reviewed_at" value="{{ $review->reviewed_at?->toDateString() ?? now()->toDateString() }}">
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.review_text') }}</span>
+                                            <textarea name="review_text" rows="3">{{ $review->review_text }}</textarea>
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.source_url') }}</span>
+                                            <input type="url" name="source_url" value="{{ $review->source_url }}">
+                                        </label>
+                                        <label class="checkbox-field">
+                                            <input type="checkbox" name="is_active" value="1" {{ $review->is_active ? 'checked' : '' }}>
+                                            <span>{{ __('messages.admin.show_home') }}</span>
+                                        </label>
+                                        <div class="review-admin-actions">
+                                            <button type="submit" class="btn btn-ghost">{{ __('messages.admin.save_review') }}</button>
+                                        </div>
+                                    </form>
+
+                                    <form method="POST" action="{{ route('admin.establishments.reviews.destroy', [$establishment, $review]) }}" class="review-delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger">{{ __('messages.admin.delete') }}</button>
+                                    </form>
+                                </article>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            @if ($establishment->exists)
+                <div id="establishment-panel-hosts" class="property-tab-panel" role="tabpanel" data-property-panel="hosts" hidden>
+                    <h2>{{ __('messages.admin.hosts_tab') }}</h2>
+                    <p class="form-help">{{ __('messages.admin.hosts_tab_description') }}</p>
+
+                    <h3 class="stacked-title">{{ __('messages.admin.add_host') }}</h3>
+                    <form method="POST" action="{{ route('admin.establishments.hosts.store', $establishment) }}">
+                        @csrf
+                        <div class="admin-form-grid compact">
+                            <label>
+                                <span>{{ __('messages.admin.host_name') }}</span>
+                                <input type="text" name="name" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.common.email') }}</span>
+                                <input type="email" name="email" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.initial_password') }}</span>
+                                <input type="password" name="password" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.common.confirm_password') }}</span>
+                                <input type="password" name="password_confirmation" required>
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">{{ __('messages.admin.add_host') }}</button>
+                        </div>
+                    </form>
+
+                    <h3 class="stacked-title">{{ __('messages.admin.hosts_assigned') }}</h3>
+                    @if ($establishment->hosts->isEmpty())
+                        <p>{{ __('messages.admin.no_hosts_assigned') }}</p>
+                    @else
+                        <div class="feature-grid review-admin-grid">
+                            @foreach ($establishment->hosts as $assignedHost)
+                                <article class="feature-card review-admin-card">
+                                    <h4>{{ $assignedHost->name }}</h4>
+                                    <p>{{ $assignedHost->email }}</p>
+                                    <form method="POST" action="{{ route('admin.establishments.hosts.destroy', [$establishment, $assignedHost]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger">{{ __('messages.admin.remove_host') }}</button>
+                                    </form>
+                                </article>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
     </x-card>
 @endsection

@@ -70,6 +70,16 @@ class Establishment extends Model
         return $this->hasMany(EstablishmentTranslation::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(SiteReview::class);
+    }
+
+    public function hosts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'establishment_host')->withTimestamps();
+    }
+
     public function localized(string $field, ?string $locale = null): mixed
     {
         $locale ??= app()->getLocale();

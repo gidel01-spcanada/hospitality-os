@@ -49,6 +49,7 @@ class AdminReservationController extends Controller
 
     public function edit(Reservation $reservation): View
     {
+        $this->ownedReservation($reservation);
         $reservation->load('guest');
 
         return view('admin.reservations.form', [
@@ -59,6 +60,7 @@ class AdminReservationController extends Controller
 
     public function update(Request $request, Reservation $reservation, AvailabilityService $availabilityService): RedirectResponse
     {
+        $this->ownedReservation($reservation);
         $validated = $this->validateReservation($request, $reservation);
         $property = $this->ownedProperty($validated['property_id']);
         $checkIn = Carbon::parse($validated['check_in']);
@@ -104,8 +106,11 @@ class AdminReservationController extends Controller
 
     public function index(Request $request): View
     {
+        $user = auth()->user();
+
         $reservations = Reservation::query()
             ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user && $user->isHost(), fn ($query) => $query->whereHas('property', fn ($q) => $q->whereIn('establishment_id', $user->establishments()->pluck('establishments.id'))))
             ->with(['property', 'guest'])
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
@@ -129,6 +134,8 @@ class AdminReservationController extends Controller
 
     public function show(Reservation $reservation): View
     {
+        $this->ownedReservation($reservation);
+
         $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
 
         return view('admin.reservations.show', compact('reservation'));
@@ -183,6 +190,8 @@ class AdminReservationController extends Controller
 
     public function updateStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
     {
+        $this->ownedReservation($reservation);
+
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:pending,pending_payment,confirmed,checked_in,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -206,6 +215,7 @@ class AdminReservationController extends Controller
 
     public function sendPaymentLink(Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
     {
+        $this->ownedReservation($reservation);
         abort_unless($reservation->canSendPaymentLink(), 403);
 
         $emailService->queuePaymentLink($reservation);
@@ -216,8 +226,11 @@ class AdminReservationController extends Controller
 
     private function tenantProperties()
     {
+        $user = auth()->user();
+
         return Property::query()
             ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user && $user->isHost(), fn ($query) => $query->whereIn('establishment_id', $user->establishments()->pluck('establishments.id')))
             ->orderBy('name')
             ->get();
     }
@@ -228,15 +241,27 @@ class AdminReservationController extends Controller
      */
     private function ownedProperty(int $propertyId): Property
     {
-        return Property::query()
+        $property = Property::query()
             ->whereKey($propertyId)
             ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
             ->firstOrFail();
+
+        $user = auth()->user();
+        if ($user && $user->isHost()) {
+            abort_unless($user->managesEstablishment($property->establishment_id), 403, __('messages.errors.establishment_manager_required'));
+        }
+
+        return $property;
     }
 
     private function ownedReservation(Reservation $reservation): Reservation
     {
         abort_unless($reservation->property?->establishment?->tenant_id === app(CurrentTenant::class)->id(), 404);
+
+        $user = auth()->user();
+        if ($user && $user->isHost()) {
+            abort_unless($user->managesEstablishment($reservation->property?->establishment_id), 403, __('messages.errors.establishment_manager_required'));
+        }
 
         return $reservation;
     }

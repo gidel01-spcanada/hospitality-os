@@ -15,7 +15,7 @@ class MessageEmailService
         $recipients = $sender->id === $thread->customer_id
             ? User::query()
                 ->where('tenant_id', $thread->establishment->tenant_id)
-                ->whereIn('role', ['admin', 'concierge'])
+                ->whereIn('role', ['admin', 'concierge', 'host'])
                 ->where('email_message_updates', true)
                 ->where('id', '!=', $sender->id)
                 ->get()

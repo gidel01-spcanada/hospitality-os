@@ -2,6 +2,8 @@
     <a class="{{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}" href="{{ route('admin.dashboard') }}">{{ __('messages.admin.back_dashboard') }}</a>
     @if (auth()->user()->isAdmin())
         <a class="{{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}" href="{{ route('admin.users.index') }}">{{ __('messages.admin.users') }}</a>
+    @endif
+    @if (auth()->user()->isEstablishmentManager())
         <a class="{{ request()->routeIs('admin.establishments.*') ? 'is-active' : '' }}" href="{{ route('admin.establishments.index') }}">{{ __('messages.admin.establishments') }}</a>
         <a class="{{ request()->routeIs('admin.properties.*') ? 'is-active' : '' }}" href="{{ route('admin.properties.index') }}">{{ __('messages.admin.properties') }}</a>
     @endif
