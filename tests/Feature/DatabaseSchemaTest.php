@@ -30,6 +30,8 @@ class DatabaseSchemaTest extends TestCase
             'admin_availability_blocks',
             'external_calendar_feeds',
             'external_calendar_events',
+            'cleaning_visits',
+            'cleaning_schedule_shares',
             'settings',
             'email_outbox',
             'audit_logs',

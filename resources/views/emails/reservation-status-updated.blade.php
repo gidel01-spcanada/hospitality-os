@@ -7,5 +7,11 @@
     @if (!empty($checkout_url))
         <p><a href="{{ $checkout_url }}">{{ __('messages.reservation_status.email_action') }}</a></p>
     @endif
+    @if (($review_channel ?? null) !== 'google' && !empty($review_url))
+        <p><a href="{{ $review_url }}">{{ __('messages.review_request.email_internal_action') }}</a></p>
+    @endif
+    @if (in_array($review_channel ?? null, ['google', 'both'], true) && !empty($google_review_url))
+        <p><a href="{{ $google_review_url }}">{{ __('messages.review_request.email_google_action') }}</a></p>
+    @endif
 </body>
 </html>

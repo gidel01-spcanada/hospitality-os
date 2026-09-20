@@ -1,5 +1,107 @@
 import './bootstrap';
 
+const analyticsConfig = window.__ANALYTICS_CONFIG__ || null;
+let analyticsReady = false;
+
+const loadAnalytics = () => {
+	if (analyticsReady || !analyticsConfig) return;
+	analyticsReady = true;
+
+	if (analyticsConfig.ga4MeasurementId && !analyticsConfig.gtmContainerId) {
+		window.dataLayer = window.dataLayer || [];
+		window.gtag = (...args) => window.dataLayer.push(args);
+		window.gtag('js', new Date());
+		window.gtag('config', analyticsConfig.ga4MeasurementId, { anonymize_ip: true });
+		const script = document.createElement('script');
+		script.async = true;
+		script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(analyticsConfig.ga4MeasurementId)}`;
+		document.head.appendChild(script);
+	}
+
+	if (analyticsConfig.gtmContainerId) {
+		window.dataLayer = window.dataLayer || [];
+		window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+		const script = document.createElement('script');
+		script.async = true;
+		script.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(analyticsConfig.gtmContainerId)}`;
+		document.head.appendChild(script);
+	}
+
+	window.trackEvent = (name, parameters = {}) => {
+		const safeParameters = Object.fromEntries(Object.entries(parameters).filter(([key, value]) =>
+			!/(email|phone|name|address|token|reservation)/i.test(key) && ['string', 'number', 'boolean'].includes(typeof value)));
+		if (typeof window.gtag === 'function') window.gtag('event', name, safeParameters);
+		window.dataLayer?.push({ event: name, ...safeParameters });
+	};
+	window.trackEvent('page_view', { page_path: window.location.pathname, page_language: document.documentElement.lang });
+};
+
+const analyticsConsent = document.querySelector('[data-analytics-consent]');
+if (analyticsConsent) {
+	const storedConsent = window.localStorage.getItem('afrik_analytics_consent');
+	if (storedConsent === 'accepted') loadAnalytics();
+	if (!storedConsent) analyticsConsent.hidden = false;
+	analyticsConsent.querySelector('[data-analytics-consent-accept]')?.addEventListener('click', () => {
+		window.localStorage.setItem('afrik_analytics_consent', 'accepted');
+		analyticsConsent.hidden = true;
+		loadAnalytics();
+	});
+	analyticsConsent.querySelector('[data-analytics-consent-decline]')?.addEventListener('click', () => {
+		window.localStorage.setItem('afrik_analytics_consent', 'declined');
+		analyticsConsent.hidden = true;
+	});
+}
+
+document.addEventListener('click', (event) => {
+	const propertyLink = event.target.closest('a.property-link, a.property-gallery-link');
+	if (propertyLink) window.trackEvent?.('select_property', { page_path: new URL(propertyLink.href).pathname });
+});
+
+document.addEventListener('submit', (event) => {
+	if (event.target.matches('#compare-form')) window.trackEvent?.('compare_properties', { selected_count: event.target.querySelectorAll('[data-compare-option]:checked').length });
+	if (event.target.matches('form[action*="/reserve"], form[action*="/checkout"]')) window.trackEvent?.('start_booking', { page_path: window.location.pathname });
+});
+
+const confirmDialog = document.querySelector('[data-confirm-dialog]');
+let pendingConfirmationForm = null;
+
+if (confirmDialog) {
+	const message = confirmDialog.querySelector('[data-confirm-dialog-message]');
+	const cancel = confirmDialog.querySelector('[data-confirm-dialog-cancel]');
+	const accept = confirmDialog.querySelector('[data-confirm-dialog-accept]');
+
+	document.addEventListener('submit', (event) => {
+		const isDelete = event.target.querySelector('input[name="_method"][value="DELETE"]');
+		const confirmation = event.submitter?.dataset.confirmMessage
+			|| event.target.dataset.confirmMessage
+			|| (isDelete ? confirmDialog.dataset.defaultMessage : '');
+		if (!confirmation || event.target.dataset.confirmed === 'true') {
+			return;
+		}
+
+		event.preventDefault();
+		pendingConfirmationForm = event.target;
+		message.textContent = confirmation;
+		confirmDialog.showModal();
+		cancel.focus();
+	});
+
+	cancel.addEventListener('click', () => confirmDialog.close());
+	accept.addEventListener('click', () => {
+		if (!pendingConfirmationForm) {
+			return;
+		}
+
+		pendingConfirmationForm.dataset.confirmed = 'true';
+		confirmDialog.close();
+		pendingConfirmationForm.requestSubmit();
+		pendingConfirmationForm = null;
+	});
+	confirmDialog.addEventListener('close', () => {
+		pendingConfirmationForm = null;
+	});
+}
+
 const mobileMenuToggle = document.querySelector('[data-mobile-menu-toggle]');
 const mobileNavActions = document.querySelector('.nav-actions');
 
@@ -10,6 +112,111 @@ if (mobileMenuToggle && mobileNavActions) {
 		mobileMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 	});
 }
+
+document.querySelector('[data-account-tabs] .is-active')?.scrollIntoView({
+	block: 'nearest',
+	inline: 'center',
+});
+
+document.querySelector('[data-print-report]')?.addEventListener('click', () => window.print());
+
+document.querySelectorAll('[data-admin-modal-open]').forEach((button) => {
+	const modal = document.querySelector(`[data-admin-modal="${button.dataset.adminModalOpen}"]`);
+	if (!modal) return;
+	button.addEventListener('click', () => {
+		modal.showModal();
+		modal.querySelector('input:not([type="hidden"]), select, textarea, button:not([data-admin-modal-close])')?.focus();
+	});
+});
+
+document.querySelectorAll('[data-admin-modal]').forEach((modal) => {
+	modal.querySelector('[data-admin-modal-close]')?.addEventListener('click', () => modal.close());
+	modal.addEventListener('click', (event) => {
+		if (event.target === modal) modal.close();
+	});
+});
+
+document.querySelectorAll('[data-host-mode]').forEach((mode) => {
+	const form = mode.closest('form');
+	const existingField = form?.querySelector('[data-host-existing-field]');
+	const createFields = form?.querySelector('[data-host-create-fields]');
+	const update = () => {
+		const existing = mode.value === 'existing';
+		if (existingField) existingField.hidden = !existing;
+		if (createFields) createFields.hidden = existing;
+		createFields?.querySelectorAll('input').forEach((input) => { input.disabled = existing; });
+		existingField?.querySelectorAll('select').forEach((select) => { select.disabled = !existing; });
+	};
+	mode.addEventListener('change', update);
+	update();
+});
+
+document.querySelectorAll('[data-cleaning-edit-label]').forEach((row, index) => {
+	const form = [...row.querySelectorAll('form')].find((candidate) => candidate.method.toLowerCase() === 'put' || candidate.querySelector('input[name="_method"][value="PUT"]'));
+	if (!form) return;
+	const modalId = `cleaning-edit-modal-${index}`;
+	const heading = form.querySelector('.cleaning-visit-heading');
+	const summary = heading?.cloneNode(true);
+	const modal = document.createElement('dialog');
+	modal.className = 'admin-modal admin-modal--side';
+	modal.dataset.adminModal = modalId;
+	modal.setAttribute('aria-labelledby', `${modalId}-title`);
+	modal.innerHTML = `<div class="admin-modal-card"><header class="admin-modal-header"><h2 id="${modalId}-title">${row.dataset.cleaningEditTitle}</h2><button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button></header><div class="admin-modal-body"></div></div>`;
+	modal.querySelector('.admin-modal-body').appendChild(form);
+	row.appendChild(modal);
+	if (heading) {
+		heading.replaceWith(summary);
+	}
+	const actions = document.createElement('div');
+	actions.className = 'cleaning-row-actions';
+	actions.innerHTML = `<button type="button" class="btn btn-ghost btn-small" data-cleaning-edit-open>${row.dataset.cleaningEditLabel}</button>`;
+	row.querySelector('form[action*="/cleaning/"]:not([action*="/cleaning/shares/"])')?.after(actions);
+	const open = actions.querySelector('[data-cleaning-edit-open]');
+	open.addEventListener('click', () => {
+		modal.showModal();
+		modal.querySelector('input:not([type="hidden"]), select, textarea, button:not([data-admin-modal-close])')?.focus();
+	});
+	modal.querySelector('[data-admin-modal-close]').addEventListener('click', () => modal.close());
+	modal.addEventListener('click', (event) => { if (event.target === modal) modal.close(); });
+});
+
+document.querySelectorAll('[data-property-panel="rules"], [data-property-panel="availability"], [data-property-panel="calendars"]').forEach((panel) => {
+	const form = [...panel.querySelectorAll('form')].find((candidate) => /price-rules|availability|calendar\/feeds/.test(candidate.action));
+	if (!form || form.closest('dialog')) return;
+
+	const modalId = `${panel.dataset.propertyPanel}-form-modal`;
+	const modal = document.createElement('dialog');
+	modal.className = 'admin-modal';
+	modal.dataset.adminModal = modalId;
+	modal.setAttribute('aria-labelledby', `${modalId}-title`);
+	modal.innerHTML = `<div class="admin-modal-card"><header class="admin-modal-header"><h2 id="${modalId}-title">${form.querySelector('button[type="submit"]')?.textContent.trim() || 'Ajouter'}</h2><button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button></header><div class="admin-modal-body"></div></div>`;
+	modal.querySelector('.admin-modal-body').appendChild(form);
+	panel.appendChild(modal);
+
+	const trigger = document.createElement('button');
+	trigger.type = 'button';
+	trigger.className = 'btn btn-primary';
+	trigger.dataset.adminModalOpen = modalId;
+	trigger.textContent = form.querySelector('button[type="submit"]')?.textContent.trim() || 'Ajouter';
+	const heading = panel.querySelector('.admin-panel > h2');
+	if (heading) {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'admin-panel-heading';
+		heading.replaceWith(wrapper);
+		wrapper.append(heading, trigger);
+	} else {
+		panel.querySelector('.admin-panel')?.prepend(trigger);
+	}
+
+	trigger.addEventListener('click', () => {
+		modal.showModal();
+		modal.querySelector('input:not([type="hidden"]), select, textarea, button:not([data-admin-modal-close])')?.focus();
+	});
+	modal.querySelector('[data-admin-modal-close]').addEventListener('click', () => modal.close());
+	modal.addEventListener('click', (event) => {
+		if (event.target === modal) modal.close();
+	});
+});
 
 document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	let images;
@@ -158,6 +365,30 @@ document.querySelectorAll('[data-video-embed]').forEach((button) => {
 	});
 });
 
+document.querySelectorAll('form').forEach((form) => {
+	const pairs = [['effective_from', 'effective_to'], ['date_from', 'date_to'], ['check_in', 'check_out']];
+	for (const [startName, endName] of pairs) {
+		const startInput = form.querySelector(`input[type="date"][name="${startName}"]`);
+		const endInput = form.querySelector(`input[type="date"][name="${endName}"]`);
+		if (!startInput || !endInput || form.querySelector('[data-date-range-picker]')) continue;
+		const picker = document.createElement('div');
+		picker.className = 'date-range-picker admin-date-range-picker';
+		picker.dataset.dateRangePicker = '';
+		picker.dataset.incompleteMessage = 'Select both dates';
+		picker.dataset.pastMessage = 'Invalid date';
+		picker.dataset.startLabel = 'End';
+		picker.dataset.endLabel = 'End';
+		picker.dataset.placeholder = 'Start / End';
+		picker.innerHTML = `<label><span>Start / End</span><button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>Start / End</span></button></label><input type="hidden" name="${startName}" value="${startInput.value}" data-date-range-start><input type="hidden" name="${endName}" value="${endInput.value}" data-date-range-end><div class="date-range-popover" data-date-range-popover hidden></div>`;
+		startInput.closest('label, div')?.setAttribute('hidden', 'hidden');
+		endInput.closest('label, div')?.setAttribute('hidden', 'hidden');
+		startInput.disabled = true;
+		endInput.disabled = true;
+		form.insertBefore(picker, startInput.closest('label, div') || startInput);
+		break;
+	}
+});
+
 document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 	const trigger = picker.querySelector('[data-date-range-trigger]');
 	const popover = picker.querySelector('[data-date-range-popover]');
@@ -166,12 +397,14 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 	const endInput = picker.querySelector('[data-date-range-end]');
 	let start = startInput.value || '';
 	let end = endInput.value || '';
+	const todayValue = new Date().toISOString().slice(0, 10);
+	const allowPastDates = picker.classList.contains('admin-date-range-picker');
 	let visibleMonth = start ? new Date(`${start}T12:00:00`) : new Date();
 	visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
 
 	const formatDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 	const displayDate = (value) => value ? new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '';
-	const render = () => {
+	const render = (focusSelector = null) => {
 		const year = visibleMonth.getFullYear();
 		const month = visibleMonth.getMonth();
 		const firstDay = new Date(year, month, 1);
@@ -182,11 +415,12 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 			const value = formatDate(new Date(year, month, day));
 			const selected = value === start || value === end;
 			const inRange = start && end && value > start && value < end;
-			cells.push(`<button type="button" class="date-range-day${selected ? ' is-selected' : ''}${inRange ? ' is-in-range' : ''}" data-date-value="${value}">${day}</button>`);
+			const past = !allowPastDates && value < todayValue;
+			cells.push(`<button type="button" class="date-range-day${selected ? ' is-selected' : ''}${inRange ? ' is-in-range' : ''}${past ? ' is-past' : ''}" data-date-value="${value}"${past ? ' disabled aria-disabled="true"' : ''}>${day}</button>`);
 		}
 		popover.innerHTML = `<div class="date-range-header"><button type="button" data-date-prev aria-label="Previous month">&larr;</button><strong>${visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</strong><button type="button" data-date-next aria-label="Next month">&rarr;</button></div><div class="date-range-weekdays">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => `<span>${day}</span>`).join('')}</div><div class="date-range-days">${cells.join('')}</div>`;
-		popover.querySelector('[data-date-prev]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render(); });
-		popover.querySelector('[data-date-next]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() + 1); render(); });
+		popover.querySelector('[data-date-prev]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() - 1); render('[data-date-prev]'); });
+		popover.querySelector('[data-date-next]').addEventListener('click', () => { visibleMonth.setMonth(visibleMonth.getMonth() + 1); render('[data-date-next]'); });
 		popover.querySelectorAll('[data-date-value]').forEach((dayButton) => {
 			dayButton.addEventListener('click', () => {
 				const value = dayButton.dataset.dateValue;
@@ -203,32 +437,39 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 					popover.hidden = true;
 					trigger.setAttribute('aria-expanded', 'false');
 				}
-				render();
+				render(start && end ? null : `[data-date-value="${value}"]`);
 			});
 		});
+		if (focusSelector) {
+			popover.querySelector(focusSelector)?.focus();
+		}
 	};
 
 	trigger.addEventListener('click', () => {
-		popover.hidden = !popover.hidden;
-		trigger.setAttribute('aria-expanded', String(!popover.hidden));
-		if (!popover.hidden) render();
-	});
-	const form = picker.closest('form');
-	form?.addEventListener('submit', (event) => {
-		if ((start && !end) || (!start && end)) {
-			event.preventDefault();
-			trigger.setAttribute('aria-invalid', 'true');
-			label.textContent = picker.dataset.incompleteMessage;
+		if (popover.hidden) {
 			popover.hidden = false;
 			trigger.setAttribute('aria-expanded', 'true');
 			render();
 		}
 	});
-	document.addEventListener('click', (event) => {
-		if (!picker.contains(event.target)) {
+	const form = picker.closest('form');
+	form?.addEventListener('submit', (event) => {
+		if ((start && start < todayValue) || (end && end < todayValue) || (start && !end) || (!start && end)) {
+			event.preventDefault();
+			trigger.setAttribute('aria-invalid', 'true');
+			label.textContent = start < todayValue || end < todayValue ? picker.dataset.pastMessage : picker.dataset.incompleteMessage;
+			popover.hidden = false;
+			trigger.setAttribute('aria-expanded', 'true');
+			render();
+		}
+	});
+	picker.addEventListener('focusout', () => {
+		window.requestAnimationFrame(() => {
+			if (!picker.contains(document.activeElement)) {
 			popover.hidden = true;
 			trigger.setAttribute('aria-expanded', 'false');
-		}
+			}
+		});
 	});
 });
 
@@ -248,6 +489,68 @@ document.querySelectorAll('[data-language-tab]').forEach((tab) => {
 			panel.classList.toggle('is-active', active);
 			panel.hidden = !active;
 		});
+	});
+});
+
+document.querySelectorAll('[data-ai-copy-assistant]').forEach((assistant) => {
+	const form = assistant.closest('[data-property-tabs]')?.querySelector('[data-property-editor-form]') || assistant.closest('form');
+	const generate = assistant.querySelector('[data-ai-copy-generate]');
+	const preview = assistant.querySelector('[data-ai-copy-preview]');
+	const status = assistant.querySelector('[data-ai-copy-status]');
+	const fields = ['summary_fr', 'description_fr', 'summary_en', 'description_en'];
+	const sourceFor = (field) => {
+		const [type, locale] = field.split('_');
+		return form.elements[`translations[${locale}][${type}]`];
+	};
+
+	generate?.addEventListener('click', async () => {
+		generate.disabled = true;
+		generate.setAttribute('aria-busy', 'true');
+		status.textContent = assistant.dataset.loadingLabel;
+		preview.hidden = true;
+
+		try {
+			const response = await fetch(assistant.dataset.endpoint, {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+				},
+				body: JSON.stringify(Object.fromEntries(fields.map((field) => [field, sourceFor(field)?.value || '']))),
+			});
+			const payload = await response.json();
+			if (!response.ok) {
+				const validationMessage = payload.errors ? Object.values(payload.errors).flat()[0] : null;
+				throw new Error(validationMessage || payload.message || assistant.dataset.errorLabel);
+			}
+
+			fields.forEach((field) => {
+				assistant.querySelector(`[data-ai-copy-result="${field}"]`).value = payload.suggestion[field];
+			});
+			preview.hidden = false;
+			status.textContent = assistant.dataset.readyLabel;
+			preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		} catch (error) {
+			status.textContent = error.message || assistant.dataset.errorLabel;
+		} finally {
+			generate.disabled = false;
+			generate.removeAttribute('aria-busy');
+		}
+	});
+
+	assistant.querySelector('[data-ai-copy-apply]')?.addEventListener('click', () => {
+		fields.forEach((field) => {
+			const source = sourceFor(field);
+			if (source) source.value = assistant.querySelector(`[data-ai-copy-result="${field}"]`).value;
+		});
+		preview.hidden = true;
+		status.textContent = assistant.dataset.appliedLabel;
+	});
+
+	assistant.querySelector('[data-ai-copy-discard]')?.addEventListener('click', () => {
+		preview.hidden = true;
+		status.textContent = assistant.dataset.discardedLabel;
 	});
 });
 
@@ -301,6 +604,25 @@ document.querySelectorAll('[data-property-tab]').forEach((tab) => {
 		});
 		window.sessionStorage.setItem(`admin-editor-tab:${window.location.pathname}`, tabName);
 		window.history.replaceState(null, '', `#${tabName}`);
+		tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+	});
+
+	tab.addEventListener('keydown', (event) => {
+		if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+			return;
+		}
+
+		event.preventDefault();
+		const tabs = [...tab.closest('[role="tablist"]').querySelectorAll('[data-property-tab]')];
+		const currentIndex = tabs.indexOf(tab);
+		const nextIndex = event.key === 'Home'
+			? 0
+			: event.key === 'End'
+				? tabs.length - 1
+				: (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+
+		tabs[nextIndex].focus();
+		tabs[nextIndex].click();
 	});
 });
 
@@ -365,6 +687,40 @@ document.querySelectorAll('[data-photo-sortable]').forEach((list) => {
 	};
 
 	rows().forEach((row) => {
+		const handle = row.querySelector('.photo-drag-handle');
+		if (handle) {
+			handle.tabIndex = 0;
+			handle.setAttribute('role', 'button');
+			handle.setAttribute('aria-describedby', 'photo-reorder-help');
+			handle.addEventListener('keydown', (event) => {
+				if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+					return;
+				}
+
+				event.preventDefault();
+				const orderedRows = rows();
+				const currentIndex = orderedRows.indexOf(row);
+				const targetIndex = event.key === 'Home'
+					? 0
+					: event.key === 'End'
+						? orderedRows.length - 1
+						: currentIndex + (event.key === 'ArrowDown' ? 1 : -1);
+
+				if (targetIndex < 0 || targetIndex >= orderedRows.length || targetIndex === currentIndex) {
+					return;
+				}
+
+				if (targetIndex > currentIndex) {
+					list.insertBefore(row, orderedRows[targetIndex].nextSibling);
+				} else {
+					list.insertBefore(row, orderedRows[targetIndex]);
+				}
+
+				updatePhotoOrder();
+				handle.focus();
+			});
+		}
+
 		row.addEventListener('dragstart', (event) => {
 			draggedRow = row;
 			row.classList.add('is-dragging');
@@ -431,14 +787,26 @@ document.querySelectorAll('[data-copy-payment-link]').forEach((button) => {
 
 document.querySelectorAll('[data-copy-text]').forEach((button) => {
 	button.addEventListener('click', async () => {
-		const originalLabel = button.textContent;
+		const status = button.parentElement?.querySelector('[data-copy-text-status]');
 		try {
 			await navigator.clipboard.writeText(button.dataset.copyText ?? '');
-			button.textContent = 'OK';
+			if (status) {
+				status.textContent = button.dataset.copySuccess ?? 'Copied.';
+				status.hidden = false;
+			} else {
+				button.textContent = button.dataset.copySuccessShort ?? 'OK';
+			}
 		} catch {
-			button.textContent = '—';
+			if (status) {
+				status.textContent = button.dataset.copyError ?? 'Unable to copy.';
+				status.hidden = false;
+			} else {
+				button.textContent = button.dataset.copyErrorShort ?? '—';
+			}
 		}
-		window.setTimeout(() => { button.textContent = originalLabel; }, 1600);
+		window.setTimeout(() => {
+			if (status) status.hidden = true;
+		}, 2400);
 	});
 });
 
@@ -460,6 +828,29 @@ document.querySelectorAll('[data-copy-share-link]').forEach((button) => {
 		}
 	});
 });
+
+const compareForm = document.querySelector('#compare-form');
+if (compareForm) {
+	const compareOptions = [...document.querySelectorAll('[data-compare-option][form="compare-form"]')];
+	const compareCount = compareForm.querySelector('[data-compare-count]');
+	const compareSubmit = compareForm.querySelector('button[type="submit"]');
+	const updateCompareState = () => {
+		const selected = compareOptions.filter((option) => option.checked);
+		compareOptions.forEach((option) => {
+			option.disabled = !option.checked && selected.length >= 3;
+		});
+		if (compareCount) {
+			compareCount.textContent = compareCount.dataset.template?.replace(':count', selected.length) || `${selected.length} selected`;
+		}
+		if (compareSubmit) compareSubmit.disabled = selected.length < 2;
+	};
+	compareCount?.setAttribute('data-template', compareCount.textContent.replace(/\d+/, ':count'));
+	compareOptions.forEach((option) => option.addEventListener('change', updateCompareState));
+	compareForm.addEventListener('submit', (event) => {
+		if (compareOptions.filter((option) => option.checked).length < 2) event.preventDefault();
+	});
+	updateCompareState();
+}
 
 document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => {
 	const parseRanges = (value) => {
@@ -504,7 +895,7 @@ document.querySelectorAll('[data-availability-calendar]').forEach((calendar) => 
 	render();
 });
 
-document.querySelectorAll('[data-toggle-availability]').forEach((button) => {
+document.querySelectorAll('[data-toggle-availability], [data-toggle-content]').forEach((button) => {
 	button.addEventListener('click', () => {
 		const content = document.getElementById(button.getAttribute('aria-controls'));
 		const expanded = button.getAttribute('aria-expanded') === 'true';

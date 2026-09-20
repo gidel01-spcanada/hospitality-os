@@ -24,4 +24,14 @@ class ProductionSecurityTest extends TestCase
             ->assertNotFound()
             ->assertSeeText('Page introuvable');
     }
+
+    public function test_404_error_page_uses_the_selected_locale(): void
+    {
+        $this->withSession(['locale' => 'en'])
+            ->get('/missing-page-for-locale-test')
+            ->assertNotFound()
+            ->assertSee('lang="en"', false)
+            ->assertSee('Error 404')
+            ->assertSee('Page not found');
+    }
 }

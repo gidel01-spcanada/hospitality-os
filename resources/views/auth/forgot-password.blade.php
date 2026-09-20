@@ -21,9 +21,9 @@
 
         <div class="field-group">
             <label for="email">{{ __('messages.auth.email') }}</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus @error('email') class="is-error" aria-invalid="true" aria-describedby="forgot-email-error" @enderror>
             @error('email')
-                <span class="error-text">{{ $message }}</span>
+                <span id="forgot-email-error" class="form-error">{{ $message }}</span>
             @enderror
         </div>
 

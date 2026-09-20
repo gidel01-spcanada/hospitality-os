@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ __('messages.checkout.badge') }} | {{ \App\Support\PlatformBrand::name() }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-100 text-slate-900">
+@extends('layouts.app')
+
+@section('title', __('messages.checkout.badge') . ' | ' . \App\Support\PlatformBrand::name())
+
+@section('content')
+<section class="checkout-page bg-slate-100 text-slate-900">
     <div class="mx-auto max-w-5xl px-4 py-10">
         <div class="mb-6">
             <p class="text-sm uppercase tracking-[0.2em] text-amber-600">{{ __('messages.checkout.badge') }}</p>
@@ -19,6 +16,16 @@
         @if (session('status'))
             <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 {{ session('status') }}
+            </div>
+        @endif
+
+        @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
+            <div class="checkout-mobile-summary">
+                <div>
+                    <span>{{ __('messages.reservation.total') }}</span>
+                    <strong>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</strong>
+                </div>
+                <a class="btn btn-primary" href="#checkout-payment">{{ __('messages.checkout.continue_to_payment') }}</a>
             </div>
         @endif
 
@@ -68,30 +75,36 @@
                     </div>
                 @endif
 
-                <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <h3 class="text-lg font-semibold">{{ __('messages.checkout.methods') }}</h3>
-                    <ul class="mt-3 space-y-2 text-sm text-slate-700">
-                        @foreach ($paymentMethods as $provider => $method)
-                            <li>• {{ __('messages.checkout.' . $provider) }}@if ($method['instructions']) — {{ $method['instructions'] }}@endif
-                                @if (in_array($provider, ['interac', 'wise', 'revolut'], true))
-                                    @php
-                                        $internationalAmount = $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount);
-                                        $interacAmount = app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $reservation->property?->establishment?->secondary_currency);
-                                    @endphp
-                                    @if ($interacAmount !== null)
-                                        <div class="ml-4 mt-1 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($interacAmount, 2, ',', ' '), 'currency' => $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($interacAmount, 2, '.', '') }} {{ $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency }}">{{ __('messages.checkout.copy') }}</button></div>
+                @if (count($paymentMethods) > 1)
+                    <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <h3 class="text-lg font-semibold">{{ __('messages.checkout.methods') }}</h3>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                            @foreach ($paymentMethods as $provider => $method)
+                                <li>• {{ __('messages.checkout.' . $provider) }}@if ($method['instructions']) — {{ $method['instructions'] }}@endif
+                                    @if (in_array($provider, ['interac', 'wise', 'revolut'], true))
+                                        @php
+                                            $internationalAmount = $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount);
+                                            $interacAmount = app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $reservation->property?->establishment?->secondary_currency);
+                                        @endphp
+                                        @if ($interacAmount !== null)
+                                            <div class="ml-4 mt-1 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($interacAmount, 2, ',', ' '), 'currency' => $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($interacAmount, 2, '.', '') }} {{ $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency }}">{{ __('messages.checkout.copy') }}</button></div>
+                                        @endif
+                                        @if (!empty($method['email']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_email', ['email' => $method['email']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['email'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
+                                        @if ($provider === 'interac' && !empty($method['security_question']))<div class="ml-4 text-xs">{{ __('messages.checkout.interac_question', ['question' => $method['security_question']]) }}</div>@endif
+                                        @if ($provider === 'interac' && !empty($method['security_answer']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.interac_answer', ['answer' => $method['security_answer']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['security_answer'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
                                     @endif
-                                    @if (!empty($method['email']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_email', ['email' => $method['email']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['email'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
-                                    @if ($provider === 'interac' && !empty($method['security_question']))<div class="ml-4 text-xs">{{ __('messages.checkout.interac_question', ['question' => $method['security_question']]) }}</div>@endif
-                                    @if ($provider === 'interac' && !empty($method['security_answer']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.interac_answer', ['answer' => $method['security_answer']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['security_answer'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </section>
 
-            <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <aside id="checkout-payment" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                @php
+                    $latestAttempt = $reservation->paymentAttempts->last();
+                    $payLaterInstructions = trim((string) ($paymentMethods['pay_later']['instructions'] ?? ''));
+                @endphp
                 @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
                     @php
                         $nonPaypalMethods = collect($paymentMethods)->except('paypal')->all();
@@ -159,8 +172,8 @@
                     @endif
                 @endif
 
-                @if (in_array('pay_later', array_keys($paymentMethods), true) && $reservation->status === 'pending')
-                    <p class="mt-3 text-center text-sm text-slate-600">{{ __('messages.checkout.pay_later') }}: {{ $paymentMethods['pay_later']['instructions'] ?: __('messages.checkout.pay_later') }}</p>
+                @if (isset($paymentMethods['pay_later']) && $reservation->status === 'pending' && $payLaterInstructions !== '' && $payLaterInstructions !== __('messages.checkout.pay_later'))
+                    <p class="mt-3 text-center text-sm text-slate-600">{{ $payLaterInstructions }}</p>
                 @endif
 
                 @if($reservation->paymentAttempts->isNotEmpty())
@@ -180,7 +193,6 @@
                     </div>
                 @endif
 
-                @php $latestAttempt = $reservation->paymentAttempts->last(); @endphp
                 @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && ($isDevEnvironment || $latestAttempt->provider !== 'pay_later'))
                     <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
                         @csrf
@@ -199,7 +211,7 @@
                             {{ __('messages.checkout.cancellation_fee_warning', ['amount' => number_format($cancellationFee, 0, ',', ' '), 'currency' => $reservation->currency]) }}
                         </p>
                     @endif
-                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-3" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-3" data-confirm-message="{{ __('messages.checkout.cancel_confirmation') }}">
                         @csrf
                         <button type="submit" class="w-full rounded-md border border-red-200 bg-white px-4 py-2.5 font-medium text-red-700 hover:bg-red-50">
                             {{ __('messages.checkout.cancel_reservation') }}
@@ -209,6 +221,7 @@
             </aside>
         </div>
     </div>
+</section>
 
     @if (isset($paymentMethods['paypal']) && $reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
         @php
@@ -279,5 +292,4 @@
             });
         </script>
     @endif
-</body>
-</html>
+@endsection

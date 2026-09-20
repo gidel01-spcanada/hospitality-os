@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Establishment;
 use App\Models\ExternalCalendarEvent;
+use App\Models\Amenity;
 use App\Models\ExternalCalendarFeed;
 use App\Models\Property;
 use App\Models\Reservation;
@@ -243,6 +244,24 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('Porto-Novo Suite')
             ->assertDontSee('Appartement 401');
+
+            $this->get('/properties?sort=price_desc')
+                ->assertOk()
+                ->assertSee('name="sort"', false)
+                ->assertSee(__('messages.properties.sort_price_desc'));
+
+            $this->get('/properties?property_type=apartment&beds=1&flexible_cancellation=1')
+                ->assertOk()
+                ->assertSee('Appartement 401')
+                ->assertSee('name="flexible_cancellation"', false);
+
+            $wifi = Amenity::query()->where('slug', 'wifi')->firstOrFail();
+            $this->get('/properties?amenities%5B%5D=' . $wifi->id)
+                ->assertOk()
+                ->assertSee('name="amenities[]"', false)
+                ->assertSee('value="' . $wifi->id . '"', false)
+                ->assertSee('checked', false)
+                ->assertSee(trans_choice('messages.properties.active_filters', 1, ['count' => 1]));
     }
 
     public function test_home_search_accepts_one_traveler(): void
@@ -342,19 +361,20 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('type="submit"', false);
 
         $this->get('/?destination=Cotonou&guests=3&check_in=2026-10-01&check_out=2026-10-03')
-            ->assertOk()
-            ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
-            ->assertSee('name="check_in" value="2026-10-01"', false)
-            ->assertSee('name="check_out" value="2026-10-03"', false)
-            ->assertSee('name="guests"', false)
-            ->assertSee('<option value="3" selected>3 voyageurs</option>', false);
+            ->assertRedirect(route('properties.index', [
+                'destination' => 'Cotonou',
+                'guests' => 3,
+                'check_in' => '2026-10-01',
+                'check_out' => '2026-10-03',
+            ]));
 
         $this->get('/properties?destination=Cotonou&guests=3&check_in=2026-10-01&check_out=2026-10-03')
             ->assertOk()
             ->assertSee('<option value="Cotonou" selected>Cotonou</option>', false)
             ->assertSee('value="3"', false)
             ->assertSee('name="check_in" value="2026-10-01" data-date-range-start', false)
-            ->assertSee('name="check_out" value="2026-10-03" data-date-range-end', false);
+            ->assertSee('name="check_out" value="2026-10-03" data-date-range-end', false)
+            ->assertSee(__('messages.properties.available_for_dates'));
 
         // Legacy links that still use the "city" parameter must keep working.
         $this->get('/properties?city=Cotonou')
@@ -373,6 +393,30 @@ class PublicPropertyBookingTest extends TestCase
         $this->get('/properties?destination=&establishment=&guests=&bedrooms=&min_price=&max_price=')
             ->assertOk()
             ->assertSee('Appartement 401');
+    }
+
+    public function test_public_catalog_can_compare_two_properties(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $propertyIds = Property::query()->published()->limit(2)->pluck('id')->all();
+
+        $this->get('/properties/compare?properties%5B%5D=' . $propertyIds[0] . '&properties%5B%5D=' . $propertyIds[1])
+            ->assertOk()
+            ->assertSee(__('messages.properties.compare_title'))
+            ->assertSee('Appartement 401');
+
+        $this->get('/properties/compare?properties%5B%5D=' . $propertyIds[0] . '&properties%5B%5D=' . $propertyIds[1] . '&check_in=2027-01-10&check_out=2027-01-12&guests=2')
+            ->assertOk()
+            ->assertSee(__('messages.properties.for_nights', ['nights' => 2]));
+
+        $properties = Property::query()->whereIn('id', $propertyIds)->get();
+        $properties->last()->update(['currency' => $properties->first()->currency === 'XOF' ? 'EUR' : 'XOF']);
+        $this->get('/properties/compare?properties%5B%5D=' . $propertyIds[0] . '&properties%5B%5D=' . $propertyIds[1])
+            ->assertUnprocessable();
+
+        $properties->last()->update(['currency' => $properties->first()->currency, 'status' => 'draft', 'is_published' => false]);
+        $this->get('/properties/compare?properties%5B%5D=' . $propertyIds[0] . '&properties%5B%5D=' . $propertyIds[1])
+            ->assertNotFound();
     }
 
     public function test_property_detail_displays_reviews_map_and_social_preview_data(): void
@@ -420,6 +464,15 @@ class PublicPropertyBookingTest extends TestCase
             'is_active' => true,
             'reviewed_at' => '2026-09-08 10:00:00',
         ]);
+        SiteReview::create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'source' => 'google',
+            'reviewer_name' => 'Nadia',
+            'rating' => 4,
+            'review_text' => null,
+            'is_active' => true,
+            'reviewed_at' => '2026-09-12 10:00:00',
+        ]);
         BrandSettings::set([
             'review_source_booking_url' => 'https://www.booking.com/hotel/example',
             'review_source_google_url' => 'https://maps.google.com/?cid=example',
@@ -429,8 +482,11 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('Wonderful stay')
             ->assertSee('Excellent location')
+            ->assertSee('Le client n’a pas laissé de commentaire.')
             ->assertSee('11/09/2026')
-            ->assertSee('Basé sur 4 avis ajoutés à la plateforme.')
+            ->assertSee('Basé sur 5 avis ajoutés à la plateforme.')
+            ->assertSee('Afficher les avis (5)')
+            ->assertSee('id="property-reviews-content" class="property-reviews-content" hidden', false)
             ->assertSee('Voir tous les avis')
             ->assertSee('Bénin')
             ->assertDontSee('>BJ<', false)
@@ -445,12 +501,43 @@ class PublicPropertyBookingTest extends TestCase
             $this->get('/reviews')
                 ->assertOk()
                 ->assertSee('Tous les avis voyageurs')
+                ->assertSee('Retour à l’accueil')
                 ->assertSee('Awa')
+                ->assertSee('Nadia')
+                ->assertSee('Le client n’a pas laissé de commentaire.')
                 ->assertSee('Moussa')
                 ->assertSee('Booking.com')
                 ->assertSee('Fatou')
                 ->assertSee('Jean')
-                ->assertSee('Basé sur 4 avis ajoutés à la plateforme.');
+                ->assertSee('Basé sur 5 avis ajoutés à la plateforme.');
+
+            $this->get(route('reviews', ['property' => $property->slug]))
+                ->assertOk()
+                ->assertSee('Retour au logement')
+                ->assertSee(route('properties.show', $property), false);
+
+            $this->get('/')
+                ->assertOk()
+                ->assertSee('Nadia')
+                ->assertSee('Le client n’a pas laissé de commentaire.');
+    }
+
+    public function test_public_property_pages_replace_draft_placeholder_copy(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $property = Property::query()->firstOrFail();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('Draft property summary awaiting confirmation.')
+            ->assertSee($property->name);
+
+        $this->get(route('properties.show', $property))
+            ->assertOk()
+            ->assertDontSee('Draft property summary awaiting confirmation.')
+            ->assertDontSee('Draft description to be replaced with owner-supplied content.')
+            ->assertSee($property->name);
     }
 
     public function test_property_detail_uses_establishment_location_information(): void

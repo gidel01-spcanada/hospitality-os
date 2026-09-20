@@ -27,12 +27,14 @@ class AdminCalendarController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'provider' => ['required', 'in:booking,airbnb,vrbo,other'],
             'url' => ['required', 'url', 'max:2048'],
             'is_enabled' => ['sometimes', 'boolean'],
         ]);
 
         $property->calendarFeeds()->create([
             'name' => $validated['name'],
+            'provider' => $validated['provider'],
             'url' => $validated['url'],
             'is_enabled' => $request->boolean('is_enabled'),
             'status' => 'stale',
@@ -59,12 +61,14 @@ class AdminCalendarController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'provider' => ['required', 'in:booking,airbnb,vrbo,other'],
             'url' => ['required', 'url', 'max:2048'],
             'is_enabled' => ['sometimes', 'boolean'],
         ]);
 
         $feed->update([
             'name' => $validated['name'],
+            'provider' => $validated['provider'],
             'url' => $validated['url'],
             'is_enabled' => $request->boolean('is_enabled'),
             'status' => $feed->url !== $validated['url'] ? 'stale' : $feed->status,
@@ -99,10 +103,10 @@ class AdminCalendarController extends Controller
 
     private function buildCalendarResponse(Property $property)
     {
-        $events = $property->reservations()->where('status', 'confirmed')->get()->map(function ($reservation) {
+        $events = $property->reservations()->whereIn('status', ['confirmed', 'checked_in', 'completed'])->get()->map(function ($reservation) {
             return [
                 'uid' => 'reservation-' . $reservation->id,
-                'summary' => 'Reserved: ' . $reservation->reservation_ref,
+                'summary' => 'Unavailable',
                 'start' => $reservation->check_in->format('Ymd'),
                 'end' => $reservation->check_out->format('Ymd'),
             ];
@@ -111,7 +115,7 @@ class AdminCalendarController extends Controller
         $blocks = $property->availabilityBlocks()->get()->map(function ($block) {
             return [
                 'uid' => 'block-' . $block->id,
-                'summary' => $block->reason ?: 'Admin block',
+                'summary' => 'Unavailable',
                 'start' => $block->start_date->format('Ymd'),
                 'end' => $block->end_date->format('Ymd'),
             ];

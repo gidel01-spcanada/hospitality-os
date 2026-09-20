@@ -103,6 +103,41 @@ class Property extends Model
         return $translation?->{$field} ?: $this->{$field};
     }
 
+    public function displaySummary(): string
+    {
+        $summary = trim((string) $this->localized('summary'));
+
+        return $this->isPlaceholderContent($summary)
+            ? __('messages.properties.summary_fallback', [
+                'name' => $this->localized('name'),
+                'city' => $this->city,
+            ])
+            : ($summary ?: (string) $this->localized('name'));
+    }
+
+    public function displayDescription(): string
+    {
+        $description = trim((string) $this->localized('description'));
+
+        return $this->isPlaceholderContent($description)
+            ? __('messages.properties.description_fallback', [
+                'name' => $this->localized('name'),
+                'city' => $this->city,
+                'guests' => $this->max_guests,
+            ])
+            : ($description ?: $this->displaySummary());
+    }
+
+    private function isPlaceholderContent(string $content): bool
+    {
+        $normalized = strtolower($content);
+
+        return $content === ''
+            || str_starts_with($normalized, 'draft ')
+            || str_contains($normalized, 'to be replaced')
+            || str_contains($normalized, 'owner-supplied');
+    }
+
     public function amenities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Amenity::class, 'property_amenities');
@@ -141,5 +176,15 @@ class Property extends Model
     public function features(): HasMany
     {
         return $this->hasMany(PropertyFeature::class);
+    }
+
+    public function cleaningVisits(): HasMany
+    {
+        return $this->hasMany(CleaningVisit::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(SiteReview::class);
     }
 }

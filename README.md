@@ -70,6 +70,10 @@ The local media import expects apartment source photos in `photo/` at the reposi
 
 On Windows with Scoop PHP 8.5, run `php artisan config:cache` before `php artisan serve` and rerun it after `.env` changes. Clear config first with `php artisan config:clear` when running PHPUnit so `phpunit.xml` testing overrides are applied.
 
+Public GA4/GTM tracking is disabled by default. To enable it in production, set `ANALYTICS_ENABLED=true` and configure either `GA4_MEASUREMENT_ID` or `GTM_CONTAINER_ID` in `.env`. Use GTM as the source of the GA4 tag when both IDs are present to avoid duplicate page views. Tracking loads only after visitor consent and excludes admin/account pages and personal fields.
+
+After deploying a release that changes the database schema, run `php artisan migrate --force` before serving traffic. In particular, the categorized amenity migrations add localized amenity names and ordering; the public catalog has a legacy-column fallback, but production should still apply all pending migrations.
+
 ## Validation
 
 - `php artisan route:list`
@@ -91,5 +95,13 @@ The Laravel application includes the public property catalog and booking flow, p
 Queued new-message email notifications can be delivered with `php artisan messages:send-email-notifications`. Run this command from a scheduler or deployment cron using the configured Laravel mailer.
 
 Reservation lifecycle automation is available with `php artisan reservations:complete-past`. It moves confirmed or checked-in reservations to `completed` after their checkout date, using `CHECKOUT_COMPLETION_GRACE_HOURS` (default: 6), and queues a status email. On Bluehost, schedule this command hourly and schedule `php artisan messages:send-email-notifications --limit=50` every few minutes to process queued emails.
+
+Google review imports can be synchronized manually with `php artisan reviews:sync-google` or for one establishment with `php artisan reviews:sync-google --establishment=12`. Each establishment can configure a CSV/JSON source URL in its Reviews tab; the Laravel scheduler checks configured sources every six hours and records the last success or error. On Bluehost, run Laravel's scheduler every minute:
+
+```cron
+* * * * * cd /path/to/hospitality-os && php artisan schedule:run >> /dev/null 2>&1
+```
+
+The Google source URL is separate from the public Google review link sent to guests. The public link opens Google's own review flow; the application does not publish reviews to Google automatically.
 
 The admin workspace supports dashboard metrics, reservation filtering and CRUD, user management, property and establishment management, reviews, site parameters, and user preferences. Run the full test suite with `php artisan test` before deploying changes.

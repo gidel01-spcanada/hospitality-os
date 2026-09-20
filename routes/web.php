@@ -4,8 +4,12 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\AdminEstablishmentController;
 use App\Http\Controllers\AdminPreferencesController;
+use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\CleaningScheduleController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicPropertyController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AdminLogController;
 use App\Models\Property;
 use App\Models\Establishment;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +21,21 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
     $reviews = collect();
     $reviewStats = ['count' => 0, 'average' => null];
     $destinations = collect();
+    $cardPricing = [];
+    $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
+    $homeFilters = $request->validate([
+        'establishment' => ['nullable', 'integer'],
+        'destination' => ['nullable', 'string', 'max:120'],
+        'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
+        'check_in' => ['nullable', 'date', 'after_or_equal:today'],
+        'check_out' => ['nullable', 'date', 'after:check_in'],
+        'sort' => ['nullable', 'in:recommended,price_asc,price_desc'],
+    ]);
+
+    if (collect(['establishment', 'destination', 'guests', 'check_in', 'check_out', 'sort'])
+        ->contains(fn (string $key): bool => $request->query->has($key))) {
+        return redirect()->route('properties.index', array_filter($homeFilters, static fn ($value) => $value !== null && $value !== ''));
+    }
 
     if (Schema::hasTable('properties')) {
         $establishments = Establishment::query()->where('is_active', true)->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
@@ -24,13 +43,45 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
         $properties = Property::query()
             ->published()
             ->when($request->integer('establishment'), fn ($query, $id) => $query->where('establishment_id', $id))
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment'])
-            ->orderBy('nightly_rate_xof')
-            ->limit(3)
+            ->when($homeFilters['destination'] ?? null, fn ($query, $value) => $query->where('city', 'like', '%' . $value . '%'))
+            ->when(($homeFilters['guests'] ?? null), fn ($query, $guests) => $query->where('max_guests', '>=', $guests))
+            ->when(($homeFilters['check_in'] ?? null) && ($homeFilters['check_out'] ?? null), function ($query) use ($homeFilters): void {
+                $query->whereDoesntHave('reservations', fn ($reservationQuery) => $reservationQuery
+                    ->where('status', '!=', 'cancelled')
+                    ->whereDate('check_in', '<', $homeFilters['check_out'])
+                    ->whereDate('check_out', '>', $homeFilters['check_in']))
+                    ->whereDoesntHave('availabilityBlocks', fn ($blockQuery) => $blockQuery
+                        ->whereDate('start_date', '<', $homeFilters['check_out'])
+                        ->whereDate('end_date', '>', $homeFilters['check_in']))
+                    ->whereDoesntHave('calendarFeeds', fn ($feedQuery) => $feedQuery
+                        ->where('is_enabled', true)
+                        ->whereHas('events', fn ($eventQuery) => $eventQuery
+                            ->whereDate('start_date', '<', $homeFilters['check_out'])
+                            ->whereDate('end_date', '>', $homeFilters['check_in'])));
+            })
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'amenities', 'translations', 'establishment.reviews' => fn ($query) => $query->active()])
             ->get();
-    }
 
-            $favoritePropertyIds = auth()->user()?->favoriteProperties()->pluck('properties.id')->all() ?? [];
+        if (($homeFilters['sort'] ?? 'recommended') === 'price_desc') {
+            $properties = $properties->sortByDesc('nightly_rate_xof')->values();
+        } elseif (($homeFilters['sort'] ?? 'recommended') === 'price_asc') {
+            $properties = $properties->sortBy('nightly_rate_xof')->values();
+        } else {
+            $properties = app(\App\Services\PropertyRecommendationService::class)->sort($properties, $favoritePropertyIds);
+        }
+
+        $properties = $properties->take(3)->values();
+        if (($homeFilters['check_in'] ?? null) && ($homeFilters['check_out'] ?? null)) {
+            foreach ($properties as $property) {
+                $cardPricing[$property->id] = \App\Services\PricingCalculator::calculate(
+                    $property,
+                    \Carbon\Carbon::parse($homeFilters['check_in']),
+                    \Carbon\Carbon::parse($homeFilters['check_out']),
+                    (int) ($homeFilters['guests'] ?? 1),
+                );
+            }
+        }
+    }
 
     if (Schema::hasTable('site_reviews')) {
         $reviewQuery = \App\Models\SiteReview::query()->where('is_active', true);
@@ -41,10 +92,15 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
         $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
-    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds'));
+    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds', 'cardPricing', 'homeFilters'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
+Route::middleware('signed')->group(function () {
+    Route::get('/review/{reservation}', [ReviewController::class, 'create'])->name('reviews.submit');
+    Route::post('/review/{reservation}', [ReviewController::class, 'store']);
+    Route::get('/review/{reservation}/google', [ReviewController::class, 'google'])->name('reviews.submit.google');
+});
 Route::middleware(['auth', 'active', 'locale'])->get('/reservation/resume', [PublicPropertyController::class, 'resume'])->name('reservation.resume');
 
 Route::middleware(['guest', 'locale'])->group(function () {
@@ -87,12 +143,20 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/reservations/{reservation}', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
+        Route::delete('/admin/reservations/{reservation}', [AdminReservationController::class, 'destroy'])->middleware('admin')->name('admin.reservations.destroy');
         Route::post('/admin/reservations/{reservation}/payment-link', [AdminReservationController::class, 'sendPaymentLink'])->name('admin.reservations.payment-link.send');
         Route::post('/admin/reservations/{reservation}/payment-proof', [AdminReservationController::class, 'uploadPaymentProof'])->name('admin.reservations.payment-proof.upload');
         Route::post('/admin/reservations/{reservation}/confirm-offline-payment', [\App\Http\Controllers\ReceiptController::class, 'confirmOfflinePayment'])->name('admin.reservations.confirm-offline-payment');
         Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
         Route::post('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'reply'])->name('admin.messages.reply');
+        Route::get('/admin/cleaning', [CleaningScheduleController::class, 'index'])->name('admin.cleaning.index');
+        Route::post('/admin/cleaning', [CleaningScheduleController::class, 'store'])->name('admin.cleaning.store');
+        Route::post('/admin/cleaning/generate', [CleaningScheduleController::class, 'generateFromDepartures'])->name('admin.cleaning.generate');
+        Route::put('/admin/cleaning/{visit}', [CleaningScheduleController::class, 'update'])->name('admin.cleaning.update');
+        Route::delete('/admin/cleaning/{visit}', [CleaningScheduleController::class, 'destroy'])->name('admin.cleaning.destroy');
+        Route::post('/admin/cleaning/share', [CleaningScheduleController::class, 'share'])->name('admin.cleaning.share');
+        Route::delete('/admin/cleaning/shares/{share}', [CleaningScheduleController::class, 'revoke'])->name('admin.cleaning.shares.revoke');
         Route::get('/admin/bookings', [AdminReservationController::class, 'index'])->name('admin.bookings.index');
         Route::get('/admin/bookings/create', [AdminReservationController::class, 'create'])->name('admin.bookings.create');
         Route::post('/admin/bookings', [AdminReservationController::class, 'store'])->name('admin.bookings.store');
@@ -102,6 +166,8 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     });
 
     Route::middleware('establishment-manager')->group(function () {
+        Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
+        Route::get('/admin/reports/export.csv', [AdminReportController::class, 'exportCsv'])->name('admin.reports.export');
         Route::get('/admin/profile', [AdminPreferencesController::class, 'index'])->name('admin.profile');
         Route::get('/admin/preferences', [AdminPreferencesController::class, 'index'])->name('admin.preferences');
         Route::put('/admin/preferences/profile', [AdminPreferencesController::class, 'updateProfile'])->name('admin.preferences.profile.update');
@@ -117,18 +183,22 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'updateReview'])->name('admin.establishments.reviews.update');
         Route::delete('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'destroyReview'])->name('admin.establishments.reviews.destroy');
         Route::post('/admin/establishments/{establishment}/reviews/import', [AdminEstablishmentController::class, 'importReviews'])->name('admin.establishments.reviews.import');
+        Route::post('/admin/establishments/{establishment}/reviews/sync-google', [AdminEstablishmentController::class, 'syncGoogleReviews'])->name('admin.establishments.reviews.sync-google');
         Route::post('/admin/establishments/{establishment}/hosts', [AdminEstablishmentController::class, 'storeHost'])->name('admin.establishments.hosts.store');
         Route::delete('/admin/establishments/{establishment}/hosts/{host}', [AdminEstablishmentController::class, 'destroyHost'])->name('admin.establishments.hosts.destroy');
         Route::get('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'index'])->name('admin.properties.index');
         Route::get('/admin/properties/create', [\App\Http\Controllers\AdminPropertyController::class, 'create'])->name('admin.properties.create');
         Route::post('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'store'])->name('admin.properties.store');
         Route::get('/admin/properties/{property}/edit', [\App\Http\Controllers\AdminPropertyController::class, 'edit'])->name('admin.properties.edit');
+        Route::post('/admin/properties/{property}/improve-copy', [\App\Http\Controllers\AdminPropertyController::class, 'improveCopy'])->name('admin.properties.improve-copy');
         Route::put('/admin/properties/{property}', [\App\Http\Controllers\AdminPropertyController::class, 'update'])->name('admin.properties.update');
         Route::put('/admin/properties/{property}/amenities', [\App\Http\Controllers\AdminPropertyController::class, 'updateAmenities'])->name('admin.properties.amenities.update');
         Route::put('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'updateImages'])->name('admin.properties.images.update');
         Route::post('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'uploadImages'])->name('admin.properties.images.upload');
         Route::post('/admin/properties/{property}/price-rules', [\App\Http\Controllers\AdminPropertyController::class, 'storePriceRule'])->name('admin.properties.price-rules.store');
         Route::post('/admin/properties/{property}/features', [\App\Http\Controllers\AdminPropertyController::class, 'storePropertyFeature'])->name('admin.properties.features.store');
+        Route::put('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'updatePropertyFeature'])->name('admin.properties.features.update');
+        Route::delete('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'deletePropertyFeature'])->name('admin.properties.features.destroy');
         Route::post('/admin/properties/{property}/availability-blocks', [\App\Http\Controllers\AdminPropertyController::class, 'storeAvailabilityBlock'])->name('admin.properties.availability.store');
         Route::delete('/admin/properties/{property}/availability-blocks/{block}', [\App\Http\Controllers\AdminPropertyController::class, 'deleteAvailabilityBlock'])->name('admin.properties.availability.destroy');
         Route::get('/admin/properties/{property}/availability', [\App\Http\Controllers\AdminPropertyController::class, 'availabilityCheck'])->name('admin.properties.availability.check');
@@ -141,6 +211,8 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     });
 
     Route::middleware('admin')->group(function () {
+        Route::get('/admin/audit-logs', [\App\Http\Controllers\AdminAuditLogController::class, 'index'])->name('admin.audit-logs');
+        Route::get('/admin/logs', [AdminLogController::class, 'index'])->name('admin.logs');
         Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
         Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
         Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
@@ -172,6 +244,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
 
 Route::middleware('locale')->group(function () {
     Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
+    Route::get('/properties/compare', [PublicPropertyController::class, 'compare'])->name('properties.compare');
     Route::get('/properties/{property:slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
     Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->name('properties.availability');
     Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->name('properties.reserve');
@@ -211,6 +284,9 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 
 Route::get('/calendar/{property:slug}/{token}.ics', [\App\Http\Controllers\AdminCalendarController::class, 'publicExport'])->name('calendar.public-export');
+Route::get('/cleaning-schedule/{token}', [CleaningScheduleController::class, 'publicSchedule'])->name('cleaning.public');
+Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class, 'publicPdf'])->name('cleaning.public.pdf');
+Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningScheduleController::class, 'publicStatus'])->middleware('throttle:30,1')->name('cleaning.public.status');
 
 Route::middleware('locale')->group(function () {
     Route::get('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('checkout.show');
@@ -232,3 +308,5 @@ Route::get('/health', function () {
         'timestamp_utc' => now('UTC')->toIso8601String(),
     ]);
 })->name('health');
+
+Route::fallback(fn () => abort(404))->middleware('locale');

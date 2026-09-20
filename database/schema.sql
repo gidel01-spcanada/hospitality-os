@@ -216,6 +216,7 @@ CREATE TABLE IF NOT EXISTS external_calendar_feeds (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     property_id BIGINT UNSIGNED NOT NULL,
     name VARCHAR(255) NOT NULL,
+    provider VARCHAR(30) NOT NULL DEFAULT 'other',
     url TEXT NOT NULL,
     is_enabled TINYINT(1) NOT NULL DEFAULT 1,
     last_sync_at TIMESTAMP NULL,
@@ -241,6 +242,44 @@ CREATE TABLE IF NOT EXISTS external_calendar_events (
     UNIQUE KEY uk_external_calendar_events_uid (uid),
     KEY idx_external_calendar_events_feed_date (feed_id, start_date),
     CONSTRAINT fk_external_calendar_events_feed FOREIGN KEY (feed_id) REFERENCES external_calendar_feeds(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cleaning_visits (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    property_id BIGINT UNSIGNED NOT NULL,
+    reservation_id BIGINT UNSIGNED NULL,
+    created_by BIGINT UNSIGNED NULL,
+    assignee_name VARCHAR(255) NOT NULL,
+    scheduled_at DATETIME NOT NULL,
+    duration_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 120,
+    status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+    started_at DATETIME NULL,
+    completed_at DATETIME NULL,
+    instructions TEXT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_cleaning_visits_property_schedule (property_id, scheduled_at),
+    CONSTRAINT fk_cleaning_visits_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cleaning_visits_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cleaning_schedule_shares (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NULL,
+    token VARCHAR(64) NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    view_mode VARCHAR(10) NOT NULL,
+    property_ids JSON NOT NULL,
+    assignee_name VARCHAR(255) NULL,
+    expires_at DATETIME NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cleaning_schedule_shares_token (token),
+    KEY idx_cleaning_schedule_shares_tenant (tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS settings (

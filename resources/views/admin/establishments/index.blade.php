@@ -19,7 +19,8 @@
         @if (session('success'))
             <div class="reservation-success">{{ session('success') }}</div>
         @endif
-        <table class="admin-table">
+        <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.establishments') }}">
+            <table class="admin-table">
                 <thead><tr><th>{{ __('messages.admin.name') }}</th><th>{{ __('messages.admin.city') }}</th><th>{{ __('messages.admin.properties') }}</th><th>{{ __('messages.admin.actions') }}</th></tr></thead>
                 <tbody>
                     @forelse ($establishments as $establishment)
@@ -46,6 +47,7 @@
                         <tr><td colspan="4" class="empty-state-inline">{{ __('messages.admin.no_establishments') }}</td></tr>
                     @endforelse
                 </tbody>
-        </table>
+            </table>
+        </div>
     </x-card>
 @endsection

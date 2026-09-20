@@ -68,6 +68,10 @@
 
             <aside class="admin-panel">
                 <h2>{{ __('messages.admin.update_status') }}</h2>
+                <form action="{{ route('admin.reservations.destroy', $reservation) }}" method="POST" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}" style="margin-bottom: 1rem;">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-full">{{ __('messages.admin.delete_reservation') }}</button>
+                </form>
                 <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form">
                     @csrf
                     @method('PATCH')

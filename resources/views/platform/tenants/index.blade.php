@@ -12,7 +12,8 @@
         @if ($tenants->isEmpty())
             <p>{{ __('messages.platform.no_tenants') }}</p>
         @else
-            <table class="admin-table">
+            <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.platform.tenants_title') }}">
+                <table class="admin-table">
                 <thead>
                     <tr>
                         <th>{{ __('messages.platform.tenant_name') }}</th>
@@ -54,7 +55,8 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+                </table>
+            </div>
         @endif
     </x-card>
 @endsection

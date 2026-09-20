@@ -16,7 +16,7 @@
             <h2>{{ __('messages.profile.account_overview') }}</h2>
             <ul>
                 <li><strong>{{ __('messages.profile.email') }}</strong><span>{{ $user->email }}</span></li>
-                <li><strong>{{ __('messages.profile.role') }}</strong><span>{{ $user->role }}</span></li>
+                <li><strong>{{ __('messages.profile.role') }}</strong><span>{{ __('messages.admin.' . ($user->role === 'admin' ? 'administrator' : $user->role)) }}</span></li>
                 <li><strong>{{ __('messages.profile.status') }}</strong><span>{{ $user->email_verified_at ? __('messages.dashboard.verified') : __('messages.dashboard.pending_verification') }}</span></li>
             </ul>
         </div>

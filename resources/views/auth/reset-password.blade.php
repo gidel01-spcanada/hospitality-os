@@ -22,15 +22,15 @@
 
         <div class="field-group">
             <label for="password">{{ __('messages.security.new_password') }}</label>
-            <input id="password" type="password" name="password" required>
+            <input id="password" type="password" name="password" required @error('password') class="is-error" aria-invalid="true" aria-describedby="reset-password-error" @enderror>
             @error('password')
-                <span class="error-text">{{ $message }}</span>
+                <span id="reset-password-error" class="form-error">{{ $message }}</span>
             @enderror
         </div>
 
         <div class="field-group">
             <label for="password_confirmation">{{ __('messages.common.confirm_password') }}</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" required>
+            <input id="password_confirmation" type="password" name="password_confirmation" required @error('password') class="is-error" aria-invalid="true" aria-describedby="reset-password-error" @enderror>
         </div>
 
         <button type="submit" class="btn btn-primary">{{ __('messages.auth.update_password') }}</button>

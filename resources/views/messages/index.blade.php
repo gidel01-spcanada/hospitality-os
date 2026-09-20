@@ -10,9 +10,25 @@
             <p class="admin-page-description">{{ __('messages.messages.description') }}</p>
         </div>
 
+        @if ($threads->isNotEmpty())
+            <section class="message-inbox" aria-labelledby="message-inbox-title">
+                <h2 id="message-inbox-title">{{ __('messages.messages.conversations') }}</h2>
+                <div class="message-thread-list">
+                    @foreach ($threads as $thread)
+                        <a class="message-thread-preview" href="{{ route($isStaff ? 'admin.messages.show' : 'messages.show', $thread) }}">
+                            <strong>{{ $isStaff ? $thread->customer->name : $thread->establishment->name }}</strong>
+                            <span>{{ $thread->messages->first()?->body ?? __('messages.messages.no_messages') }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @else
+            <p class="empty-state">{{ __('messages.messages.no_threads') }}</p>
+        @endif
+
         @if (!$isStaff)
-            <div class="message-new-panel">
-                <h2>{{ __('messages.messages.start_thread') }}</h2>
+            <details class="message-new-panel" @if($threads->isEmpty() || $errors->any()) open @endif>
+                <summary>{{ __('messages.messages.start_thread') }}</summary>
                 <form method="POST" action="{{ route('messages.store') }}" class="message-form">
                     @csrf
                     <label for="establishment_id">{{ __('messages.messages.establishment') }}</label>
@@ -26,18 +42,7 @@
                     <textarea id="body" name="body" rows="4" maxlength="5000" required></textarea>
                     <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
                 </form>
-            </div>
+            </details>
         @endif
-
-        <div class="message-thread-list">
-            @forelse ($threads as $thread)
-                <a class="message-thread-preview" href="{{ route($isStaff ? 'admin.messages.show' : 'messages.show', $thread) }}">
-                    <strong>{{ $isStaff ? $thread->customer->name : $thread->establishment->name }}</strong>
-                    <span>{{ $thread->messages->first()?->body ?? __('messages.messages.no_messages') }}</span>
-                </a>
-            @empty
-                <p class="empty-state">{{ __('messages.messages.no_threads') }}</p>
-            @endforelse
-        </div>
     </div>
 @endsection

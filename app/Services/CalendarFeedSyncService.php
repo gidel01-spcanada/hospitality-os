@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class CalendarFeedSyncService
 {
@@ -24,6 +23,13 @@ class CalendarFeedSyncService
             }
 
             $events = $this->parse($response->body());
+
+            $eventUids = collect($events)->pluck('uid')->all();
+            if ($eventUids === []) {
+                $feed->events()->delete();
+            } else {
+                $feed->events()->whereNotIn('uid', $eventUids)->delete();
+            }
 
             foreach ($events as $event) {
                 ExternalCalendarEvent::query()->updateOrCreate(
@@ -56,7 +62,17 @@ class CalendarFeedSyncService
 
     protected function parse(string $calendar): array
     {
-        $lines = preg_split('/\r\n|\n|\r/', trim($calendar));
+        $rawLines = preg_split('/\r\n|\n|\r/', trim($calendar)) ?: [];
+        $lines = [];
+        foreach ($rawLines as $line) {
+            if (($line[0] ?? '') === ' ' || ($line[0] ?? '') === "\t") {
+                if ($lines !== []) {
+                    $lines[array_key_last($lines)] .= ltrim($line);
+                }
+            } else {
+                $lines[] = $line;
+            }
+        }
         $events = [];
         $current = [];
 
@@ -68,12 +84,16 @@ class CalendarFeedSyncService
 
             if ($line === 'END:VEVENT') {
                 if (! empty($current['uid'])) {
-                    $events[] = [
+                    $startDate = $this->normalizeDate($current['dtstart'] ?? null);
+                    $endDate = $this->normalizeDate($current['dtend'] ?? ($current['dtstart'] ?? null));
+                    if ($startDate && $endDate && ($current['status'] ?? '') !== 'CANCELLED') {
+                        $events[] = [
                         'uid' => $current['uid'],
-                        'summary' => $current['summary'] ?? 'Imported availability',
-                        'start_date' => $this->normalizeDate($current['dtstart'] ?? null),
-                        'end_date' => $this->normalizeDate($current['dtend'] ?? ($current['dtstart'] ?? null)),
-                    ];
+                        'summary' => $this->unescape((string) ($current['summary'] ?? 'Imported availability')),
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        ];
+                    }
                 }
 
                 $current = [];
@@ -92,6 +112,8 @@ class CalendarFeedSyncService
                 $current['dtstart'] = substr($line, strpos($line, ':') + 1);
             } elseif (str_starts_with($line, 'DTEND')) {
                 $current['dtend'] = substr($line, strpos($line, ':') + 1);
+            } elseif (str_starts_with($line, 'STATUS')) {
+                $current['status'] = strtoupper(trim(substr($line, strpos($line, ':') + 1)));
             }
         }
 
@@ -111,10 +133,15 @@ class CalendarFeedSyncService
             return date('Y-m-d', strtotime($value));
         }
 
-        if (preg_match('/^\d{8}T\d{6}Z?$/', $value)) {
+        if (preg_match('/^\d{8}T\d{6}(Z|[+-]\d{4})?$/', $value)) {
             return date('Y-m-d', strtotime(substr($value, 0, 8)));
         }
 
         return null;
+    }
+
+    protected function unescape(string $value): string
+    {
+        return str_replace(['\\n', '\\N', '\\,', '\\;', '\\\\'], ["\n", "\n", ',', ';', '\\'], $value);
     }
 }

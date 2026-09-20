@@ -24,30 +24,34 @@
 
                 <label>
                     <span>{{ __('messages.auth.full_name') }}</span>
-                    <input type="text" name="name" value="{{ old('name') }}" autocomplete="name" required>
+                    <input type="text" name="name" value="{{ old('name') }}" autocomplete="name" required @error('name') class="is-error" aria-invalid="true" aria-describedby="register-name-error" @enderror>
+                    @error('name')<span id="register-name-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 <label>
                     <span>Email</span>
-                    <input type="email" name="email" value="{{ old('email', request('email')) }}" autocomplete="email" required>
+                    <input type="email" name="email" value="{{ old('email', request('email')) }}" autocomplete="email" required @error('email') class="is-error" aria-invalid="true" aria-describedby="register-email-error" @enderror>
+                    @error('email')<span id="register-email-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 <label>
                     <span>{{ __('messages.auth.language') }}</span>
-                    <select name="locale" required>
+                    <select name="locale" required @error('locale') class="is-error" aria-invalid="true" aria-describedby="register-locale-error" @enderror>
                         <option value="fr" @selected(old('locale', app()->getLocale()) === 'fr')>Français</option>
                         <option value="en" @selected(old('locale', app()->getLocale()) === 'en')>English</option>
                     </select>
+                    @error('locale')<span id="register-locale-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 <label>
                     <span>{{ __('messages.auth.password') }}</span>
-                    <input type="password" name="password" autocomplete="new-password" required>
+                    <input type="password" name="password" autocomplete="new-password" required @error('password') class="is-error" aria-invalid="true" aria-describedby="register-password-error" @enderror>
+                    @error('password')<span id="register-password-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 <label>
                     <span>{{ __('messages.auth.confirm_password') }}</span>
-                    <input type="password" name="password_confirmation" autocomplete="new-password" required>
+                    <input type="password" name="password_confirmation" autocomplete="new-password" required @error('password') class="is-error" aria-invalid="true" aria-describedby="register-password-error" @enderror>
                 </label>
 
                 @include('partials.recaptcha')

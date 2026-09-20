@@ -24,12 +24,14 @@
 
                 <label>
                     <span>{{ __('messages.auth.email') }}</span>
-                    <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" required>
+                    <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" required @error('email') class="is-error" aria-invalid="true" aria-describedby="login-email-error" @enderror>
+                    @error('email')<span id="login-email-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 <label>
                     <span>{{ __('messages.common.password') }}</span>
-                    <input type="password" name="password" autocomplete="current-password" required>
+                    <input type="password" name="password" autocomplete="current-password" required @error('password') class="is-error" aria-invalid="true" aria-describedby="login-password-error" @enderror>
+                    @error('password')<span id="login-password-error" class="form-error">{{ $message }}</span>@enderror
                 </label>
 
                 @include('partials.recaptcha')

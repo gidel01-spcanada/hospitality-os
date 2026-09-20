@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SiteReview;
+use App\Support\CurrentTenant;
 use Carbon\Carbon;
 
 class ReviewImportService
@@ -156,6 +157,7 @@ class ReviewImportService
 
     private function importHeaderMappedCsv(string $csv, string $source, ?int $tenantId, ?int $establishmentId): int
     {
+        $tenantId ??= app(CurrentTenant::class)->id();
         $lines = preg_split('/\r\n|\r|\n/', trim($csv));
         $header = str_getcsv((string) array_shift($lines), ',');
         $columns = $this->mapHeaderColumns($header, self::HEADER_ALIASES[$source]);
@@ -178,17 +180,27 @@ class ReviewImportService
             $reviewText = trim((string) ($fields[$columns['review_text']] ?? ''));
             $sourceUrl = trim((string) ($fields[$columns['source_url']] ?? ''));
 
-            SiteReview::query()->create([
+            $reviewedAtValue = $reviewedAt !== '' ? Carbon::parse($reviewedAt) : now();
+            $identity = [
                 'tenant_id' => $tenantId,
                 'establishment_id' => $establishmentId,
                 'source' => $source,
                 'reviewer_name' => $reviewerName,
+            ];
+            $review = SiteReview::withoutGlobalScopes()
+                ->where('establishment_id', $establishmentId)
+                ->where('source', $source)
+                ->where('reviewer_name', $reviewerName)
+                ->first()
+                ?? new SiteReview();
+            $review->fill([
+                ...$identity,
+                'reviewed_at' => $reviewedAtValue,
                 'rating' => max(1, min(5, (int) round($rating))),
                 'review_text' => $reviewText !== '' ? $reviewText : null,
                 'source_url' => $sourceUrl !== '' ? $sourceUrl : null,
-                'reviewed_at' => $reviewedAt !== '' ? Carbon::parse($reviewedAt) : now(),
                 'is_active' => true,
-            ]);
+            ])->save();
 
             $inserted++;
         }

@@ -34,7 +34,7 @@
                 <div class="form-actions reservation-detail-actions">
                     <a class="btn btn-primary" href="{{ route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}">{{ __('messages.checkout.pay_now') }}</a>
 
-                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" onsubmit="return confirm('{{ __('messages.checkout.cancel_confirmation') }}');">
+                    <form action="{{ route('checkout.cancel', ['reservation' => $reservation, 'token' => $reservation->checkout_token]) }}" method="POST" data-confirm-message="{{ __('messages.checkout.cancel_confirmation') }}">
                         @csrf
                         <button type="submit" class="btn btn-ghost">{{ __('messages.checkout.cancel_reservation') }}</button>
                     </form>

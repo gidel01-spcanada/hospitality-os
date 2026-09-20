@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ExternalCalendarFeed;
+use App\Models\ExternalCalendarEvent;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\User;
@@ -23,11 +24,15 @@ class CalendarFeedControlsTest extends TestCase
         $property = Property::firstOrFail();
 
         Http::fake([
-            'https://example.com/blocked.ics' => Http::response("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-1\r\nDTSTART:20260910\r\nDTEND:20260912\r\nSUMMARY:Maintenance\r\nEND:VEVENT\r\nEND:VCALENDAR"),
+            'https://example.com/blocked.ics' => Http::sequence()
+                ->push("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-1\r\nDTSTART:20260910\r\nDTEND:20260912\r\nSUMMARY:Maintenance\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:cancelled-event\r\nDTSTART:20260913\r\nDTEND:20260914\r\nSTATUS:CANCELLED\r\nEND:VEVENT\r\nEND:VCALENDAR")
+                ->push("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-2\r\nDTSTART;VALUE=DATE:20260915\r\nDTEND;VALUE=DATE:20260916\r\nSUMMARY:Long;\r\n description\, escaped\r\nEND:VEVENT\r\nEND:VCALENDAR")
+                ->push("BEGIN:VCALENDAR\r\nEND:VCALENDAR"),
         ]);
 
         $create = $this->actingAs($admin)->post('/admin/properties/' . $property->id . '/calendar/feeds', [
             'name' => 'Airbnb feed',
+            'provider' => 'airbnb',
             'url' => 'https://example.com/blocked.ics',
             'is_enabled' => true,
         ]);
@@ -39,6 +44,7 @@ class CalendarFeedControlsTest extends TestCase
         $this->actingAs($admin)
             ->put('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id, [
                 'name' => 'Updated Airbnb feed',
+                'provider' => 'airbnb',
                 'url' => 'https://example.com/blocked.ics',
                 'is_enabled' => true,
             ])
@@ -51,7 +57,15 @@ class CalendarFeedControlsTest extends TestCase
             ->assertRedirect('/admin/properties/' . $property->id . '/edit#calendars');
 
         $this->assertDatabaseHas('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-1']);
+        $this->assertDatabaseMissing('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'cancelled-event']);
         $this->assertNotNull($feed->fresh()->last_successful_sync_at);
+
+        $this->actingAs($admin)
+            ->post('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id . '/sync')
+            ->assertRedirect();
+        $this->assertDatabaseMissing('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-1']);
+        $this->assertDatabaseHas('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-2']);
+        $this->assertSame('2026-09-15', ExternalCalendarEvent::query()->where('feed_id', $feed->id)->where('uid', 'test-event-2')->value('start_date')->format('Y-m-d'));
 
         Reservation::query()->create([
             'property_id' => $property->id,
@@ -74,14 +88,22 @@ class CalendarFeedControlsTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/properties/' . $property->id . '/edit')
             ->assertOk()
-            ->assertSee('data-external="[[&quot;2026-09-10&quot;,&quot;2026-09-12&quot;]]', false);
+            ->assertSee('data-external="[[&quot;2026-09-15&quot;,&quot;2026-09-16&quot;]]', false);
 
         $export = $this->actingAs($admin)->get('/admin/properties/' . $property->id . '/calendar/export.ics');
 
         $export->assertOk();
         $export->assertHeader('Content-Type', 'text/calendar; charset=UTF-8');
         $export->assertSee('BEGIN:VCALENDAR');
-        $export->assertSee('AFK-CALENDAR-CONFIRMED');
+        $export->assertSee('Unavailable');
+        $export->assertDontSee('AFK-CALENDAR-CONFIRMED');
+        $export->assertDontSee('Maintenance');
+        $export->assertDontSee('confirmed@example.com');
+
+        $this->actingAs($admin)
+            ->post('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id . '/sync')
+            ->assertRedirect();
+        $this->assertDatabaseMissing('external_calendar_events', ['feed_id' => $feed->id]);
         $export->assertDontSee('AFK-CALENDAR-PENDING');
 
         $this->actingAs($admin)

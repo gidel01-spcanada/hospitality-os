@@ -250,6 +250,7 @@ CREATE TABLE IF NOT EXISTS external_calendar_feeds (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     property_id BIGINT UNSIGNED NOT NULL,
     name VARCHAR(255) NOT NULL,
+    provider VARCHAR(30) NOT NULL DEFAULT 'other',
     url TEXT NOT NULL,
     is_enabled TINYINT(1) NOT NULL DEFAULT 1,
     last_sync_at TIMESTAMP NULL,
@@ -275,6 +276,46 @@ CREATE TABLE IF NOT EXISTS external_calendar_events (
     UNIQUE KEY uk_external_calendar_events_uid (uid),
     KEY idx_external_calendar_events_feed_date (feed_id, start_date),
     CONSTRAINT fk_external_calendar_events_feed FOREIGN KEY (feed_id) REFERENCES external_calendar_feeds(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cleaning_visits (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    property_id BIGINT UNSIGNED NOT NULL,
+    reservation_id BIGINT UNSIGNED NULL,
+    created_by BIGINT UNSIGNED NULL,
+    assignee_name VARCHAR(255) NOT NULL,
+    scheduled_at DATETIME NOT NULL,
+    duration_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 120,
+    status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+    started_at DATETIME NULL,
+    completed_at DATETIME NULL,
+    instructions TEXT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_cleaning_visits_property_schedule (property_id, scheduled_at),
+    CONSTRAINT fk_cleaning_visits_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cleaning_visits_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
+    CONSTRAINT fk_cleaning_visits_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cleaning_schedule_shares (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NULL,
+    token VARCHAR(64) NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    view_mode VARCHAR(10) NOT NULL,
+    property_ids JSON NOT NULL,
+    assignee_name VARCHAR(255) NULL,
+    expires_at DATETIME NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cleaning_schedule_shares_token (token),
+    KEY idx_cleaning_schedule_shares_tenant (tenant_id),
+    CONSTRAINT fk_cleaning_schedule_shares_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -321,6 +362,11 @@ ALTER TABLE establishments
     ADD COLUMN latitude DECIMAL(10,7) NULL,
     ADD COLUMN longitude DECIMAL(10,7) NULL,
     ADD COLUMN google_maps_url VARCHAR(2048) NULL,
+    ADD COLUMN review_channel VARCHAR(20) NOT NULL DEFAULT 'internal',
+    ADD COLUMN google_review_url VARCHAR(2048) NULL,
+    ADD COLUMN google_reviews_import_url VARCHAR(2048) NULL,
+    ADD COLUMN google_reviews_last_sync_at DATETIME NULL,
+    ADD COLUMN google_reviews_last_sync_error TEXT NULL,
     ADD COLUMN features JSON NULL,
     ADD COLUMN payment_methods JSON NULL;
 
@@ -342,8 +388,12 @@ CREATE TABLE IF NOT EXISTS property_features (
 CREATE TABLE IF NOT EXISTS site_reviews (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, source VARCHAR(50) NOT NULL DEFAULT 'google', reviewer_name VARCHAR(255) NULL,
     rating TINYINT NOT NULL DEFAULT 5, review_text TEXT NULL, source_url VARCHAR(2048) NULL, reviewed_at TIMESTAMP NULL,
+    property_id BIGINT UNSIGNED NULL,
+    reservation_id BIGINT UNSIGNED NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1, created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), KEY idx_site_reviews_active (is_active, reviewed_at)
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, PRIMARY KEY (id), KEY idx_site_reviews_active (is_active, reviewed_at),
+    KEY idx_site_reviews_property (property_id), UNIQUE KEY uk_site_reviews_reservation (reservation_id), CONSTRAINT fk_site_reviews_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL,
+    CONSTRAINT fk_site_reviews_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS property_translations (

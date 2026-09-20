@@ -10,7 +10,13 @@ use Carbon\Carbon;
 
 class AvailabilityService
 {
-    public function isAvailable(Property $property, Carbon $checkIn, Carbon $checkOut, ?int $ignoreReservationId = null): bool
+    public function isAvailable(
+        Property $property,
+        Carbon $checkIn,
+        Carbon $checkOut,
+        ?int $ignoreReservationId = null,
+        bool $ignoreExternalCalendarConflicts = false,
+    ): bool
     {
         if ($checkOut->lte($checkIn) || $checkIn->diffInDays($checkOut) < max(1, (int) $property->minimum_stay)) {
             return false;
@@ -28,18 +34,21 @@ class AvailabilityService
             return false;
         }
 
-        $externalConflicts = ExternalCalendarEvent::query()
-            ->whereHas('feed', fn ($query) => $query->where('property_id', $property->id)->where('is_enabled', true))
-            ->whereDate('start_date', '<', $checkOut->toDateString())
-            ->whereDate('end_date', '>', $checkIn->toDateString())
-            ->exists();
-
-        if ($externalConflicts) {
+        if (! $ignoreExternalCalendarConflicts && $this->hasExternalCalendarConflict($property, $checkIn, $checkOut)) {
             return false;
         }
 
         return ! AdminAvailabilityBlock::query()
             ->where('property_id', $property->id)
+            ->whereDate('start_date', '<', $checkOut->toDateString())
+            ->whereDate('end_date', '>', $checkIn->toDateString())
+            ->exists();
+    }
+
+    public function hasExternalCalendarConflict(Property $property, Carbon $checkIn, Carbon $checkOut): bool
+    {
+        return ExternalCalendarEvent::query()
+            ->whereHas('feed', fn ($query) => $query->where('property_id', $property->id)->where('is_enabled', true))
             ->whereDate('start_date', '<', $checkOut->toDateString())
             ->whereDate('end_date', '>', $checkIn->toDateString())
             ->exists();

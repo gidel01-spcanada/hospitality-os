@@ -14,6 +14,7 @@ class ExternalCalendarFeed extends Model
     protected $fillable = [
         'property_id',
         'name',
+        'provider',
         'url',
         'is_enabled',
         'last_sync_at',

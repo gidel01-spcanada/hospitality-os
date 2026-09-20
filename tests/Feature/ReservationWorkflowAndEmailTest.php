@@ -6,6 +6,8 @@ use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\User;
+use App\Models\PaymentAttempt;
+use App\Models\Receipt;
 use App\Jobs\CompletePastReservations;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,6 +16,37 @@ use Tests\TestCase;
 class ReservationWorkflowAndEmailTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_only_admin_can_delete_reservation_and_associated_payment_records(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::query()->create(['full_name' => 'Delete Me', 'email' => 'delete-me@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-DELETE-001',
+            'status' => 'pending', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => $guest->email,
+            'subtotal' => 1000, 'fees' => 0, 'taxes' => 0, 'total_amount' => 1000, 'source' => 'website',
+        ]);
+        $attempt = PaymentAttempt::query()->create([
+            'reservation_id' => $reservation->id, 'provider' => 'offline', 'provider_reference' => 'delete-ref',
+            'currency' => 'XOF', 'amount' => 1000, 'status' => 'created', 'idempotency_key' => 'delete-key', 'payload' => [],
+        ]);
+        $receipt = Receipt::query()->create([
+            'reservation_id' => $reservation->id, 'payment_attempt_id' => $attempt->id, 'receipt_number' => 'RC-DELETE-001',
+            'amount' => 1000, 'currency' => 'XOF', 'issued_at' => now(),
+        ]);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        $this->actingAs($customer)->delete(route('admin.reservations.destroy', $reservation))->assertForbidden();
+        $this->actingAs($admin)->delete(route('admin.reservations.destroy', $reservation))->assertRedirect(route('admin.reservations.index'));
+
+        $this->assertDatabaseMissing('reservations', ['id' => $reservation->id]);
+        $this->assertDatabaseMissing('payment_attempts', ['id' => $attempt->id]);
+        $this->assertDatabaseMissing('receipts', ['id' => $receipt->id]);
+        $this->assertDatabaseMissing('reservation_guests', ['id' => $guest->id]);
+    }
 
     public function test_admin_can_review_reservations_and_queue_status_updates(): void
     {

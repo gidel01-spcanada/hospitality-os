@@ -4,6 +4,7 @@
 @section('seo_description', __('messages.seo.contact_description', ['brand' => \App\Support\PlatformBrand::name()]))
 
 @section('content')
+@php($brand = \App\Support\BrandSettings::all())
 <section class="page-hero compact-hero">
     <div class="container">
         <span class="badge badge-emerald">Support</span>
@@ -15,11 +16,11 @@
 <section class="container dashboard-grid">
     <div class="summary-card">
         <h2>{{ __('messages.contact.email') }}</h2>
-        <p>bonjour@afrikappart.com</p>
+        <p><a href="mailto:{{ $brand['contact_email'] }}">{{ $brand['contact_email'] }}</a></p>
     </div>
     <div class="summary-card">
         <h2>{{ __('messages.contact.phone') }}</h2>
-        <p>+229 97 00 00 00</p>
+        <p><a href="tel:{{ preg_replace('/[^+\d]/', '', $brand['support_phone']) }}">{{ $brand['support_phone'] }}</a></p>
     </div>
     <div class="summary-card full-width">
         <h2>{{ __('messages.contact.hours') }}</h2>

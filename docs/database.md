@@ -18,6 +18,8 @@ The database foundation for Afrik Appart is intentionally normalized and aligned
 - `currency_configs`: configuration for conversion and supported currencies.
 - `admin_availability_blocks`: staff-maintained dates unavailable for booking.
 - `external_calendar_feeds` and `external_calendar_events`: iCalendar import and feed synchronization records.
+- `cleaning_visits`: scheduled housekeeping/concierge visits linked to properties and optionally reservations.
+- `cleaning_schedule_shares`: revocable, expiring, property-scoped public week/month schedule links.
 - `settings`: app configuration values for locale, pricing, and internal toggles.
 - `email_outbox`: transactional email queue and status monitoring.
 - `audit_logs`: staff action tracking and operational review.
