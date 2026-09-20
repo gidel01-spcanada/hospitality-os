@@ -45,14 +45,11 @@
                 </select>
             </div>
 
-            <div>
-                <label for="date_from" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.admin.from') }}</label>
-                <input type="date" name="date_from" id="date_from" class="input-md" value="{{ request('date_from') }}" />
-            </div>
-
-            <div>
-                <label for="date_to" style="display: block; font-size: var(--font-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">{{ __('messages.admin.to') }}</label>
-                <input type="date" name="date_to" id="date_to" class="input-md" value="{{ request('date_to') }}" />
+            <div class="date-range-picker admin-date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.admin.to') }}" data-end-label="{{ __('messages.admin.to') }}" data-placeholder="{{ __('messages.admin.from') }} / {{ __('messages.admin.to') }}">
+                <label for="booking-date-range-trigger"><span>{{ __('messages.admin.from') }} / {{ __('messages.admin.to') }}</span><button type="button" id="booking-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>{{ request('date_from') && request('date_to') ? request('date_from') . ' → ' . request('date_to') : __('messages.admin.from') . ' / ' . __('messages.admin.to') }}</span></button></label>
+                <input type="hidden" name="date_from" value="{{ request('date_from') }}" data-date-range-start>
+                <input type="hidden" name="date_to" value="{{ request('date_to') }}" data-date-range-end>
+                <div class="date-range-popover" data-date-range-popover hidden></div>
             </div>
 
             <div class="admin-filter-actions">
@@ -65,7 +62,8 @@
 
 <!-- Bookings Table -->
 <x-card>
-    <table class="admin-table">
+    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.reservations') }}">
+        <table class="admin-table">
         <thead>
             <tr>
                 <th>{{ __('messages.admin.property') }}</th>
@@ -126,7 +124,8 @@
                 </tr>
             @endforelse
         </tbody>
-    </table>
+        </table>
+    </div>
 
     @if ($bookings->hasPages())
         <div class="card-footer" style="justify-content: center;">

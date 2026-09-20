@@ -49,33 +49,33 @@
 
 <!-- Key Activities -->
 @if ($user->isAdmin())
-<div style="margin-top: var(--space-8);">
+<div class="admin-dashboard-section">
     <x-card>
         <div class="card-header">
             <h3>{{ __('messages.admin.key_activities') }}</h3>
-            <p style="margin: var(--space-2) 0 0 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ __('messages.admin.admin_responsibilities') }}</p>
+            <p class="admin-dashboard-section-description">{{ __('messages.admin.admin_responsibilities') }}</p>
         </div>
 
         <div class="card-body">
-            <ul style="margin: 0; padding: 0; list-style: none;">
-                <li style="padding: var(--space-4); border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+            <ul class="admin-activity-list">
+                <li>
                     <div>
                         <strong>{{ __('messages.admin.validate_property_listings') }}</strong>
-                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.validate_property_listings_help') }}</p>
+                        <p>{{ __('messages.admin.validate_property_listings_help') }}</p>
                     </div>
                     <x-button tag="a" href="/admin/properties" variant="secondary" size="sm">{{ __('messages.admin.manage') }}</x-button>
                 </li>
-                <li style="padding: var(--space-4); border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+                <li>
                     <div>
                         <strong>{{ __('messages.admin.monitor_bookings') }}</strong>
-                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.monitor_bookings_help') }}</p>
+                        <p>{{ __('messages.admin.monitor_bookings_help') }}</p>
                     </div>
                     <x-button tag="a" href="/admin/bookings" variant="secondary" size="sm">{{ __('messages.admin.view') }}</x-button>
                 </li>
-                <li style="padding: var(--space-4); display: flex; justify-content: space-between; align-items: center;">
+                <li>
                     <div>
                         <strong>{{ __('messages.admin.user_management') }}</strong>
-                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.user_management_help') }}</p>
+                        <p>{{ __('messages.admin.user_management_help') }}</p>
                     </div>
                     <x-button tag="a" href="/admin/users" variant="secondary" size="sm">{{ __('messages.admin.manage') }}</x-button>
                 </li>
@@ -84,26 +84,26 @@
     </x-card>
 </div>
 @elseif ($user->isEstablishmentManager())
-<div style="margin-top: var(--space-8);">
+<div class="admin-dashboard-section">
     <x-card>
         <div class="card-header">
             <h3>{{ __('messages.admin.key_activities') }}</h3>
-            <p style="margin: var(--space-2) 0 0 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ __('messages.admin.host_responsibilities') }}</p>
+            <p class="admin-dashboard-section-description">{{ __('messages.admin.host_responsibilities') }}</p>
         </div>
 
         <div class="card-body">
-            <ul style="margin: 0; padding: 0; list-style: none;">
-                <li style="padding: var(--space-4); border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center;">
+            <ul class="admin-activity-list">
+                <li>
                     <div>
                         <strong>{{ __('messages.admin.validate_property_listings') }}</strong>
-                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.validate_property_listings_help') }}</p>
+                        <p>{{ __('messages.admin.validate_property_listings_help') }}</p>
                     </div>
                     <x-button tag="a" href="/admin/properties" variant="secondary" size="sm">{{ __('messages.admin.manage') }}</x-button>
                 </li>
-                <li style="padding: var(--space-4); display: flex; justify-content: space-between; align-items: center;">
+                <li>
                     <div>
                         <strong>{{ __('messages.admin.monitor_bookings') }}</strong>
-                        <p style="margin: var(--space-1) 0 0 0; font-size: var(--font-sm); color: var(--text-secondary);">{{ __('messages.admin.monitor_bookings_help') }}</p>
+                        <p>{{ __('messages.admin.monitor_bookings_help') }}</p>
                     </div>
                     <x-button tag="a" href="/admin/bookings" variant="secondary" size="sm">{{ __('messages.admin.view') }}</x-button>
                 </li>
@@ -112,7 +112,7 @@
     </x-card>
 </div>
 @else
-<div style="margin-top: var(--space-8);">
+<div class="admin-dashboard-section">
     <x-card variant="outlined">
         <div class="card-body" style="text-align: center;">
             <svg class="icon icon-xl" style="margin-bottom: var(--space-4); color: var(--theme-primary);" fill="currentColor" viewBox="0 0 24 24">
@@ -127,9 +127,9 @@
 @endif
 
 <!-- Quick Actions -->
-<div style="margin-top: var(--space-8);">
-    <h3 style="margin-bottom: var(--space-4);">{{ __('messages.admin.quick_actions') }}</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-4);">
+<div class="admin-dashboard-section">
+    <h3 class="admin-dashboard-section-title">{{ __('messages.admin.quick_actions') }}</h3>
+    <div class="admin-quick-actions">
         <x-card clickable href="/admin/bookings/create">
             <div style="padding: var(--space-4); text-align: center;">
                 <svg class="icon icon-lg" style="margin-bottom: var(--space-3); color: var(--theme-primary);" fill="currentColor" viewBox="0 0 24 24">
@@ -152,17 +152,6 @@
         </x-card>
         @endif
 
-        @if ($user->isEstablishmentManager())
-        <x-card clickable href="{{ route('admin.properties.index') }}">
-            <div style="padding: var(--space-4); text-align: center;">
-                <svg class="icon icon-lg" style="margin-bottom: var(--space-3); color: var(--theme-primary);" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                </svg>
-                <h4 style="margin: 0 0 var(--space-2) 0;">{{ __('messages.admin.properties') }}</h4>
-                <p style="margin: 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ __('messages.admin.manage_properties_help') }}</p>
-            </div>
-        </x-card>
-        @endif
     </div>
 </div>
 @endsection

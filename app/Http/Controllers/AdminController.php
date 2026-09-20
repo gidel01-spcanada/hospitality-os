@@ -11,6 +11,7 @@ use App\Support\BrandSettings;
 use App\Support\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -186,9 +187,20 @@ class AdminController extends Controller
     {
         abort_if($managedUser->is(auth()->user()), 422, __('messages.errors.self_deactivation'));
 
-        $managedUser->delete();
+        DB::transaction(function () use ($managedUser): void {
+            // Preserve reservation/payment/audit history; remove account-owned data and pivots.
+            DB::table('password_reset_tokens')->where('email', $managedUser->email)->delete();
+            DB::table('mobile_access_tokens')->where('user_id', $managedUser->id)->delete();
+            DB::table('property_favorites')->where('user_id', $managedUser->id)->delete();
+            DB::table('establishment_host')->where('user_id', $managedUser->id)->delete();
+            DB::table('audit_logs')->where('user_id', $managedUser->id)->update(['user_id' => null]);
+            DB::table('reservations')->where('user_id', $managedUser->id)->update(['user_id' => null]);
+            DB::table('cleaning_visits')->where('created_by', $managedUser->id)->update(['created_by' => null]);
+            DB::table('cleaning_schedule_shares')->where('created_by', $managedUser->id)->update(['created_by' => null]);
+            $managedUser->delete();
+        });
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')->with('success', __('messages.flash.user_deleted_cascade'));
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -238,10 +250,27 @@ class AdminController extends Controller
 
         abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
 
-        $reviews = SiteReview::query()->orderByDesc('reviewed_at')->get();
+        $filters = request()->validate([
+            'property' => ['nullable', 'integer', 'exists:properties,id'],
+            'source' => ['nullable', 'in:booking,google,airbnb,website'],
+            'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+        $reviews = SiteReview::query()
+            ->with(['property', 'establishment'])
+            ->when($filters['property'] ?? null, fn ($query, $property) => $query->where('property_id', $property))
+            ->when($filters['source'] ?? null, fn ($query, $source) => $query->where('source', $source))
+            ->when($filters['rating'] ?? null, fn ($query, $rating) => $query->where('rating', $rating))
+            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('reviewed_at', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('reviewed_at', '<=', $date))
+            ->orderByDesc('reviewed_at')->get();
+        $properties = Property::query()
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->with('establishment')->orderBy('name')->get();
         $brand = BrandSettings::all();
 
-        return view('admin.reviews', compact('user', 'reviews', 'brand'));
+        return view('admin.reviews', compact('user', 'reviews', 'properties', 'brand', 'filters'));
     }
 
     public function storeReview(Request $request): RedirectResponse
@@ -253,6 +282,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'source' => ['required', 'in:booking,google,airbnb'],
             'reviewer_name' => ['required', 'string', 'max:255'],
+            'property_id' => ['nullable', 'integer', 'exists:properties,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'review_text' => ['nullable', 'string', 'max:2000'],
             'source_url' => ['nullable', 'url', 'max:2048'],
@@ -261,6 +291,7 @@ class AdminController extends Controller
         ]);
 
         SiteReview::query()->create([
+            'property_id' => $this->adminReviewProperty($validated['property_id'] ?? null),
             'source' => $validated['source'],
             'reviewer_name' => $validated['reviewer_name'],
             'rating' => $validated['rating'],
@@ -282,6 +313,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'source' => ['required', 'in:booking,google,airbnb'],
             'reviewer_name' => ['required', 'string', 'max:255'],
+            'property_id' => ['nullable', 'integer', 'exists:properties,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'review_text' => ['nullable', 'string', 'max:2000'],
             'source_url' => ['nullable', 'url', 'max:2048'],
@@ -290,6 +322,7 @@ class AdminController extends Controller
         ]);
 
         $review->update([
+            'property_id' => $this->adminReviewProperty($validated['property_id'] ?? null),
             'source' => $validated['source'],
             'reviewer_name' => $validated['reviewer_name'],
             'rating' => $validated['rating'],
@@ -311,6 +344,20 @@ class AdminController extends Controller
         $review->delete();
 
         return redirect()->route('admin.reviews')->with('status', __('messages.flash.review_deleted'));
+    }
+
+    private function adminReviewProperty(?int $propertyId): ?int
+    {
+        if (! $propertyId) {
+            return null;
+        }
+
+        abort_unless(Property::query()
+            ->whereKey($propertyId)
+            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->exists(), 422);
+
+        return $propertyId;
     }
 
     public function importReviews(Request $request): RedirectResponse

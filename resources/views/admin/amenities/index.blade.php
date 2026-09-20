@@ -88,7 +88,7 @@
                             </div>
                         </form>
 
-                        <form method="POST" action="{{ route('admin.amenities.categories.destroy', $selectedCategory) }}">
+                        <form method="POST" action="{{ route('admin.amenities.categories.destroy', $selectedCategory) }}" data-confirm-message="{{ __('messages.dialog.delete_item') }}">
                             @csrf
                             @method('DELETE')
                             <div class="amenity-category-rename-action">
@@ -138,7 +138,7 @@
                                             <span class="sr-only">{{ __('messages.admin.save') }}</span>
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.amenities.destroy', $amenity) }}">
+                                    <form method="POST" action="{{ route('admin.amenities.destroy', $amenity) }}" data-confirm-message="{{ __('messages.dialog.delete_item') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-icon btn-small" title="{{ __('messages.admin.delete') }}">

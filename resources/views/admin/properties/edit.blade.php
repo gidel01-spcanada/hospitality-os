@@ -17,7 +17,7 @@
 
         <div class="property-editor-tabs" data-property-tabs>
             <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.property_editor_sections') }}">
-                @foreach (['general' => __('messages.admin.general_information'), 'photos' => __('messages.admin.photos'), 'amenities' => __('messages.admin.amenities'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
+                @foreach (['general' => __('messages.admin.general_information'), 'copy' => 'Assistant rédaction', 'photos' => __('messages.admin.photos'), 'amenities' => __('messages.admin.amenities'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="property-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
             </div>
@@ -66,11 +66,41 @@
                         </div>
                         <div class="property-media-editor">
                             <h3>{{ __('messages.admin.video_media') }}</h3>
-                            <label class="full-width"><span>{{ __('messages.admin.video_urls') }}</span><textarea name="video_urls" rows="4" placeholder="https://cdn.example.com/property-tour.mp4&#10;https://www.youtube.com/watch?v=...">{{ old('video_urls', implode("\n", $property->video_urls ?? [])) }}</textarea></label>
+                            <label class="full-width"><span>{{ __('messages.admin.video_urls') }}</span><input type="url" name="video_urls" value="{{ old('video_urls', implode(', ', $property->video_urls ?? [])) }}" placeholder="https://www.youtube.com/watch?v=..." inputmode="url"></label>
                             <p class="form-help">{{ __('messages.admin.video_urls_help') }}</p>
                         </div>
                         <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_general') }}</button></div>
                     </form>
+                </div>
+            </div>
+
+            <div id="property-panel-copy" class="property-tab-panel" role="tabpanel" data-property-panel="copy" hidden>
+                <div class="admin-panel">
+                    <h2>Assistant rédaction</h2>
+                    <section class="ai-copy-assistant" data-ai-copy-assistant data-endpoint="{{ route('admin.properties.improve-copy', $property) }}" data-loading-label="{{ __('messages.ai_copy.loading') }}" data-ready-label="{{ __('messages.ai_copy.ready') }}" data-error-label="{{ __('messages.ai_copy.error') }}" data-applied-label="{{ __('messages.ai_copy.applied') }}" data-discarded-label="{{ __('messages.ai_copy.discarded') }}">
+                        <div class="ai-copy-heading">
+                            <div>
+                                <h3>{{ __('messages.ai_copy.title') }}</h3>
+                                <p class="form-help">{{ __('messages.ai_copy.help') }}</p>
+                            </div>
+                            <button type="button" class="btn btn-ghost" data-ai-copy-generate @disabled(blank(config('services.property_copy.api_key')))>{{ __('messages.ai_copy.generate') }}</button>
+                        </div>
+                        @if (blank(config('services.property_copy.api_key')))<p class="form-help">{{ __('messages.ai_copy.not_configured') }}</p>@endif
+                        <p class="ai-copy-status" data-ai-copy-status role="status" aria-live="polite"></p>
+                        <div class="ai-copy-preview" data-ai-copy-preview hidden>
+                            <p class="form-help">{{ __('messages.ai_copy.preview_help') }}</p>
+                            <div class="ai-copy-preview-grid">
+                                @foreach (['fr' => 'Français', 'en' => 'English'] as $locale => $language)
+                                    <div>
+                                        <h4>{{ $language }}</h4>
+                                        <label><span>{{ __('messages.admin.summary') }}</span><textarea rows="2" readonly data-ai-copy-result="summary_{{ $locale }}"></textarea></label>
+                                        <label><span>{{ __('messages.admin.description') }}</span><textarea rows="5" readonly data-ai-copy-result="description_{{ $locale }}"></textarea></label>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="form-actions"><button type="button" class="btn btn-primary" data-ai-copy-apply>{{ __('messages.ai_copy.apply') }}</button><button type="button" class="btn btn-ghost" data-ai-copy-discard>{{ __('messages.ai_copy.discard') }}</button></div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -82,6 +112,7 @@
                         <small>{{ __('messages.admin.upload_photo_help') }}</small>
                         <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.upload') }}</button></div>
                     </form>
+                    <p id="photo-reorder-help" class="sr-only">{{ __('messages.admin.reorder_photo_help') }}</p>
                     @if ($property->images->isNotEmpty())
                         <form method="POST" action="{{ route('admin.properties.images.update', $property) }}" class="photo-order-form">@csrf @method('PUT')<p class="form-help">{{ __('messages.admin.drag_photo_help') }}</p><div class="admin-photo-list-head" aria-hidden="true"><span>#</span><span></span><span>{{ __('messages.admin.photo_column') }}</span><span>{{ __('messages.admin.room_or_area') }}</span><span>{{ __('messages.admin.cover_column') }}</span><span></span></div><div class="admin-photo-list" data-photo-sortable>@foreach ($property->images->sortBy('sort_order') as $image)<div class="admin-photo-row" draggable="true" data-photo-id="{{ $image->id }}"><span class="photo-position" data-photo-position aria-hidden="true">{{ $loop->iteration }}</span><span class="photo-drag-handle" aria-hidden="true">&#8942;&#8942;</span><img src="{{ asset($image->file_path) }}" alt="{{ $property->name }} photo"><input type="hidden" name="image_order[{{ $image->id }}]" value="{{ $loop->iteration }}" data-photo-order><input type="text" name="image_tags[{{ $image->id }}]" value="{{ old('image_tags.' . $image->id, $image->room_tag) }}" maxlength="100" placeholder="Living room, bedroom 1..." aria-label="{{ __('messages.admin.room_or_area') }}"><label class="photo-cover-toggle" title="{{ __('messages.admin.use_for_cards') }}"><input type="radio" name="cover_image_id" value="{{ $image->id }}" @checked($image->is_cover || (!$property->images->contains('is_cover', true) && $loop->first))><span class="photo-cover-icon" aria-hidden="true">&#9733;</span><span class="sr-only">{{ __('messages.admin.use_for_cards') }}</span></label><button type="submit" class="photo-remove-button" name="remove_image_id" value="{{ $image->id }}" title="{{ __('messages.admin.remove_photo') }}" aria-label="{{ __('messages.admin.remove_photo') }}"><span aria-hidden="true">&#10005;</span></button></div>@endforeach</div><p class="photo-order-status" data-photo-order-status hidden>{{ __('messages.admin.photo_order_pending') }}</p><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_photos') }}</button></div></form>
                     @else<p class="form-help">{{ __('messages.admin.no_photos') }}</p>@endif
@@ -119,7 +150,45 @@
             </div>
 
             <div id="property-panel-features" class="property-tab-panel" role="tabpanel" data-property-panel="features" hidden>
-                <div class="admin-panel"><h2>{{ __('messages.admin.features') }}</h2><form method="POST" action="{{ route('admin.properties.features.store', $property) }}">@csrf<div class="admin-form-grid compact"><label class="full-width"><span>{{ __('messages.admin.feature_name') }}</span><input name="name" placeholder="Private pool, concierge service..." required></label><label class="full-width"><span>{{ __('messages.admin.description') }}</span><textarea name="description" rows="3"></textarea></label><label><span>{{ __('messages.admin.cost_xof') }}</span><input type="number" step="0.01" min="0" name="cost_xof" value="0" required></label><label class="checkbox-field"><input type="checkbox" name="is_active" value="1" checked><span>{{ __('messages.admin.active') }}</span></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_feature') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.selected_features') }}</h3>@forelse ($property->features as $feature)<div class="admin-record-item"><strong>{{ $feature->name }}</strong><span>{{ $feature->is_active ? __('messages.admin.active') : __('messages.admin.inactive') }}</span><span>{{ $feature->cost_xof ? number_format((float) $feature->cost_xof, 0, ',', ' ') . ' XOF' : __('messages.admin.included') }}</span></div>@empty<p class="form-help">{{ __('messages.admin.no_features') }}</p>@endforelse</div></div>
+                <div class="admin-panel">
+                    <h2>{{ __('messages.admin.features') }}</h2>
+                    <form method="POST" action="{{ route('admin.properties.features.store', $property) }}">
+                        @csrf
+                        <input type="hidden" name="active_tab" value="features">
+                        <div class="admin-form-grid compact">
+                            <label class="full-width"><span>{{ __('messages.admin.feature_name') }}</span><input name="name" placeholder="Private pool, concierge service..." required></label>
+                            <label class="full-width"><span>{{ __('messages.admin.description') }}</span><textarea name="description" rows="3"></textarea></label>
+                            <label><span>{{ __('messages.admin.cost_xof') }}</span><input type="number" step="0.01" min="0" name="cost_xof" value="0" required></label>
+                            <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" checked><span>{{ __('messages.admin.active') }}</span></label>
+                        </div>
+                        <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_feature') }}</button></div>
+                    </form>
+                    <div class="admin-record-list property-feature-editor-list">
+                        <h3>{{ __('messages.admin.selected_features') }}</h3>
+                        @forelse ($property->features as $feature)
+                            <article class="property-feature-editor">
+                                <form method="POST" action="{{ route('admin.properties.features.update', [$property, $feature]) }}">
+                                    @csrf @method('PUT')
+                                    <input type="hidden" name="active_tab" value="features">
+                                    <div class="admin-form-grid compact">
+                                        <label><span>{{ __('messages.admin.feature_name') }}</span><input name="name" value="{{ $feature->name }}" required></label>
+                                        <label><span>{{ __('messages.admin.cost_xof') }}</span><input type="number" step="0.01" min="0" name="cost_xof" value="{{ $feature->cost_xof }}" required></label>
+                                        <label class="full-width"><span>{{ __('messages.admin.description') }}</span><textarea name="description" rows="2">{{ $feature->description }}</textarea></label>
+                                        <label class="checkbox-field"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($feature->is_active)><span>{{ __('messages.admin.active') }}</span></label>
+                                    </div>
+                                    <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_feature') }}</button></div>
+                                </form>
+                                <form method="POST" action="{{ route('admin.properties.features.destroy', [$property, $feature]) }}" class="property-feature-delete" data-confirm-message="{{ __('messages.admin.delete_feature_confirmation', ['name' => $feature->name]) }}">
+                                    @csrf @method('DELETE')
+                                    <input type="hidden" name="active_tab" value="features">
+                                    <button class="btn btn-danger" type="submit">{{ __('messages.admin.delete') }}</button>
+                                </form>
+                            </article>
+                        @empty
+                            <p class="form-help">{{ __('messages.admin.no_features') }}</p>
+                        @endforelse
+                    </div>
+                </div>
             </div>
 
             <div id="property-panel-availability" class="property-tab-panel" role="tabpanel" data-property-panel="availability" hidden>
@@ -128,7 +197,7 @@
                     $reservedRanges = $property->reservations->where('status', '!=', 'cancelled')->map(fn ($reservation) => [$reservation->check_in->toDateString(), $reservation->check_out->toDateString()])->values();
                     $externalRanges = $property->calendarFeeds->where('is_enabled', true)->flatMap(fn ($feed) => $feed->events->map(fn ($event) => [$event->start_date->toDateString(), $event->end_date->toDateString()]))->values();
                 @endphp
-                <div class="admin-panel"><h2>{{ __('messages.admin.availability') }}</h2><div class="availability-legend"><span class="availability-key availability-available">{{ __('messages.admin.available') }}</span><span class="availability-key availability-blocked">{{ __('messages.admin.blocked_reserved') }}</span><span class="availability-key availability-external">{{ __('messages.admin.external_bookings') }}</span><span class="availability-key availability-past">{{ __('messages.admin.past') }}</span></div><div class="availability-calendar" data-availability-calendar data-blocked="{{ $blockedRanges->toJson() }}" data-reserved="{{ $reservedRanges->toJson() }}" data-external="{{ $externalRanges->toJson() }}"></div><form method="POST" action="{{ route('admin.properties.availability.store', $property) }}">@csrf<div class="admin-form-grid compact"><label><span>{{ __('messages.admin.blocked_from') }}</span><input type="date" name="start_date" required></label><label><span>{{ __('messages.admin.blocked_to') }}</span><input type="date" name="end_date" required></label><label class="full-width"><span>{{ __('messages.admin.reason') }}</span><input name="reason" placeholder="Maintenance, renovation..." required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.block_dates') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.current_blocks') }}</h3>@forelse ($property->availabilityBlocks->sortBy('start_date') as $block)<div class="admin-record-item"><strong>{{ $block->start_date }} → {{ $block->end_date }}</strong><span>{{ $block->reason }}</span><form method="POST" action="{{ route('admin.properties.availability.destroy', [$property, $block]) }}">@csrf @method('DELETE')<button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_blocks') }}</p>@endforelse</div></div>
+                <div class="admin-panel"><h2>{{ __('messages.admin.availability') }}</h2><div class="availability-legend"><span class="availability-key availability-available">{{ __('messages.admin.available') }}</span><span class="availability-key availability-blocked">{{ __('messages.admin.blocked_reserved') }}</span><span class="availability-key availability-external">{{ __('messages.admin.external_bookings') }}</span><span class="availability-key availability-past">{{ __('messages.admin.past') }}</span></div><div class="availability-calendar" data-availability-calendar data-blocked="{{ $blockedRanges->toJson() }}" data-reserved="{{ $reservedRanges->toJson() }}" data-external="{{ $externalRanges->toJson() }}"></div><form method="POST" action="{{ route('admin.properties.availability.store', $property) }}">@csrf<div class="admin-form-grid compact"><div class="date-range-picker admin-date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.admin.blocked_to') }}" data-end-label="{{ __('messages.admin.blocked_to') }}" data-placeholder="{{ __('messages.admin.blocked_from') }}"><label for="availability-date-range-trigger"><span>{{ __('messages.admin.blocked_from') }} / {{ __('messages.admin.blocked_to') }}</span><button type="button" id="availability-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>{{ __('messages.admin.blocked_from') }} / {{ __('messages.admin.blocked_to') }}</span></button></label><input type="hidden" name="start_date" data-date-range-start required><input type="hidden" name="end_date" data-date-range-end required><div class="date-range-popover" data-date-range-popover hidden></div></div><label class="full-width"><span>{{ __('messages.admin.reason') }}</span><input name="reason" placeholder="Maintenance, renovation..." required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.block_dates') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.current_blocks') }}</h3>@forelse ($property->availabilityBlocks->sortBy('start_date') as $block)<div class="admin-record-item"><strong>{{ $block->start_date }} → {{ $block->end_date }}</strong><span>{{ $block->reason }}</span><form method="POST" action="{{ route('admin.properties.availability.destroy', [$property, $block]) }}">@csrf @method('DELETE')<button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_blocks') }}</p>@endforelse</div></div>
             </div>
 
             <div id="property-panel-calendars" class="property-tab-panel" role="tabpanel" data-property-panel="calendars" hidden>

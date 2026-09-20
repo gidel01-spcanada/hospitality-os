@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="{{ app()->getLocale() }}">
+<head><meta charset="utf-8"><style>
+body{font-family:DejaVu Sans,sans-serif;color:#172326;font-size:11px}h1{margin:0 0 4px;font-size:22px}header{border-bottom:2px solid #0f5b4c;padding-bottom:12px;margin-bottom:16px}.meta{color:#52656b}.visit{page-break-inside:avoid;border:1px solid #d9e2df;margin-bottom:10px;padding:10px}.date{display:inline-block;width:110px;vertical-align:top;color:#0f5b4c;font-weight:bold}.details{display:inline-block;width:560px;vertical-align:top}.details h2{font-size:14px;margin:0 0 5px}.line{margin:3px 0}.instructions{margin-top:7px;padding:7px;background:#f3f7f5}footer{margin-top:18px;border-top:1px solid #ddd;padding-top:8px;color:#66777b}
+</style></head>
+<body>
+<header><h1>{{ __('messages.cleaning.public_title') }}</h1><div class="meta">{{ $share->period_start->translatedFormat('d M Y') }} - {{ $share->period_end->translatedFormat('d M Y') }}@if($share->assignee_name) · {{ __('messages.cleaning.for_assignee', ['name' => $share->assignee_name]) }}@endif</div></header>
+@forelse($visits as $visit)
+<div class="visit"><div class="date">{{ $visit->scheduled_at->translatedFormat('D d M Y') }}<br>{{ $visit->scheduled_at->format('H:i') }}</div><div class="details"><h2>{{ $visit->property->name }} - {{ $visit->property->establishment->name }}</h2><div class="line"><strong>{{ __('messages.cleaning.assignee') }}:</strong> {{ $visit->assignee_name }} &nbsp; | &nbsp; <strong>{{ __('messages.cleaning.duration') }}:</strong> {{ $visit->duration_minutes }} min &nbsp; | &nbsp; <strong>{{ __('messages.admin.status') }}:</strong> {{ $visit->isOverdue() ? __('messages.cleaning.overdue') : __('messages.cleaning.status_'.$visit->status) }}</div>@if($visit->started_at || $visit->completed_at)<div class="line">@if($visit->started_at)<strong>{{ __('messages.cleaning.actual_start') }}:</strong> {{ $visit->started_at->format('H:i') }}@endif @if($visit->completed_at)&nbsp; | &nbsp;<strong>{{ __('messages.cleaning.actual_end') }}:</strong> {{ $visit->completed_at->format('H:i') }}@endif</div>@endif @if($visit->instructions)<div class="instructions"><strong>{{ __('messages.cleaning.instructions') }}:</strong> {{ $visit->instructions }}</div>@endif</div></div>
+@empty<p>{{ __('messages.cleaning.empty') }}</p>@endforelse
+<footer>{{ __('messages.cleaning.shared_footer', ['date' => $share->expires_at?->translatedFormat('d M Y')]) }}</footer>
+</body></html>

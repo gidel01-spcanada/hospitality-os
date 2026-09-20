@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @section('title', __('messages.seo.property_title', ['name' => $property->localized('name'), 'bedrooms' => $property->bedrooms, 'city' => $property->city, 'brand' => \App\Support\PlatformBrand::name()]))
-@section('seo_description', $property->localized('description') ?: $property->localized('summary'))
+@section('seo_description', $property->displayDescription())
 
 @push('head')
     @php
         $shareTitle = $property->localized('name');
-        $shareDescription = $property->localized('description') ?: $property->localized('summary');
+        $shareDescription = $property->displayDescription();
         $shareImage = $property->images->firstWhere('is_cover', true) ?? $property->images->first();
         $shareImageUrl = $shareImage ? asset($shareImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
     @endphp
@@ -69,16 +69,29 @@
     <section class="property-show-header">
         <div class="container">
             <div class="property-show-topline">
-                <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
                 <a href="{{ route('properties.index') }}" class="inline-link">← {{ __('messages.properties.back_to_list') }}</a>
+                @if ($property->establishment)
+                    <span class="badge badge-emerald">{{ $property->establishment->localized('name') }}</span>
+                @endif
+            </div>
+            <div class="property-title-block">
+                <h1>{{ $property->localized('name') }}</h1>
+                <p>{{ $property->displaySummary() }}</p>
+            </div>
+            <div class="mobile-booking-summary">
+                <div>
+                    <span>{{ __('messages.properties.from') }}</span>
+                    <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
+                </div>
+                <a class="btn btn-primary" href="#booking-panel">{{ __('messages.properties.request_reservation') }}</a>
             </div>
             @php
                 $shareUrl = url()->current();
                 $encodedShareUrl = urlencode($shareUrl);
                 $encodedShareTitle = urlencode($shareTitle);
             @endphp
-            <div class="share-panel" aria-label="{{ __('messages.properties.share') }}">
-                <strong>{{ __('messages.properties.share') }}</strong>
+            <details class="share-panel">
+                <summary>{{ __('messages.properties.share') }}</summary>
                 <div class="share-links">
                     <a href="https://wa.me/?text={{ $encodedShareTitle }}%20{{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_whatsapp') }}</a>
                     <a href="https://www.facebook.com/sharer/sharer.php?u={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_facebook') }}</a>
@@ -88,7 +101,7 @@
                     <button type="button" data-copy-share-link="{{ $shareUrl }}" data-copy-share-link-success="{{ __('messages.properties.share_link_copied') }}" data-copy-share-link-error="{{ __('messages.properties.share_link_copy_failed') }}">{{ __('messages.properties.share_tiktok') }}</button>
                 </div>
                 <p class="form-help" data-copy-share-link-status aria-live="polite" hidden></p>
-            </div>
+            </details>
             <div class="property-show-layout">
                 <div class="gallery-panel">
                     @php
@@ -152,7 +165,7 @@
                     @endif
                 </div>
 
-                <aside class="booking-panel">
+                <aside class="booking-panel" id="booking-panel">
                     <div class="booking-card">
                         <div class="price-summary">
                             <div class="price-row">
@@ -198,23 +211,19 @@
                                     <input id="email" name="email" type="email" value="{{ old('email') }}" required>
                                 </div>
                             @endif
-                            <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                            <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
                                 <span>{{ __('messages.properties.check_in') }} / {{ __('messages.properties.check_out') }}</span>
                                 <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
-                                    <span data-date-range-label>{{ old('check_in', now()->toDateString()) }} → {{ old('check_out', now()->addDay()->toDateString()) }}</span>
+                                    <span data-date-range-label>{{ old('check_in', $bookingCheckIn) && old('check_out', $bookingCheckOut) ? old('check_in', $bookingCheckIn) . ' → ' . old('check_out', $bookingCheckOut) : __('messages.home.select_dates') }}</span>
                                 </button>
-                                <input type="hidden" name="check_in" value="{{ old('check_in', now()->toDateString()) }}" data-date-range-start required>
-                                <input type="hidden" name="check_out" value="{{ old('check_out', now()->addDay()->toDateString()) }}" data-date-range-end required>
+                                <input type="hidden" name="check_in" value="{{ old('check_in', $bookingCheckIn) }}" data-date-range-start required>
+                                <input type="hidden" name="check_out" value="{{ old('check_out', $bookingCheckOut) }}" data-date-range-end required>
                                 <div class="date-range-popover" data-date-range-popover hidden></div>
                             </div>
                             <div class="grid-two compact-grid">
                                 <div class="input-group">
                                     <label for="adults">{{ __('messages.properties.adults') }}</label>
-                                    <select id="adults" name="adults">
-                                        @for ($i = 1; $i <= min(6, (int) $property->max_guests); $i++)
-                                            <option value="{{ $i }}" @selected(old('adults', 2) == $i)>{{ $i }} {{ $i === 1 ? __('messages.properties.adult') : __('messages.properties.adults') }}</option>
-                                        @endfor
-                                    </select>
+                                    <input id="adults" name="adults" type="number" min="1" max="{{ $property->max_guests }}" step="1" inputmode="numeric" value="{{ old('adults', $bookingGuests ?: 1) }}">
                                 </div>
                                 <div class="input-group">
                                     <label for="country">{{ __('messages.properties.country') }}</label>
@@ -301,7 +310,7 @@
             <div class="content-column">
                 <div class="detail-card">
                                 <h2>{{ __('messages.properties.about') }}</h2>
-                            <p>{{ $property->localized('description') ?: $property->localized('summary') }}</p>
+                            <p>{{ $property->displayDescription() }}</p>
                 </div>
 
                 <div class="detail-card">
@@ -367,39 +376,48 @@
                     </div>
                 </div>
 
-                <div class="detail-card">
+                <div class="detail-card property-reviews-card">
                     <div class="detail-card-heading">
                         <h2>{{ __('messages.properties.reviews') }}</h2>
                         @if ($reviewStats['count'] > 0)
-                            <a class="inline-link" href="{{ route('reviews') }}">{{ __('messages.reviews.view_all') }}</a>
+                            <div class="property-review-heading-actions">
+                                <a class="inline-link" href="{{ route('reviews', ['property' => $property->slug]) }}">{{ __('messages.reviews.view_all') }}</a>
+                                <button type="button" class="btn btn-ghost btn-small" data-toggle-content data-show-label="{{ __('messages.reviews.show', ['count' => $reviewStats['count']]) }}" data-hide-label="{{ __('messages.reviews.hide') }}" aria-expanded="false" aria-controls="property-reviews-content">{{ __('messages.reviews.show', ['count' => $reviewStats['count']]) }}</button>
+                            </div>
                         @endif
                     </div>
                     @if ($reviews->isNotEmpty())
-                        <div class="review-summary property-review-summary">
-                            <div class="review-summary-score">
-                                <strong>{{ $reviewStats['average'] }}</strong>
-                                <span>/ 5</span>
-                                <div class="review-summary-stars">★★★★★</div>
+                        <div id="property-reviews-content" class="property-reviews-content" hidden>
+                            <div class="review-summary property-review-summary">
+                                <div class="review-summary-score">
+                                    <strong>{{ $reviewStats['average'] }}</strong>
+                                    <span>/ 5</span>
+                                    <div class="review-summary-stars">★★★★★</div>
+                                </div>
+                                <div class="review-summary-copy">
+                                    <h3>{{ __('messages.home.verified_reviews') }}</h3>
+                                    <p>{{ __('messages.home.review_count', ['count' => $reviewStats['count']]) }}</p>
+                                </div>
                             </div>
-                            <div class="review-summary-copy">
-                                <h3>{{ __('messages.home.verified_reviews') }}</h3>
-                                <p>{{ __('messages.home.review_count', ['count' => $reviewStats['count']]) }}</p>
+                            <div class="review-grid property-review-grid">
+                                @foreach ($reviews as $review)
+                                    <article class="review-card property-review-bubble">
+                                        <div class="property-review-meta">
+                                            <strong>{{ $review->reviewer_name }}</strong>
+                                            <span class="review-source">{{ $review->source_label }}</span>
+                                        </div>
+                                        @if ($review->review_text)
+                                            <p class="review-quote">{{ $review->review_text }}</p>
+                                        @else
+                                            <p class="review-quote review-no-comment">{{ __('messages.reviews.no_comment') }}</p>
+                                        @endif
+                                        <div class="property-review-footer">
+                                            <span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span>
+                                            @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
+                                        </div>
+                                    </article>
+                                @endforeach
                             </div>
-                        </div>
-                        <div class="review-grid property-review-grid">
-                            @foreach ($reviews as $review)
-                                <article class="review-card property-review-bubble">
-                                    <div class="property-review-meta">
-                                        <strong>{{ $review->reviewer_name }}</strong>
-                                        <span class="review-source">{{ $review->source_label }}</span>
-                                    </div>
-                                    @if ($review->review_text)<p class="review-quote">{{ $review->review_text }}</p>@endif
-                                    <div class="property-review-footer">
-                                        <span class="review-stars">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span>
-                                        @if ($review->reviewed_at)<time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>@endif
-                                    </div>
-                                </article>
-                            @endforeach
                         </div>
                     @else
                         <p>{{ __('messages.properties.no_reviews') }}</p>

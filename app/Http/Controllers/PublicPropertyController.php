@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Property;
+use App\Models\Amenity;
 use App\Models\Establishment;
 use App\Models\SiteReview;
 use App\Models\Reservation;
@@ -22,10 +23,11 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
+use App\Services\PropertyRecommendationService;
 
 class PublicPropertyController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, PropertyRecommendationService $recommendations): View
     {
         $filters = $request->validate([
             'establishment' => ['nullable', 'integer', 'exists:establishments,id'],
@@ -33,11 +35,17 @@ class PublicPropertyController extends Controller
             'city' => ['nullable', 'string', 'max:120'],
             'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
             'bedrooms' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'beds' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'property_type' => ['nullable', 'in:apartment,house,villa,studio,room,other'],
+            'flexible_cancellation' => ['nullable', 'boolean'],
+            'amenities' => ['nullable', 'array'],
+            'amenities.*' => ['integer', 'exists:amenities,id'],
             'check_in' => ['nullable', 'date', 'after_or_equal:today'],
             'check_out' => ['nullable', 'date', 'after:check_in'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
             'favorites' => ['nullable', 'boolean'],
+            'sort' => ['nullable', Rule::in(['recommended', 'price_asc', 'price_desc'])],
         ]);
 
         // Empty inputs arrive as null, so drop them before they reach the query builder.
@@ -56,6 +64,10 @@ class PublicPropertyController extends Controller
             ->when($destination, fn ($query, $value) => $query->where('city', 'like', '%' . $value . '%'))
             ->when($filters['guests'] ?? null, fn ($query, $guests) => $query->where('max_guests', '>=', $guests))
             ->when($filters['bedrooms'] ?? null, fn ($query, $bedrooms) => $query->where('bedrooms', '>=', $bedrooms))
+            ->when($filters['beds'] ?? null, fn ($query, $beds) => $query->where('beds', '>=', $beds))
+            ->when($filters['property_type'] ?? null, fn ($query, $type) => $query->where('property_type', $type))
+            ->when(($filters['flexible_cancellation'] ?? false), fn ($query) => $query->whereHas('establishment', fn ($establishmentQuery) => $establishmentQuery->where('cancellation_fee_percent', '<=', 0)))
+            ->when($filters['amenities'] ?? [], fn ($query, $amenityIds) => $query->whereHas('amenities', fn ($amenityQuery) => $amenityQuery->whereIn('amenities.id', $amenityIds)))
             ->when($checkIn && $checkOut, function ($query) use ($checkIn, $checkOut): void {
                 $query
                     ->whereDoesntHave('reservations', fn ($reservationQuery) => $reservationQuery
@@ -74,10 +86,15 @@ class PublicPropertyController extends Controller
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
             ->when($favoritesOnly && auth()->check(), fn ($query) => $query->whereIn('id', $favoritePropertyIds))
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment'])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'translations', 'amenities', 'establishment.reviews' => fn ($query) => $query->active()])
             ->when($favoritePropertyIds, fn ($query) => $query->orderByRaw('CASE WHEN id IN (' . implode(',', array_fill(0, count($favoritePropertyIds), '?')) . ') THEN 0 ELSE 1 END', $favoritePropertyIds))
-            ->orderBy('nightly_rate_xof')
+            ->when(($filters['sort'] ?? 'recommended') === 'price_desc', fn ($query) => $query->orderByDesc('nightly_rate_xof'))
+            ->when(($filters['sort'] ?? 'recommended') !== 'price_desc', fn ($query) => $query->orderBy('nightly_rate_xof'))
             ->get();
+
+        if (($filters['sort'] ?? 'recommended') === 'recommended') {
+            $properties = $recommendations->sort($properties, $favoritePropertyIds);
+        }
 
         if ($destination !== null) {
             $filters['destination'] = $destination;
@@ -87,25 +104,74 @@ class PublicPropertyController extends Controller
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
         $selectedEstablishment = $establishments->firstWhere('id', $filters['establishment'] ?? null);
         $filterCurrency = $selectedEstablishment?->currency ?: ($properties->first()?->currency ?: 'XOF');
+        $amenities = Amenity::query()->ordered()->get();
 
-        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds', 'filterCurrency'));
+        return view('properties.index', compact('properties', 'establishments', 'destinations', 'filters', 'favoritePropertyIds', 'filterCurrency', 'amenities'));
     }
 
-    public function show(Property $property): View
+    public function show(Request $request, Property $property): View
     {
         abort_unless($property->status === 'published' && $property->is_active && $property->establishment?->is_active, 404);
-        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
-        $reviews = SiteReview::query()
-            ->active()
-            ->when($property->establishment?->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
-            ->orderByDesc('reviewed_at');
+        $dateFilters = $request->validate([
+            'check_in' => ['nullable', 'date', 'after_or_equal:today'],
+            'check_out' => ['nullable', 'date', 'after:check_in'],
+            'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+        $bookingCheckIn = $dateFilters['check_in'] ?? '';
+        $bookingCheckOut = $dateFilters['check_out'] ?? '';
+        $bookingGuests = $dateFilters['guests'] ?? '';
+        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active()->orderByDesc('reviewed_at'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
+        $reviews = $property->reviews;
+        if ($reviews->isEmpty()) {
+            $reviews = SiteReview::query()
+                ->active()
+                ->when($property->establishment?->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
+                ->whereNull('property_id')
+                ->orderByDesc('reviewed_at')
+                ->get();
+        }
         $reviewStats = [
-            'count' => (clone $reviews)->count(),
-            'average' => round((float) (clone $reviews)->avg('rating'), 1),
+            'count' => $reviews->count(),
+            'average' => round((float) $reviews->avg('rating'), 1),
         ];
-        $reviews = $reviews->limit(6)->get();
+        $reviews = $reviews->take(6);
 
-        return view('properties.show', compact('property', 'reviews', 'reviewStats'));
+        return view('properties.show', compact('property', 'reviews', 'reviewStats', 'bookingCheckIn', 'bookingCheckOut', 'bookingGuests'));
+    }
+
+    public function compare(Request $request): View
+    {
+        $validated = $request->validate([
+            'properties' => ['required', 'array', 'min:2', 'max:3'],
+            'properties.*' => ['integer', 'distinct', 'exists:properties,id'],
+            'check_in' => ['nullable', 'date', 'after_or_equal:today'],
+            'check_out' => ['nullable', 'date', 'after:check_in'],
+            'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+        $properties = Property::query()
+            ->published()
+            ->whereIn('id', $validated['properties'])
+            ->with(['amenities', 'reviews' => fn ($query) => $query->active(), 'establishment.reviews' => fn ($query) => $query->active()])
+            ->get()
+            ->sortBy(fn (Property $property) => array_search($property->id, array_map('intval', $validated['properties']), true))
+            ->values();
+
+        abort_if($properties->count() !== count($validated['properties']), 404);
+        abort_if($properties->pluck('currency')->unique()->count() > 1, 422, __('messages.properties.compare_same_currency'));
+
+        $cardPricing = [];
+        if (($validated['check_in'] ?? null) && ($validated['check_out'] ?? null)) {
+            foreach ($properties as $property) {
+                $cardPricing[$property->id] = PricingCalculator::calculate(
+                    $property,
+                    Carbon::parse($validated['check_in']),
+                    Carbon::parse($validated['check_out']),
+                    (int) ($validated['guests'] ?? 1),
+                );
+            }
+        }
+
+        return view('properties.compare', compact('properties', 'cardPricing'));
     }
 
     public function resume(Request $request, AvailabilityService $availabilityService, ReservationEmailService $emailService, \App\Services\GoogleRecaptchaVerifier $recaptcha): RedirectResponse

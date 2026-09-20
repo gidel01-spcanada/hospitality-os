@@ -16,6 +16,8 @@ class SiteReview extends Model
     protected $fillable = [
         'tenant_id',
         'establishment_id',
+        'property_id',
+        'reservation_id',
         'source',
         'reviewer_name',
         'rating',
@@ -34,6 +36,16 @@ class SiteReview extends Model
     public function establishment(): BelongsTo
     {
         return $this->belongsTo(Establishment::class);
+    }
+
+    public function property(): BelongsTo
+    {
+        return $this->belongsTo(Property::class);
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function scopeActive($query)

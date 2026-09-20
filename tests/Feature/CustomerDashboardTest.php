@@ -340,6 +340,44 @@ class CustomerDashboardTest extends TestCase
         $this->assertDatabaseMissing('site_reviews', ['id' => $review->id]);
     }
 
+    public function test_admin_can_filter_reviews_by_property_source_rating_and_date(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::query()->firstOrFail();
+        SiteReview::query()->create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'property_id' => $property->id,
+            'establishment_id' => $property->establishment_id,
+            'source' => 'google',
+            'reviewer_name' => 'Visible Review',
+            'rating' => 5,
+            'reviewed_at' => '2027-01-15',
+            'is_active' => true,
+        ]);
+        SiteReview::query()->create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'source' => 'booking',
+            'reviewer_name' => 'Hidden Review',
+            'rating' => 2,
+            'reviewed_at' => '2026-01-15',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.reviews', [
+                'property' => $property->id,
+                'source' => 'google',
+                'rating' => 5,
+                'date_from' => '2027-01-01',
+                'date_to' => '2027-01-31',
+            ]))
+            ->assertOk()
+            ->assertSee('Visible Review')
+            ->assertDontSee('Hidden Review');
+    }
+
     public function test_customer_can_update_profile_name_and_open_preferences_page(): void
     {
         $this->seed(DatabaseSeeder::class);

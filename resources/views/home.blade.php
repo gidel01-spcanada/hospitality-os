@@ -45,7 +45,7 @@
                                 @endforeach
                             </select>
                         </label>
-                        <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
+                        <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
                             <span>{{ __('messages.home.dates') }}</span>
                             <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
                                 <span data-date-range-label>{{ request('check_in') && request('check_out') ? request('check_in') . ' → ' . request('check_out') : __('messages.home.select_dates') }}</span>
@@ -56,12 +56,8 @@
                         </div>
                         <label>
                             <span>{{ __('messages.home.travelers') }}</span>
-                            <select name="guests" aria-label="{{ __('messages.home.travelers') }}">
-                                <option value="1" @selected(request('guests', '1') == 1)>1 voyageur</option>
-                                <option value="2" @selected(request('guests', '2') == 2)>2 voyageurs</option>
-                                <option value="3" @selected(request('guests') == 3)>3 voyageurs</option>
-                                <option value="4" @selected(request('guests') == 4)>4 voyageurs</option>
-                            </select>
+                            <input name="guests" type="number" min="1" max="100" step="1" inputmode="numeric" list="traveler-suggestions" aria-label="{{ __('messages.home.travelers') }}" value="{{ request('guests', '1') }}">
+                            <datalist id="traveler-suggestions"><option value="1">1 voyageur</option><option value="2">2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option></datalist>
                         </label>
                         <button type="submit" class="btn btn-primary btn-full">{{ __('messages.home.search') }}</button>
                     </form>
@@ -124,7 +120,7 @@
                             <p>{{ __('messages.home.review_count', ['count' => $reviewStats['count']]) }}</p>
                         </div>
                         <div class="review-summary-links">
-                            <a href="{{ route('reviews') }}">{{ __('messages.reviews.view_all') }}</a>
+                            <a href="{{ route('reviews', ['from' => 'home']) }}">{{ __('messages.reviews.view_all') }}</a>
                         </div>
                     </div>
 
@@ -141,6 +137,8 @@
                                 @endif
                                 @if($review->review_text)
                                     <p class="review-quote">“{{ $review->review_text }}”</p>
+                                @else
+                                    <p class="review-quote review-no-comment">{{ __('messages.reviews.no_comment') }}</p>
                                 @endif
                             </article>
                         @endforeach
@@ -197,7 +195,25 @@
             @endif
             <div class="property-grid">
                 @foreach ($properties as $property)
-                    @php($isFavorite = in_array($property->id, $favoritePropertyIds ?? [], true))
+                    @php
+                        $galleryImages = $property->images->values()->map(fn ($image, $index) => [
+                            'url' => asset($image->file_path),
+                            'tag' => $image->room_tag,
+                            'alt' => __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $index + 1]),
+                        ]);
+                        $coverImage = $property->images->firstWhere('is_cover', true) ?? $property->images->first();
+                        $coverUrl = $coverImage ? asset($coverImage->file_path) : ($property->cover_image ? asset($property->cover_image) : asset('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'));
+                        $coverIndex = $coverImage ? $property->images->search(fn ($image) => $image->id === $coverImage->id) : 0;
+                        $isFavorite = in_array($property->id, $favoritePropertyIds ?? [], true);
+                        $propertyReviews = $property->reviews?->where('is_active', true) ?? collect();
+                        if ($propertyReviews->isEmpty()) $propertyReviews = $property->establishment?->reviews?->where('is_active', true)->whereNull('property_id') ?? collect();
+                        $reviewCount = $propertyReviews->count();
+                        $reviewAverage = $reviewCount ? number_format((float) $propertyReviews->avg('rating'), 1, ',', ' ') : null;
+                        $amenityNames = $property->amenities->pluck('name')->filter()->take(3);
+                        $flexibleCancellation = (float) ($property->establishment?->cancellation_fee_percent ?? 0) <= 0;
+                        $hasDateSearch = filled($homeFilters['check_in'] ?? null) && filled($homeFilters['check_out'] ?? null);
+                        $propertyUrl = route('properties.show', $property) . (($hasDateSearch || filled($homeFilters['guests'] ?? null)) ? '?' . http_build_query(array_filter(['check_in' => $homeFilters['check_in'] ?? null, 'check_out' => $homeFilters['check_out'] ?? null, 'guests' => $homeFilters['guests'] ?? null], fn ($value) => filled($value))) : '');
+                    @endphp
                     <article class="property-card property-card-link">
                         @auth
                             <form method="POST" action="{{ route('properties.favorite.toggle', $property) }}" class="favorite-form">
@@ -211,18 +227,37 @@
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
                             </a>
                         @endauth
-                        <a href="{{ route('properties.show', $property) }}" class="property-link" aria-label="Voir {{ $property->localized('name') }}">
-                            <img src="{{ $property->cover_image ? asset($property->cover_image) : 'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80' }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => 1]) }}" class="property-image" loading="lazy">
+                        <div class="property-gallery" data-gallery='@json($galleryImages)' data-gallery-start="{{ $coverIndex === false ? 0 : $coverIndex }}">
+                            <a href="{{ $propertyUrl }}" class="property-gallery-link" aria-label="{{ __('messages.properties.view_details') }}: {{ $property->localized('name') }}"><img src="{{ $coverUrl }}" alt="{{ __('messages.seo.property_image_alt', ['name' => $property->localized('name'), 'city' => $property->city, 'number' => $coverIndex === false ? 1 : $coverIndex + 1]) }}" class="property-image" data-gallery-image loading="lazy"></a>
+                            @if ($coverImage?->room_tag)
+                                <span class="gallery-tag" data-gallery-tag>{{ $coverImage->room_tag }}</span>
+                            @endif
+                            @if ($galleryImages->count() > 1)
+                                <button type="button" class="gallery-control gallery-prev" data-gallery-prev aria-label="Previous photo">&#8592;</button>
+                                <button type="button" class="gallery-control gallery-next" data-gallery-next aria-label="Next photo">&#8594;</button>
+                                <span class="gallery-counter" data-gallery-counter>1 / {{ $galleryImages->count() }}</span>
+                            @endif
+                        </div>
+                        <a href="{{ $propertyUrl }}" class="property-link" aria-label="Voir {{ $property->localized('name') }}">
                             <div class="property-copy">
-                                <div class="meta-row">
-                                    <span class="badge badge-emerald">{{ $property->localized('name') }}</span>
+                                <div class="property-card-type-row">
+                                    <span class="badge badge-emerald">{{ __('messages.admin.type_' . $property->property_type) }}</span>
+                                    @if ($reviewAverage)<span class="property-card-rating">★ {{ $reviewAverage }} · {{ __('messages.properties.review_count_short', ['count' => $reviewCount]) }}</span>@else<span class="property-card-rating property-card-new">{{ __('messages.properties.new_listing') }}</span>@endif
                                 </div>
-                                <h3>{{ $property->localized('summary') ?: $property->localized('name') }}</h3>
-                                <p>{{ $property->max_guests }} voyageurs · {{ $property->bedrooms }} chambre(s) · {{ $property->bathrooms }} salle(s) de bain</p>
+                                <h3>{{ $property->localized('name') }}</h3>
+                                <p class="property-card-location">{{ implode(', ', array_filter([$property->city, $property->country])) ?: __('messages.properties.location_on_request') }}</p>
+                                <p class="property-card-summary">{{ $property->displaySummary() }}</p>
+                                <p class="property-card-meta">{{ __('messages.properties.guest_summary_full', ['guests' => $property->max_guests, 'bedrooms' => $property->bedrooms, 'beds' => $property->beds, 'bathrooms' => $property->bathrooms]) }}</p>
+                                @if ($amenityNames->isNotEmpty())<p class="property-card-amenities">{{ $amenityNames->implode(' · ') }}@if($property->amenities->count() > $amenityNames->count()) · +{{ $property->amenities->count() - $amenityNames->count() }}@endif</p>@endif
+                                @if ($flexibleCancellation)<p class="property-card-policy">{{ __('messages.properties.flexible_cancellation') }}</p>@endif
                                 <div class="property-card-footer">
-                                    <span class="inline-link">{{ __('messages.properties.view_details') }} →</span>
                                     <div class="property-price-footer">
-                                        <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
+                                        @if (isset($cardPricing[$property->id]))
+                                            <strong>{{ number_format($cardPricing[$property->id]['total_amount'], 0, ',', ' ') }} {{ $cardPricing[$property->id]['currency'] }} {{ __('messages.properties.for_nights', ['nights' => $cardPricing[$property->id]['nights']]) }}</strong>
+                                            <span>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</span>
+                                        @else
+                                            <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
+                                        @endif
                                         @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                             <span>≈ {{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</span>
                                         @endif

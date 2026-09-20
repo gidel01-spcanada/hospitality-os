@@ -12,6 +12,10 @@
     $seoTitle = trim((string) $__env->yieldContent('title', config('app.name', $brand['site_name'] ?? __('messages.brand.default_name'))));
     $seoImage = trim((string) $__env->yieldContent('seo_image', asset('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80')));
     $footerCopyright = strtr((string) ($brand['footer_copyright'] ?? ''), [':year' => now()->year, ':site_name' => $brand['site_name']]);
+    $analyticsConfig = [
+        'ga4MeasurementId' => config('services.analytics.ga4_measurement_id'),
+        'gtmContainerId' => config('services.analytics.gtm_container_id'),
+    ];
 @endphp
 
 <!DOCTYPE html>
@@ -24,6 +28,7 @@
         <meta name="description" content="{{ $seoDescription }}">
         <link rel="canonical" href="{{ url()->current() }}">
         <meta name="robots" content="{{ $isPrivatePage ? 'noindex,nofollow' : 'index,follow' }}">
+        <script>window.__ANALYTICS_CONFIG__ = @json(config('services.analytics.enabled') && ! $isPrivatePage ? $analyticsConfig : null);</script>
         @unless ($isPrivatePage)
             <meta property="og:type" content="website">
             <meta property="og:site_name" content="{{ $brand['site_name'] ?? __('messages.brand.default_name') }}">
@@ -59,6 +64,12 @@
                     <span aria-hidden="true"></span>
                 </button>
                 <div class="nav-actions">
+                    <nav class="mobile-nav-links" aria-label="{{ __('messages.nav.mobile_navigation') }}">
+                        <a href="{{ route('home') }}">{{ __('messages.nav.home') }}</a>
+                        <a href="{{ route('properties.index') }}">{{ __('messages.nav.properties') }}</a>
+                        <a href="{{ route('home') }}#experience">{{ __('messages.nav.experience') }}</a>
+                        <a href="{{ route('home') }}#contact">{{ __('messages.nav.contact') }}</a>
+                    </nav>
                     @guest
                         @if ($alternateLocale)
                             <div class="locale-switch" aria-label="Language switcher">
@@ -116,8 +127,8 @@
                 </div>
                 <div>
                     <h3>{{ __('messages.brand.contact') }}</h3>
-                    <p>{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}</p>
-                    <p>{{ $brand['support_phone'] ?? '+229 00 00 00 00' }}</p>
+                    <p><a href="mailto:{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}">{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}</a></p>
+                    <p><a href="tel:{{ preg_replace('/[^+\d]/', '', $brand['support_phone'] ?? '+229 00 00 00 00') }}">{{ $brand['support_phone'] ?? '+229 00 00 00 00' }}</a></p>
                     <p><a href="{{ route('faq') }}">{{ __('messages.faq.title') }}</a></p>
                 </div>
                 <div>
@@ -131,5 +142,9 @@
                 <p>{{ $footerCopyright }}</p>
             </div>
         </footer>
+        @unless ($isPrivatePage)
+            @include('partials.analytics-consent')
+        @endunless
+        @include('partials.confirm-dialog')
     </body>
 </html>

@@ -53,7 +53,8 @@
 
 <!-- Users Table -->
 <x-card>
-    <table class="admin-table">
+    <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.users_title') }}">
+        <table class="admin-table">
         <thead>
             <tr>
                 <th>{{ __('messages.admin.name') }}</th>
@@ -84,17 +85,17 @@
                     <td>{{ $user->created_at->translatedFormat('d M Y') }}</td>
                     <td style="text-align: right;">
                         <div class="admin-row-actions">
-                            <x-button tag="a" href="/admin/users/{{ $user->id }}/edit" variant="ghost" size="sm" class="btn-icon" title="Edit" aria-label="Edit user">
+                            <x-button tag="a" href="/admin/users/{{ $user->id }}/edit" variant="ghost" size="sm" class="btn-icon" title="{{ __('messages.admin.edit') }}" aria-label="{{ __('messages.admin.edit') }}">
                                 <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9l-6.455 6.456M9 9l6 6" />
                                 </svg>
                             </x-button>
 
                             @if ($user->id !== auth()->id())
-                                <form method="POST" action="/admin/users/{{ $user->id }}" onsubmit="return confirm('Are you sure?');" style="display: inline;">
+                                <form method="POST" action="/admin/users/{{ $user->id }}" data-confirm-message="{{ __('messages.dialog.delete_item') }}" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="Delete" aria-label="Delete user">
+                                    <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="{{ __('messages.admin.delete') }}" aria-label="{{ __('messages.admin.delete') }}">
                                         <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
                                             <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478m-3.622-13.5a3 3 0 00-3.022 3.022v2.205h2.118a.75.75 0 010 1.5H2.883V15a3 3 0 003 3h15.75A3 3 0 0023.883 15V6.575a3 3 0 00-2.978-3.025h-3.253v-2.205a3 3 0 00-3.022-3.022zm-1.68 4.478a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm3 .75a.75.75 0 001.5 0v6a.75.75 0 00-1.5 0v-6z" clip-rule="evenodd" />
                                         </svg>
@@ -112,7 +113,8 @@
                 </tr>
             @endforelse
         </tbody>
-    </table>
+        </table>
+    </div>
 
     @if ($users->hasPages())
         <div class="card-footer" style="justify-content: center;">

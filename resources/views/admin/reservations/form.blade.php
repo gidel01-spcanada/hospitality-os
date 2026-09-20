@@ -34,11 +34,25 @@
                     @endforeach
                 </select>
             </div>
-            <x-input name="check_in" label="{{ __('messages.admin.check_in') }}" type="date" required value="{{ old('check_in', $reservation->check_in?->format('Y-m-d')) }}" />
-            <x-input name="check_out" label="{{ __('messages.admin.check_out') }}" type="date" required value="{{ old('check_out', $reservation->check_out?->format('Y-m-d')) }}" />
+            <div class="date-range-picker admin-date-range-picker full-width" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.admin.check_out') }}" data-end-label="{{ __('messages.admin.check_out') }}" data-placeholder="{{ __('messages.admin.check_in') }} / {{ __('messages.admin.check_out') }}">
+                <label for="reservation-date-range-trigger"><span>{{ __('messages.admin.check_in') }} / {{ __('messages.admin.check_out') }}</span><button type="button" id="reservation-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>{{ old('check_in', $reservation->check_in?->format('Y-m-d')) && old('check_out', $reservation->check_out?->format('Y-m-d')) ? old('check_in', $reservation->check_in?->format('Y-m-d')) . ' → ' . old('check_out', $reservation->check_out?->format('Y-m-d')) : __('messages.admin.check_in') . ' / ' . __('messages.admin.check_out') }}</span></button></label>
+                <input type="hidden" name="check_in" value="{{ old('check_in', $reservation->check_in?->format('Y-m-d')) }}" data-date-range-start required>
+                <input type="hidden" name="check_out" value="{{ old('check_out', $reservation->check_out?->format('Y-m-d')) }}" data-date-range-end required>
+                <div class="date-range-popover" data-date-range-popover hidden></div>
+            </div>
             <x-input name="adults" label="{{ __('messages.admin.adults') }}" type="number" min="1" max="8" required value="{{ old('adults', $reservation->adults ?: 1) }}" />
             <x-input name="children" label="{{ __('messages.admin.children') }}" type="number" min="0" max="8" value="{{ old('children', $reservation->children ?: 0) }}" />
             <x-input name="infants" label="{{ __('messages.admin.infants') }}" type="number" min="0" max="4" value="{{ old('infants', $reservation->infants ?: 0) }}" />
+            @if (auth()->user()->isEstablishmentManager())
+                <div class="full-width reservation-calendar-override">
+                    <label class="checkbox-field">
+                        <input type="hidden" name="ignore_external_calendar_conflicts" value="0">
+                        <input type="checkbox" name="ignore_external_calendar_conflicts" value="1" @checked(old('ignore_external_calendar_conflicts'))>
+                        <span>{{ __('messages.admin.ignore_external_calendar_conflicts') }}</span>
+                    </label>
+                    <p class="form-help">{{ __('messages.admin.ignore_external_calendar_conflicts_help') }}</p>
+                </div>
+            @endif
         </x-form-group>
 
         <x-form-group title="{{ __('messages.admin.notes') }}" description="{{ __('messages.admin.optional_internal_notes') }}">

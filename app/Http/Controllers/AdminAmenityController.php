@@ -21,7 +21,7 @@ class AdminAmenityController extends Controller
         $selectedCategory = $categories->firstWhere('id', (int) $request->query('category'))
             ?? $categories->first();
 
-        $selectedCategory?->load(['amenities' => fn ($query) => $query->orderBy('sort_order')]);
+        $selectedCategory?->load(['amenities' => fn ($query) => $query->ordered()]);
 
         return view('admin.amenities.index', compact('categories', 'selectedCategory'));
     }

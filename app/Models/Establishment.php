@@ -27,6 +27,11 @@ class Establishment extends Model
         'latitude',
         'longitude',
         'google_maps_url',
+        'review_channel',
+        'google_review_url',
+        'google_reviews_import_url',
+        'google_reviews_last_sync_at',
+        'google_reviews_last_sync_error',
         'features',
         'payment_methods',
         'cancellation_fee_percent',
@@ -58,6 +63,7 @@ class Establishment extends Model
         'electricity_billed_separately' => 'boolean',
         'is_active' => 'boolean',
         'secondary_currency_rate' => 'decimal:6',
+        'google_reviews_last_sync_at' => 'datetime',
     ];
 
     public function properties(): HasMany

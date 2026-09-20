@@ -11,11 +11,60 @@ use App\Models\AdminAvailabilityBlock;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class PropertyAdminControlsTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_property_copy_preview_requires_approval_and_obeys_daily_limit(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        config([
+            'services.property_copy.api_key' => 'test-key',
+            'services.property_copy.daily_limit' => 1,
+        ]);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        $original = $property->translations()->where('locale', 'fr')->value('description');
+        $suggestion = [
+            'summary_fr' => 'Résumé amélioré.',
+            'description_fr' => 'Description française améliorée.',
+            'summary_en' => 'Improved summary.',
+            'description_en' => 'Improved English description.',
+        ];
+        Http::fake(['api.groq.com/*' => Http::response([
+            'choices' => [['message' => ['content' => json_encode($suggestion)]]],
+        ])]);
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.properties.improve-copy', $property), [
+                'description_fr' => 'Description originale.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('suggestion.description_fr', 'Description française améliorée.');
+
+        $this->assertSame($original, $property->translations()->where('locale', 'fr')->value('description'));
+        $this->actingAs($admin)
+            ->postJson(route('admin.properties.improve-copy', $property), ['description_fr' => 'Encore.'])
+            ->assertTooManyRequests();
+    }
+
+    public function test_host_cannot_improve_copy_for_an_unassigned_property(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::firstOrFail();
+        $host = User::factory()->create([
+            'tenant_id' => $property->establishment->tenant_id,
+            'role' => 'host',
+            'is_admin' => false,
+        ]);
+
+        $this->actingAs($host)
+            ->postJson(route('admin.properties.improve-copy', $property), ['description_fr' => 'Texte.'])
+            ->assertForbidden();
+    }
 
     public function test_admin_can_manage_property_pricing_and_availability(): void
     {
@@ -78,6 +127,66 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertDatabaseMissing('admin_availability_blocks', ['id' => $block->id]);
     }
 
+    public function test_admin_can_update_and_delete_property_features(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        $feature = $property->features()->create([
+            'name' => 'Petit-déjeuner',
+            'description' => 'Servi chaque matin.',
+            'cost_xof' => 5000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.properties.features.update', [$property, $feature]), [
+                'name' => 'Petit-déjeuner complet',
+                'description' => 'Servi chaque matin sur demande.',
+                'cost_xof' => 7500,
+                'is_active' => '0',
+                'active_tab' => 'features',
+            ])
+            ->assertRedirect(route('admin.properties.edit', $property).'#features');
+
+        $this->assertDatabaseHas('property_features', [
+            'id' => $feature->id,
+            'name' => 'Petit-déjeuner complet',
+            'cost_xof' => '7500.00',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.properties.features.destroy', [$property, $feature]), ['active_tab' => 'features'])
+            ->assertRedirect(route('admin.properties.edit', $property).'#features');
+
+        $this->assertDatabaseMissing('property_features', ['id' => $feature->id]);
+    }
+
+    public function test_property_feature_actions_reject_a_feature_from_another_property(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $properties = Property::query()->limit(2)->get();
+        $feature = $properties[1]->features()->create([
+            'name' => 'Service privé',
+            'cost_xof' => 1000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.properties.features.update', [$properties[0], $feature]), [
+                'name' => 'Tentative',
+                'cost_xof' => 0,
+            ])
+            ->assertNotFound();
+
+        $this->actingAs($admin)
+            ->delete(route('admin.properties.features.destroy', [$properties[0], $feature]))
+            ->assertNotFound();
+        $this->assertDatabaseHas('property_features', ['id' => $feature->id, 'name' => 'Service privé']);
+    }
+
     public function test_admin_can_manage_amenities_from_their_own_editor_tab(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -122,6 +231,7 @@ class PropertyAdminControlsTest extends TestCase
 
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $establishment = Establishment::firstOrFail();
+        $property = $establishment->properties()->firstOrFail();
 
         $this->actingAs($admin)
             ->put('/admin/establishments/' . $establishment->id, [
@@ -466,11 +576,13 @@ class PropertyAdminControlsTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $establishment = Establishment::firstOrFail();
+        $property = $establishment->properties()->firstOrFail();
 
         $this->actingAs($admin)
             ->post(route('admin.establishments.reviews.store', $establishment), [
                 'source' => 'google',
                 'reviewer_name' => 'Chidi O.',
+                'property_id' => $property->id,
                 'rating' => 5,
                 'review_text' => 'Superbe séjour.',
                 'reviewed_at' => now()->toDateString(),
@@ -483,6 +595,7 @@ class PropertyAdminControlsTest extends TestCase
             'reviewer_name' => 'Chidi O.',
             'source' => 'google',
             'rating' => 5,
+            'property_id' => $property->id,
         ]);
     }
 
@@ -607,7 +720,24 @@ class PropertyAdminControlsTest extends TestCase
             'rating' => 4,
         ]);
 
-        $this->assertSame(4, SiteReview::query()->where('establishment_id', $establishment->id)->count());
+        $reviewCountBeforeRepeat = SiteReview::query()
+            ->where('establishment_id', $establishment->id)
+            ->where('source', 'google')
+            ->where('reviewer_name', 'John Smith')
+            ->count();
+
+        $this->actingAs($admin)
+            ->post(route('admin.establishments.reviews.import', $establishment), [
+                'format' => 'google',
+                'csv' => $googleCsv,
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment) . '#reviews');
+
+        $this->assertSame($reviewCountBeforeRepeat, SiteReview::query()
+            ->where('establishment_id', $establishment->id)
+            ->where('source', 'google')
+            ->where('reviewer_name', 'John Smith')
+            ->count());
     }
 
     public function test_establishment_review_import_requires_csv_content(): void
@@ -742,6 +872,9 @@ class PropertyAdminControlsTest extends TestCase
         ]);
 
         $this->get('/?establishment=' . $other->id)
+            ->assertRedirect(route('properties.index', ['establishment' => $other->id]));
+
+        $this->get('/properties?establishment=' . $other->id)
             ->assertOk()
             ->assertSee('Appartement Porto-Novo')
             ->assertDontSee('Appartement 401');

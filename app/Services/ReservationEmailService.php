@@ -7,6 +7,7 @@ use App\Models\Receipt;
 use App\Models\Reservation;
 use App\Models\PaymentAttempt;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 
 class ReservationEmailService
 {
@@ -33,6 +34,15 @@ class ReservationEmailService
     public function queueForReservation(Reservation $reservation, string $template, ?string $subject = null): void
     {
         $reservation->loadMissing('priceLines');
+        $reservation->loadMissing('property.establishment');
+        $reviewPayload = [];
+        if ($reservation->status === 'completed') {
+            $reviewPayload = [
+                'review_url' => URL::temporarySignedRoute('reviews.submit', now()->addDays(30), ['reservation' => $reservation]),
+                'google_review_url' => $reservation->property?->establishment?->google_review_url,
+                'review_channel' => $reservation->property?->establishment?->review_channel ?: 'internal',
+            ];
+        }
 
         EmailOutbox::query()->create([
             'template' => $template,
@@ -53,6 +63,7 @@ class ReservationEmailService
                     'amount' => (string) $line->amount,
                     'currency' => $line->currency,
                 ])->toArray(),
+                ...$reviewPayload,
             ],
         ]);
     }

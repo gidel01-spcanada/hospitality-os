@@ -9,7 +9,7 @@
     </div>
 
     <x-card>
-
+        <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.reservations') }}">
             <table class="admin-table">
                 <thead class="bg-slate-50 text-left">
                     <tr>
@@ -35,5 +35,6 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
     </x-card>
 @endsection

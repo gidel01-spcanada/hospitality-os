@@ -9,7 +9,7 @@
             <h1 class="admin-page-title">{{ __('messages.admin.properties') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.properties_description') }}</p>
         </div>
-        <x-button tag="a" href="{{ route('admin.properties.create') }}" variant="primary">Add Property</x-button>
+        <x-button tag="a" href="{{ route('admin.properties.create') }}" variant="primary">{{ __('messages.admin.add_property') }}</x-button>
     </div>
 </div>
 
@@ -57,7 +57,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3);">
                     <div style="min-width: 0;">
                         <h3 style="margin: 0 0 var(--space-1); font-size: var(--font-base); line-height: 1.35;">{{ $property->name }}</h3>
-                        <p style="margin: 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ $property->establishment?->name ?? 'No establishment' }}</p>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: var(--font-sm);">{{ $property->establishment?->name ?? __('messages.admin.no_establishment') }}</p>
                     </div>
                     @if ($property->status === 'published')
                         <x-badge variant="success" size="sm" dot style="flex-shrink: 0;">{{ __('messages.admin.published') }}</x-badge>

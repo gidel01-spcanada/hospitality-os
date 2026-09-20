@@ -6,6 +6,7 @@
 @section('content')
 <section class="page-hero compact-hero">
     <div class="container">
+        <a class="inline-link reviews-back-link" href="{{ $backUrl }}">← {{ $backLabel }}</a>
         <span class="badge badge-emerald">{{ __('messages.home.guest_reviews') }}</span>
         <h1>{{ __('messages.reviews.title') }}</h1>
         <p>{{ __('messages.reviews.subtitle') }}</p>
@@ -39,6 +40,8 @@
                     @endif
                     @if ($review->review_text)
                         <p class="review-quote">“{{ $review->review_text }}”</p>
+                    @else
+                        <p class="review-quote review-no-comment">{{ __('messages.reviews.no_comment') }}</p>
                     @endif
                 </article>
             @endforeach

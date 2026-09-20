@@ -51,6 +51,20 @@ return [
         'minimum_score' => (float) env('RECAPTCHA_MINIMUM_SCORE', 0.5),
     ],
 
+    'property_copy' => [
+        'provider' => env('PROPERTY_COPY_PROVIDER', 'groq'),
+        'api_key' => env('GROQ_API_KEY'),
+        'base_url' => env('PROPERTY_COPY_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('PROPERTY_COPY_MODEL', 'openai/gpt-oss-20b'),
+        'daily_limit' => (int) env('PROPERTY_COPY_DAILY_LIMIT', 10),
+    ],
+
+    'analytics' => [
+        'enabled' => (bool) env('ANALYTICS_ENABLED', false),
+        'ga4_measurement_id' => env('GA4_MEASUREMENT_ID'),
+        'gtm_container_id' => env('GTM_CONTAINER_ID'),
+    ],
+
     'fedapay' => [
         'environment' => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
         'public_key' => env('FEDAPAY_PUBLIC_KEY'),

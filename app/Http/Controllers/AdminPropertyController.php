@@ -9,12 +9,17 @@ use App\Models\PropertyFeature;
 use App\Models\PropertyImage;
 use App\Models\Establishment;
 use App\Services\AvailabilityService;
+use App\Services\PropertyCopyImprover;
+use App\Services\AuditRecorder;
 use App\Support\CurrentTenant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use App\Models\ExternalCalendarFeed;
@@ -27,7 +32,7 @@ class AdminPropertyController extends Controller
     {
         return view('admin.properties.create', [
             'establishments' => $this->manageableEstablishments(),
-            'amenities' => Amenity::query()->with('category')->orderBy('sort_order')->get(),
+            'amenities' => Amenity::query()->with('category')->ordered()->get(),
         ]);
     }
 
@@ -63,6 +68,7 @@ class AdminPropertyController extends Controller
             'is_published' => $validated['status'] === 'published',
         ]);
         $property->amenities()->sync($amenityIds);
+        app(AuditRecorder::class)->action('amenities_synced', $property, ['amenity_ids' => $amenityIds]);
 
         return redirect()->route('admin.properties.edit', $property)->with('success', 'Property created successfully.');
     }
@@ -97,7 +103,7 @@ class AdminPropertyController extends Controller
         $property->load(['images', 'amenities', 'features', 'translations', 'rateRules', 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
 
         $establishments = $this->manageableEstablishments();
-        $amenities = Amenity::query()->with('category')->orderBy('sort_order')->get();
+        $amenities = Amenity::query()->with('category')->ordered()->get();
         return view('admin.properties.edit', compact('property', 'establishments', 'amenities'));
     }
 
@@ -145,6 +151,7 @@ class AdminPropertyController extends Controller
 
         if ($request->has('amenity_ids')) {
             $property->amenities()->sync($amenityIds);
+            app(AuditRecorder::class)->action('amenities_synced', $property, ['amenity_ids' => $amenityIds]);
         }
 
         foreach (['fr', 'en'] as $locale) {
@@ -155,6 +162,51 @@ class AdminPropertyController extends Controller
         }
 
         return $this->editorRedirect($property, $request, __('messages.flash.property_updated'));
+    }
+
+    public function improveCopy(Request $request, Property $property, PropertyCopyImprover $improver): JsonResponse
+    {
+        $this->authorizeProperty($property);
+        $copy = $request->validate([
+            'summary_fr' => ['nullable', 'string', 'max:2000'],
+            'description_fr' => ['nullable', 'string', 'max:10000'],
+            'summary_en' => ['nullable', 'string', 'max:2000'],
+            'description_en' => ['nullable', 'string', 'max:10000'],
+        ]);
+        if (! collect($copy)->contains(fn ($value) => filled($value))) {
+            throw ValidationException::withMessages(['copy' => __('messages.ai_copy.source_required')]);
+        }
+
+        $key = 'property-copy:'.auth()->id().':'.now()->toDateString();
+        $limit = (int) config('services.property_copy.daily_limit', 10);
+        if (RateLimiter::tooManyAttempts($key, $limit)) {
+            return response()->json(['message' => __('messages.ai_copy.limit_reached')], 429);
+        }
+
+        try {
+            $suggestion = $improver->improve($property, array_merge([
+                'summary_fr' => '',
+                'description_fr' => '',
+                'summary_en' => '',
+                'description_en' => '',
+            ], $copy));
+            RateLimiter::hit($key, max(1, (int) now()->diffInSeconds(now()->endOfDay())));
+
+            return response()->json(['suggestion' => $suggestion]);
+        } catch (\Throwable $exception) {
+            Log::warning('Property copy improvement failed.', [
+                'property_id' => $property->id,
+                'user_id' => auth()->id(),
+                'exception' => $exception::class,
+                'reason' => $exception->getMessage(),
+            ]);
+
+            $message = $exception instanceof \RuntimeException
+                ? $exception->getMessage()
+                : __('messages.ai_copy.provider_unavailable');
+
+            return response()->json(['message' => $message], 503);
+        }
     }
 
     public function updateAmenities(Request $request, Property $property): RedirectResponse
@@ -365,12 +417,7 @@ class AdminPropertyController extends Controller
     {
         $this->authorizeProperty($property);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'cost_xof' => ['required', 'numeric', 'min:0'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $this->validatePropertyFeature($request);
 
         $property->features()->create([
             'name' => $validated['name'],
@@ -380,6 +427,41 @@ class AdminPropertyController extends Controller
         ]);
 
         return $this->editorRedirect($property, $request, __('messages.flash.feature_saved'), 'features');
+    }
+
+    public function updatePropertyFeature(Request $request, Property $property, PropertyFeature $feature): RedirectResponse
+    {
+        $this->authorizeProperty($property);
+        abort_unless($feature->property_id === $property->id, 404);
+        $validated = $this->validatePropertyFeature($request);
+
+        $feature->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'cost_xof' => $validated['cost_xof'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return $this->editorRedirect($property, $request, __('messages.flash.feature_updated'), 'features');
+    }
+
+    public function deletePropertyFeature(Request $request, Property $property, PropertyFeature $feature): RedirectResponse
+    {
+        $this->authorizeProperty($property);
+        abort_unless($feature->property_id === $property->id, 404);
+        $feature->delete();
+
+        return $this->editorRedirect($property, $request, __('messages.flash.feature_deleted'), 'features');
+    }
+
+    private function validatePropertyFeature(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'cost_xof' => ['required', 'numeric', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
     }
 
     public function availabilityCheck(Property $property, Request $request, AvailabilityService $availabilityService): RedirectResponse|View
@@ -400,7 +482,7 @@ class AdminPropertyController extends Controller
 
     private function editorRedirect(Property $property, Request $request, string $message, string $fallbackTab = 'general'): RedirectResponse
     {
-        $tab = in_array($request->input('active_tab'), ['general', 'photos', 'amenities', 'rules', 'features', 'availability', 'calendars'], true)
+        $tab = in_array($request->input('active_tab'), ['general', 'copy', 'photos', 'amenities', 'rules', 'features', 'availability', 'calendars'], true)
             ? $request->input('active_tab')
             : $fallbackTab;
 
@@ -409,7 +491,7 @@ class AdminPropertyController extends Controller
 
     private function normalizeVideoUrls(?string $value): array
     {
-        $urls = collect(preg_split('/\r\n|\r|\n/', (string) $value))
+        $urls = collect(preg_split('/\r\n|\r|\n|,/', (string) $value))
             ->map(fn (string $url) => trim($url))
             ->filter()
             ->values();

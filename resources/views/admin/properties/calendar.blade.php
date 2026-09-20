@@ -25,6 +25,15 @@
                             <input type="text" name="name" placeholder="Booking or Airbnb feed" required>
                         </label>
                         <label class="full-width">
+                            <span>{{ __('messages.admin.calendar_provider') }}</span>
+                            <select name="provider" required>
+                                <option value="booking">Booking.com</option>
+                                <option value="airbnb">Airbnb</option>
+                                <option value="vrbo">Vrbo</option>
+                                <option value="other">{{ __('messages.admin.other') }}</option>
+                            </select>
+                        </label>
+                        <label class="full-width">
                             <span>URL ICS</span>
                             <input type="url" name="url" placeholder="https://example.com/calendar.ics" required>
                         </label>
@@ -49,8 +58,8 @@
                         @foreach ($feeds as $feed)
                             <li>
                                 <div>
-                                    <strong>{{ $feed->name }}</strong>
-                                    <small>{{ $feed->status }} · {{ $feed->last_successful_sync_at?->format('d/m/Y H:i') ?? __('messages.admin.never_synced') }}</small>
+                                    <strong>{{ $feed->name }} · {{ ucfirst($feed->provider) }}</strong>
+                                    <small>{{ $feed->status }} · {{ $feed->last_successful_sync_at?->format('d/m/Y H:i') ?? __('messages.admin.never_synced') }}{{ $feed->last_sync_error ? ' · '.$feed->last_sync_error : '' }}</small>
                                 </div>
                                 <div class="feed-actions">
                                     <form method="POST" action="{{ route('admin.properties.calendar.sync', [$property, $feed]) }}">

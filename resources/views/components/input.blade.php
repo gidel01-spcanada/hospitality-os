@@ -14,6 +14,11 @@
     'suffix' => null,
 ])
 
+@php
+    $resolvedError = $error ?: $errors->first($name);
+    $descriptionId = $resolvedError ? $name . '-error' : ($help ? $name . '-help' : null);
+@endphp
+
 <div class="form-group">
     @if ($label)
         <label for="{{ $name }}">
@@ -40,7 +45,9 @@
                 @if ($placeholder) placeholder="{{ $placeholder }}" @endif
                 @if ($required) required @endif
                 @if ($disabled) disabled @endif
-                class="input-{{ $size }} {{ $error ? 'is-error' : '' }}"
+                @if ($resolvedError) aria-invalid="true" @endif
+                @if ($descriptionId) aria-describedby="{{ $descriptionId }}" @endif
+                class="input-{{ $size }} {{ $resolvedError ? 'is-error' : '' }}"
                 {{ $attributes }}
             />
             
@@ -57,14 +64,16 @@
             @if ($placeholder) placeholder="{{ $placeholder }}" @endif
             @if ($required) required @endif
             @if ($disabled) disabled @endif
-            class="input-{{ $size }} {{ $error ? 'is-error' : '' }}"
+            @if ($resolvedError) aria-invalid="true" @endif
+            @if ($descriptionId) aria-describedby="{{ $descriptionId }}" @endif
+            class="input-{{ $size }} {{ $resolvedError ? 'is-error' : '' }}"
             {{ $attributes }}
         />
     @endif
 
-    @if ($error)
-        <span class="form-error">{{ $error }}</span>
+    @if ($resolvedError)
+        <span id="{{ $name }}-error" class="form-error">{{ $resolvedError }}</span>
     @elseif ($help)
-        <span class="form-help">{{ $help }}</span>
+        <span id="{{ $name }}-help" class="form-help">{{ $help }}</span>
     @endif
 </div>

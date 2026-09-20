@@ -86,6 +86,8 @@
                         <div><label for="latitude">{{ __('messages.admin.latitude') }}</label><input id="latitude" type="number" step="any" name="latitude" value="{{ old('latitude', $establishment->latitude) }}"></div>
                         <div><label for="longitude">{{ __('messages.admin.longitude') }}</label><input id="longitude" type="number" step="any" name="longitude" value="{{ old('longitude', $establishment->longitude) }}"></div>
                         <div class="full-width"><label for="google_maps_url">{{ __('messages.admin.google_maps_url') }}</label><input id="google_maps_url" type="url" name="google_maps_url" value="{{ old('google_maps_url', $establishment->google_maps_url) }}" placeholder="https://maps.google.com/..."></div>
+                        <div><label for="review_channel">{{ __('messages.admin.review_channel') }}</label><select id="review_channel" name="review_channel"><option value="internal" @selected(old('review_channel', $establishment->review_channel ?? 'internal') === 'internal')>{{ __('messages.admin.review_channel_internal') }}</option><option value="google" @selected(old('review_channel', $establishment->review_channel) === 'google')>{{ __('messages.admin.review_channel_google') }}</option><option value="both" @selected(old('review_channel', $establishment->review_channel) === 'both')>{{ __('messages.admin.review_channel_both') }}</option></select></div>
+                        <div class="full-width"><label for="google_review_url">{{ __('messages.admin.google_review_url') }}</label><input id="google_review_url" type="url" name="google_review_url" value="{{ old('google_review_url', $establishment->google_review_url) }}" placeholder="https://g.page/r/.../review"></div>
                     </div>
                 </div>
                 <div id="establishment-panel-taxes" class="property-tab-panel" role="tabpanel" data-property-panel="taxes" hidden>
@@ -214,7 +216,17 @@
                     <h2>{{ __('messages.admin.reviews_tab') }}</h2>
                     <p class="form-help">{{ __('messages.admin.reviews_tab_description') }}</p>
 
-                    <h3 class="stacked-title">{{ __('messages.admin.add_review') }}</h3>
+                    <div class="admin-panel-heading">
+                        <h3 class="stacked-title">{{ __('messages.admin.add_review') }}</h3>
+                        <button type="button" class="btn btn-primary" data-admin-modal-open="establishment-review-modal">{{ __('messages.admin.add_review') }}</button>
+                    </div>
+                    <dialog class="admin-modal" data-admin-modal="establishment-review-modal" aria-labelledby="establishment-review-modal-title">
+                        <div class="admin-modal-card">
+                            <header class="admin-modal-header">
+                                <h2 id="establishment-review-modal-title">{{ __('messages.admin.add_review') }}</h2>
+                                <button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button>
+                            </header>
+                            <div class="admin-modal-body">
                     <form method="POST" action="{{ route('admin.establishments.reviews.store', $establishment) }}">
                         @csrf
                         <div class="admin-form-grid compact">
@@ -229,6 +241,15 @@
                             <label>
                                 <span>{{ __('messages.admin.reviewer') }}</span>
                                 <input type="text" name="reviewer_name" required>
+                            </label>
+                            <label>
+                                <span>{{ __('messages.admin.review_property') }}</span>
+                                <select name="property_id">
+                                    <option value="">{{ __('messages.admin.review_establishment_wide') }}</option>
+                                    @foreach ($establishment->properties as $property)
+                                        <option value="{{ $property->id }}">{{ $property->localized('name') }}</option>
+                                    @endforeach
+                                </select>
                             </label>
                             <label>
                                 <span>{{ __('messages.admin.rating') }}</span>
@@ -255,8 +276,20 @@
                             <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_review') }}</button>
                         </div>
                     </form>
+                            </div>
+                        </div>
+                    </dialog>
 
                     <h3 class="stacked-title">{{ __('messages.admin.import_csv') }}</h3>
+                    <form method="POST" action="{{ route('admin.establishments.reviews.sync-google', $establishment) }}" class="google-review-sync-panel">
+                        @csrf
+                        <label class="full-width"><span>{{ __('messages.admin.google_reviews_import_url') }}</span><input type="url" name="google_reviews_import_url" value="{{ old('google_reviews_import_url', $establishment->google_reviews_import_url) }}" placeholder="https://.../google-reviews.csv"></label>
+                        <p class="form-help">{{ __('messages.admin.google_reviews_import_help') }}</p>
+                        <p class="form-help">{{ __('messages.admin.google_reviews_import_source_note') }}</p>
+                        @if($establishment->google_reviews_last_sync_at)<p class="form-help">{{ __('messages.admin.google_reviews_last_sync', ['date' => $establishment->google_reviews_last_sync_at->format('d/m/Y H:i')]) }}</p>@endif
+                        @if($establishment->google_reviews_last_sync_error)<p class="form-error-box">{{ $establishment->google_reviews_last_sync_error }}</p>@endif
+                        <button type="submit" class="btn btn-ghost">{{ __('messages.admin.sync_google_reviews') }}</button>
+                    </form>
                     <form method="POST" enctype="multipart/form-data" action="{{ route('admin.establishments.reviews.import', $establishment) }}">
                         @csrf
                         <div class="form-grid">
@@ -292,7 +325,7 @@
                                 <article class="feature-card review-admin-card">
                                     <div class="icon">★</div>
                                     <h4>{{ $review->reviewer_name }}</h4>
-                                    <p>{{ $review->source_label }}</p>
+                                    <p>{{ $review->source_label }} · {{ $review->property?->localized('name') ?? __('messages.admin.review_establishment_wide') }}</p>
                                     <strong>{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</strong>
                                     @if ($review->review_text)<p>{{ $review->review_text }}</p>@endif
 
@@ -310,6 +343,15 @@
                                         <label>
                                             <span>{{ __('messages.admin.reviewer') }}</span>
                                             <input type="text" name="reviewer_name" value="{{ $review->reviewer_name }}" required>
+                                        </label>
+                                        <label>
+                                            <span>{{ __('messages.admin.review_property') }}</span>
+                                            <select name="property_id">
+                                                <option value="">{{ __('messages.admin.review_establishment_wide') }}</option>
+                                                @foreach ($establishment->properties as $property)
+                                                    <option value="{{ $property->id }}" @selected($review->property_id === $property->id)>{{ $property->localized('name') }}</option>
+                                                @endforeach
+                                            </select>
                                         </label>
                                         <label>
                                             <span>{{ __('messages.admin.rating') }}</span>
@@ -336,7 +378,7 @@
                                         </div>
                                     </form>
 
-                                    <form method="POST" action="{{ route('admin.establishments.reviews.destroy', [$establishment, $review]) }}" class="review-delete-form">
+                                    <form method="POST" action="{{ route('admin.establishments.reviews.destroy', [$establishment, $review]) }}" class="review-delete-form" data-confirm-message="{{ __('messages.dialog.delete_item') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">{{ __('messages.admin.delete') }}</button>
@@ -353,9 +395,24 @@
                     <h2>{{ __('messages.admin.hosts_tab') }}</h2>
                     <p class="form-help">{{ __('messages.admin.hosts_tab_description') }}</p>
 
-                    <h3 class="stacked-title">{{ __('messages.admin.add_host') }}</h3>
+                    <div class="admin-panel-heading">
+                        <h3 class="stacked-title">{{ __('messages.admin.hosts_assigned') }}</h3>
+                        <button type="button" class="btn btn-primary" data-admin-modal-open="establishment-host-modal">{{ __('messages.admin.add_host') }}</button>
+                    </div>
+                    <dialog class="admin-modal admin-modal--side" data-admin-modal="establishment-host-modal" aria-labelledby="establishment-host-modal-title">
+                        <div class="admin-modal-card">
+                            <header class="admin-modal-header">
+                                <h2 id="establishment-host-modal-title">{{ __('messages.admin.add_host') }}</h2>
+                                <button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button>
+                            </header>
+                            <div class="admin-modal-body">
                     <form method="POST" action="{{ route('admin.establishments.hosts.store', $establishment) }}">
                         @csrf
+                        <label class="full-width"><span>{{ __('messages.admin.host_mode') }}</span><select name="mode" data-host-mode><option value="create">{{ __('messages.admin.host_mode_create') }}</option>@if(auth()->user()->isAdmin())<option value="existing">{{ __('messages.admin.host_mode_existing') }}</option>@endif</select></label>
+                        @if(auth()->user()->isAdmin())
+                            <label class="full-width" data-host-existing-field hidden><span>{{ __('messages.admin.existing_user') }}</span><select name="existing_user_id"><option value="">{{ __('messages.admin.select_user') }}</option>@foreach($availableHostUsers as $availableHostUser)<option value="{{ $availableHostUser->id }}">{{ $availableHostUser->name }} — {{ $availableHostUser->email }} ({{ $availableHostUser->role }})</option>@endforeach</select></label>
+                        @endif
+                        <div data-host-create-fields>
                         <div class="admin-form-grid compact">
                             <label>
                                 <span>{{ __('messages.admin.host_name') }}</span>
@@ -374,12 +431,15 @@
                                 <input type="password" name="password_confirmation" required>
                             </label>
                         </div>
+                        </div>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">{{ __('messages.admin.add_host') }}</button>
                         </div>
                     </form>
+                            </div>
+                        </div>
+                    </dialog>
 
-                    <h3 class="stacked-title">{{ __('messages.admin.hosts_assigned') }}</h3>
                     @if ($establishment->hosts->isEmpty())
                         <p>{{ __('messages.admin.no_hosts_assigned') }}</p>
                     @else
@@ -388,7 +448,7 @@
                                 <article class="feature-card review-admin-card">
                                     <h4>{{ $assignedHost->name }}</h4>
                                     <p>{{ $assignedHost->email }}</p>
-                                    <form method="POST" action="{{ route('admin.establishments.hosts.destroy', [$establishment, $assignedHost]) }}">
+                                    <form method="POST" action="{{ route('admin.establishments.hosts.destroy', [$establishment, $assignedHost]) }}" data-confirm-message="{{ __('messages.dialog.delete_item') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">{{ __('messages.admin.remove_host') }}</button>

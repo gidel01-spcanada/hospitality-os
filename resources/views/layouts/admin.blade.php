@@ -18,13 +18,11 @@
         <!-- Topbar -->
         <div class="admin-topbar">
             <div class="admin-topbar-left">
-                <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-                    <svg class="icon icon-md" fill="currentColor" viewBox="0 0 24 24">
-                        <path fill-rule="evenodd" d="M3 6.75A.75.75 0 013.75 6h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 6.75zM3 12a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zm0 5.25a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
-                    </svg>
+                <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="{{ __('messages.admin.toggle_navigation') }}">
+                    <x-admin-icon name="menu" class="icon icon-md" />
                 </button>
                 
-                <a href="/admin" class="text-lg font-bold text-primary" style="text-decoration: none;">
+                <a href="/admin" class="admin-topbar-brand">
                     {{ __('messages.admin.title') }}
                 </a>
             </div>
@@ -32,25 +30,19 @@
             <div class="admin-topbar-right">
                 <!-- Public site -->
                 <a class="btn btn-ghost" href="{{ route('home') }}" target="_blank" rel="noopener" aria-label="{{ __('messages.admin.view_site') }}" title="{{ __('messages.admin.view_site') }}">
-                    <svg class="icon icon-md" fill="currentColor" viewBox="0 0 24 24">
-                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM6.262 6.072a8.25 8.25 0 1010.562-.766 4.5 4.5 0 01-1.318 1.357L14.25 7.5l.165.33a.809.809 0 01-1.086 1.085l-.604-.302a1.125 1.125 0 00-1.298.21l-.132.131c-.439.44-.439 1.152 0 1.591l.296.296c.256.257.622.374.98.314l1.17-.195c.323-.054.654.036.905.245l1.33 1.108c.32.267.46.694.358 1.1a8.7 8.7 0 01-2.288 4.04l-.723.724a1.125 1.125 0 01-1.298.21l-.153-.076a1.125 1.125 0 01-.622-1.006v-1.089c0-.298-.119-.585-.33-.796l-1.347-1.347a1.125 1.125 0 01-.21-1.298L9.75 12l-1.64-1.64a6 6 0 01-1.676-3.257l-.172-1.03z" clip-rule="evenodd" />
-                    </svg>
+                    <x-admin-icon name="globe" class="icon icon-md" />
                 </a>
 
                 <!-- Booking queue -->
                 <a class="btn btn-ghost" href="{{ route('admin.bookings.index') }}" aria-label="{{ __('messages.admin.open_reservations') }}" title="{{ __('messages.admin.open_reservations') }}">
-                    <svg class="icon icon-md" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5.85 3.5a.75.75 0 00-1.117-1.007A19.5 19.5 0 005.503 19.5h12.994a19.5 19.5 0 00.617-16.007.75.75 0 00-1.117 1.007A18 18 0 0018.503 19.5H5.503a18 18 0 00.347-15.993z" />
-                    </svg>
+                    <x-admin-icon name="calendar" class="icon icon-md" />
                 </a>
 
                 <!-- User Menu -->
                 <div class="user-menu" style="position: relative;">
-                    <button class="btn btn-ghost" id="userMenuToggle" aria-label="User menu" style="display: flex; align-items: center; gap: 8px;">
-                        <span>{{ auth()->user()->name }}</span>
-                        <svg class="icon icon-sm" fill="currentColor" viewBox="0 0 24 24">
-                            <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653z" clip-rule="evenodd" />
-                        </svg>
+                    <button class="btn btn-ghost admin-user-menu-toggle" id="userMenuToggle" aria-label="{{ __('messages.admin.user_menu') }}">
+                        <span class="admin-user-menu-name">{{ auth()->user()->name }}</span>
+                        <x-admin-icon name="user-circle" class="icon icon-sm" />
                     </button>
                     
                     <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); min-width: 200px; box-shadow: var(--shadow-md); z-index: var(--z-dropdown);">
@@ -78,9 +70,7 @@
                 <li class="admin-nav-section">
                     <div class="admin-nav-item">
                         <a href="/admin" class="admin-nav-link {{ request()->is('admin') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M11.47 3.841a.75.75 0 015.06 0l7.915 4.027A.75.75 0 0124 7.574V20.25a.75.75 0 01-.75.75H2.75A.75.75 0 012 20.25V7.574a.75.75 0 01.395-.659l7.915-4.027zM9 6.75V15a.75.75 0 001.5 0V6.75H9zm0 0h1.5m3 0H15V15a.75.75 0 001.5 0V6.75h-1.5m0 0h1.5M9 15h6" />
-                            </svg>
+                            <x-admin-icon name="dashboard" />
                             <span>{{ __('messages.admin.dashboard') }}</span>
                         </a>
                     </div>
@@ -89,9 +79,7 @@
                 <li class="admin-nav-section">
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.messages.index') }}" class="admin-nav-link {{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M4.5 3.75A2.25 2.25 0 0 0 2.25 6v9a2.25 2.25 0 0 0 2.25 2.25h3.879l3.09 2.318a.75.75 0 0 0 .962 0l3.09-2.318H19.5A2.25 2.25 0 0 0 21.75 15V6a2.25 2.25 0 0 0-2.25-2.25h-15ZM6.75 8.25A.75.75 0 0 1 7.5 7.5h9a.75.75 0 0 1 0 1.5h-9a.75.75 0 0 1-.75-.75Zm.75 3a.75.75 0 0 0 0 1.5h5.25a.75.75 0 0 0 0-1.5H7.5Z" clip-rule="evenodd" />
-                            </svg>
+                            <x-admin-icon name="messages" />
                             <span>{{ __('messages.messages.title') }}</span>
                         </a>
                     </div>
@@ -104,9 +92,7 @@
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->is('admin/users*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 001.591-.079 9.018 9.018 0 002.997-.960 7.5 7.5 0 015.562-2.035 7.5 7.5 0 015.562 2.035 9.018 9.018 0 002.997.96 9.337 9.337 0 001.591.079 9.38 9.38 0 002.625-.372V9a6 6 0 00-9-5.582v.003a6 6 0 01-7.356 9.017.75.75 0 11-.564-1.41 7.5 7.5 0 009.213-7.844V9a6 6 0 00-9 5.582v10.128z" />
-                            </svg>
+                            <x-admin-icon name="users" />
                             <span>{{ __('messages.admin.users_title') }}</span>
                         </a>
                     </div>
@@ -114,20 +100,31 @@
 
                     <div class="admin-nav-item">
                         <a href="/admin/bookings" class="admin-nav-link {{ request()->is('admin/bookings*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6.584 2.915A3 3 0 0013.9 1h.2a3 3 0 013 3v2h3.97a3 3 0 012.992 3.718A20.086 20.086 0 0121.93 10H21a.75.75 0 100 1.5h.97l-.978 12.71a3 3 0 01-2.991 2.79h-15.946a3 3 0 01-2.993-2.79L1.03 11.5H0a.75.75 0 000 1.5h.07A20.086 20.086 0 012.116 8.633 3 3 0 015.108 6.915h3.976v-2a3 3 0 011.5-2.585zM5.5 4v2h13v-2a1.5 1.5 0 00-1.5-1.5h-.2a1.5 1.5 0 00-1.5 1.5H7a1.5 1.5 0 00-1.5-1.5 1.5 1.5 0 00-1.5 1.5z" />
-                            </svg>
+                            <x-admin-icon name="reservations" />
                             <span>{{ __('messages.admin.reservations') }}</span>
+                        </a>
+                    </div>
+
+                    <div class="admin-nav-item">
+                        <a href="{{ route('admin.cleaning.index') }}" class="admin-nav-link {{ request()->routeIs('admin.cleaning.*') ? 'is-active' : '' }}">
+                            <x-admin-icon name="cleaning" />
+                            <span>{{ __('messages.cleaning.title') }}</span>
                         </a>
                     </div>
 
                     @if (auth()->user()->isEstablishmentManager())
                     <div class="admin-nav-item">
+                        <a href="{{ route('admin.reports.index') }}" class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'is-active' : '' }}">
+                            <x-admin-icon name="reports" />
+                            <span>{{ __('messages.reports.title') }}</span>
+                        </a>
+                    </div>
+                    @endif
+
+                    @if (auth()->user()->isEstablishmentManager())
+                    <div class="admin-nav-item">
                         <a href="{{ route('admin.properties.index') }}" class="admin-nav-link {{ request()->is('admin/properties*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19.5 6h-15v9h15V6z" />
-                                <path fill-rule="evenodd" d="M3.751 2.25a.75.75 0 00-.75.75v16.5a.75.75 0 001.5 0V3a.75.75 0 00-.75-.75zM20.25 2.25a.75.75 0 00-.75.75v16.5a.75.75 0 001.5 0V3a.75.75 0 00-.75-.75z" clip-rule="evenodd" />
-                            </svg>
+                            <x-admin-icon name="properties" />
                             <span>{{ __('messages.admin.properties') }}</span>
                         </a>
                     </div>
@@ -136,9 +133,7 @@
                     @if (auth()->user()->isEstablishmentManager())
                         <div class="admin-nav-item">
                             <a href="{{ route('admin.establishments.index') }}" class="admin-nav-link {{ request()->is('admin/establishments*') ? 'is-active' : '' }}">
-                                <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                    <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6A.75.75 0 0 1 9 5.25Zm6-3a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
-                                </svg>
+                                <x-admin-icon name="establishments" />
                                 <span>{{ __('messages.admin.establishments') }}</span>
                             </a>
                         </div>
@@ -152,10 +147,8 @@
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.amenities.index') }}" class="admin-nav-link {{ request()->is('admin/amenities*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M11.078 2.25c-.929 0-1.734.578-2.025 1.461L7.432 5.307H3.75A2.25 2.25 0 001.5 7.557v10.886A2.25 2.25 0 003.75 20.5h16.5a2.25 2.25 0 002.25-2.25V7.557a2.25 2.25 0 00-2.25-2.25H16.568l-1.621-3.846a2.25 2.25 0 00-2.025-1.461H11.078zm-2.05 6.369a.75.75 0 10-1.06 1.06L10.94 14l-2.972 2.97a.75.75 0 101.06 1.061L12 15.06l2.97 2.972a.75.75 0 10 1.061-1.06L13.06 14l2.97-2.97a.75.75 0 10-1.06-1.06L12 12.94l-2.97-2.97z" clip-rule="evenodd" />
-                            </svg>
-                            <span>{{ __('messages.admin.amenities_title') }}</span>
+                            <x-admin-icon name="amenities" />
+                            <span>{{ __('messages.admin.amenities_menu') }}</span>
                         </a>
                     </div>
                     @endif
@@ -163,10 +156,20 @@
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.settings') }}" class="admin-nav-link {{ request()->is('admin/settings*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M11.078 2.25c-.929 0-1.734.578-2.025 1.461L7.432 5.307H3.75A2.25 2.25 0 001.5 7.557v10.886A2.25 2.25 0 003.75 20.5h16.5a2.25 2.25 0 002.25-2.25V7.557a2.25 2.25 0 00-2.25-2.25H16.568l-1.621-3.846a2.25 2.25 0 00-2.025-1.461H11.078zm-2.05 6.369a.75.75 0 10-1.06 1.06L10.94 14l-2.972 2.97a.75.75 0 101.06 1.061L12 15.06l2.97 2.972a.75.75 0 10 1.061-1.06L13.06 14l2.97-2.97a.75.75 0 10-1.06-1.06L12 12.94l-2.97-2.97z" clip-rule="evenodd" />
-                            </svg>
+                            <x-admin-icon name="settings" />
                             <span>{{ __('messages.admin.settings') }}</span>
+                        </a>
+                    </div>
+                    <div class="admin-nav-item">
+                        <a href="{{ route('admin.logs') }}" class="admin-nav-link {{ request()->routeIs('admin.logs') ? 'is-active' : '' }}">
+                            <x-admin-icon name="reports" />
+                            <span>{{ __('messages.admin.logs') }}</span>
+                        </a>
+                    </div>
+                    <div class="admin-nav-item">
+                        <a href="{{ route('admin.audit-logs') }}" class="admin-nav-link {{ request()->routeIs('admin.audit-logs') ? 'is-active' : '' }}">
+                            <x-admin-icon name="reports" />
+                            <span>Journal des modifications</span>
                         </a>
                     </div>
                     @endif
@@ -174,9 +177,7 @@
                     @if (auth()->user()->isPlatformAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('platform.tenants.index') }}" class="admin-nav-link {{ request()->is('platform/*') ? 'is-active' : '' }}">
-                            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6A.75.75 0 0 1 9 5.25Zm6-3a.75.75 0 0 1 .75.75v18a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75Zm6 3a.75.75 0 0 1 .75.75v15a.75.75 0 0 1-1.5 0V6a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
-                            </svg>
+                            <x-admin-icon name="tenants" />
                             <span>{{ __('messages.platform.tenants_title') }}</span>
                         </a>
                     </div>
@@ -209,14 +210,14 @@
 
                 <!-- Flash Messages -->
                 @if ($message = session('success') ?? session('status'))
-                    <div class="alert alert-success" role="alert" style="background-color: var(--color-success-100); border-left: 4px solid var(--color-success-600); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6); color: var(--color-success-700);">
-                        <strong>Success!</strong> {{ $message }}
+                    <div class="alert alert-success admin-flash" role="status" aria-live="polite">
+                        <strong>{{ __('messages.common.success') }}</strong> {{ $message }}
                     </div>
                 @endif
 
                 @if ($message = session('error'))
-                    <div class="alert alert-error" role="alert" style="background-color: var(--color-error-100); border-left: 4px solid var(--color-error-600); padding: var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-6); color: var(--color-error-700);">
-                        <strong>Error!</strong> {{ $message }}
+                    <div class="alert alert-error admin-flash" role="alert" aria-live="assertive">
+                        <strong>{{ __('messages.common.error') }}</strong> {{ $message }}
                     </div>
                 @endif
 
@@ -254,5 +255,6 @@
     </script>
 
     @stack('scripts')
+    @include('partials.confirm-dialog')
 </body>
 </html>

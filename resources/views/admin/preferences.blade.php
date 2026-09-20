@@ -82,11 +82,11 @@
 </div>
 
 <!-- Theme Selector -->
-<div style="margin-top: var(--space-8);">
+<div class="admin-preferences-section">
     <x-card>
         <div class="card-header">
             <h3>{{ __('messages.admin.theme_selection') }}</h3>
-            <p style="margin: var(--space-2) 0 0 0; color: var(--text-secondary); font-size: var(--font-sm);">
+            <p class="theme-description">
                 {{ __('messages.admin.theme_description') }}
             </p>
         </div>
@@ -95,107 +95,26 @@
             @csrf
             @method('PUT')
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6);">
-                <!-- Light Admin Theme -->
-                <label style="cursor: pointer;">
-                    <input 
-                        type="radio" 
-                        name="theme" 
-                        value="light-admin"
-                        {{ (auth()->user()->theme ?? 'light-admin') === 'light-admin' ? 'checked' : '' }}
-                        style="display: none;"
-                    />
-                    <div style="
-                        border: 3px solid {{ (auth()->user()->theme ?? 'light-admin') === 'light-admin' ? 'var(--theme-primary)' : 'var(--border-default)' }};
-                        border-radius: var(--radius-lg);
-                        padding: var(--space-4);
-                        background: white;
-                        transition: all 200ms ease;
-                    ">
-                        <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
-                            <div style="width: 24px; height: 24px; background: #1F2937; border-radius: var(--radius-md);"></div>
-                            <div style="width: 24px; height: 24px; background: #F3F4F6; border-radius: var(--radius-md); border: 1px solid #D1D5DB;"></div>
+            <div class="theme-option-grid">
+                @foreach ([
+                    'light-admin' => ['class' => '', 'title' => __('messages.admin.theme_light'), 'copy' => __('messages.admin.theme_light_description'), 'swatches' => ['light-ink', 'light-surface']],
+                    'dark-admin' => ['class' => 'theme-option-dark', 'title' => __('messages.admin.theme_dark'), 'copy' => __('messages.admin.theme_dark_description'), 'swatches' => ['dark-text', 'dark-surface']],
+                    'emerald' => ['class' => '', 'title' => __('messages.admin.theme_emerald'), 'copy' => __('messages.admin.theme_emerald_description'), 'swatches' => ['emerald', 'emerald-light']],
+                    'gold' => ['class' => '', 'title' => __('messages.admin.theme_gold'), 'copy' => __('messages.admin.theme_gold_description'), 'swatches' => ['gold', 'gold-light']],
+                ] as $themeValue => $themeOption)
+                    <label class="theme-option {{ $themeOption['class'] }}">
+                        <input type="radio" name="theme" value="{{ $themeValue }}" @checked((auth()->user()->theme ?? 'light-admin') === $themeValue)>
+                        <div class="theme-option-card">
+                            <div class="theme-swatches" aria-hidden="true">
+                                @foreach ($themeOption['swatches'] as $swatch)
+                                    <span class="theme-swatch theme-swatch-{{ $swatch }}"></span>
+                                @endforeach
+                            </div>
+                            <div class="theme-option-title">{{ $themeOption['title'] }}</div>
+                            <div class="theme-option-copy">{{ $themeOption['copy'] }}</div>
                         </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_light') }}</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_light_description') }}</div>
-                    </div>
-                </label>
-
-                <!-- Dark Admin Theme -->
-                <label style="cursor: pointer;">
-                    <input 
-                        type="radio" 
-                        name="theme" 
-                        value="dark-admin"
-                        {{ (auth()->user()->theme ?? 'light-admin') === 'dark-admin' ? 'checked' : '' }}
-                        style="display: none;"
-                    />
-                    <div style="
-                        border: 3px solid {{ (auth()->user()->theme ?? 'light-admin') === 'dark-admin' ? 'var(--theme-primary)' : 'var(--border-default)' }};
-                        border-radius: var(--radius-lg);
-                        padding: var(--space-4);
-                        background: #111827;
-                        color: white;
-                        transition: all 200ms ease;
-                    ">
-                        <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
-                            <div style="width: 24px; height: 24px; background: #F3F4F6; border-radius: var(--radius-md);"></div>
-                            <div style="width: 24px; height: 24px; background: #1F2937; border-radius: var(--radius-md); border: 1px solid #374151;"></div>
-                        </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_dark') }}</div>
-                        <div style="font-size: var(--font-xs); color: #9CA3AF; margin-top: var(--space-1);">{{ __('messages.admin.theme_dark_description') }}</div>
-                    </div>
-                </label>
-
-                <!-- Emerald Theme (Public Inspiration) -->
-                <label style="cursor: pointer;">
-                    <input 
-                        type="radio" 
-                        name="theme" 
-                        value="emerald"
-                        {{ (auth()->user()->theme ?? 'light-admin') === 'emerald' ? 'checked' : '' }}
-                        style="display: none;"
-                    />
-                    <div style="
-                        border: 3px solid {{ (auth()->user()->theme ?? 'light-admin') === 'emerald' ? 'var(--theme-primary)' : 'var(--border-default)' }};
-                        border-radius: var(--radius-lg);
-                        padding: var(--space-4);
-                        background: white;
-                        transition: all 200ms ease;
-                    ">
-                        <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
-                            <div style="width: 24px; height: 24px; background: #0f5b4c; border-radius: var(--radius-md);"></div>
-                            <div style="width: 24px; height: 24px; background: #d1fae5; border-radius: var(--radius-md);"></div>
-                        </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_emerald') }}</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_emerald_description') }}</div>
-                    </div>
-                </label>
-
-                <!-- Gold Theme (Public Inspiration) -->
-                <label style="cursor: pointer;">
-                    <input 
-                        type="radio" 
-                        name="theme" 
-                        value="gold"
-                        {{ (auth()->user()->theme ?? 'light-admin') === 'gold' ? 'checked' : '' }}
-                        style="display: none;"
-                    />
-                    <div style="
-                        border: 3px solid {{ (auth()->user()->theme ?? 'light-admin') === 'gold' ? 'var(--theme-primary)' : 'var(--border-default)' }};
-                        border-radius: var(--radius-lg);
-                        padding: var(--space-4);
-                        background: white;
-                        transition: all 200ms ease;
-                    ">
-                        <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
-                            <div style="width: 24px; height: 24px; background: #c89b3c; border-radius: var(--radius-md);"></div>
-                            <div style="width: 24px; height: 24px; background: #fef3c7; border-radius: var(--radius-md);"></div>
-                        </div>
-                        <div style="font-size: var(--font-sm); font-weight: var(--font-semibold);">{{ __('messages.admin.theme_gold') }}</div>
-                        <div style="font-size: var(--font-xs); color: var(--text-secondary); margin-top: var(--space-1);">{{ __('messages.admin.theme_gold_description') }}</div>
-                    </div>
-                </label>
+                    </label>
+                @endforeach
             </div>
 
             <div style="display: flex; gap: var(--space-2);">

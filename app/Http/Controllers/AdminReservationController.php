@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
@@ -38,9 +39,20 @@ class AdminReservationController extends Controller
         $property = $this->ownedProperty($validated['property_id']);
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
+        $ignoreExternalConflicts = $request->boolean('ignore_external_calendar_conflicts');
 
         $this->ensureReservationRules($property, $checkIn, $checkOut, $validated);
-        abort_unless($availabilityService->isAvailable($property, $checkIn, $checkOut), 422, 'The property is not available for these dates.');
+        $this->authorizeExternalCalendarOverride($ignoreExternalConflicts);
+        $externalConflictOverridden = $ignoreExternalConflicts
+            && $availabilityService->hasExternalCalendarConflict($property, $checkIn, $checkOut);
+        abort_unless(
+            $availabilityService->isAvailable($property, $checkIn, $checkOut, null, $ignoreExternalConflicts),
+            422,
+            __('messages.errors.property_unavailable'),
+        );
+        if ($externalConflictOverridden) {
+            $validated['notes'] = $this->appendExternalCalendarOverrideAudit($validated['notes'] ?? null);
+        }
 
         $reservation = $this->persistReservation($validated, $property, $checkIn, $checkOut);
 
@@ -65,9 +77,20 @@ class AdminReservationController extends Controller
         $property = $this->ownedProperty($validated['property_id']);
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
+        $ignoreExternalConflicts = $request->boolean('ignore_external_calendar_conflicts');
 
         $this->ensureReservationRules($property, $checkIn, $checkOut, $validated);
-        abort_unless($availabilityService->isAvailable($property, $checkIn, $checkOut, $reservation->id), 422, 'The property is not available for these dates.');
+        $this->authorizeExternalCalendarOverride($ignoreExternalConflicts);
+        $externalConflictOverridden = $ignoreExternalConflicts
+            && $availabilityService->hasExternalCalendarConflict($property, $checkIn, $checkOut);
+        abort_unless(
+            $availabilityService->isAvailable($property, $checkIn, $checkOut, $reservation->id, $ignoreExternalConflicts),
+            422,
+            __('messages.errors.property_unavailable'),
+        );
+        if ($externalConflictOverridden) {
+            $validated['notes'] = $this->appendExternalCalendarOverrideAudit($validated['notes'] ?? null);
+        }
 
         $guest = $reservation->guest ?: new ReservationGuest();
         $guest->fill([
@@ -139,6 +162,33 @@ class AdminReservationController extends Controller
         $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
 
         return view('admin.reservations.show', compact('reservation'));
+    }
+
+    public function destroy(Reservation $reservation): RedirectResponse
+    {
+        abort_unless(auth()->user()?->isAdmin(), 403, __('messages.errors.admin_required'));
+        $this->ownedReservation($reservation);
+        $reservation->load(['paymentAttempts', 'guest']);
+
+        DB::transaction(function () use ($reservation): void {
+            foreach ($reservation->paymentAttempts as $attempt) {
+                $proofPath = data_get($attempt->payload, 'payment_proof.path');
+                if ($proofPath && File::exists(public_path($proofPath))) {
+                    File::delete(public_path($proofPath));
+                }
+            }
+
+            $guest = $reservation->guest;
+            $reservation->delete();
+
+            if ($guest && ! $guest->reservations()->exists()) {
+                $guest->delete();
+            }
+        });
+
+        Log::notice('Reservation deleted by administrator', ['reservation_id' => $reservation->id, 'reservation_ref' => $reservation->reservation_ref, 'deleted_by' => auth()->id()]);
+
+        return redirect()->route('admin.reservations.index')->with('status', __('messages.flash.reservation_deleted'));
     }
 
     public function uploadPaymentProof(Request $request, Reservation $reservation): RedirectResponse
@@ -280,7 +330,23 @@ class AdminReservationController extends Controller
             'children' => ['nullable', 'integer', 'min:0', 'max:8'],
             'infants' => ['nullable', 'integer', 'min:0', 'max:4'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'ignore_external_calendar_conflicts' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    private function authorizeExternalCalendarOverride(bool $requested): void
+    {
+        abort_if($requested && ! auth()->user()?->isEstablishmentManager(), 403, __('messages.errors.establishment_manager_required'));
+    }
+
+    private function appendExternalCalendarOverrideAudit(?string $notes): string
+    {
+        $audit = __('messages.admin.external_calendar_override_audit', [
+            'user' => auth()->user()->name,
+            'date' => now()->toDateTimeString(),
+        ]);
+
+        return trim(trim((string) $notes).PHP_EOL.$audit);
     }
 
     private function ensureReservationRules(Property $property, Carbon $checkIn, Carbon $checkOut, array $validated): void
