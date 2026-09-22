@@ -374,6 +374,7 @@ class PublicPropertyController extends Controller
             'infants' => (int) ($validated['infants'] ?? 0),
             'currency' => $pricing['currency'],
             'email' => $email,
+            'locale' => app()->getLocale(),
             'subtotal' => $pricing['subtotal'],
             'fees' => $pricing['fees'],
             'taxes' => $pricing['taxes'],
@@ -392,7 +393,7 @@ class PublicPropertyController extends Controller
 
         ReservationPriceLine::query()->insert($priceLines);
 
-        $emailService->queueForReservation($reservation, 'reservation_received', 'Confirmation de votre demande de réservation');
+        $emailService->queueForReservation($reservation, 'reservation_received');
 
         if ($createdGuestAccount) {
             try {

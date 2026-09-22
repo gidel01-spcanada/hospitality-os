@@ -79,7 +79,7 @@
                     <div>
                         <label for="status">{{ __('messages.admin.status') }}</label>
                         <select id="status" name="status">
-                            @foreach(['pending', 'pending_payment', 'confirmed', 'checked_in', 'completed', 'cancelled'] as $status)
+                            @foreach(['pending', 'pending_payment', 'pending_validation', 'confirmed', 'checked_in', 'completed', 'cancelled'] as $status)
                                 <option value="{{ $status }}" {{ $reservation->status === $status ? 'selected' : '' }}>{{ __('messages.admin.status_' . $status) }}</option>
                             @endforeach
                         </select>

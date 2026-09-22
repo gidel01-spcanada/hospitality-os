@@ -21,7 +21,14 @@ class AdminCalendarController extends Controller
         return view('admin.properties.calendar', compact('property', 'feeds'));
     }
 
-    public function storeFeed(Request $request, Property $property): RedirectResponse
+    public function createFeed(Property $property): \Illuminate\View\View
+    {
+        $this->authorizeProperty($property);
+
+        return view('admin.properties.calendar-feed-form', ['property' => $property, 'feed' => null]);
+    }
+
+    public function storeFeed(Request $request, Property $property, CalendarFeedSyncService $service): RedirectResponse
     {
         $this->authorizeProperty($property);
 
@@ -32,7 +39,7 @@ class AdminCalendarController extends Controller
             'is_enabled' => ['sometimes', 'boolean'],
         ]);
 
-        $property->calendarFeeds()->create([
+        $feed = $property->calendarFeeds()->create([
             'name' => $validated['name'],
             'provider' => $validated['provider'],
             'url' => $validated['url'],
@@ -41,7 +48,20 @@ class AdminCalendarController extends Controller
             'sync_interval_minutes' => 60,
         ]);
 
-        return redirect()->to(route('admin.properties.edit', $property) . '#calendars')->with('success', __('messages.flash.calendar_saved'));
+        $synced = $feed->is_enabled && $service->sync($feed);
+
+        return redirect()->to(route('admin.properties.edit', $property) . '#calendars')->with(
+            match (true) {
+                $synced => 'success',
+                $feed->is_enabled => 'error',
+                default => 'success',
+            },
+            match (true) {
+                $synced => __('messages.flash.calendar_saved_and_synced'),
+                $feed->is_enabled => __('messages.flash.calendar_saved_sync_failed'),
+                default => __('messages.flash.calendar_saved'),
+            },
+        );
     }
 
     public function syncFeed(Property $property, ExternalCalendarFeed $feed, CalendarFeedSyncService $service): RedirectResponse
@@ -52,6 +72,14 @@ class AdminCalendarController extends Controller
         $service->sync($feed);
 
         return redirect()->to(route('admin.properties.edit', $property) . '#calendars')->with('success', __('messages.flash.calendar_synced'));
+    }
+
+    public function editFeed(Property $property, ExternalCalendarFeed $feed): \Illuminate\View\View
+    {
+        $this->authorizeProperty($property);
+        abort_unless($feed->property_id === $property->id, 404);
+
+        return view('admin.properties.calendar-feed-form', ['property' => $property, 'feed' => $feed]);
     }
 
     public function updateFeed(Request $request, Property $property, ExternalCalendarFeed $feed): RedirectResponse

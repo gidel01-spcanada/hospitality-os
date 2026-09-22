@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\EmailOutbox;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -254,7 +255,11 @@ class AuthAndAdminFlowTest extends TestCase
             ])
             ->assertRedirect('/admin/users');
 
-        $this->assertDatabaseHas('users', ['email' => 'host@example.com', 'role' => 'host', 'is_admin' => false]);
+        $createdHost = User::where('email', 'host@example.com')->firstOrFail();
+        $this->assertSame('host', $createdHost->role);
+        $this->assertFalse($createdHost->is_admin);
+        $this->assertNotNull($createdHost->email_verified_at);
+        $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'host@example.com', 'template' => 'staff_account_invitation']);
     }
 
     public function test_host_is_scoped_to_their_assigned_establishment_only(): void
@@ -324,6 +329,8 @@ class AuthAndAdminFlowTest extends TestCase
 
         $coHost = User::where('email', 'co-host@example.com')->firstOrFail();
         $this->assertSame('host', $coHost->role);
+        $this->assertNotNull($coHost->email_verified_at);
+        $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'co-host@example.com', 'template' => 'staff_account_invitation']);
         $this->assertTrue($coHost->establishments()->whereKey($assigned->id)->exists());
 
         // The newly added co-host can now manage the same establishment.

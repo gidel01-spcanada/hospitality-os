@@ -8,7 +8,6 @@
         <a class="{{ request()->routeIs('admin.properties.*') ? 'is-active' : '' }}" href="{{ route('admin.properties.index') }}">{{ __('messages.admin.properties') }}</a>
         <a class="{{ request()->routeIs('admin.reports.*') ? 'is-active' : '' }}" href="{{ route('admin.reports.index') }}">{{ __('messages.reports.title') }}</a>
     @endif
-    <a class="{{ request()->routeIs('admin.reservations.*') ? 'is-active' : '' }}" href="{{ route('admin.reservations.index') }}">{{ __('messages.admin.reservations') }}</a>
     <a class="{{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}" href="{{ route('admin.messages.index') }}">{{ __('messages.messages.title') }}</a>
     @if (auth()->user()->isAdmin())
         <a class="{{ request()->routeIs('admin.reviews') ? 'is-active' : '' }}" href="{{ route('admin.reviews') }}">{{ __('messages.admin.reviews') }}</a>

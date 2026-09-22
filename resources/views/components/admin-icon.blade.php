@@ -14,6 +14,12 @@
         @case('user-circle')
             <circle cx="12" cy="12" r="9" /><circle cx="12" cy="9" r="3" /><path d="M6.8 18.2c1.2-2.2 3-3.2 5.2-3.2s4 1 5.2 3.2" />
             @break
+        @case('user')
+            <circle cx="12" cy="8" r="3.25" /><path d="M5.5 20v-1.25A5.75 5.75 0 0 1 11.25 13h1.5a5.75 5.75 0 0 1 5.75 5.75V20" />
+            @break
+        @case('logout')
+            <path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" /><path d="m15 8 4 4-4 4M19 12H9" />
+            @break
         @case('dashboard')
             <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
             @break

@@ -8,6 +8,9 @@
         <h1 class="admin-page-title">{{ __('messages.admin.logs') }}</h1>
         <p class="admin-page-description">{{ __('messages.admin.logs_description') }}</p>
     </div>
+    <div class="admin-page-actions">
+        <a class="btn btn-ghost" href="{{ route('admin.audit-logs') }}">Journal des modifications</a>
+    </div>
 </div>
 
 <x-card class="audit-log-card">

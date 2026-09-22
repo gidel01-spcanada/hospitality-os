@@ -74,106 +74,54 @@
                         </ul>
                     </div>
                 @endif
-
-                @if (count($paymentMethods) > 1)
-                    <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <h3 class="text-lg font-semibold">{{ __('messages.checkout.methods') }}</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
-                            @foreach ($paymentMethods as $provider => $method)
-                                <li>• {{ __('messages.checkout.' . $provider) }}@if ($method['instructions']) — {{ $method['instructions'] }}@endif
-                                    @if (in_array($provider, ['interac', 'wise', 'revolut'], true))
-                                        @php
-                                            $internationalAmount = $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount);
-                                            $interacAmount = app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $reservation->property?->establishment?->secondary_currency);
-                                        @endphp
-                                        @if ($interacAmount !== null)
-                                            <div class="ml-4 mt-1 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($interacAmount, 2, ',', ' '), 'currency' => $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($interacAmount, 2, '.', '') }} {{ $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency }}">{{ __('messages.checkout.copy') }}</button></div>
-                                        @endif
-                                        @if (!empty($method['email']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.' . $provider . '_email', ['email' => $method['email']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['email'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
-                                        @if ($provider === 'interac' && !empty($method['security_question']))<div class="ml-4 text-xs">{{ __('messages.checkout.interac_question', ['question' => $method['security_question']]) }}</div>@endif
-                                        @if ($provider === 'interac' && !empty($method['security_answer']))<div class="ml-4 flex items-center gap-2 text-xs"><span>{{ __('messages.checkout.interac_answer', ['answer' => $method['security_answer']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['security_answer'] }}">{{ __('messages.checkout.copy') }}</button></div>@endif
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
             </section>
 
             <aside id="checkout-payment" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 @php
                     $latestAttempt = $reservation->paymentAttempts->last();
-                    $payLaterInstructions = trim((string) ($paymentMethods['pay_later']['instructions'] ?? ''));
+                    $showPaymentOptions = in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true);
+                    $awaitingValidation = $reservation->status === 'pending_validation';
                 @endphp
-                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed')
-                    @php
-                        $nonPaypalMethods = collect($paymentMethods)->except('paypal')->all();
-                        $cancellationFeePercent = (float) ($reservation->property?->establishment?->cancellation_fee_percent ?? 0);
-                        $cancellationFeeHoldAmount = $reservation->property?->establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
-                        $onlineMethods = collect($paymentMethods)->except(['pay_later', 'interac'])->all();
-                    @endphp
 
-                    @if (isset($paymentMethods['pay_later']) && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && count($onlineMethods) > 0)
-                        <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                            <p class="font-semibold">{{ __('messages.checkout.pay_later_guarantee_title') }}</p>
-                            <p class="mt-1">{{ __('messages.checkout.pay_later_guarantee_notice', [
-                                'amount' => number_format($cancellationFeeHoldAmount, 0, ',', ' '),
-                                'currency' => $reservation->currency,
-                                'percent' => rtrim(rtrim(number_format($cancellationFeePercent, 2, ',', ' '), '0'), ','),
-                            ]) }}</p>
-                        </div>
-                    @endif
-
-                    @if (count($nonPaypalMethods) > 0)
-                        <form action="{{ route('checkout.start', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="space-y-4">
-                            @csrf
-                            @if (count($nonPaypalMethods) === 1)
-                                @php $singleProvider = array_key_first($nonPaypalMethods); @endphp
-                                <input type="hidden" name="provider" value="{{ $singleProvider }}">
-                                <div>
-                                    <span class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</span>
-                                    <div class="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
-                                        {{ __('messages.checkout.' . $singleProvider) }}
-                                    </div>
-                                </div>
-                            @else
-                                <div>
-                                    <label for="provider" class="mb-1 block text-sm font-medium text-slate-700">{{ __('messages.checkout.mode') }}</label>
-                                    <select id="provider" name="provider" class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-amber-500 focus:outline-none">
-                                        @foreach ($nonPaypalMethods as $provider => $method)
-                                            <option value="{{ $provider }}">{{ __('messages.checkout.' . $provider) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-
-                            @if (isset($paymentMethods['pay_later']) && $cancellationFeePercent > 0 && $cancellationFeeHoldAmount > 0 && count($onlineMethods) > 1)
-                                <div>
-                                    <label for="guarantee_provider" class="mb-1 block text-xs font-medium text-slate-700">{{ __('messages.checkout.guarantee_provider_label') }}</label>
-                                    <select id="guarantee_provider" name="guarantee_provider" class="w-full rounded-md border border-slate-300 px-3 py-2 text-xs focus:border-amber-500 focus:outline-none">
-                                        @foreach ($onlineMethods as $onlineProvider => $method)
-                                            <option value="{{ $onlineProvider }}">{{ __('messages.checkout.' . $onlineProvider) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-
-                            <button type="submit" class="w-full rounded-md bg-amber-500 px-4 py-2.5 font-medium text-white hover:bg-amber-600">
-                                {{ __('messages.checkout.start') }}
-                            </button>
-                        </form>
-                    @endif
-
-                    @if (isset($paymentMethods['paypal']))
-                        <div class="@if(count($nonPaypalMethods) > 0) mt-6 border-t border-slate-200 pt-4 @endif">
-                            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('messages.checkout.paypal_smart_buttons_heading') }}</p>
-                            <div id="paypal-button-container"></div>
-                        </div>
-                    @endif
+                @if ($awaitingValidation)
+                    <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                        {{ __('messages.checkout.awaiting_validation') }}
+                    </div>
                 @endif
 
-                @if (isset($paymentMethods['pay_later']) && $reservation->status === 'pending' && $payLaterInstructions !== '' && $payLaterInstructions !== __('messages.checkout.pay_later'))
-                    <p class="mt-3 text-center text-sm text-slate-600">{{ $payLaterInstructions }}</p>
+                @if ($showPaymentOptions)
+                    @php
+                        $cancellationFeePercent = (float) ($reservation->property?->establishment?->cancellation_fee_percent ?? 0);
+                        $cancellationFeeHoldAmount = $reservation->property?->establishment?->cancellationFeeHoldAmount($reservation) ?? 0.0;
+                        $onlineMethods = collect($paymentMethods)->except(['pay_later', 'interac', 'wise', 'revolut']);
+                        $providerOrder = ['paypal', 'fedapay', 'cinetpay', 'mpesa', 'pay_later', 'interac', 'wise', 'revolut'];
+                        $orderedMethods = collect($providerOrder)->filter(fn ($provider) => isset($paymentMethods[$provider]))->mapWithKeys(fn ($provider) => [$provider => $paymentMethods[$provider]]);
+                        $useAccordion = $orderedMethods->count() > 1;
+                    @endphp
+
+                    <div class="space-y-3">
+                        @foreach ($orderedMethods as $provider => $method)
+                            @php
+                                $providerAttempt = $reservation->paymentAttempts->where('provider', $provider)->last();
+                            @endphp
+                            @if ($useAccordion)
+                                <details class="group rounded-lg border border-slate-200" name="payment-method-accordion" @if($loop->first) open @endif>
+                                    <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-slate-800">
+                                        <span>{{ __('messages.checkout.' . $provider) }}</span>
+                                        <span class="text-slate-400 transition-transform group-open:rotate-180">&#9662;</span>
+                                    </summary>
+                                    <div class="border-t border-slate-200 px-4 py-4">
+                                        @include('checkout.partials.payment-method', ['provider' => $provider, 'method' => $method, 'providerAttempt' => $providerAttempt, 'onlineMethods' => $onlineMethods, 'cancellationFeePercent' => $cancellationFeePercent, 'cancellationFeeHoldAmount' => $cancellationFeeHoldAmount])
+                                    </div>
+                                </details>
+                            @else
+                                <div class="rounded-lg border border-slate-200 px-4 py-4">
+                                    <p class="mb-3 font-medium text-slate-800">{{ __('messages.checkout.' . $provider) }}</p>
+                                    @include('checkout.partials.payment-method', ['provider' => $provider, 'method' => $method, 'providerAttempt' => $providerAttempt, 'onlineMethods' => $onlineMethods, 'cancellationFeePercent' => $cancellationFeePercent, 'cancellationFeeHoldAmount' => $cancellationFeeHoldAmount])
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
                 @endif
 
                 @if($reservation->paymentAttempts->isNotEmpty())
@@ -183,7 +131,7 @@
                             @foreach($reservation->paymentAttempts as $attempt)
                                 <li class="rounded-md bg-slate-50 px-3 py-2">
                                     <div class="flex items-center justify-between">
-                                        <span class="font-medium">{{ $attempt->provider }}</span>
+                                        <span class="font-medium">{{ __('messages.checkout.' . $attempt->provider) }}</span>
                                         <span class="text-slate-500">{{ $attempt->status }}</span>
                                     </div>
                                     <div class="mt-1 text-xs text-slate-500">{{ $attempt->provider_reference }}</div>
@@ -193,18 +141,19 @@
                     </div>
                 @endif
 
-                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && ($isDevEnvironment || $latestAttempt->provider !== 'pay_later'))
+                @php $canSimulatePayment = $isDevEnvironment || auth()->user()?->canManageReservations(); @endphp
+                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && $canSimulatePayment)
                     <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
                         @csrf
                         <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
                             {{ __('messages.checkout.simulate') }}
                         </button>
                     </form>
-                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && in_array($latestAttempt?->provider, ['pay_later', 'interac'], true) && ! $isDevEnvironment)
+                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && ! $canSimulatePayment)
                     <p class="mt-6 text-center text-sm text-slate-500">{{ __('messages.checkout.simulate_unavailable') }}</p>
                 @endif
 
-                @if (in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true))
+                @if ($showPaymentOptions)
                     @php $cancellationFee = $reservation->property?->establishment?->cancellationFeeFor($reservation) ?? 0.0; @endphp
                     @if ($cancellationFee > 0)
                         <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">

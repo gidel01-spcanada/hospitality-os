@@ -4,9 +4,18 @@
 
 @section('content')
     <div class="admin-page-header">
-        <h1 class="admin-page-title">{{ __('messages.platform.tenants_title') }}</h1>
-        <p class="admin-page-description">{{ __('messages.platform.tenants_description') }}</p>
+        <div>
+            <h1 class="admin-page-title">{{ __('messages.platform.tenants_title') }}</h1>
+            <p class="admin-page-description">{{ __('messages.platform.tenants_description') }}</p>
+        </div>
+        <div class="admin-page-actions">
+            <x-button tag="a" href="{{ route('platform.tenants.create') }}" variant="primary">{{ __('messages.platform.add_tenant') }}</x-button>
+        </div>
     </div>
+
+    @if (session('success'))
+        <div class="reservation-success">{{ session('success') }}</div>
+    @endif
 
     <x-card>
         @if ($tenants->isEmpty())

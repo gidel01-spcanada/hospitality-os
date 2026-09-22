@@ -2,16 +2,40 @@
 
 namespace Tests\Feature;
 
+use App\Models\EmailOutbox;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class PaymentWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_invalid_checkout_link_redirects_to_account_access_recovery_page(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::query()->create(['full_name' => 'Bob Doe', 'email' => 'bob@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-ACCESS-001',
+            'status' => 'cancelled', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => 'bob@example.com',
+            'subtotal' => 1000, 'fees' => 0, 'taxes' => 0, 'total_amount' => 1000, 'source' => 'website',
+        ]);
+
+        $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => str_repeat('0', 64)]))
+            ->assertRedirect(route('reservation.access'));
+
+        $this->get(route('reservation.access'))
+            ->assertOk()
+            ->assertSee(__('messages.auth.sign_in'))
+            ->assertSee(__('messages.auth.create_account'));
+    }
 
     public function test_checkout_and_verified_payment_flow_work(): void
     {
@@ -49,10 +73,10 @@ class PaymentWorkflowTest extends TestCase
         $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
 
         $this->get('/reservations/' . $reservation->id . '/checkout')
-            ->assertForbidden();
+            ->assertRedirect(route('reservation.access'));
 
         $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => str_repeat('0', 64)]))
-            ->assertForbidden();
+            ->assertRedirect(route('reservation.access'));
 
         $this->get($checkoutUrl)
             ->assertOk()
@@ -225,6 +249,109 @@ class PaymentWorkflowTest extends TestCase
 
         $this->post($checkoutUrl, ['provider' => 'pay_later'])
             ->assertStatus(422);
+    }
+
+    public function test_checkout_shows_wise_procedure_details_even_as_sole_payment_method(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->with('establishment')->firstOrFail();
+        $property->establishment->update([
+            'secondary_currency' => 'EUR',
+            'secondary_currency_rate' => 650.0,
+            'payment_methods' => [
+                'pay_later' => ['enabled' => false, 'instructions' => ''],
+                'paypal' => ['enabled' => false, 'instructions' => ''],
+                'wise' => ['enabled' => true, 'instructions' => '', 'email' => 'wise@afrikappart.test'],
+            ],
+        ]);
+        $guest = ReservationGuest::create(['full_name' => 'Wise Guest', 'email' => 'wise-guest@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-PAY-WISE',
+            'status' => 'pending', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => $guest->email,
+            'subtotal' => 100000, 'fees' => 10000, 'taxes' => 5000, 'total_amount' => 115000, 'source' => 'website',
+        ]);
+
+        $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
+            ->assertOk()
+            ->assertSee(__('messages.checkout.wise_email', ['email' => 'wise@afrikappart.test']));
+    }
+
+    public function test_guest_can_submit_offline_payment_proof_and_host_is_notified(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->with('establishment')->firstOrFail();
+        $property->establishment->update([
+            'secondary_currency' => 'EUR',
+            'secondary_currency_rate' => 650.0,
+            'payment_methods' => [
+                'pay_later' => ['enabled' => false, 'instructions' => ''],
+                'paypal' => ['enabled' => false, 'instructions' => ''],
+                'wise' => ['enabled' => true, 'instructions' => '', 'email' => 'wise@afrikappart.test'],
+            ],
+        ]);
+        $guest = ReservationGuest::create(['full_name' => 'Proof Guest', 'email' => 'proof-guest@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-PAY-PROOF',
+            'status' => 'pending', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => $guest->email,
+            'subtotal' => 100000, 'fees' => 10000, 'taxes' => 5000, 'total_amount' => 115000, 'source' => 'website',
+        ]);
+
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $offlineProofUrl = route('checkout.offline-proof', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->get($checkoutUrl)->assertOk()->assertSee(__('messages.checkout.i_have_paid'));
+
+        $this->post($offlineProofUrl, [
+            'provider' => 'wise',
+            'payment_proof' => UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf'),
+        ])->assertRedirect($checkoutUrl);
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_validation']);
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'wise', 'status' => 'awaiting_validation']);
+
+        $attempt = $reservation->paymentAttempts()->where('provider', 'wise')->firstOrFail();
+        $this->assertNotEmpty(data_get($attempt->payload, 'payment_proof.path'));
+
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $this->assertDatabaseHas('email_outbox', [
+            'recipient_email' => $admin->email,
+            'template' => 'payment_proof_submitted',
+            'status' => 'queued',
+        ]);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee(__('messages.checkout.awaiting_validation'))
+            ->assertDontSee(__('messages.checkout.i_have_paid'));
+    }
+
+    public function test_only_staff_can_simulate_payment_in_production(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'Staff Sim Guest', 'email' => 'staff-sim@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-PAY-SIM',
+            'status' => 'pending', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => $guest->email,
+            'subtotal' => 100000, 'fees' => 10000, 'taxes' => 5000, 'total_amount' => 115000, 'source' => 'website',
+        ]);
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $this->post($checkoutUrl, ['provider' => 'pay_later'])->assertRedirect($checkoutUrl);
+
+        $this->app->instance('env', 'production');
+        $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($admin)->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee(__('messages.checkout.simulate'));
+
+        $completeUrl = route('checkout.complete', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $this->actingAs($admin)->post($completeUrl)->assertRedirect($checkoutUrl);
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
     }
 
     public function test_customer_can_cancel_an_unfinalized_reservation_from_checkout(): void

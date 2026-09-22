@@ -25,6 +25,7 @@ class Reservation extends Model
         'infants',
         'currency',
         'email',
+        'locale',
         'subtotal',
         'fees',
         'taxes',

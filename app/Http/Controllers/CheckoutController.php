@@ -7,19 +7,30 @@ use App\Services\Payments\PaymentGatewayManager;
 use App\Services\ReservationEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
-    public function show(Request $request, Reservation $reservation): View
+    public function show(Request $request, Reservation $reservation): View|RedirectResponse
     {
+        if (! $this->canAccessCheckout($request, $reservation)) {
+            return redirect()->route('reservation.access');
+        }
+
         $token = $this->authorizeCheckout($request, $reservation);
         $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
         $paymentMethods = $this->paymentMethods($reservation);
         $isDevEnvironment = app()->environment(['local', 'testing']);
 
         return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment'));
+    }
+
+    public function accessHelp(): View
+    {
+        return view('checkout.access');
     }
 
     public function start(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
@@ -162,8 +173,8 @@ class CheckoutController extends Controller
     {
         $token = $this->authorizeCheckout($request, $reservation);
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
-        // Offline (pay_later) has no external status to verify; only an admin-confirmed receipt marks it paid outside dev.
-        abort_if(in_array($attempt->provider, ['pay_later', 'interac', 'wise', 'revolut'], true) && ! app()->environment(['local', 'testing']), 403, __('messages.checkout.simulate_unavailable'));
+        // Payment confirmation is handled via PayPal, an offline transfer verified by staff, or admin-confirmed receipts; guests cannot self-confirm outside dev.
+        abort_unless(app()->environment(['local', 'testing']) || $request->user()?->canManageReservations(), 403, __('messages.checkout.simulate_unavailable'));
         $gateway = $manager->resolve($attempt->provider, $attempt->payload['mode'] ?? 'sandbox');
         $attempt = $gateway->verifyStatus($attempt);
 
@@ -186,6 +197,63 @@ class CheckoutController extends Controller
         $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
+    }
+
+    public function submitOfflineProof(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        abort_unless(in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true), 422, __('messages.checkout.offline_proof_unavailable'));
+
+        $validated = $request->validate([
+            'provider' => ['required', 'string', 'in:interac,wise,revolut'],
+            'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+        ]);
+
+        $paymentMethods = $this->paymentMethods($reservation);
+        abort_unless(isset($paymentMethods[$validated['provider']]), 422, __('messages.checkout.offline_proof_unavailable'));
+
+        $attempt = $reservation->paymentAttempts()->where('provider', $validated['provider'])->latest()->first();
+        if (! $attempt) {
+            $attempt = $reservation->paymentAttempts()->create([
+                'provider' => $validated['provider'],
+                'provider_reference' => $validated['provider'] . '-' . Str::lower(Str::random(12)),
+                'currency' => $reservation->currency,
+                'amount' => $reservation->total_amount,
+                'status' => 'awaiting_validation',
+                'idempotency_key' => $validated['provider'] . '-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'payload' => [],
+            ]);
+        }
+
+        /** @var \Illuminate\Http\UploadedFile $file */
+        $file = $validated['payment_proof'];
+        $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'reservations' . DIRECTORY_SEPARATOR . $reservation->id;
+        File::ensureDirectoryExists($directory);
+        $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . strtolower($file->getClientOriginalExtension());
+        $file->move($directory, $filename);
+        $relativePath = 'uploads/reservations/' . $reservation->id . '/' . $filename;
+
+        $attempt->update([
+            'status' => 'awaiting_validation',
+            'payload' => array_merge((array) $attempt->payload, [
+                'payment_proof' => [
+                    'path' => $relativePath,
+                    'original_name' => $file->getClientOriginalName(),
+                    'uploaded_by' => 'guest',
+                    'uploaded_at' => now()->toIso8601String(),
+                ],
+            ]),
+        ]);
+
+        $reservation->update([
+            'status' => 'pending_validation',
+            'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Guest submitted payment proof for ' . $validated['provider'] . '.'),
+        ]);
+
+        $emailService->queueOfflineProofNotification($reservation, $attempt);
+
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
+            ->with('status', __('messages.checkout.offline_proof_submitted'));
     }
 
     public function cancel(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
@@ -363,17 +431,20 @@ class CheckoutController extends Controller
         return response()->json(['ok' => true, 'provider' => $provider, 'status' => $attempt?->status ?? 'ignored']);
     }
 
-    private function authorizeCheckout(Request $request, Reservation $reservation): string
+    private function canAccessCheckout(Request $request, Reservation $reservation): bool
     {
         $token = (string) $request->query('token', $request->input('token', ''));
         $owner = $request->user();
 
-        abort_unless(
-            ($owner && $reservation->user_id === $owner->id)
-                || ($reservation->checkout_token && $token && hash_equals($reservation->checkout_token, $token)),
-            403,
-            'Checkout access denied.'
-        );
+        return ($owner && ($reservation->user_id === $owner->id || strtolower((string) $reservation->email) === strtolower((string) $owner->email)))
+            || ($reservation->checkout_token && $token && hash_equals($reservation->checkout_token, $token));
+    }
+
+    private function authorizeCheckout(Request $request, Reservation $reservation): string
+    {
+        $token = (string) $request->query('token', $request->input('token', ''));
+
+        abort_unless($this->canAccessCheckout($request, $reservation), 403, 'Checkout access denied.');
 
         return $token ?: (string) $reservation->checkout_token;
     }

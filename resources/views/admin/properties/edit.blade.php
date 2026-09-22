@@ -11,7 +11,7 @@
         </div>
     </div>
 
-    <x-card>
+    <x-card class="property-editor-card">
         @if (session('success'))<div class="reservation-success">{{ session('success') }}</div>@endif
         @if ($errors->any())<div class="form-alert form-alert-error">@foreach ($errors->all() as $error)<span>{{ $error }}</span>@endforeach</div>@endif
 
@@ -146,7 +146,7 @@
                 </div>
             </div>
 
-            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>                <div class="admin-panel"><h2>{{ __('messages.admin.pricing_rules') }}</h2><form method="POST" action="{{ route('admin.properties.price-rules.store', $property) }}">@csrf<div class="admin-form-grid compact"><label><span>{{ __('messages.admin.start') }}</span><input type="date" name="effective_from" required></label><label><span>{{ __('messages.admin.end') }}</span><input type="date" name="effective_to"></label><label><span>{{ __('messages.admin.rate_xof') }}</span><input type="number" step="0.01" name="nightly_rate_xof" value="{{ $property->nightly_rate_xof }}" required></label><label><span>{{ __('messages.admin.minimum_stay') }}</span><input type="number" name="minimum_stay" min="1" value="{{ $property->minimum_stay }}" required></label><label><span>{{ __('messages.admin.rule_type') }}</span><input name="rule_type" value="standard" required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_rule') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
+            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>                <div class="admin-panel"><div class="admin-panel-heading"><h2>{{ __('messages.admin.pricing_rules') }}</h2><a class="btn btn-primary" href="{{ route('admin.properties.price-rules.create', $property) }}">{{ __('messages.admin.add_rule') }}</a></div><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
             </div>
 
             <div id="property-panel-features" class="property-tab-panel" role="tabpanel" data-property-panel="features" hidden>
@@ -197,11 +197,63 @@
                     $reservedRanges = $property->reservations->where('status', '!=', 'cancelled')->map(fn ($reservation) => [$reservation->check_in->toDateString(), $reservation->check_out->toDateString()])->values();
                     $externalRanges = $property->calendarFeeds->where('is_enabled', true)->flatMap(fn ($feed) => $feed->events->map(fn ($event) => [$event->start_date->toDateString(), $event->end_date->toDateString()]))->values();
                 @endphp
-                <div class="admin-panel"><h2>{{ __('messages.admin.availability') }}</h2><div class="availability-legend"><span class="availability-key availability-available">{{ __('messages.admin.available') }}</span><span class="availability-key availability-blocked">{{ __('messages.admin.blocked_reserved') }}</span><span class="availability-key availability-external">{{ __('messages.admin.external_bookings') }}</span><span class="availability-key availability-past">{{ __('messages.admin.past') }}</span></div><div class="availability-calendar" data-availability-calendar data-blocked="{{ $blockedRanges->toJson() }}" data-reserved="{{ $reservedRanges->toJson() }}" data-external="{{ $externalRanges->toJson() }}"></div><form method="POST" action="{{ route('admin.properties.availability.store', $property) }}">@csrf<div class="admin-form-grid compact"><div class="date-range-picker admin-date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.admin.blocked_to') }}" data-end-label="{{ __('messages.admin.blocked_to') }}" data-placeholder="{{ __('messages.admin.blocked_from') }}"><label for="availability-date-range-trigger"><span>{{ __('messages.admin.blocked_from') }} / {{ __('messages.admin.blocked_to') }}</span><button type="button" id="availability-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>{{ __('messages.admin.blocked_from') }} / {{ __('messages.admin.blocked_to') }}</span></button></label><input type="hidden" name="start_date" data-date-range-start required><input type="hidden" name="end_date" data-date-range-end required><div class="date-range-popover" data-date-range-popover hidden></div></div><label class="full-width"><span>{{ __('messages.admin.reason') }}</span><input name="reason" placeholder="Maintenance, renovation..." required></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.block_dates') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.current_blocks') }}</h3>@forelse ($property->availabilityBlocks->sortBy('start_date') as $block)<div class="admin-record-item"><strong>{{ $block->start_date }} → {{ $block->end_date }}</strong><span>{{ $block->reason }}</span><form method="POST" action="{{ route('admin.properties.availability.destroy', [$property, $block]) }}">@csrf @method('DELETE')<button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_blocks') }}</p>@endforelse</div></div>
+                <div class="admin-panel"><div class="admin-panel-heading"><h2>{{ __('messages.admin.availability') }}</h2><a class="btn btn-primary" href="{{ route('admin.properties.availability.create', $property) }}">{{ __('messages.admin.block_dates') }}</a></div><div class="availability-legend"><span class="availability-key availability-available">{{ __('messages.admin.available') }}</span><span class="availability-key availability-blocked">{{ __('messages.admin.blocked_reserved') }}</span><span class="availability-key availability-external">{{ __('messages.admin.external_bookings') }}</span><span class="availability-key availability-past">{{ __('messages.admin.past') }}</span></div><div class="availability-calendar" data-availability-calendar data-blocked="{{ $blockedRanges->toJson() }}" data-reserved="{{ $reservedRanges->toJson() }}" data-external="{{ $externalRanges->toJson() }}"></div><div class="admin-record-list"><h3>{{ __('messages.admin.current_blocks') }}</h3>@forelse ($property->availabilityBlocks->sortBy('start_date') as $block)<div class="admin-record-item"><strong>{{ $block->start_date }} → {{ $block->end_date }}</strong><span>{{ $block->reason }}</span><form method="POST" action="{{ route('admin.properties.availability.destroy', [$property, $block]) }}">@csrf @method('DELETE')<button type="submit" class="btn btn-ghost btn-small">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_blocks') }}</p>@endforelse</div></div>
             </div>
 
             <div id="property-panel-calendars" class="property-tab-panel" role="tabpanel" data-property-panel="calendars" hidden>
-                <div class="admin-panel"><h2>{{ __('messages.admin.calendars_impacting') }}</h2><form method="POST" action="{{ route('admin.properties.calendar.store', $property) }}">@csrf<div class="admin-form-grid"><label class="full-width"><span>{{ __('messages.admin.calendar_name') }}</span><input name="name" placeholder="Booking or Airbnb feed" required></label><label class="full-width"><span>{{ __('messages.admin.ics_url') }}</span><input type="url" name="url" placeholder="https://example.com/calendar.ics" required></label><label class="checkbox-field full-width"><input type="checkbox" name="is_enabled" value="1" checked><span>{{ __('messages.admin.enable_automatically') }}</span></label></div><div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.save_calendar_feed') }}</button></div></form><div class="admin-record-list"><h3>{{ __('messages.admin.connected_calendars') }}</h3>@forelse ($property->calendarFeeds as $feed)<div class="admin-record-item"><form method="POST" action="{{ route('admin.properties.calendar.update', [$property, $feed]) }}">@csrf @method('PUT')<label><span>{{ __('messages.admin.calendar_name') }}</span><input name="name" value="{{ $feed->name }}" required></label><label><span>{{ __('messages.admin.ics_url') }}</span><input type="url" name="url" value="{{ $feed->url }}" required></label><label class="checkbox-field"><input type="checkbox" name="is_enabled" value="1" @checked($feed->is_enabled)><span>{{ __('messages.admin.enable_automatically') }}</span></label><button class="btn btn-primary btn-small" type="submit">{{ __('messages.admin.update') }}</button></form><span>{{ $feed->status }}</span><form method="POST" action="{{ route('admin.properties.calendar.sync', [$property, $feed]) }}">@csrf<button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.sync') }}</button></form><form method="POST" action="{{ route('admin.properties.calendar.destroy', [$property, $feed]) }}">@csrf @method('DELETE')<button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.delete') }}</button></form></div>@empty<p class="form-help">{{ __('messages.admin.no_calendars') }}</p>@endforelse</div><div class="form-actions"><label class="full-width"><span>{{ __('messages.admin.external_calendar_url') }}</span><input type="url" readonly value="{{ route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) }}"></label><p class="form-help">{{ __('messages.admin.external_calendar_help') }}</p><a class="btn btn-ghost" href="{{ route('admin.properties.calendar.export', $property) }}">{{ __('messages.admin.export_calendar') }}</a></div></div>
+                <div class="admin-panel calendar-panel">
+                    <div class="calendar-panel-header">
+                        <div>
+                            <h2>{{ __('messages.admin.calendars_impacting') }}</h2>
+                            <p class="form-help">{{ __('messages.admin.add_calendar_feed_help') }}</p>
+                        </div>
+                        <a class="btn btn-primary" href="{{ route('admin.properties.calendar.create', $property) }}">{{ __('messages.admin.add_calendar_feed_title') }}</a>
+                    </div>
+
+                    <div class="calendar-feed-list">
+                        @forelse ($property->calendarFeeds as $feed)
+                            <div class="calendar-feed-row">
+                                <div class="calendar-feed-info">
+                                    <div class="calendar-feed-name-row">
+                                        <strong>{{ $feed->name }}</strong>
+                                        <span class="calendar-feed-provider">{{ ucfirst($feed->provider) }}</span>
+                                        <span class="calendar-status-badge calendar-status-{{ $feed->status }}">{{ __('messages.admin.calendar_feed_status_' . $feed->status) }}</span>
+                                    </div>
+                                    <p class="calendar-feed-meta">
+                                        {{ $feed->last_successful_sync_at ? __('messages.admin.calendar_last_sync', ['date' => $feed->last_successful_sync_at->format('d/m/Y H:i')]) : __('messages.admin.never_synced') }}
+                                        @if ($feed->last_sync_error)
+                                            · <span class="calendar-feed-error">{{ __('messages.admin.calendar_last_error', ['message' => $feed->last_sync_error]) }}</span>
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="calendar-feed-actions">
+                                    <form method="POST" action="{{ route('admin.properties.calendar.sync', [$property, $feed]) }}">
+                                        @csrf
+                                        <button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.sync') }}</button>
+                                    </form>
+                                    <a class="btn btn-ghost btn-small" href="{{ route('admin.properties.calendar.edit', [$property, $feed]) }}">{{ __('messages.admin.edit') }}</a>
+                                    <form method="POST" action="{{ route('admin.properties.calendar.destroy', [$property, $feed]) }}" data-confirm-message="{{ __('messages.admin.delete_calendar_confirmation', ['name' => $feed->name]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-ghost btn-small" type="submit">{{ __('messages.admin.delete') }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="form-help">{{ __('messages.admin.no_calendars') }}</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="admin-panel calendar-share-panel">
+                    <h2>{{ __('messages.admin.share_calendar_title') }}</h2>
+                    <p class="form-help">{{ __('messages.admin.external_calendar_help') }}</p>
+                    <div class="calendar-share-row">
+                        <input type="url" readonly value="{{ route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) }}">
+                        <button type="button" class="btn btn-ghost" data-copy-text="{{ route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) }}" data-copy-success="{{ __('messages.admin.calendar_url_copied') }}" data-copy-error="{{ __('messages.admin.calendar_url_copy_failed') }}">{{ __('messages.admin.copy_calendar_url') }}</button>
+                        <a class="btn btn-ghost" href="{{ route('admin.properties.calendar.export', $property) }}">{{ __('messages.admin.export_calendar') }}</a>
+                    </div>
+                </div>
             </div>
         </div>
     </x-card>

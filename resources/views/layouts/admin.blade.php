@@ -38,28 +38,16 @@
                     <x-admin-icon name="calendar" class="icon icon-md" />
                 </a>
 
-                <!-- User Menu -->
-                <div class="user-menu" style="position: relative;">
-                    <button class="btn btn-ghost admin-user-menu-toggle" id="userMenuToggle" aria-label="{{ __('messages.admin.user_menu') }}">
-                        <span class="admin-user-menu-name">{{ auth()->user()->name }}</span>
-                        <x-admin-icon name="user-circle" class="icon icon-sm" />
+                <a class="btn btn-ghost" href="{{ route('account.profile') }}" aria-label="{{ __('messages.profile.tabs.profile') }}" title="{{ __('messages.profile.tabs.profile') }}">
+                    <x-admin-icon name="user" class="icon icon-md" />
+                </a>
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-ghost" aria-label="{{ __('messages.nav.logout') }}" title="{{ __('messages.nav.logout') }}">
+                        <x-admin-icon name="logout" class="icon icon-md" />
                     </button>
-                    
-                    <div id="userDropdown" class="user-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); min-width: 200px; box-shadow: var(--shadow-md); z-index: var(--z-dropdown);">
-                        <a href="{{ route('account.profile') }}" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
-                            {{ __('messages.profile.tabs.profile') }}
-                        </a>
-                        <a href="{{ route('home') }}" class="user-dropdown-item" style="display: block; padding: var(--space-3); text-decoration: none; color: var(--text-primary); border-bottom: 1px solid var(--border-default);">
-                            {{ __('messages.admin.view_site') }}
-                        </a>
-                        <form method="POST" action="/logout" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="user-dropdown-item" style="width: 100%; text-align: left; padding: var(--space-3); background: none; border: none; cursor: pointer; color: var(--color-error-600); font-weight: var(--font-medium);">
-                                {{ __('messages.nav.logout') }}
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -85,9 +73,9 @@
                     </div>
                 </li>
 
-                <!-- Management -->
+                <!-- Operations -->
                 <li class="admin-nav-section">
-                    <div class="admin-nav-section-title">{{ __('messages.admin.management') }}</div>
+                    <div class="admin-nav-section-title">{{ __('messages.admin.operations') }}</div>
 
                     @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
@@ -140,20 +128,17 @@
                     @endif
                 </li>
 
-                <!-- Settings -->
+                @if (auth()->user()->isAdmin())
+                <!-- Platform administration -->
                 <li class="admin-nav-section">
-                    <div class="admin-nav-section-title">{{ __('messages.admin.settings_title') }}</div>
+                    <div class="admin-nav-section-title">{{ __('messages.admin.administration') }}</div>
 
-                    @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.amenities.index') }}" class="admin-nav-link {{ request()->is('admin/amenities*') ? 'is-active' : '' }}">
                             <x-admin-icon name="amenities" />
                             <span>{{ __('messages.admin.amenities_menu') }}</span>
                         </a>
                     </div>
-                    @endif
-
-                    @if (auth()->user()->isAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.settings') }}" class="admin-nav-link {{ request()->is('admin/settings*') ? 'is-active' : '' }}">
                             <x-admin-icon name="settings" />
@@ -163,17 +148,9 @@
                     <div class="admin-nav-item">
                         <a href="{{ route('admin.logs') }}" class="admin-nav-link {{ request()->routeIs('admin.logs') ? 'is-active' : '' }}">
                             <x-admin-icon name="reports" />
-                            <span>{{ __('messages.admin.logs') }}</span>
+                            <span>Journaux</span>
                         </a>
                     </div>
-                    <div class="admin-nav-item">
-                        <a href="{{ route('admin.audit-logs') }}" class="admin-nav-link {{ request()->routeIs('admin.audit-logs') ? 'is-active' : '' }}">
-                            <x-admin-icon name="reports" />
-                            <span>Journal des modifications</span>
-                        </a>
-                    </div>
-                    @endif
-
                     @if (auth()->user()->isPlatformAdmin())
                     <div class="admin-nav-item">
                         <a href="{{ route('platform.tenants.index') }}" class="admin-nav-link {{ request()->is('platform/*') ? 'is-active' : '' }}">
@@ -183,6 +160,7 @@
                     </div>
                     @endif
                 </li>
+                @endif
             </ul>
         </nav>
 
@@ -238,20 +216,6 @@
             }
         });
 
-        // User dropdown menu
-        document.getElementById('userMenuToggle').addEventListener('click', function(e) {
-            e.stopPropagation();
-            const dropdown = document.getElementById('userDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('userDropdown');
-            const userMenu = document.querySelector('.user-menu');
-            if (!userMenu.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
-        });
     </script>
 
     @stack('scripts')

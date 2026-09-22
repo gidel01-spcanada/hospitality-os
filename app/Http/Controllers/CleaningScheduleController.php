@@ -32,30 +32,34 @@ class CleaningScheduleController extends Controller
             ->whereIn('property_id', $properties->pluck('id'))
             ->whereNotNull('assignee_name')->distinct()->orderBy('assignee_name')->pluck('assignee_name');
         $assignee = trim($request->string('assignee')->toString()) ?: null;
+        $status = $request->string('status')->toString() ?: null;
         if ($assignee && ! $assignees->containsStrict($assignee)) {
             throw ValidationException::withMessages(['assignee' => __('messages.cleaning.unknown_assignee')]);
         }
 
-        $visits = $this->visitQuery($properties, $from, $to, $propertyId, $assignee)->get();
-        $linkedReservationIds = $visits->pluck('reservation_id')->filter()->unique();
-        $reservations = Reservation::query()
-            ->whereIn('property_id', $properties->pluck('id'))
-            ->where(function ($query) use ($from, $to, $linkedReservationIds): void {
-                $query->where(function ($query) use ($from, $to): void {
-                    $query->whereIn('status', ['confirmed', 'checked_in', 'completed'])
-                        ->whereDate('check_out', '>=', $from->subDays(7)->toDateString())
-                        ->whereDate('check_out', '<=', $to->addDays(7)->toDateString());
-                })->when($linkedReservationIds->isNotEmpty(), fn ($query) => $query->orWhereIn('id', $linkedReservationIds));
-            })
-            ->with('property')->orderBy('check_out')->get();
+        abort_unless($status === null || in_array($status, ['scheduled', 'in_progress', 'completed', 'cancelled'], true), 422);
+        $visits = $this->visitQuery($properties, $from, $to, $propertyId, $assignee, $status)->get();
         $shares = CleaningScheduleShare::query()
             ->where('tenant_id', app(CurrentTenant::class)->id())
             ->when(auth()->user()->isHost(), fn ($query) => $query->where('created_by', auth()->id()))
             ->latest()->limit(10)->get();
 
         return view('admin.cleaning.index', compact(
-            'properties', 'visits', 'reservations', 'shares', 'mode',
-            'reference', 'from', 'to', 'propertyId', 'assignees', 'assignee',
+            'properties', 'visits', 'shares', 'mode',
+            'reference', 'from', 'to', 'propertyId', 'assignees', 'assignee', 'status',
+        ));
+    }
+
+    public function create(Request $request): View
+    {
+        $properties = $this->manageableProperties();
+        [$mode, $reference, $from, $to] = $this->period($request);
+        $propertyId = $request->integer('property') ?: null;
+        $assignee = trim($request->string('assignee')->toString()) ?: null;
+        $reservations = $this->availableReservations($properties, $from, $to);
+
+        return view('admin.cleaning.create', compact(
+            'properties', 'reservations', 'mode', 'reference', 'propertyId', 'assignee',
         ));
     }
 
@@ -69,6 +73,16 @@ class CleaningScheduleController extends Controller
         CleaningVisit::query()->create($validated + ['created_by' => auth()->id()]);
 
         return $this->scheduleRedirect($request)->with('success', __('messages.cleaning.created'));
+    }
+
+    public function generateForm(Request $request): View
+    {
+        $properties = $this->manageableProperties();
+        [$mode, $reference] = $this->period($request);
+        $propertyId = $request->integer('property') ?: null;
+        $assignee = trim($request->string('assignee')->toString()) ?: null;
+
+        return view('admin.cleaning.generate', compact('mode', 'reference', 'propertyId', 'assignee'));
     }
 
     public function generateFromDepartures(Request $request): RedirectResponse
@@ -132,6 +146,23 @@ class CleaningScheduleController extends Controller
         $visit->update($validated + $this->executionTimestamps($visit, $validated['status']));
 
         return $this->scheduleRedirect($request)->with('success', __('messages.cleaning.updated'));
+    }
+
+    public function edit(CleaningVisit $visit): View
+    {
+        $this->authorizeVisit($visit);
+        $properties = $this->manageableProperties();
+        $reservations = Reservation::query()
+            ->whereIn('property_id', $properties->pluck('id'))
+            ->where(function ($query) use ($visit): void {
+                $query->whereIn('status', ['confirmed', 'checked_in', 'completed']);
+                if ($visit->reservation_id) {
+                    $query->orWhereKey($visit->reservation_id);
+                }
+            })
+            ->with('property')->orderBy('check_out')->get();
+
+        return view('admin.cleaning.edit', compact('visit', 'properties', 'reservations'));
     }
 
     public function destroy(Request $request, CleaningVisit $visit): RedirectResponse
@@ -290,6 +321,16 @@ class CleaningScheduleController extends Controller
         }
     }
 
+    private function availableReservations(Collection $properties, CarbonImmutable $from, CarbonImmutable $to): Collection
+    {
+        return Reservation::query()
+            ->whereIn('property_id', $properties->pluck('id'))
+            ->whereIn('status', ['confirmed', 'checked_in', 'completed'])
+            ->whereDate('check_out', '>=', $from->subDays(7)->toDateString())
+            ->whereDate('check_out', '<=', $to->addDays(7)->toDateString())
+            ->with('property')->orderBy('check_out')->get();
+    }
+
     private function executionTimestamps(CleaningVisit $visit, string $status): array
     {
         return match ($status) {
@@ -346,12 +387,13 @@ class CleaningScheduleController extends Controller
             });
     }
 
-    private function visitQuery(Collection $properties, CarbonImmutable $from, CarbonImmutable $to, ?int $propertyId = null, ?string $assignee = null)
+    private function visitQuery(Collection $properties, CarbonImmutable $from, CarbonImmutable $to, ?int $propertyId = null, ?string $assignee = null, ?string $status = null)
     {
         return CleaningVisit::query()
             ->whereIn('property_id', $properties->pluck('id'))
             ->when($propertyId, fn ($query) => $query->where('property_id', $propertyId))
             ->when($assignee, fn ($query) => $query->where('assignee_name', $assignee))
+            ->when($status, fn ($query) => $query->where('status', $status))
             ->whereBetween('scheduled_at', [$from->startOfDay(), $to->endOfDay()])
             ->with(['property.establishment', 'reservation'])
             ->orderBy('scheduled_at');
@@ -379,6 +421,7 @@ class CleaningScheduleController extends Controller
             'date' => $request->input('date'),
             'property' => $request->input('property'),
             'assignee' => $request->input('assignee'),
+            'status' => $request->input('status'),
         ]));
     }
 }

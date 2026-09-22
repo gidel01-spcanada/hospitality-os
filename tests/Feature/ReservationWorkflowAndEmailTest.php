@@ -17,6 +17,36 @@ class ReservationWorkflowAndEmailTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_set_guest_preferred_locale_and_email_is_queued_in_that_language(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+
+        // Admin's own session locale is French; the guest's chosen locale should still win.
+        $this->actingAs($admin)->post(route('admin.reservations.store'), [
+            'property_id' => $property->id,
+            'full_name' => 'English Guest',
+            'email' => 'english-guest@example.com',
+            'phone' => '+22900000000',
+            'country' => 'CA',
+            'locale' => 'en',
+            'check_in' => now()->addDays(5)->toDateString(),
+            'check_out' => now()->addDays(7)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+        ])->assertRedirect();
+
+        $reservation = Reservation::query()->where('email', 'english-guest@example.com')->firstOrFail();
+        $this->assertSame('en', $reservation->locale);
+
+        $notification = \App\Models\EmailOutbox::query()->where('template', 'reservation_created')->latest()->firstOrFail();
+        $this->assertSame('en', $notification->payload['locale']);
+        $this->assertSame('Your reservation confirmation: ' . $reservation->reservation_ref, $notification->payload['subject']);
+        $this->assertStringContainsString('lang=en', $notification->payload['checkout_url']);
+    }
+
     public function test_only_admin_can_delete_reservation_and_associated_payment_records(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -146,7 +176,7 @@ class ReservationWorkflowAndEmailTest extends TestCase
             'status' => 'queued',
         ]);
         $paymentLink = \App\Models\EmailOutbox::query()->where('template', 'payment_link')->latest()->firstOrFail();
-        $this->assertSame(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $paymentLink->payload['checkout_url']);
+        $this->assertSame(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token, 'lang' => 'fr']), $paymentLink->payload['checkout_url']);
 
         $this->actingAs($admin)
             ->patch('/admin/reservations/' . $reservation->id . '/status', [

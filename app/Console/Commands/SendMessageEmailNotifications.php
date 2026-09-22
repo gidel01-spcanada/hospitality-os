@@ -16,7 +16,7 @@ class SendMessageEmailNotifications extends Command
     {
         $limit = max(1, (int) $this->option('limit'));
         $notifications = EmailOutbox::query()
-            ->whereIn('template', ['message_received', 'payment_link', 'reservation_received', 'reservation_status_updated', 'receipt_issued'])
+            ->whereIn('template', ['message_received', 'payment_link', 'reservation_created', 'reservation_received', 'reservation_status_updated', 'receipt_issued', 'payment_proof_submitted'])
             ->where('status', 'queued')
             ->oldest()
             ->limit($limit)
@@ -30,9 +30,11 @@ class SendMessageEmailNotifications extends Command
 
                 $view = match ($notification->template) {
                     'payment_link' => 'emails.payment-link',
+                    'reservation_created' => 'emails.reservation-created',
                     'reservation_received' => 'emails.reservation-received',
                     'reservation_status_updated' => 'emails.reservation-status-updated',
                     'receipt_issued' => 'emails.receipt-issued',
+                    'payment_proof_submitted' => 'emails.payment-proof-submitted',
                     default => 'emails.message-received',
                 };
 

@@ -367,6 +367,13 @@ class AdminPropertyController extends Controller
         return $response;
     }
 
+    public function createPriceRule(Property $property): View
+    {
+        $this->authorizeProperty($property);
+
+        return view('admin.properties.price-rule-create', ['property' => $property]);
+    }
+
     public function storePriceRule(Request $request, Property $property): RedirectResponse
     {
         $this->authorizeProperty($property);
@@ -382,6 +389,13 @@ class AdminPropertyController extends Controller
         $property->rateRules()->create($validated);
 
         return $this->editorRedirect($property, $request, __('messages.flash.price_rule_saved'), 'rules');
+    }
+
+    public function createAvailabilityBlock(Property $property): View
+    {
+        $this->authorizeProperty($property);
+
+        return view('admin.properties.availability-block-create', ['property' => $property]);
     }
 
     public function storeAvailabilityBlock(Request $request, Property $property): RedirectResponse

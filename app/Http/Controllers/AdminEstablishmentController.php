@@ -12,6 +12,7 @@ use App\Models\SiteReview;
 use App\Services\ReviewImportService;
 use App\Services\GoogleReviewSyncService;
 use App\Services\AuditRecorder;
+use App\Services\AccountInvitationService;
 use App\Models\User;
 
 class AdminEstablishmentController extends Controller
@@ -131,6 +132,14 @@ class AdminEstablishmentController extends Controller
         return in_array($request->input('active_tab'), ['general', 'online', 'taxes', 'translations', 'payments', 'reviews', 'hosts'], true)
             ? $request->input('active_tab')
             : 'general';
+    }
+
+    public function createReview(Establishment $establishment): View
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+        $establishment->load('properties');
+
+        return view('admin.establishments.review-create', compact('establishment'));
     }
 
     public function storeReview(Request $request, Establishment $establishment): RedirectResponse
@@ -264,7 +273,24 @@ class AdminEstablishmentController extends Controller
         }
     }
 
-    public function storeHost(Request $request, Establishment $establishment): RedirectResponse
+    public function createHost(Establishment $establishment): View
+    {
+        abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
+        $availableHostUsers = auth()->user()?->isAdmin()
+            ? User::query()
+                ->where(function ($query) use ($establishment) {
+                    $query->where('tenant_id', $establishment->tenant_id)->orWhereNull('tenant_id');
+                })
+                ->whereIn('role', ['customer', 'host'])
+                ->whereNotIn('id', $establishment->hosts->pluck('id'))
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'role'])
+            : collect();
+
+        return view('admin.establishments.host-create', compact('establishment', 'availableHostUsers'));
+    }
+
+    public function storeHost(Request $request, Establishment $establishment, AccountInvitationService $invitations): RedirectResponse
     {
         abort_unless(auth()->user()?->managesEstablishment($establishment->id), 403, __('messages.errors.establishment_manager_required'));
 
@@ -302,6 +328,8 @@ class AdminEstablishmentController extends Controller
                 'locale' => app()->getLocale(),
                 'is_active' => true,
             ]);
+            $host->forceFill(['email_verified_at' => now()])->save();
+            $invitations->send($host);
         }
 
         $host->establishments()->syncWithoutDetaching([$establishment->id]);

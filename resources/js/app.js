@@ -62,6 +62,16 @@ document.addEventListener('submit', (event) => {
 	if (event.target.matches('form[action*="/reserve"], form[action*="/checkout"]')) window.trackEvent?.('start_booking', { page_path: window.location.pathname });
 });
 
+// Fallback for browsers that don't yet support the native `name` attribute grouping on <details>.
+document.addEventListener('toggle', (event) => {
+	const details = event.target;
+	if (details.tagName !== 'DETAILS' || !details.open || !details.name) return;
+
+	document.querySelectorAll(`details[name="${details.name}"]`).forEach((other) => {
+		if (other !== details) other.open = false;
+	});
+}, true);
+
 const confirmDialog = document.querySelector('[data-confirm-dialog]');
 let pendingConfirmationForm = null;
 
@@ -118,7 +128,56 @@ document.querySelector('[data-account-tabs] .is-active')?.scrollIntoView({
 	inline: 'center',
 });
 
+document.querySelectorAll('.admin-flash.alert-success').forEach((flash) => {
+	setTimeout(() => {
+		flash.classList.add('is-dismissing');
+		flash.addEventListener('transitionend', () => flash.remove(), { once: true });
+	}, 4000);
+});
+
 document.querySelector('[data-print-report]')?.addEventListener('click', () => window.print());
+
+if (document.body.classList.contains('admin-layout')) {
+	const scrollKey = `admin-scroll:${window.location.pathname}${window.location.search}`;
+	const resetScrollKey = `admin-scroll-reset:${window.location.pathname}`;
+	const sidebar = document.querySelector('#adminSidebar');
+	const sidebarScrollKey = 'admin-sidebar-scroll';
+	const savedScroll = window.sessionStorage.getItem(scrollKey);
+	const invalidControl = document.querySelector('[aria-invalid="true"], .is-error, .form-error-box, .form-alert-error');
+	if (window.sessionStorage.getItem(resetScrollKey) === 'true') {
+		window.sessionStorage.removeItem(resetScrollKey);
+		window.sessionStorage.removeItem(scrollKey);
+		window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+	} else if (invalidControl) {
+		window.sessionStorage.removeItem(scrollKey);
+		window.requestAnimationFrame(() => invalidControl.scrollIntoView({ block: 'center', behavior: 'auto' }));
+	} else if (savedScroll !== null) {
+		window.sessionStorage.removeItem(scrollKey);
+		window.requestAnimationFrame(() => window.scrollTo({ top: Number(savedScroll), behavior: 'auto' }));
+	}
+
+	document.addEventListener('submit', (event) => {
+		if (event.defaultPrevented || !event.target.matches('form')) return;
+		window.sessionStorage.setItem(scrollKey, String(window.scrollY));
+	});
+
+	document.querySelectorAll('a[href*="/create"], a[href*="/edit"]').forEach((link) => {
+		link.addEventListener('click', () => {
+			const destination = new URL(link.href, window.location.origin);
+			window.sessionStorage.setItem(`admin-scroll-reset:${destination.pathname}`, 'true');
+		});
+	});
+
+	if (sidebar) {
+		const savedSidebarScroll = window.sessionStorage.getItem(sidebarScrollKey);
+		if (savedSidebarScroll !== null) {
+			window.requestAnimationFrame(() => { sidebar.scrollTop = Number(savedSidebarScroll); });
+		}
+		const saveSidebarScroll = () => window.sessionStorage.setItem(sidebarScrollKey, String(sidebar.scrollTop));
+		sidebar.addEventListener('scroll', saveSidebarScroll, { passive: true });
+		sidebar.querySelectorAll('.admin-nav-link').forEach((link) => link.addEventListener('click', saveSidebarScroll));
+	}
+}
 
 document.querySelectorAll('[data-admin-modal-open]').forEach((button) => {
 	const modal = document.querySelector(`[data-admin-modal="${button.dataset.adminModalOpen}"]`);
@@ -151,72 +210,9 @@ document.querySelectorAll('[data-host-mode]').forEach((mode) => {
 	update();
 });
 
-document.querySelectorAll('[data-cleaning-edit-label]').forEach((row, index) => {
-	const form = [...row.querySelectorAll('form')].find((candidate) => candidate.method.toLowerCase() === 'put' || candidate.querySelector('input[name="_method"][value="PUT"]'));
-	if (!form) return;
-	const modalId = `cleaning-edit-modal-${index}`;
-	const heading = form.querySelector('.cleaning-visit-heading');
-	const summary = heading?.cloneNode(true);
-	const modal = document.createElement('dialog');
-	modal.className = 'admin-modal admin-modal--side';
-	modal.dataset.adminModal = modalId;
-	modal.setAttribute('aria-labelledby', `${modalId}-title`);
-	modal.innerHTML = `<div class="admin-modal-card"><header class="admin-modal-header"><h2 id="${modalId}-title">${row.dataset.cleaningEditTitle}</h2><button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button></header><div class="admin-modal-body"></div></div>`;
-	modal.querySelector('.admin-modal-body').appendChild(form);
-	row.appendChild(modal);
-	if (heading) {
-		heading.replaceWith(summary);
-	}
-	const actions = document.createElement('div');
-	actions.className = 'cleaning-row-actions';
-	actions.innerHTML = `<button type="button" class="btn btn-ghost btn-small" data-cleaning-edit-open>${row.dataset.cleaningEditLabel}</button>`;
-	row.querySelector('form[action*="/cleaning/"]:not([action*="/cleaning/shares/"])')?.after(actions);
-	const open = actions.querySelector('[data-cleaning-edit-open]');
-	open.addEventListener('click', () => {
-		modal.showModal();
-		modal.querySelector('input:not([type="hidden"]), select, textarea, button:not([data-admin-modal-close])')?.focus();
-	});
-	modal.querySelector('[data-admin-modal-close]').addEventListener('click', () => modal.close());
-	modal.addEventListener('click', (event) => { if (event.target === modal) modal.close(); });
-});
+// Cleaning visit create/edit now use dedicated pages instead of dynamically-generated modals.
 
-document.querySelectorAll('[data-property-panel="rules"], [data-property-panel="availability"], [data-property-panel="calendars"]').forEach((panel) => {
-	const form = [...panel.querySelectorAll('form')].find((candidate) => /price-rules|availability|calendar\/feeds/.test(candidate.action));
-	if (!form || form.closest('dialog')) return;
-
-	const modalId = `${panel.dataset.propertyPanel}-form-modal`;
-	const modal = document.createElement('dialog');
-	modal.className = 'admin-modal';
-	modal.dataset.adminModal = modalId;
-	modal.setAttribute('aria-labelledby', `${modalId}-title`);
-	modal.innerHTML = `<div class="admin-modal-card"><header class="admin-modal-header"><h2 id="${modalId}-title">${form.querySelector('button[type="submit"]')?.textContent.trim() || 'Ajouter'}</h2><button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Fermer">&times;</button></header><div class="admin-modal-body"></div></div>`;
-	modal.querySelector('.admin-modal-body').appendChild(form);
-	panel.appendChild(modal);
-
-	const trigger = document.createElement('button');
-	trigger.type = 'button';
-	trigger.className = 'btn btn-primary';
-	trigger.dataset.adminModalOpen = modalId;
-	trigger.textContent = form.querySelector('button[type="submit"]')?.textContent.trim() || 'Ajouter';
-	const heading = panel.querySelector('.admin-panel > h2');
-	if (heading) {
-		const wrapper = document.createElement('div');
-		wrapper.className = 'admin-panel-heading';
-		heading.replaceWith(wrapper);
-		wrapper.append(heading, trigger);
-	} else {
-		panel.querySelector('.admin-panel')?.prepend(trigger);
-	}
-
-	trigger.addEventListener('click', () => {
-		modal.showModal();
-		modal.querySelector('input:not([type="hidden"]), select, textarea, button:not([data-admin-modal-close])')?.focus();
-	});
-	modal.querySelector('[data-admin-modal-close]').addEventListener('click', () => modal.close());
-	modal.addEventListener('click', (event) => {
-		if (event.target === modal) modal.close();
-	});
-});
+// Property rules, availability, and calendars now use dedicated create/edit pages instead of dynamically-generated modals.
 
 document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	let images;
@@ -384,7 +380,8 @@ document.querySelectorAll('form').forEach((form) => {
 		endInput.closest('label, div')?.setAttribute('hidden', 'hidden');
 		startInput.disabled = true;
 		endInput.disabled = true;
-		form.insertBefore(picker, startInput.closest('label, div') || startInput);
+		const anchor = startInput.closest('label, div') || startInput;
+		anchor.parentNode?.insertBefore(picker, anchor);
 		break;
 	}
 });
@@ -398,7 +395,7 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 	let start = startInput.value || '';
 	let end = endInput.value || '';
 	const todayValue = new Date().toISOString().slice(0, 10);
-	const allowPastDates = picker.classList.contains('admin-date-range-picker');
+	const allowPastDates = picker.classList.contains('admin-date-range-picker') && !picker.hasAttribute('data-disable-past-dates');
 	let visibleMonth = start ? new Date(`${start}T12:00:00`) : new Date();
 	visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
 
@@ -434,6 +431,10 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 				endInput.value = end;
 				label.textContent = start && end ? `${displayDate(start)} → ${displayDate(end)}` : start ? `${displayDate(start)} → ${picker.dataset.endLabel}` : picker.dataset.placeholder;
 				if (start && end) {
+					trigger.removeAttribute('aria-invalid');
+					picker.querySelector('[data-date-range-error]')?.remove();
+				}
+				if (start && end) {
 					popover.hidden = true;
 					trigger.setAttribute('aria-expanded', 'false');
 				}
@@ -457,7 +458,16 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 		if ((start && start < todayValue) || (end && end < todayValue) || (start && !end) || (!start && end)) {
 			event.preventDefault();
 			trigger.setAttribute('aria-invalid', 'true');
-			label.textContent = start < todayValue || end < todayValue ? picker.dataset.pastMessage : picker.dataset.incompleteMessage;
+			const errorMessage = start < todayValue || end < todayValue ? picker.dataset.pastMessage : picker.dataset.incompleteMessage;
+			label.textContent = errorMessage;
+			let error = picker.querySelector('[data-date-range-error]');
+			if (!error) {
+				error = document.createElement('p');
+				error.className = 'form-error-box';
+				error.dataset.dateRangeError = '';
+				picker.appendChild(error);
+			}
+			error.textContent = errorMessage;
 			popover.hidden = false;
 			trigger.setAttribute('aria-expanded', 'true');
 			render();

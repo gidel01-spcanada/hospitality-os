@@ -190,6 +190,23 @@ body.admin-layout textarea {
     padding: var(--space-4);
     border-left: 4px solid currentColor;
     border-radius: var(--radius-md);
+    transition: opacity var(--transition-base, 0.2s ease);
+}
+
+.admin-flash.is-dismissing {
+    opacity: 0;
+}
+
+.admin-flash.alert-success {
+    color: var(--color-success-700);
+    background-color: var(--color-success-50);
+    border-left-color: var(--color-success-600);
+}
+
+.admin-flash.alert-error {
+    color: var(--color-error-700);
+    background-color: var(--color-error-50);
+    border-left-color: var(--color-error-600);
 }
 
 /* Sidebar toggle button */
@@ -331,6 +348,20 @@ body.admin-layout textarea {
 
 .admin-panel-heading h2 { margin: 0; }
 
+.settings-editor-tabs .property-tab-list {
+    background: #f6f3ec;
+    border-color: rgba(15, 91, 76, 0.14);
+}
+
+.settings-editor-tabs .property-tab.is-active {
+    background: white;
+    color: var(--afrik-emerald);
+}
+
+.settings-tab-panel {
+    padding: var(--space-2) 0 0;
+}
+
 .admin-modal {
     width: min(680px, calc(100% - 2rem));
     max-height: min(90vh, 760px);
@@ -398,6 +429,77 @@ body.admin-layout textarea {
 .audit-log-card .admin-date-range-picker {
     position: relative;
     z-index: 31;
+}
+
+.audit-log-list-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-default);
+}
+
+.booking-list-card {
+    position: relative;
+    z-index: 30;
+    overflow: visible;
+}
+
+.booking-list-card .admin-date-range-picker,
+.booking-list-card form {
+    position: relative;
+    z-index: 31;
+}
+
+.booking-list-section {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-default);
+}
+
+.booking-page-header-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.booking-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(200px, 1fr)) auto;
+    align-items: end;
+    gap: var(--space-4);
+}
+
+.booking-filters > div,
+.booking-filters .date-range-picker {
+    min-width: 0;
+}
+
+.booking-filters .admin-filter-actions {
+    align-self: end;
+    min-height: 48px;
+}
+
+.booking-filters .admin-date-range-picker {
+    align-self: end;
+}
+
+.booking-filters .admin-date-range-picker > label {
+    display: grid;
+    gap: var(--space-2);
+    color: var(--text-primary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.booking-filters .date-range-trigger {
+    min-height: var(--input-height-md);
+    height: var(--input-height-md);
+    padding: 0 var(--space-3);
+    border-color: var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--input-font-size);
 }
 
 /* ============================================================================
@@ -560,6 +662,14 @@ body.admin-layout textarea {
     z-index: 31;
 }
 
+.report-filter-card .admin-date-range-picker:has(.date-range-popover:not([hidden])) {
+    z-index: calc(var(--z-sticky) + 1);
+}
+
+.report-filter-card .admin-date-range-picker .date-range-popover {
+    z-index: calc(var(--z-sticky) + 2);
+}
+
 .ai-copy-assistant {
     margin-top: var(--space-5);
     padding: var(--space-4);
@@ -668,6 +778,7 @@ body.admin-layout textarea {
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.96);
     box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-4);
 }
 
 .report-section-nav a {
@@ -1003,10 +1114,29 @@ body.admin-layout textarea {
     display: block;
 }
 
+.cleaning-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.cleaning-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
 .cleaning-create-action {
     display: flex;
     justify-content: flex-end;
     margin-bottom: var(--space-4);
+}
+
+.cleaning-generator-action {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 var(--space-3);
 }
 
 .cleaning-generator {
@@ -1024,16 +1154,29 @@ body.admin-layout textarea {
 
 .cleaning-generator-form {
     display: grid;
-    grid-template-columns: 1.2fr .7fr .8fr 1.5fr auto;
-    align-items: end;
-    gap: var(--space-3);
-    margin-top: var(--space-3);
+    gap: var(--space-4);
+    margin-top: var(--space-4);
 }
 
 .cleaning-generator-form label,
-.cleaning-generator-form input {
+.cleaning-generator-form input,
+.cleaning-generator-form textarea {
     display: block;
     width: 100%;
+}
+
+.cleaning-generator-form label > span {
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-semibold);
+}
+
+.cleaning-generator-timing {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
 }
 
 .cleaning-list,
@@ -1063,11 +1206,71 @@ body.admin-layout textarea {
     background: white;
 }
 
+.cleaning-list::before {
+    content: "Date et heure  |  Logement  |  Assigné  |  Statut  |  Actions";
+    display: block;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
 .cleaning-visit-heading {
     display: flex;
     justify-content: space-between;
     gap: var(--space-3);
     margin-bottom: var(--space-3);
+}
+
+.cleaning-visit-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: var(--space-4);
+}
+
+.cleaning-visit-row .cleaning-row-actions,
+.cleaning-visit-row > form:last-of-type {
+    grid-column: 2;
+}
+
+.cleaning-visit-row > form:last-of-type { grid-row: 2; }
+
+.cleaning-table .cleaning-visit-row {
+    display: table-row;
+}
+
+.cleaning-table .cleaning-visit {
+    padding: 0;
+    border-left: 0;
+    opacity: 1;
+}
+
+.cleaning-table .cleaning-visit td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border-default);
+    vertical-align: middle;
+}
+
+.cleaning-table .cleaning-visit-heading {
+    margin: 0;
+}
+
+.cleaning-table .cleaning-visit-heading strong,
+.cleaning-table .cleaning-visit-heading time {
+    display: block;
+}
+
+.cleaning-table .cleaning-row-actions {
+    display: inline-flex;
+    margin: 0 var(--space-2) 0 0;
+}
+
+.cleaning-table .cleaning-row-actions + form {
+    display: inline-block;
+    margin: 0;
 }
 
 .cleaning-visit-heading time,
@@ -1146,12 +1349,31 @@ body.admin-layout textarea {
 .cleaning-public-shell footer { margin-top: 24px; color: #5b6b70; font-size: .85rem; }
 
 @media (max-width: 900px) {
+    .cleaning-page-header { flex-direction: column; }
+    .booking-page-header-content {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .cleaning-workspace { grid-template-columns: 1fr; }
     .cleaning-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cleaning-generator-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {
+    .cleaning-generator-timing { grid-template-columns: 1fr; }
+    .cleaning-page-actions { width: 100%; }
+    .cleaning-page-actions .btn { flex: 1; }
+    .cleaning-list::before { content: none; }
+    .cleaning-visit-row { grid-template-columns: 1fr; }
+    .cleaning-visit-row .cleaning-row-actions,
+    .cleaning-visit-row > form:last-of-type { grid-column: 1; }
+    .cleaning-table .cleaning-visit-row { display: table-row; }
+    .booking-filters { grid-template-columns: 1fr; }
     .cleaning-filters { grid-template-columns: 1fr; }
     .cleaning-generator-form { grid-template-columns: 1fr; }
     .cleaning-period-bar,.cleaning-share-result,.cleaning-share-row,.cleaning-public-header { align-items: stretch; flex-direction: column; }
