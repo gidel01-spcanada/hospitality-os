@@ -9,6 +9,7 @@ use App\Models\SiteReview;
 use App\Models\User;
 use App\Support\BrandSettings;
 use App\Support\CurrentTenant;
+use App\Services\AccountInvitationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,7 +94,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function storeUser(Request $request): RedirectResponse
+    public function storeUser(Request $request, AccountInvitationService $invitations): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -124,15 +125,17 @@ class AdminController extends Controller
             'email_message_updates' => $request->boolean('email_message_updates'),
             'email_marketing' => $request->boolean('email_marketing'),
             'email_newsletter' => $request->boolean('email_newsletter'),
-            'email_verified_at' => $request->boolean('email_verified') ? now() : null,
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
         ]);
+        $managedUser->forceFill(['email_verified_at' => now()])->save();
 
         if ($validated['role'] === 'host') {
             $managedUser->establishments()->sync($validated['establishments'] ?? []);
         }
 
-        return redirect()->route('admin.users.index')->with('status', __('messages.flash.user_created'));
+        $invitations->send($managedUser);
+
+        return redirect()->route('admin.users.index')->with('status', __('messages.flash.user_created_invitation_sent'));
     }
 
     public function updateUser(Request $request, User $managedUser): RedirectResponse

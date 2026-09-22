@@ -5,7 +5,7 @@
 @section('content')
 <!-- Page Header -->
 <div class="admin-page-header">
-    <div class="admin-page-actions" style="justify-content: space-between;">
+    <div class="booking-page-header-content">
         <div>
             <h1 class="admin-page-title">{{ __('messages.admin.users_title') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.users_description') }}</p>
@@ -92,14 +92,10 @@
                             </x-button>
 
                             @if ($user->id !== auth()->id())
-                                <form method="POST" action="/admin/users/{{ $user->id }}" data-confirm-message="{{ __('messages.dialog.delete_item') }}" style="display: inline;">
+                                <form method="POST" action="/admin/users/{{ $user->id }}" data-confirm-message="{{ __('messages.admin.delete_user_confirmation', ['name' => $user->name]) }}" style="display: inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="{{ __('messages.admin.delete') }}" aria-label="{{ __('messages.admin.delete') }}">
-                                        <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                                            <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478m-3.622-13.5a3 3 0 00-3.022 3.022v2.205h2.118a.75.75 0 010 1.5H2.883V15a3 3 0 003 3h15.75A3 3 0 0023.883 15V6.575a3 3 0 00-2.978-3.025h-3.253v-2.205a3 3 0 00-3.022-3.022zm-1.68 4.478a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0v-6zm3 .75a.75.75 0 001.5 0v6a.75.75 0 00-1.5 0v-6z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
+                                    <button type="submit" class="btn btn-danger btn-sm">{{ __('messages.admin.delete_user') }}</button>
                                 </form>
                             @endif
                         </div>

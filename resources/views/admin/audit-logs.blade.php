@@ -8,9 +8,12 @@
         <h1 class="admin-page-title">Journal des modifications</h1>
         <p class="admin-page-description">Historique des créations, modifications et suppressions. Cette page est réservée aux administrateurs.</p>
     </div>
+    <div class="admin-page-actions">
+        <a class="btn btn-ghost" href="{{ route('admin.logs') }}">Journaux système</a>
+    </div>
 </div>
 
-<x-card>
+<x-card class="audit-log-card">
     <form method="GET" action="{{ route('admin.audit-logs') }}" class="admin-form-grid compact">
         <label><span>Action</span><select name="event"><option value="">Toutes</option><option value="created" @selected($event === 'created')>Création</option><option value="updated" @selected($event === 'updated')>Modification</option><option value="deleted" @selected($event === 'deleted')>Suppression</option></select></label>
         <label><span>Objet</span><select name="type"><option value="">Tous les objets</option>@foreach($types as $objectType)<option value="{{ $objectType }}" @selected($type === $objectType)>{{ class_basename($objectType) }}</option>@endforeach</select></label>
@@ -22,9 +25,7 @@
         </div>
         <div class="form-actions"><button class="btn btn-primary" type="submit">Filtrer</button></div>
     </form>
-</x-card>
-
-<x-card>
+    <div class="admin-log-list-section">
     <div class="admin-table-wrap">
         <table class="admin-table">
             <thead><tr><th>Date</th><th>Administrateur</th><th>Action</th><th>Objet</th><th>Changements</th><th>Adresse IP</th></tr></thead>
@@ -45,5 +46,6 @@
         </table>
     </div>
     {{ $logs->links() }}
+    </div>
 </x-card>
 @endsection

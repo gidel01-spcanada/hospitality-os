@@ -24,6 +24,8 @@ Schedule::call(function () {
 
 Schedule::job(new \App\Jobs\CompletePastReservations())->hourly();
 
+Schedule::command('messages:send-email-notifications', ['--limit' => 50])->everyMinute();
+
 Schedule::call(function (): void {
     \App\Models\Establishment::query()
         ->whereNotNull('google_reviews_import_url')

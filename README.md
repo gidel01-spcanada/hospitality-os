@@ -92,15 +92,19 @@ Deployments are incremental by default: `scripts/deploy-bluehost.ps1` maintains 
 
 The Laravel application includes the public property catalog and booking flow, payment integrations, reservation emails, message notifications, property media and calendar management, and a role-protected admin workspace.
 
-Queued new-message email notifications can be delivered with `php artisan messages:send-email-notifications`. Run this command from a scheduler or deployment cron using the configured Laravel mailer.
+Queued new-message and reservation email notifications are sent automatically every minute by the Laravel scheduler (`php artisan messages:send-email-notifications --limit=50`), as long as the single scheduler cron entry below is configured. You do not need a separate cron line per command — `schedule:run` dispatches every command registered in `routes/console.php` whose interval is due. You can also run it manually at any time.
 
-Reservation lifecycle automation is available with `php artisan reservations:complete-past`. It moves confirmed or checked-in reservations to `completed` after their checkout date, using `CHECKOUT_COMPLETION_GRACE_HOURS` (default: 6), and queues a status email. On Bluehost, schedule this command hourly and schedule `php artisan messages:send-email-notifications --limit=50` every few minutes to process queued emails.
+Reservation lifecycle automation is available with `php artisan reservations:complete-past`. It moves confirmed or checked-in reservations to `completed` after their checkout date, using `CHECKOUT_COMPLETION_GRACE_HOURS` (default: 6), and queues a status email.
 
-Google review imports can be synchronized manually with `php artisan reviews:sync-google` or for one establishment with `php artisan reviews:sync-google --establishment=12`. Each establishment can configure a CSV/JSON source URL in its Reviews tab; the Laravel scheduler checks configured sources every six hours and records the last success or error. On Bluehost, run Laravel's scheduler every minute:
+Google review imports can be synchronized manually with `php artisan reviews:sync-google` or for one establishment with `php artisan reviews:sync-google --establishment=12`. Each establishment can configure a CSV/JSON source URL in its Reviews tab; the Laravel scheduler checks configured sources every six hours and records the last success or error.
+
+This single cron entry drives every scheduled task above (email queue, past-reservation completion, calendar feed sync, Google review sync). On Bluehost (or any host), add exactly one cron line running every minute:
 
 ```cron
 * * * * * cd /path/to/hospitality-os && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+Do not add separate cron entries for `messages:send-email-notifications` or the other commands — they are triggered by `schedule:run` based on the intervals set in `routes/console.php`. You can verify what is scheduled and when it will next run with `php artisan schedule:list`.
 
 The Google source URL is separate from the public Google review link sent to guests. The public link opens Google's own review flow; the application does not publish reviews to Google automatically.
 

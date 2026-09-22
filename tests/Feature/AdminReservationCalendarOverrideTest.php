@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
+use App\Models\EmailOutbox;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\User;
@@ -25,7 +26,8 @@ class AdminReservationCalendarOverrideTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.reservations.store'), $payload)
-            ->assertUnprocessable();
+            ->assertRedirect()
+            ->assertSessionHasErrors('check_in');
 
         $this->actingAs($admin)
             ->post(route('admin.reservations.store'), $payload + ['ignore_external_calendar_conflicts' => '1'])
@@ -34,13 +36,26 @@ class AdminReservationCalendarOverrideTest extends TestCase
         $reservation = Reservation::query()->where('email', $payload['email'])->firstOrFail();
         $this->assertStringContainsString('[Dérogation calendrier externe]', $reservation->notes);
         $this->assertStringContainsString($admin->name, $reservation->notes);
+        $this->assertDatabaseHas('email_outbox', [
+            'recipient_email' => $payload['email'],
+            'template' => 'reservation_created',
+            'status' => 'queued',
+        ]);
+
+        $this->artisan('messages:send-email-notifications')->assertExitCode(0);
+        $this->assertDatabaseHas('email_outbox', [
+            'recipient_email' => $payload['email'],
+            'template' => 'reservation_created',
+            'status' => 'sent',
+        ]);
 
         $this->actingAs($admin)
             ->post(route('admin.reservations.store'), array_merge($payload, [
                 'email' => 'second-override@example.com',
                 'ignore_external_calendar_conflicts' => '1',
             ]))
-            ->assertUnprocessable();
+            ->assertRedirect()
+            ->assertSessionHasErrors('check_in');
     }
 
     public function test_assigned_host_can_override_but_concierge_cannot(): void

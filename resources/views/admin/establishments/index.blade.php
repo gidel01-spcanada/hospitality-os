@@ -4,15 +4,15 @@
 
 @section('content')
     <div class="admin-page-header">
-        <div class="admin-page-actions" style="justify-content: space-between;">
-            <div>
-                <h1 class="admin-page-title">{{ __('messages.admin.establishments') }}</h1>
-                <p class="admin-page-description">{{ __('messages.admin.establishments_description') }}</p>
-            </div>
-            @if (auth()->user()->isAdmin())
-                <x-button tag="a" href="{{ route('admin.establishments.create') }}" variant="primary">{{ __('messages.admin.add_establishment') }}</x-button>
-            @endif
+        <div>
+            <h1 class="admin-page-title">{{ __('messages.admin.establishments') }}</h1>
+            <p class="admin-page-description">{{ __('messages.admin.establishments_description') }}</p>
         </div>
+        @if (auth()->user()->isAdmin())
+            <div class="admin-page-actions">
+                <x-button tag="a" href="{{ route('admin.establishments.create') }}" variant="primary">{{ __('messages.admin.add_establishment') }}</x-button>
+            </div>
+        @endif
     </div>
 
     <x-card>

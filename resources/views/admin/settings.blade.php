@@ -15,7 +15,7 @@
                 </div>
             @endif
 
-            <div class="property-editor-tabs" data-property-tabs>
+            <div class="property-editor-tabs settings-editor-tabs" data-property-tabs>
                 <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.settings_sections') }}">
                     @foreach (['general' => __('messages.admin.general_information'), 'email' => __('messages.admin.email_communications')] as $tab => $label)
                         <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="settings-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
@@ -24,7 +24,7 @@
                 <form method="POST" action="{{ route('admin.settings.update') }}">
                     @csrf
 
-                    <div id="settings-panel-general" class="property-tab-panel is-active" role="tabpanel" data-property-panel="general">
+                    <div id="settings-panel-general" class="property-tab-panel settings-tab-panel is-active" role="tabpanel" data-property-panel="general">
                         <div class="form-grid">
                     <div>
                         <label for="site_name">{{ __('messages.admin.site_name') }}</label>
@@ -95,7 +95,7 @@
                         </div>
                     </div>
 
-                    <div id="settings-panel-email" class="property-tab-panel" role="tabpanel" data-property-panel="email" hidden>
+                    <div id="settings-panel-email" class="property-tab-panel settings-tab-panel" role="tabpanel" data-property-panel="email" hidden>
                         <h2 style="margin-bottom: var(--space-4);">{{ __('messages.admin.email_communications') }}</h2>
                         <div class="form-grid">
                         <div>

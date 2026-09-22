@@ -128,7 +128,7 @@ class MobileApiController extends Controller
 
     public function updateReservationStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): JsonResponse
     {
-        $validated = $request->validate(['status' => ['required', 'in:pending,pending_payment,confirmed,checked_in,completed,cancelled'], 'notes' => ['nullable', 'string', 'max:500']]);
+        $validated = $request->validate(['status' => ['required', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'], 'notes' => ['nullable', 'string', 'max:500']]);
         $changed = $reservation->status !== $validated['status'];
         $reservation->update(['status' => $validated['status'], 'notes' => $validated['notes'] ?? $reservation->notes]);
         if ($changed) {

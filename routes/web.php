@@ -151,8 +151,11 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
         Route::post('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'reply'])->name('admin.messages.reply');
         Route::get('/admin/cleaning', [CleaningScheduleController::class, 'index'])->name('admin.cleaning.index');
+        Route::get('/admin/cleaning/create', [CleaningScheduleController::class, 'create'])->name('admin.cleaning.create');
         Route::post('/admin/cleaning', [CleaningScheduleController::class, 'store'])->name('admin.cleaning.store');
+        Route::get('/admin/cleaning/generate', [CleaningScheduleController::class, 'generateForm'])->name('admin.cleaning.generate.create');
         Route::post('/admin/cleaning/generate', [CleaningScheduleController::class, 'generateFromDepartures'])->name('admin.cleaning.generate');
+        Route::get('/admin/cleaning/{visit}/edit', [CleaningScheduleController::class, 'edit'])->name('admin.cleaning.edit');
         Route::put('/admin/cleaning/{visit}', [CleaningScheduleController::class, 'update'])->name('admin.cleaning.update');
         Route::delete('/admin/cleaning/{visit}', [CleaningScheduleController::class, 'destroy'])->name('admin.cleaning.destroy');
         Route::post('/admin/cleaning/share', [CleaningScheduleController::class, 'share'])->name('admin.cleaning.share');
@@ -179,11 +182,13 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/establishments/{establishment}/edit', [AdminEstablishmentController::class, 'edit'])->name('admin.establishments.edit');
         Route::post('/admin/establishments', [AdminEstablishmentController::class, 'store'])->name('admin.establishments.store');
         Route::put('/admin/establishments/{establishment}', [AdminEstablishmentController::class, 'update'])->name('admin.establishments.update');
+        Route::get('/admin/establishments/{establishment}/reviews/create', [AdminEstablishmentController::class, 'createReview'])->name('admin.establishments.reviews.create');
         Route::post('/admin/establishments/{establishment}/reviews', [AdminEstablishmentController::class, 'storeReview'])->name('admin.establishments.reviews.store');
         Route::put('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'updateReview'])->name('admin.establishments.reviews.update');
         Route::delete('/admin/establishments/{establishment}/reviews/{review}', [AdminEstablishmentController::class, 'destroyReview'])->name('admin.establishments.reviews.destroy');
         Route::post('/admin/establishments/{establishment}/reviews/import', [AdminEstablishmentController::class, 'importReviews'])->name('admin.establishments.reviews.import');
         Route::post('/admin/establishments/{establishment}/reviews/sync-google', [AdminEstablishmentController::class, 'syncGoogleReviews'])->name('admin.establishments.reviews.sync-google');
+        Route::get('/admin/establishments/{establishment}/hosts/create', [AdminEstablishmentController::class, 'createHost'])->name('admin.establishments.hosts.create');
         Route::post('/admin/establishments/{establishment}/hosts', [AdminEstablishmentController::class, 'storeHost'])->name('admin.establishments.hosts.store');
         Route::delete('/admin/establishments/{establishment}/hosts/{host}', [AdminEstablishmentController::class, 'destroyHost'])->name('admin.establishments.hosts.destroy');
         Route::get('/admin/properties', [\App\Http\Controllers\AdminPropertyController::class, 'index'])->name('admin.properties.index');
@@ -195,15 +200,19 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/properties/{property}/amenities', [\App\Http\Controllers\AdminPropertyController::class, 'updateAmenities'])->name('admin.properties.amenities.update');
         Route::put('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'updateImages'])->name('admin.properties.images.update');
         Route::post('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'uploadImages'])->name('admin.properties.images.upload');
+        Route::get('/admin/properties/{property}/price-rules/create', [\App\Http\Controllers\AdminPropertyController::class, 'createPriceRule'])->name('admin.properties.price-rules.create');
         Route::post('/admin/properties/{property}/price-rules', [\App\Http\Controllers\AdminPropertyController::class, 'storePriceRule'])->name('admin.properties.price-rules.store');
         Route::post('/admin/properties/{property}/features', [\App\Http\Controllers\AdminPropertyController::class, 'storePropertyFeature'])->name('admin.properties.features.store');
         Route::put('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'updatePropertyFeature'])->name('admin.properties.features.update');
         Route::delete('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'deletePropertyFeature'])->name('admin.properties.features.destroy');
+        Route::get('/admin/properties/{property}/availability-blocks/create', [\App\Http\Controllers\AdminPropertyController::class, 'createAvailabilityBlock'])->name('admin.properties.availability.create');
         Route::post('/admin/properties/{property}/availability-blocks', [\App\Http\Controllers\AdminPropertyController::class, 'storeAvailabilityBlock'])->name('admin.properties.availability.store');
         Route::delete('/admin/properties/{property}/availability-blocks/{block}', [\App\Http\Controllers\AdminPropertyController::class, 'deleteAvailabilityBlock'])->name('admin.properties.availability.destroy');
         Route::get('/admin/properties/{property}/availability', [\App\Http\Controllers\AdminPropertyController::class, 'availabilityCheck'])->name('admin.properties.availability.check');
         Route::get('/admin/properties/{property}/calendar', [\App\Http\Controllers\AdminCalendarController::class, 'index'])->name('admin.properties.calendar');
+        Route::get('/admin/properties/{property}/calendar/feeds/create', [\App\Http\Controllers\AdminCalendarController::class, 'createFeed'])->name('admin.properties.calendar.create');
         Route::post('/admin/properties/{property}/calendar/feeds', [\App\Http\Controllers\AdminCalendarController::class, 'storeFeed'])->name('admin.properties.calendar.store');
+        Route::get('/admin/properties/{property}/calendar/feeds/{feed}/edit', [\App\Http\Controllers\AdminCalendarController::class, 'editFeed'])->name('admin.properties.calendar.edit');
         Route::put('/admin/properties/{property}/calendar/feeds/{feed}', [\App\Http\Controllers\AdminCalendarController::class, 'updateFeed'])->name('admin.properties.calendar.update');
         Route::delete('/admin/properties/{property}/calendar/feeds/{feed}', [\App\Http\Controllers\AdminCalendarController::class, 'deleteFeed'])->name('admin.properties.calendar.destroy');
         Route::post('/admin/properties/{property}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\AdminCalendarController::class, 'syncFeed'])->name('admin.properties.calendar.sync');
@@ -237,6 +246,8 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
 
     Route::middleware('platform-admin')->group(function () {
         Route::get('/platform/tenants', [\App\Http\Controllers\PlatformAdminController::class, 'index'])->name('platform.tenants.index');
+        Route::get('/platform/tenants/create', [\App\Http\Controllers\PlatformAdminController::class, 'create'])->name('platform.tenants.create');
+        Route::post('/platform/tenants', [\App\Http\Controllers\PlatformAdminController::class, 'store'])->name('platform.tenants.store');
         Route::post('/platform/tenants/{tenant}/suspend', [\App\Http\Controllers\PlatformAdminController::class, 'suspend'])->name('platform.tenants.suspend');
         Route::post('/platform/tenants/{tenant}/activate', [\App\Http\Controllers\PlatformAdminController::class, 'activate'])->name('platform.tenants.activate');
     });
@@ -289,12 +300,14 @@ Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class,
 Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningScheduleController::class, 'publicStatus'])->middleware('throttle:30,1')->name('cleaning.public.status');
 
 Route::middleware('locale')->group(function () {
+    Route::get('/reservations/access', [\App\Http\Controllers\CheckoutController::class, 'accessHelp'])->name('reservation.access');
     Route::get('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->name('checkout.start');
     Route::post('/reservations/{reservation}/checkout/paypal/create', [\App\Http\Controllers\CheckoutController::class, 'createPayPalOrder'])->name('checkout.paypal.create');
     Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->name('checkout.paypal.capture');
     Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->name('checkout.complete');
     Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::post('/reservations/{reservation}/checkout/offline-proof', [\App\Http\Controllers\CheckoutController::class, 'submitOfflineProof'])->name('checkout.offline-proof');
     Route::get('/reservations/{reservation}/checkout/{provider}/return', [\App\Http\Controllers\CheckoutController::class, 'return'])->name('checkout.return');
 });
 Route::post('/webhooks/{provider}', [\App\Http\Controllers\CheckoutController::class, 'webhook'])->name('checkout.webhook');

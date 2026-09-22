@@ -23,8 +23,18 @@ class CalendarFeedControlsTest extends TestCase
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $property = Property::firstOrFail();
 
+        $this->actingAs($admin)->get('/admin/properties/' . $property->id . '/edit')
+            ->assertOk()
+            ->assertSee(route('admin.properties.calendar.create', $property), false)
+            ->assertSee('data-copy-text="' . route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) . '"', false);
+
+        $this->actingAs($admin)->get(route('admin.properties.calendar.create', $property))
+            ->assertOk()
+            ->assertSee('name="provider"', false);
+
         Http::fake([
             'https://example.com/blocked.ics' => Http::sequence()
+                ->push("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-1\r\nDTSTART:20260910\r\nDTEND:20260912\r\nSUMMARY:Maintenance\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:cancelled-event\r\nDTSTART:20260913\r\nDTEND:20260914\r\nSTATUS:CANCELLED\r\nEND:VEVENT\r\nEND:VCALENDAR")
                 ->push("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-1\r\nDTSTART:20260910\r\nDTEND:20260912\r\nSUMMARY:Maintenance\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nUID:cancelled-event\r\nDTSTART:20260913\r\nDTEND:20260914\r\nSTATUS:CANCELLED\r\nEND:VEVENT\r\nEND:VCALENDAR")
                 ->push("BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:test-event-2\r\nDTSTART;VALUE=DATE:20260915\r\nDTEND;VALUE=DATE:20260916\r\nSUMMARY:Long;\r\n description\, escaped\r\nEND:VEVENT\r\nEND:VCALENDAR")
                 ->push("BEGIN:VCALENDAR\r\nEND:VCALENDAR"),
@@ -40,6 +50,8 @@ class CalendarFeedControlsTest extends TestCase
         $create->assertRedirect('/admin/properties/' . $property->id . '/edit#calendars');
 
         $feed = ExternalCalendarFeed::firstOrFail();
+        $this->assertDatabaseHas('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-1']);
+        $this->assertNotNull($feed->fresh()->last_successful_sync_at);
 
         $this->actingAs($admin)
             ->put('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id, [
@@ -112,6 +124,27 @@ class CalendarFeedControlsTest extends TestCase
 
         $this->assertDatabaseMissing('external_calendar_feeds', ['id' => $feed->id]);
         $this->assertDatabaseMissing('external_calendar_events', ['feed_id' => $feed->id]);
+    }
+
+    public function test_adding_a_calendar_feed_with_an_unreachable_url_flags_the_sync_failure(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+
+        Http::fake(['https://example.com/broken.ics' => Http::response('', 500)]);
+
+        $this->actingAs($admin)->post('/admin/properties/' . $property->id . '/calendar/feeds', [
+            'name' => 'Broken feed',
+            'provider' => 'other',
+            'url' => 'https://example.com/broken.ics',
+            'is_enabled' => true,
+        ])->assertRedirect('/admin/properties/' . $property->id . '/edit#calendars')
+            ->assertSessionHas('error');
+
+        $feed = ExternalCalendarFeed::firstOrFail();
+        $this->assertNotNull($feed->last_sync_error);
+        $this->assertNull($feed->last_successful_sync_at);
     }
 
     public function test_public_calendar_url_returns_ics_only_with_valid_token(): void

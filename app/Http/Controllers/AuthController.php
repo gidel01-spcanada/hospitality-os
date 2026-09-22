@@ -108,7 +108,7 @@ class AuthController extends Controller
         app()->setLocale($locale);
         session()->put('locale', $locale);
 
-        $statuses = ['pending', 'pending_payment', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
+        $statuses = ['pending', 'pending_payment', 'pending_validation', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
         $statusFilter = $request->string('status')->toString();
 
         if (! in_array($statusFilter, [...$statuses, 'all'], true)) {

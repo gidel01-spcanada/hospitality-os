@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AdminReservationController extends Controller
@@ -33,7 +34,7 @@ class AdminReservationController extends Controller
         ]);
     }
 
-    public function store(Request $request, AvailabilityService $availabilityService): RedirectResponse
+    public function store(Request $request, AvailabilityService $availabilityService, ReservationEmailService $emailService): RedirectResponse
     {
         $validated = $this->validateReservation($request);
         $property = $this->ownedProperty($validated['property_id']);
@@ -45,18 +46,19 @@ class AdminReservationController extends Controller
         $this->authorizeExternalCalendarOverride($ignoreExternalConflicts);
         $externalConflictOverridden = $ignoreExternalConflicts
             && $availabilityService->hasExternalCalendarConflict($property, $checkIn, $checkOut);
-        abort_unless(
-            $availabilityService->isAvailable($property, $checkIn, $checkOut, null, $ignoreExternalConflicts),
-            422,
-            __('messages.errors.property_unavailable'),
-        );
+        if (! $availabilityService->isAvailable($property, $checkIn, $checkOut, null, $ignoreExternalConflicts)) {
+            throw ValidationException::withMessages([
+                'check_in' => __('messages.errors.property_unavailable'),
+            ]);
+        }
         if ($externalConflictOverridden) {
             $validated['notes'] = $this->appendExternalCalendarOverrideAudit($validated['notes'] ?? null);
         }
 
         $reservation = $this->persistReservation($validated, $property, $checkIn, $checkOut);
+        $emailService->queueForReservation($reservation, 'reservation_created');
 
-        return redirect()->route('admin.reservations.show', $reservation)->with('success', 'Reservation created successfully.');
+        return redirect()->route('admin.reservations.show', $reservation)->with('success', __('messages.flash.reservation_created_email_queued'));
     }
 
     public function edit(Reservation $reservation): View
@@ -113,6 +115,7 @@ class AdminReservationController extends Controller
                 'infants' => $validated['infants'] ?? 0,
                 'currency' => $pricing['currency'],
                 'email' => strtolower($validated['email']),
+                'locale' => $validated['locale'] ?? null,
                 'subtotal' => $pricing['subtotal'],
                 'fees' => $pricing['fees'],
                 'taxes' => $pricing['taxes'],
@@ -243,7 +246,7 @@ class AdminReservationController extends Controller
         $this->ownedReservation($reservation);
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:pending,pending_payment,confirmed,checked_in,completed,cancelled'],
+            'status' => ['required', 'string', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -256,7 +259,7 @@ class AdminReservationController extends Controller
         ]);
 
         if ($oldStatus !== $newStatus) {
-            $emailService->queueForReservation($reservation, 'reservation_status_updated', 'Mise à jour de votre réservation');
+            $emailService->queueForReservation($reservation, 'reservation_status_updated');
         }
 
         return redirect()->route('admin.reservations.show', $reservation)
@@ -324,6 +327,7 @@ class AdminReservationController extends Controller
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:40'],
             'country' => ['nullable', 'string', 'max:80'],
+            'locale' => ['nullable', 'in:fr,en'],
             'check_in' => ['required', 'date', $reservation ? 'date' : 'after_or_equal:today'],
             'check_out' => ['required', 'date', 'after:check_in'],
             'adults' => ['required', 'integer', 'min:1', 'max:8'],
@@ -354,8 +358,17 @@ class AdminReservationController extends Controller
         $nights = $checkIn->diffInDays($checkOut);
         $guests = (int) $validated['adults'] + (int) ($validated['children'] ?? 0);
 
-        abort_if($nights < (int) ($property->minimum_stay ?? 1), 422, 'The reservation does not meet the property minimum stay.');
-        abort_if($property->max_guests && $guests > $property->max_guests, 422, 'The number of guests exceeds this property capacity.');
+        if ($nights < (int) ($property->minimum_stay ?? 1)) {
+            throw ValidationException::withMessages([
+                'check_out' => __('messages.properties.minimum_stay_error', ['nights' => $property->minimum_stay]),
+            ]);
+        }
+
+        if ($property->max_guests && $guests > $property->max_guests) {
+            throw ValidationException::withMessages([
+                'adults' => __('messages.errors.reservation_capacity_exceeded'),
+            ]);
+        }
     }
 
     private function persistReservation(array $validated, Property $property, Carbon $checkIn, Carbon $checkOut): Reservation
@@ -380,6 +393,7 @@ class AdminReservationController extends Controller
                 'infants' => $validated['infants'] ?? 0,
                 'currency' => $pricing['currency'],
                 'email' => strtolower($validated['email']),
+                'locale' => $validated['locale'] ?? null,
                 'subtotal' => $pricing['subtotal'],
                 'fees' => $pricing['fees'],
                 'taxes' => $pricing['taxes'],

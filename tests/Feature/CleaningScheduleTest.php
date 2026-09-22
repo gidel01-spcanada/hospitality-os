@@ -239,6 +239,7 @@ class CleaningScheduleTest extends TestCase
 
     public function test_admin_schedule_marks_past_scheduled_visits_as_overdue(): void
     {
+        $this->travelTo(now()->next(\Carbon\Carbon::WEDNESDAY)->setTime(12, 0));
         $this->seed(DatabaseSeeder::class);
         $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
         $property = Property::query()->firstOrFail();

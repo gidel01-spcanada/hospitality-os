@@ -6,7 +6,7 @@
 @section('content')
 <!-- Page Header -->
 <div class="admin-page-header">
-    <div class="admin-page-actions" style="justify-content: space-between;">
+    <div class="booking-page-header-content">
         <div>
             <h1 class="admin-page-title">{{ __('messages.admin.reservations') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.reservations_description') }}</p>
@@ -21,9 +21,9 @@
 </div>
 
 <!-- Filters -->
-<x-card style="margin-bottom: var(--space-6);">
+<x-card class="booking-list-card">
     <div class="card-body">
-        <form method="GET" action="/admin/bookings" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); align-items: flex-end;">
+        <form method="GET" action="/admin/bookings" class="booking-filters">
             <div>
                 <x-input 
                     name="search" 
@@ -39,6 +39,7 @@
                     <option value="">{{ __('messages.admin.all_status') }}</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ __('messages.admin.status_pending') }}</option>
                     <option value="pending_payment" {{ request('status') === 'pending_payment' ? 'selected' : '' }}>{{ __('messages.admin.status_pending_payment') }}</option>
+                    <option value="pending_validation" {{ request('status') === 'pending_validation' ? 'selected' : '' }}>{{ __('messages.admin.status_pending_validation') }}</option>
                     <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>{{ __('messages.admin.status_confirmed') }}</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>{{ __('messages.admin.status_cancelled') }}</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ __('messages.admin.status_completed') }}</option>
@@ -58,10 +59,8 @@
             </div>
         </form>
     </div>
-</x-card>
-
+    <div class="booking-list-section">
 <!-- Bookings Table -->
-<x-card>
     <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.reservations') }}">
         <table class="admin-table">
         <thead>
@@ -83,13 +82,14 @@
                     <td>{{ $booking->guest?->full_name ?? $booking->email ?? __('messages.common.not_available') }}</td>
                     <td>{{ $booking->check_in->translatedFormat('d M Y') }}</td>
                     <td>{{ $booking->check_out->translatedFormat('d M Y') }}</td>
-                    <td class="text-center">{{ $booking->check_out->diffInDays($booking->check_in) }}</td>
+                    <td class="text-center">{{ $booking->check_in->diffInDays($booking->check_out) }}</td>
                     <td class="font-semibold">{{ $booking->total_amount !== null ? number_format((float) $booking->total_amount, 2) . ' ' . ($booking->currency ?: $booking->property?->currency ?? 'XOF') : __('messages.common.to_be_announced') }}</td>
                     <td>
                         @php
                             $statusColors = [
                                 'pending' => 'warning',
                                 'pending_payment' => 'warning',
+                                'pending_validation' => 'warning',
                                 'confirmed' => 'success',
                                 'cancelled' => 'error',
                                 'completed' => 'info',
@@ -113,6 +113,18 @@
                                     <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9l-6.455 6.456M9 9l6 6" />
                                 </svg>
                             </x-button>
+
+                            @if (auth()->user()->isAdmin())
+                                <form method="POST" action="{{ route('admin.reservations.destroy', $booking) }}" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm btn-icon" title="{{ __('messages.admin.delete_reservation') }}" aria-label="{{ __('messages.admin.delete_reservation') }}">
+                                        <svg class="icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M9 3.75A2.25 2.25 0 0 1 11.25 1.5h1.5A2.25 2.25 0 0 1 15 3.75V5h3.75a.75.75 0 0 1 0 1.5h-.66l-.72 12.03A3.75 3.75 0 0 1 13.63 22H10.37a3.75 3.75 0 0 1-3.74-3.47L5.91 6.5h-.66a.75.75 0 0 1 0-1.5H9V3.75ZM10.5 5h3V3.75a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0-.75.75V5Zm-2.09 1.5.72 11.94a2.25 2.25 0 0 0 2.24 2.06h1.26a2.25 2.25 0 0 0 2.24-2.06l.72-11.94H8.41Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </td>
                 </tr>
@@ -132,5 +144,6 @@
             {{ $bookings->links() }}
         </div>
     @endif
+    </div>
 </x-card>
 @endsection
