@@ -17,7 +17,7 @@
 
         <div class="property-editor-tabs" data-property-tabs>
             <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.property_editor_sections') }}">
-                @foreach (['general' => __('messages.admin.general_information'), 'copy' => 'Assistant rédaction', 'photos' => __('messages.admin.photos'), 'amenities' => __('messages.admin.amenities'), 'rules' => __('messages.admin.pricing_rules'), 'features' => __('messages.admin.features'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
+                @foreach (['general' => __('messages.admin.general_information'), 'copy' => 'Assistant rédaction', 'photos' => __('messages.admin.photos'), 'amenities' => __('messages.admin.amenities'), 'features' => __('messages.admin.features'), 'rules' => __('messages.admin.pricing_rules'), 'availability' => __('messages.admin.availability'), 'calendars' => __('messages.admin.calendars')] as $tab => $label)
                     <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="property-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                 @endforeach
             </div>
@@ -146,23 +146,9 @@
                 </div>
             </div>
 
-            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>                <div class="admin-panel"><div class="admin-panel-heading"><h2>{{ __('messages.admin.pricing_rules') }}</h2><a class="btn btn-primary" href="{{ route('admin.properties.price-rules.create', $property) }}">{{ __('messages.admin.add_rule') }}</a></div><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
-            </div>
-
             <div id="property-panel-features" class="property-tab-panel" role="tabpanel" data-property-panel="features" hidden>
                 <div class="admin-panel">
-                    <h2>{{ __('messages.admin.features') }}</h2>
-                    <form method="POST" action="{{ route('admin.properties.features.store', $property) }}">
-                        @csrf
-                        <input type="hidden" name="active_tab" value="features">
-                        <div class="admin-form-grid compact">
-                            <label class="full-width"><span>{{ __('messages.admin.feature_name') }}</span><input name="name" placeholder="Private pool, concierge service..." required></label>
-                            <label class="full-width"><span>{{ __('messages.admin.description') }}</span><textarea name="description" rows="3"></textarea></label>
-                            <label><span>{{ __('messages.admin.cost_xof') }}</span><input type="number" step="0.01" min="0" name="cost_xof" value="0" required></label>
-                            <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" checked><span>{{ __('messages.admin.active') }}</span></label>
-                        </div>
-                        <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.admin.add_feature') }}</button></div>
-                    </form>
+                    <div class="admin-panel-heading"><h2>{{ __('messages.admin.features') }}</h2><a class="btn btn-primary" href="{{ route('admin.properties.features.create', $property) }}">{{ __('messages.admin.add_feature') }}</a></div>
                     <div class="admin-record-list property-feature-editor-list">
                         <h3>{{ __('messages.admin.selected_features') }}</h3>
                         @forelse ($property->features as $feature)
@@ -189,6 +175,9 @@
                         @endforelse
                     </div>
                 </div>
+            </div>
+
+            <div id="property-panel-rules" class="property-tab-panel" role="tabpanel" data-property-panel="rules" hidden>                <div class="admin-panel"><div class="admin-panel-heading"><h2>{{ __('messages.admin.pricing_rules') }}</h2><a class="btn btn-primary" href="{{ route('admin.properties.price-rules.create', $property) }}">{{ __('messages.admin.add_rule') }}</a></div><div class="admin-record-list"><h3>{{ __('messages.admin.created_rules') }}</h3>@forelse ($property->rateRules->sortByDesc('effective_from') as $rule)<div class="admin-record-item"><strong>{{ $rule->rule_type }}</strong><span>{{ $rule->effective_from }}{{ $rule->effective_to ? ' → ' . $rule->effective_to : '' }}</span><span>{{ number_format((float) $rule->nightly_rate_xof, 0, ',', ' ') }} XOF</span></div>@empty<p class="form-help">{{ __('messages.admin.no_rules') }}</p>@endforelse</div></div>
             </div>
 
             <div id="property-panel-availability" class="property-tab-panel" role="tabpanel" data-property-panel="availability" hidden>

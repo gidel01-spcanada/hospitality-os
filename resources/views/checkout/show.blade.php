@@ -3,7 +3,7 @@
 @section('title', __('messages.checkout.badge') . ' | ' . \App\Support\PlatformBrand::name())
 
 @section('content')
-<section class="checkout-page bg-slate-100 text-slate-900">
+<section class="checkout-page">
     <div class="mx-auto max-w-5xl px-4 py-10">
         <div class="mb-6">
             <p class="text-sm uppercase tracking-[0.2em] text-amber-600">{{ __('messages.checkout.badge') }}</p>
@@ -40,6 +40,10 @@
                 </div>
 
                 <dl class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.establishment') }}</dt>
+                        <dd class="mt-1 font-medium">{{ $reservation->property?->establishment?->name ?? '—' }}</dd>
+                    </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.property') }}</dt>
                         <dd class="mt-1 font-medium">{{ $reservation->property?->name ?? '—' }}</dd>
@@ -79,9 +83,15 @@
             <aside id="checkout-payment" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 @php
                     $latestAttempt = $reservation->paymentAttempts->last();
-                    $showPaymentOptions = in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true);
+                    $showPaymentOptions = ! $linkExpired && in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true);
                     $awaitingValidation = $reservation->status === 'pending_validation';
                 @endphp
+
+                @if ($linkExpired)
+                    <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {{ __('messages.checkout.link_expired') }}
+                    </div>
+                @endif
 
                 @if ($awaitingValidation)
                     <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

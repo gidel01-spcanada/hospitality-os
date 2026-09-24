@@ -147,7 +147,7 @@
                             @php $method = $establishment->payment_methods[$provider] ?? []; @endphp
                             <div class="payment-method-card">
                                 <label class="checkbox-field"><input type="checkbox" name="payment_methods[{{ $provider }}][enabled]" value="1" @checked(old('payment_methods.' . $provider . '.enabled', $method['enabled'] ?? $provider === 'pay_later'))><span>{{ $label }}</span></label>
-                                @if (array_key_exists($provider, $paymentProviderReadiness))
+                                @if ($provider !== 'pay_later' && array_key_exists($provider, $paymentProviderReadiness))
                                     @php
                                         $productionReady = $paymentProviderReadiness[$provider]['production_ready'] ?? false;
                                         $selectedMode = old('payment_methods.' . $provider . '.mode', $method['mode'] ?? 'sandbox');
@@ -157,7 +157,7 @@
                                         <option value="production" @selected($selectedMode === 'production') @disabled(! $productionReady)>{{ __('messages.admin.payment_mode_production') }}{{ $productionReady ? '' : ' — ' . __('messages.admin.payment_production_unavailable') }}</option>
                                     </select></label>
                                 @endif
-                                <label><span>{{ __('messages.admin.instructions') }}</span><input name="payment_methods[{{ $provider }}][instructions]" value="{{ old('payment_methods.' . $provider . '.instructions', $method['instructions'] ?? '') }}" placeholder="{{ __('messages.admin.optional_customer_instructions') }}"></label>
+                                <label><span>{{ __('messages.admin.instructions') }}</span><input name="payment_methods[{{ $provider }}][instructions]" value="{{ old('payment_methods.' . $provider . '.instructions', $method['instructions'] ?? ($provider === 'pay_later' ? __('messages.checkout.pay_on_arrival_default_instructions') : '')) }}" placeholder="{{ __('messages.admin.optional_customer_instructions') }}"></label>
                                 @if ($provider === 'interac')
                                     <label><span>{{ __('messages.admin.interac_email') }}</span><input type="email" name="payment_methods[interac][email]" value="{{ old('payment_methods.interac.email', $method['email'] ?? '') }}"></label>
                                     <label><span>{{ __('messages.admin.interac_security_question') }}</span><input name="payment_methods[interac][security_question]" value="{{ old('payment_methods.interac.security_question', $method['security_question'] ?? '') }}"></label>

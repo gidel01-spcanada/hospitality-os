@@ -32,6 +32,7 @@ class Reservation extends Model
         'total_amount',
         'source',
         'notes',
+        'customer_note',
     ];
 
     protected $casts = [

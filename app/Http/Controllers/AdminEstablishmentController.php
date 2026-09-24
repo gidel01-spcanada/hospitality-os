@@ -455,7 +455,7 @@ class AdminEstablishmentController extends Controller
         return collect(['pay_later', 'fedapay', 'paypal', 'cinetpay', 'mpesa', 'interac', 'wise', 'revolut'])->mapWithKeys(function (string $provider) use ($methods) {
             $method = $methods[$provider] ?? [];
             $enabled = filter_var($method['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $mode = $method['mode'] ?? 'sandbox';
+            $mode = $provider === 'pay_later' ? 'manual' : ($method['mode'] ?? 'sandbox');
 
             if ($enabled && $mode === 'production' && ! ($this->paymentProviderReadiness()[$provider]['production_ready'] ?? false)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
@@ -463,10 +463,15 @@ class AdminEstablishmentController extends Controller
                 ]);
             }
 
+            $instructions = trim((string) ($method['instructions'] ?? ''));
+            if ($provider === 'pay_later' && $instructions === '') {
+                $instructions = __('messages.checkout.pay_on_arrival_default_instructions');
+            }
+
             return [$provider => [
                 'enabled' => $enabled,
                 'mode' => $mode,
-                'instructions' => trim((string) ($method['instructions'] ?? '')),
+                'instructions' => $instructions,
                 'email' => trim((string) ($method['email'] ?? '')),
                 'security_question' => trim((string) ($method['security_question'] ?? '')),
                 'security_answer' => trim((string) ($method['security_answer'] ?? '')),

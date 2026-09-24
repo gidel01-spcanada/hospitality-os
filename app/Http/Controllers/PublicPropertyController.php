@@ -244,6 +244,7 @@ class PublicPropertyController extends Controller
             'adults' => ['required', 'integer', 'min:1', 'max:8'],
             'children' => ['nullable', 'integer', 'min:0', 'max:8'],
             'infants' => ['nullable', 'integer', 'min:0', 'max:4'],
+            'customer_note' => ['nullable', 'string', 'max:2000'],
             'selected_features' => ['nullable', 'array'],
             'selected_features.*' => ['integer', Rule::exists('property_features', 'id')->where(fn ($query) => $query->where('property_id', $property->id)->where('is_active', true))],
             'create_account' => ['sometimes', 'boolean'],
@@ -381,6 +382,7 @@ class PublicPropertyController extends Controller
             'total_amount' => $pricing['total_amount'],
             'source' => 'website',
             'notes' => 'Reservation placed from public booking form.' . ($selectedFeatures->isNotEmpty() ? ' Extras: ' . $selectedFeatures->pluck('name')->implode(', ') : ''),
+            'customer_note' => $validated['customer_note'] ?? null,
         ]);
 
         $priceLines = array_map(function (array $line) use ($reservation): array {

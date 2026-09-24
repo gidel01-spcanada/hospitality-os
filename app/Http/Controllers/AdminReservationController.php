@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MessageThread;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPriceLine;
 use App\Models\Property;
+use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
 use App\Services\ReservationEmailService;
@@ -121,6 +123,7 @@ class AdminReservationController extends Controller
                 'taxes' => $pricing['taxes'],
                 'total_amount' => $pricing['total_amount'],
                 'notes' => $validated['notes'] ?? null,
+                'customer_note' => $validated['customer_note'] ?? null,
             ]);
 
             $reservation->priceLines()->delete();
@@ -163,8 +166,39 @@ class AdminReservationController extends Controller
         $this->ownedReservation($reservation);
 
         $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
+        $customerThread = $this->ensureCustomerThread($reservation);
 
-        return view('admin.reservations.show', compact('reservation'));
+        return view('admin.reservations.show', compact('reservation', 'customerThread'));
+    }
+
+    private function ensureCustomerThread(Reservation $reservation): ?MessageThread
+    {
+        $customerUser = $reservation->user ?? User::query()->firstOrCreate(
+            ['email' => strtolower((string) $reservation->email)],
+            [
+                'name' => $reservation->guest?->full_name ?? $reservation->email,
+                'password' => bcrypt(Str::random(24)),
+                'role' => 'customer',
+                'tenant_id' => $reservation->property?->establishment?->tenant_id,
+                'locale' => app()->getLocale(),
+                'email_booking_updates' => true,
+                'email_message_updates' => true,
+            ]
+        );
+
+        if ($reservation->user_id !== $customerUser->id) {
+            $reservation->update(['user_id' => $customerUser->id]);
+        }
+
+        $establishmentId = $reservation->property?->establishment_id;
+        if (! $establishmentId) {
+            return null;
+        }
+
+        return MessageThread::query()->firstOrCreate([
+            'customer_id' => $customerUser->id,
+            'establishment_id' => $establishmentId,
+        ]);
     }
 
     public function destroy(Reservation $reservation): RedirectResponse
@@ -334,6 +368,7 @@ class AdminReservationController extends Controller
             'children' => ['nullable', 'integer', 'min:0', 'max:8'],
             'infants' => ['nullable', 'integer', 'min:0', 'max:4'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'customer_note' => ['nullable', 'string', 'max:2000'],
             'ignore_external_calendar_conflicts' => ['sometimes', 'boolean'],
         ]);
     }
@@ -400,6 +435,7 @@ class AdminReservationController extends Controller
                 'total_amount' => $pricing['total_amount'],
                 'source' => 'admin',
                 'notes' => $validated['notes'] ?? null,
+                'customer_note' => $validated['customer_note'] ?? null,
             ]);
 
             ReservationPriceLine::query()->insert($this->priceLines($reservation, $pricing));

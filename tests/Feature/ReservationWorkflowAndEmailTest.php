@@ -47,6 +47,44 @@ class ReservationWorkflowAndEmailTest extends TestCase
         $this->assertStringContainsString('lang=en', $notification->payload['checkout_url']);
     }
 
+    public function test_customer_remark_is_stored_and_displayed_on_reservation_page(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $guest = ReservationGuest::query()->create(['full_name' => 'Remark Customer', 'email' => 'remark@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-REMARK-001',
+            'status' => 'pending',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => 'remark@example.com',
+            'subtotal' => 1000,
+            'fees' => 0,
+            'taxes' => 0,
+            'total_amount' => 1000,
+            'source' => 'website',
+            'customer_note' => 'Je souhaite un lit double et une arrivée tardive.',
+            'notes' => 'Note interne de validation.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/admin/reservations/' . $reservation->id)
+            ->assertOk()
+            ->assertSee('Remarque client')
+            ->assertSee('Je souhaite un lit double et une arrivée tardive.')
+            ->assertSee('Note interne')
+            ->assertSee('Message au client');
+
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'customer_note' => 'Je souhaite un lit double et une arrivée tardive.']);
+    }
+
     public function test_only_admin_can_delete_reservation_and_associated_payment_records(): void
     {
         $this->seed(DatabaseSeeder::class);
