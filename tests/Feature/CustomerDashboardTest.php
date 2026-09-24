@@ -195,7 +195,7 @@ class CustomerDashboardTest extends TestCase
             ->get('/admin/settings')
             ->assertOk()
             ->assertSee('Paramètres du site')
-            ->assertSee('Informations générales')
+            ->assertSee('Générale')
             ->assertSee('Communications par e-mail');
 
         $this->actingAs($admin)

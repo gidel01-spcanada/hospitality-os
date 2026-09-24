@@ -78,6 +78,10 @@
                 <label for="notes">{{ __('messages.admin.notes') }}</label>
                 <textarea id="notes" name="notes" class="input-md" rows="4">{{ old('notes', $reservation->notes) }}</textarea>
             </div>
+            <div>
+                <label for="customer_note">{{ __('messages.admin.customer_note') }}</label>
+                <textarea id="customer_note" name="customer_note" class="input-md" rows="4">{{ old('customer_note', $reservation->customer_note) }}</textarea>
+            </div>
         </x-form-group>
 
         <div class="form-actions">

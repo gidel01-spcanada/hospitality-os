@@ -242,6 +242,11 @@
                             </div>
                             <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="{{ __('messages.properties.phone_optional') }}">
 
+                            <div class="input-group">
+                                <label for="customer_note">{{ __('messages.properties.customer_note') }}</label>
+                                <textarea id="customer_note" name="customer_note" rows="3" maxlength="2000" placeholder="{{ __('messages.properties.customer_note_help') }}">{{ old('customer_note') }}</textarea>
+                            </div>
+
                             @if ($property->features->isNotEmpty())
                                 <div class="feature-choice-box">
                                     <h3>{{ __('messages.properties.extra_options') }}</h3>

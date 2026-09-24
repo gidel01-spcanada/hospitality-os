@@ -61,8 +61,13 @@
 @elseif (in_array($provider, ['interac', 'wise', 'revolut'], true))
     @php
         $internationalAmount = $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount);
-        $convertedAmount = app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $reservation->property?->establishment?->secondary_currency);
-        $providerCurrency = $provider === 'interac' ? 'CAD' : $reservation->property?->establishment?->secondary_currency;
+        $internationalCurrency = $reservation->property?->establishment?->secondary_currency;
+        $isInteracInCad = $provider === 'interac' && strtoupper((string) $internationalCurrency) === 'CAD';
+        $convertedAmount = $provider === 'interac' && ! $isInteracInCad
+            ? app(\App\Services\InternationalCurrencyConverter::class)->toCad((float) $internationalAmount, $internationalCurrency)
+            : $internationalAmount;
+        $providerCurrency = $provider === 'interac' ? 'CAD' : $internationalCurrency;
+        $showInternationalAmount = $provider === 'interac' && ! $isInteracInCad && $internationalAmount !== null;
     @endphp
 
     @if (!empty($method['instructions']))
@@ -70,8 +75,11 @@
     @endif
 
     <div class="space-y-2 text-sm">
+        @if ($showInternationalAmount)
+            <div class="text-slate-500">{{ __('messages.checkout.interac_international_amount', ['amount' => number_format($internationalAmount, 2, ',', ' '), 'currency' => $internationalCurrency]) }}</div>
+        @endif
         @if ($convertedAmount !== null)
-            <div class="flex items-center gap-2"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($convertedAmount, 2, ',', ' '), 'currency' => $providerCurrency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($convertedAmount, 2, '.', '') }} {{ $providerCurrency }}">{{ __('messages.checkout.copy') }}</button></div>
+            <div class="flex items-center gap-2 font-semibold"><span>{{ __('messages.checkout.' . $provider . '_amount', ['amount' => number_format($convertedAmount, 2, ',', ' '), 'currency' => $providerCurrency]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ number_format($convertedAmount, 2, '.', '') }} {{ $providerCurrency }}">{{ __('messages.checkout.copy') }}</button></div>
         @endif
         @if (!empty($method['email']))
             <div class="flex items-center gap-2"><span>{{ __('messages.checkout.' . $provider . '_email', ['email' => $method['email']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['email'] }}">{{ __('messages.checkout.copy') }}</button></div>

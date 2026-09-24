@@ -14,6 +14,10 @@ use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
+    private const PAYABLE_STATUSES = ['pending', 'pending_payment', 'payment_failed'];
+
+    private const LINK_VALID_HOURS = 48;
+
     public function show(Request $request, Reservation $reservation): View|RedirectResponse
     {
         if (! $this->canAccessCheckout($request, $reservation)) {
@@ -24,8 +28,9 @@ class CheckoutController extends Controller
         $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
         $paymentMethods = $this->paymentMethods($reservation);
         $isDevEnvironment = app()->environment(['local', 'testing']);
+        $linkExpired = $this->isPayable($reservation) && $this->isLinkExpired($reservation);
 
-        return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment'));
+        return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment', 'linkExpired'));
     }
 
     public function accessHelp(): View
@@ -36,6 +41,7 @@ class CheckoutController extends Controller
     public function start(Request $request, Reservation $reservation, PaymentGatewayManager $manager): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
+        $this->guardPaymentIsAllowed($reservation);
         $validated = $request->validate([
             'provider' => ['required', 'string', 'in:pay_later,fedapay,paypal,cinetpay,mpesa,interac,wise,revolut'],
             'guarantee_provider' => ['nullable', 'string', 'in:fedapay,paypal,cinetpay,mpesa'],
@@ -132,7 +138,7 @@ class CheckoutController extends Controller
     {
         $configured = $reservation->property?->establishment?->payment_methods ?? [];
         $defaults = [
-            'pay_later' => ['enabled' => true, 'mode' => 'production', 'instructions' => ''],
+            'pay_later' => ['enabled' => true, 'mode' => 'manual', 'instructions' => __('messages.checkout.pay_on_arrival_default_instructions')],
             'fedapay' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
             'paypal' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
             'cinetpay' => ['enabled' => false, 'mode' => 'sandbox', 'instructions' => ''],
@@ -144,6 +150,10 @@ class CheckoutController extends Controller
 
         return collect($defaults)->mapWithKeys(function (array $default, string $provider) use ($configured, $reservation) {
             $method = array_merge($default, $configured[$provider] ?? []);
+
+            if ($provider === 'pay_later' && trim((string) $method['instructions']) === '') {
+                $method['instructions'] = __('messages.checkout.pay_on_arrival_default_instructions');
+            }
 
             if (! $method['enabled']) {
                 return [];
@@ -203,6 +213,7 @@ class CheckoutController extends Controller
     {
         $token = $this->authorizeCheckout($request, $reservation);
         abort_unless(in_array($reservation->status, ['pending', 'pending_payment', 'payment_failed'], true), 422, __('messages.checkout.offline_proof_unavailable'));
+        $this->guardPaymentIsAllowed($reservation);
 
         $validated = $request->validate([
             'provider' => ['required', 'string', 'in:interac,wise,revolut'],
@@ -301,6 +312,7 @@ class CheckoutController extends Controller
     public function createPayPalOrder(Request $request, Reservation $reservation, PaymentGatewayManager $manager)
     {
         $token = $this->authorizeCheckout($request, $reservation);
+        $this->guardPaymentIsAllowed($reservation);
         $paymentMethods = $this->paymentMethods($reservation);
 
         abort_unless(isset($paymentMethods['paypal']), 422, 'PayPal is not available for this establishment.');
@@ -339,6 +351,7 @@ class CheckoutController extends Controller
     public function capturePayPalOrder(Request $request, Reservation $reservation, PaymentGatewayManager $manager, ReservationEmailService $emailService)
     {
         $token = $this->authorizeCheckout($request, $reservation);
+        $this->guardPaymentIsAllowed($reservation);
         $paymentMethods = $this->paymentMethods($reservation);
 
         abort_unless(isset($paymentMethods['paypal']), 422, 'PayPal is not available for this establishment.');
@@ -447,6 +460,22 @@ class CheckoutController extends Controller
         abort_unless($this->canAccessCheckout($request, $reservation), 403, 'Checkout access denied.');
 
         return $token ?: (string) $reservation->checkout_token;
+    }
+
+    private function isPayable(Reservation $reservation): bool
+    {
+        return in_array($reservation->status, self::PAYABLE_STATUSES, true);
+    }
+
+    private function isLinkExpired(Reservation $reservation): bool
+    {
+        return (bool) $reservation->created_at?->addHours(self::LINK_VALID_HOURS)->isPast();
+    }
+
+    private function guardPaymentIsAllowed(Reservation $reservation): void
+    {
+        abort_unless($this->isPayable($reservation), 422, __('messages.checkout.payment_no_longer_available'));
+        abort_if($this->isLinkExpired($reservation), 410, __('messages.checkout.link_expired'));
     }
 
     private function validWebhookSignature(Request $request, string $provider): bool

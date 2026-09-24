@@ -778,7 +778,7 @@ body.admin-layout textarea {
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.96);
     box-shadow: var(--shadow-sm);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-5);
 }
 
 .report-section-nav a {

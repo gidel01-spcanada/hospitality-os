@@ -202,6 +202,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/properties/{property}/images', [\App\Http\Controllers\AdminPropertyController::class, 'uploadImages'])->name('admin.properties.images.upload');
         Route::get('/admin/properties/{property}/price-rules/create', [\App\Http\Controllers\AdminPropertyController::class, 'createPriceRule'])->name('admin.properties.price-rules.create');
         Route::post('/admin/properties/{property}/price-rules', [\App\Http\Controllers\AdminPropertyController::class, 'storePriceRule'])->name('admin.properties.price-rules.store');
+        Route::get('/admin/properties/{property}/features/create', [\App\Http\Controllers\AdminPropertyController::class, 'createPropertyFeature'])->name('admin.properties.features.create');
         Route::post('/admin/properties/{property}/features', [\App\Http\Controllers\AdminPropertyController::class, 'storePropertyFeature'])->name('admin.properties.features.store');
         Route::put('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'updatePropertyFeature'])->name('admin.properties.features.update');
         Route::delete('/admin/properties/{property}/features/{feature}', [\App\Http\Controllers\AdminPropertyController::class, 'deletePropertyFeature'])->name('admin.properties.features.destroy');
@@ -231,12 +232,17 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
         Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
         Route::get('/admin/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'index'])->name('admin.amenities.index');
+        Route::get('/admin/amenities/categories/create', [\App\Http\Controllers\AdminAmenityController::class, 'createCategory'])->name('admin.amenities.categories.create');
         Route::post('/admin/amenities/categories', [\App\Http\Controllers\AdminAmenityController::class, 'storeCategory'])->name('admin.amenities.categories.store');
+        Route::get('/admin/amenities/categories/{amenityCategory}/edit', [\App\Http\Controllers\AdminAmenityController::class, 'editCategory'])->name('admin.amenities.categories.edit');
         Route::put('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'updateCategory'])->name('admin.amenities.categories.update');
         Route::delete('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyCategory'])->name('admin.amenities.categories.destroy');
+        Route::get('/admin/amenities/categories/{amenityCategory}/amenities/create', [\App\Http\Controllers\AdminAmenityController::class, 'createAmenity'])->name('admin.amenities.create');
         Route::post('/admin/amenities/categories/{amenityCategory}/amenities', [\App\Http\Controllers\AdminAmenityController::class, 'storeAmenity'])->name('admin.amenities.store');
+        Route::get('/admin/amenities/{amenity}/edit', [\App\Http\Controllers\AdminAmenityController::class, 'editAmenity'])->name('admin.amenities.edit');
         Route::put('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'updateAmenity'])->name('admin.amenities.update');
         Route::delete('/admin/amenities/{amenity}', [\App\Http\Controllers\AdminAmenityController::class, 'destroyAmenity'])->name('admin.amenities.destroy');
+        Route::get('/admin/amenities/categories/{amenityCategory}', [\App\Http\Controllers\AdminAmenityController::class, 'showCategory'])->name('admin.amenities.categories.show');
         Route::get('/admin/reviews', [AdminController::class, 'reviews'])->name('admin.reviews');
         Route::post('/admin/reviews', [AdminController::class, 'storeReview'])->name('admin.reviews.store');
         Route::put('/admin/reviews/{review}', [AdminController::class, 'updateReview'])->name('admin.reviews.update');

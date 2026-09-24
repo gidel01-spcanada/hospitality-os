@@ -427,6 +427,13 @@ class AdminPropertyController extends Controller
         return $this->editorRedirect($property, $request, __('messages.flash.availability_deleted'), 'availability');
     }
 
+    public function createPropertyFeature(Property $property): View
+    {
+        $this->authorizeProperty($property);
+
+        return view('admin.properties.feature-create', ['property' => $property]);
+    }
+
     public function storePropertyFeature(Request $request, Property $property): RedirectResponse
     {
         $this->authorizeProperty($property);

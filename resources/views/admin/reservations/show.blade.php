@@ -53,6 +53,13 @@
                     </div>
                 </dl>
 
+                @if ($reservation->customer_note)
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <h2>{{ __('messages.admin.customer_note') }}</h2>
+                        <p>{{ $reservation->customer_note }}</p>
+                    </div>
+                @endif
+
                 <div class="card" style="margin-top: 1.5rem;">
                     <h2>{{ __('messages.admin.financial_details') }}</h2>
                     <ul>
@@ -67,12 +74,30 @@
             </div>
 
             <aside class="admin-panel">
-                <h2>{{ __('messages.admin.update_status') }}</h2>
-                <form action="{{ route('admin.reservations.destroy', $reservation) }}" method="POST" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}" style="margin-bottom: 1rem;">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-full">{{ __('messages.admin.delete_reservation') }}</button>
-                </form>
-                <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form">
+                <div class="admin-action-stack">
+                    @if ($customerThread)
+                        <a href="{{ route('admin.messages.show', $customerThread) }}" class="btn btn-ghost btn-full">{{ __('messages.admin.message_customer') }}</a>
+                    @endif
+
+                    <form action="{{ route('admin.reservations.destroy', $reservation) }}" method="POST" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger btn-full">{{ __('messages.admin.delete_reservation') }}</button>
+                    </form>
+                </div>
+
+                <div class="card" style="margin-top: 1rem;">
+                    <div class="admin-note-header">
+                        <h2>{{ __('messages.admin.internal_note') }}</h2>
+                        <a href="#reservation-internal-note-editor" class="btn btn-ghost btn-small">{{ __('messages.admin.edit') }}</a>
+                    </div>
+                    @if ($reservation->notes)
+                        <p>{{ $reservation->notes }}</p>
+                    @else
+                        <p class="text-slate-500">{{ __('messages.admin.no_internal_note') }}</p>
+                    @endif
+                </div>
+
+                <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form" id="reservation-internal-note-editor" style="margin-top: 1rem;">
                     @csrf
                     @method('PATCH')
 
@@ -87,7 +112,7 @@
 
                     <div>
                         <label for="notes">{{ __('messages.admin.internal_note') }}</label>
-                        <textarea id="notes" name="notes" rows="4" placeholder="{{ __('messages.admin.add_management_note') }}"></textarea>
+                        <textarea id="notes" name="notes" rows="4" placeholder="{{ __('messages.admin.add_management_note') }}">{{ old('notes', $reservation->notes) }}</textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-full">{{ __('messages.admin.save_status') }}</button>

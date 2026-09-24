@@ -11,19 +11,19 @@ use Illuminate\View\View;
 
 class AdminAmenityController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
         $categories = AmenityCategory::query()
             ->withCount('amenities')
             ->orderBy('sort_order')
             ->get();
 
-        $selectedCategory = $categories->firstWhere('id', (int) $request->query('category'))
-            ?? $categories->first();
+        return view('admin.amenities.index', compact('categories'));
+    }
 
-        $selectedCategory?->load(['amenities' => fn ($query) => $query->ordered()]);
-
-        return view('admin.amenities.index', compact('categories', 'selectedCategory'));
+    public function createCategory(): View
+    {
+        return view('admin.amenities.category-create');
     }
 
     public function storeCategory(Request $request): RedirectResponse
@@ -43,6 +43,18 @@ class AdminAmenityController extends Controller
         ]);
 
         return $this->toCategory($category)->with('success', __('messages.flash.amenity_category_created'));
+    }
+
+    public function showCategory(AmenityCategory $amenityCategory): View
+    {
+        $amenityCategory->load(['amenities' => fn ($query) => $query->ordered()]);
+
+        return view('admin.amenities.category-show', ['category' => $amenityCategory]);
+    }
+
+    public function editCategory(AmenityCategory $amenityCategory): View
+    {
+        return view('admin.amenities.category-edit', ['category' => $amenityCategory]);
     }
 
     public function updateCategory(Request $request, AmenityCategory $amenityCategory): RedirectResponse
@@ -68,6 +80,11 @@ class AdminAmenityController extends Controller
         return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_category_deleted'));
     }
 
+    public function createAmenity(AmenityCategory $amenityCategory): View
+    {
+        return view('admin.amenities.amenity-create', ['category' => $amenityCategory]);
+    }
+
     public function storeAmenity(Request $request, AmenityCategory $amenityCategory): RedirectResponse
     {
         $validated = $request->validate([
@@ -83,6 +100,13 @@ class AdminAmenityController extends Controller
         ]);
 
         return $this->toCategory($amenityCategory)->with('success', __('messages.flash.amenity_created'));
+    }
+
+    public function editAmenity(Amenity $amenity): View
+    {
+        $categories = AmenityCategory::query()->orderBy('sort_order')->get();
+
+        return view('admin.amenities.amenity-edit', ['amenity' => $amenity, 'categories' => $categories]);
     }
 
     public function updateAmenity(Request $request, Amenity $amenity): RedirectResponse
@@ -110,7 +134,7 @@ class AdminAmenityController extends Controller
     {
         $categoryId = $category instanceof AmenityCategory ? $category->id : $category;
 
-        return redirect()->route('admin.amenities.index', ['category' => $categoryId]);
+        return redirect()->route('admin.amenities.categories.show', ['amenityCategory' => $categoryId]);
     }
 
     private function uniqueAmenitySlug(string $name): string

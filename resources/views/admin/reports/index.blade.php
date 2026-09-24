@@ -19,13 +19,14 @@
         </div>
     </div>
 
+    <nav class="report-section-nav" aria-label="{{ __('messages.reports.sections') }}">
+        <a href="#operations">{{ __('messages.reports.operations') }}</a>
+        <a href="#finance">{{ __('messages.reports.finance') }}</a>
+        <a href="#performance">{{ __('messages.reports.performance') }}</a>
+        <a href="#quality">{{ __('messages.reports.quality') }}</a>
+    </nav>
+
     <x-card class="report-filter-card">
-        <nav class="report-section-nav" aria-label="{{ __('messages.reports.sections') }}">
-            <a href="#operations">{{ __('messages.reports.operations') }}</a>
-            <a href="#finance">{{ __('messages.reports.finance') }}</a>
-            <a href="#performance">{{ __('messages.reports.performance') }}</a>
-            <a href="#quality">{{ __('messages.reports.quality') }}</a>
-        </nav>
         <form method="GET" action="{{ route('admin.reports.index') }}" class="report-filters">
             <div class="date-range-picker admin-date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.reports.to') }}" data-end-label="{{ __('messages.reports.to') }}" data-placeholder="{{ __('messages.reports.from') }} / {{ __('messages.reports.to') }}">
                 <label for="report-date-range-trigger"><span>{{ __('messages.reports.from') }} / {{ __('messages.reports.to') }}</span><button type="button" id="report-date-range-trigger" class="date-range-trigger" data-date-range-trigger aria-expanded="false"><span data-date-range-label>{{ $from->toDateString() }} → {{ $to->toDateString() }}</span></button></label>
