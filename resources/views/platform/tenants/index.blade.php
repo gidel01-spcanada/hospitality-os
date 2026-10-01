@@ -8,9 +8,11 @@
             <h1 class="admin-page-title">{{ __('messages.platform.tenants_title') }}</h1>
             <p class="admin-page-description">{{ __('messages.platform.tenants_description') }}</p>
         </div>
-        <div class="admin-page-actions">
-            <x-button tag="a" href="{{ route('platform.tenants.create') }}" variant="primary">{{ __('messages.platform.add_tenant') }}</x-button>
-        </div>
+        @if (config('platform.mode') === 'cloud')
+            <div class="admin-page-actions">
+                <x-button tag="a" href="{{ route('platform.tenants.create') }}" variant="primary">{{ __('messages.platform.add_tenant') }}</x-button>
+            </div>
+        @endif
     </div>
 
     @if (session('success'))

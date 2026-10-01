@@ -66,7 +66,7 @@ class AdminAmenityController extends Controller
 
         $amenityCategory->update($validated);
 
-        return $this->toCategory($amenityCategory)->with('success', __('messages.flash.amenity_category_updated'));
+        return redirect()->route('admin.amenities.index')->with('success', __('messages.flash.amenity_category_updated'));
     }
 
     public function destroyCategory(AmenityCategory $amenityCategory): RedirectResponse

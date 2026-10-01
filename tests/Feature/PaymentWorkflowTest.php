@@ -37,6 +37,63 @@ class PaymentWorkflowTest extends TestCase
             ->assertSee(__('messages.auth.create_account'));
     }
 
+    public function test_checkout_keeps_last_selected_payment_method_accordion_open_by_default(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->update([
+            'payment_methods' => [
+                'paypal' => ['enabled' => true, 'mode' => 'sandbox', 'instructions' => ''],
+                'fedapay' => ['enabled' => true, 'mode' => 'sandbox', 'instructions' => ''],
+                'pay_later' => ['enabled' => true, 'mode' => 'manual', 'instructions' => 'Pay on arrival.'],
+            ],
+        ]);
+        $guest = ReservationGuest::query()->create([
+            'full_name' => 'Charlie Doe',
+            'email' => 'charlie@example.com',
+            'phone' => '+229 11 11 11 11',
+            'country' => 'Bénin',
+            'metadata' => ['source' => 'test'],
+        ]);
+
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-PAY-OPEN-001',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => 'charlie@example.com',
+            'subtotal' => 100000,
+            'fees' => 10000,
+            'taxes' => 5000,
+            'total_amount' => 115000,
+            'source' => 'website',
+        ]);
+
+        $reservation->paymentAttempts()->create([
+            'provider' => 'fedapay',
+            'provider_reference' => 'fedapay-123',
+            'currency' => 'XOF',
+            'amount' => 115000,
+            'status' => 'created',
+            'idempotency_key' => 'attempt-fedapay-1',
+            'payload' => ['mode' => 'sandbox'],
+        ]);
+
+        $response = $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
+            ->assertOk()
+            ->assertSee('name="payment-method-accordion" open', false)
+            ->assertSee(__('messages.checkout.fedapay'), false);
+
+        $this->assertSame(1, substr_count($response->getContent(), 'name="payment-method-accordion" open'));
+    }
+
     public function test_checkout_and_verified_payment_flow_work(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -325,6 +382,10 @@ class PaymentWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee(__('messages.checkout.awaiting_validation'))
             ->assertDontSee(__('messages.checkout.i_have_paid'));
+
+        $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))
+            ->assertOk()
+            ->assertSee(asset(data_get($attempt->payload, 'payment_proof.path')), false);
     }
 
     public function test_only_staff_can_simulate_payment_in_production(): void
@@ -555,5 +616,38 @@ class PaymentWorkflowTest extends TestCase
             'reservation_id' => $reservation->id,
             'provider' => 'pay_later',
         ]);
+    }
+
+    public function test_admin_can_generate_receipt_for_confirmed_reservation_without_one(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'No Receipt Guest', 'email' => 'no-receipt@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-GEN-RECEIPT-001',
+            'status' => 'confirmed', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 2, 'children' => 0, 'infants' => 0, 'currency' => 'XOF', 'email' => $guest->email,
+            'subtotal' => 100000, 'fees' => 10000, 'taxes' => 5000, 'total_amount' => 115000, 'source' => 'website',
+        ]);
+        $reservation->paymentAttempts()->create([
+            'provider' => 'offline', 'provider_reference' => 'offline-gen-1', 'currency' => 'XOF',
+            'amount' => 115000, 'status' => 'paid', 'idempotency_key' => 'attempt-offline-gen-1', 'payload' => [],
+        ]);
+
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))
+            ->assertOk()
+            ->assertSee(__('messages.receipts.generate'));
+
+        $this->actingAs($admin)
+            ->post(route('admin.reservations.receipt.generate', $reservation))
+            ->assertRedirect(route('admin.reservations.show', $reservation));
+
+        $this->assertDatabaseHas('receipts', ['reservation_id' => $reservation->id]);
+
+        $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))
+            ->assertOk()
+            ->assertDontSee(__('messages.receipts.generate'));
     }
 }

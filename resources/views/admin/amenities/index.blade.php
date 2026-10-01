@@ -34,6 +34,7 @@
                             <td>
                                 <div class="admin-row-actions">
                                     <x-button tag="a" href="{{ route('admin.amenities.categories.show', $category) }}" variant="ghost" size="sm" title="{{ __('messages.admin.view') }}">{{ __('messages.admin.view') }}</x-button>
+                                    <x-button tag="a" href="{{ route('admin.amenities.categories.show', $category) }}" variant="ghost" size="sm" title="{{ __('messages.admin.manage_amenities') }}">{{ __('messages.admin.amenities_menu') }}</x-button>
                                     <x-button tag="a" href="{{ route('admin.amenities.categories.edit', $category) }}" variant="ghost" size="sm" class="btn-icon" title="{{ __('messages.admin.edit') }}" aria-label="{{ __('messages.admin.edit') }}">
                                         <svg class="icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 9l-6.455 6.456M9 9l6 6" />

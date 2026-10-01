@@ -14,6 +14,7 @@ class PlatformAdminTest extends TestCase
 
     public function test_platform_admin_can_create_a_new_tenant_with_an_invited_admin(): void
     {
+        config(['platform.mode' => 'cloud']);
         $this->seed(DatabaseSeeder::class);
         $platformAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
 
@@ -50,6 +51,7 @@ class PlatformAdminTest extends TestCase
 
     public function test_non_platform_admin_cannot_create_a_tenant(): void
     {
+        config(['platform.mode' => 'cloud']);
         $this->seed(DatabaseSeeder::class);
         $host = User::factory()->create(['role' => 'host', 'is_platform_admin' => false]);
 
@@ -59,5 +61,23 @@ class PlatformAdminTest extends TestCase
             'admin_name' => 'Blocked Admin',
             'admin_email' => 'blocked-admin@example.com',
         ])->assertForbidden();
+    }
+
+    public function test_tenant_creation_is_unavailable_outside_cloud_mode(): void
+    {
+        config(['platform.mode' => 'on_premise']);
+        $this->seed(DatabaseSeeder::class);
+        $platformAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($platformAdmin)->get(route('platform.tenants.index'))
+            ->assertOk()
+            ->assertDontSee(__('messages.platform.add_tenant'));
+
+        $this->actingAs($platformAdmin)->get(route('platform.tenants.create'))->assertNotFound();
+        $this->actingAs($platformAdmin)->post(route('platform.tenants.store'), [
+            'name' => 'Blocked Onprem Tenant',
+            'admin_name' => 'Blocked Admin',
+            'admin_email' => 'blocked-onprem-admin@example.com',
+        ])->assertNotFound();
     }
 }

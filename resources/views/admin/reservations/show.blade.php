@@ -131,18 +131,38 @@
                 @endif
 
                 <div class="payment-link-actions" style="margin-top: 1rem;">
-                    @php
-                        $latestPaymentAttempt = $reservation->paymentAttempts->sortByDesc('created_at')->first();
-                        $paymentProof = data_get($latestPaymentAttempt?->payload, 'payment_proof');
-                    @endphp
                     <form action="{{ route('admin.reservations.payment-proof.upload', $reservation) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <label for="payment_proof">{{ __('messages.receipts.payment_proof') }}</label>
                         <input id="payment_proof" name="payment_proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required>
                         <button type="submit" class="btn btn-ghost btn-full">{{ __('messages.receipts.upload_proof') }}</button>
                     </form>
-                    @if ($paymentProof && data_get($paymentProof, 'path'))
-                        <p class="form-help"><a class="inline-link" href="{{ asset(data_get($paymentProof, 'path')) }}" target="_blank" rel="noopener">{{ __('messages.receipts.view_proof') }}</a></p>
+
+                    @php
+                        $proofAttempts = $reservation->paymentAttempts
+                            ->filter(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path'))
+                            ->sortByDesc('created_at');
+                    @endphp
+                    @if ($proofAttempts->isNotEmpty())
+                        <ul class="uploaded-proof-list" style="margin-top: 0.75rem;">
+                            @foreach ($proofAttempts as $attempt)
+                                @php
+                                    $proof = data_get($attempt->payload, 'payment_proof');
+                                    $proofUrl = asset(data_get($proof, 'path'));
+                                    $isImage = (bool) preg_match('/\.(jpe?g|png|webp)$/i', (string) data_get($proof, 'path'));
+                                @endphp
+                                <li style="margin-top: 0.5rem;">
+                                    <a class="inline-link" href="{{ $proofUrl }}" target="_blank" rel="noopener">
+                                        @if ($isImage)
+                                            <img src="{{ $proofUrl }}" alt="{{ __('messages.receipts.view_proof') }}" style="max-width: 160px; max-height: 160px; display: block; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                                        @else
+                                            {{ __('messages.receipts.view_proof') }}
+                                        @endif
+                                    </a>
+                                    <p class="form-help">{{ __('messages.checkout.' . $attempt->provider) }} — {{ $attempt->created_at?->format('d/m/Y H:i') }}</p>
+                                </li>
+                            @endforeach
+                        </ul>
                     @endif
                 </div>
 
@@ -152,6 +172,22 @@
                         <input name="provider_reference" type="text" placeholder="{{ __('messages.receipts.reference_placeholder') }}">
                         <button type="submit" class="btn btn-primary btn-full">{{ __('messages.receipts.confirm_offline') }}</button>
                     </form>
+                </div>
+
+                <div class="card" style="margin-top: 1rem;">
+                    <h2>{{ __('messages.receipts.title') }}</h2>
+                    @if ($reservation->receipts->isNotEmpty())
+                        <ul>
+                            @foreach ($reservation->receipts as $receipt)
+                                <li><a class="inline-link" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.receipts.download', ['number' => $receipt->receipt_number]) }}</a></li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <form action="{{ route('admin.reservations.receipt.generate', $reservation) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-ghost btn-full">{{ __('messages.receipts.generate') }}</button>
+                        </form>
+                    @endif
                 </div>
             </aside>
         </div>

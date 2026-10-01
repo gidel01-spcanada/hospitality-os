@@ -28,7 +28,8 @@
 
         <div class="form-actions">
             <x-button type="submit" variant="primary">{{ __('messages.admin.save_category') }}</x-button>
-            <x-button tag="a" href="{{ route('admin.amenities.categories.show', $category) }}" variant="secondary">{{ __('messages.admin.cancel') }}</x-button>
+            <x-button tag="a" href="{{ route('admin.amenities.categories.show', $category) }}" variant="ghost">{{ __('messages.admin.manage_amenities') }}</x-button>
+            <x-button tag="a" href="{{ route('admin.amenities.index') }}" variant="secondary">{{ __('messages.admin.cancel') }}</x-button>
         </div>
     </form>
 </x-card>

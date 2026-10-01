@@ -262,6 +262,37 @@ class AuthAndAdminFlowTest extends TestCase
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'host@example.com', 'template' => 'staff_account_invitation']);
     }
 
+    public function test_admin_category_edit_redirects_back_to_category_list_and_shows_manage_equipment_action(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($admin);
+
+        $category = \App\Models\AmenityCategory::query()->create([
+            'tenant_id' => $admin->tenant_id,
+            'slug' => 'bathroom',
+            'name_en' => 'Bathroom',
+            'name_fr' => 'Salle de bain',
+            'sort_order' => 10,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.amenities.categories.edit', $category))
+            ->assertOk()
+            ->assertSee(route('admin.amenities.index'))
+            ->assertSee(route('admin.amenities.categories.show', $category));
+
+        $this->actingAs($admin)
+            ->put(route('admin.amenities.categories.update', $category), [
+                'name_en' => 'Bathroom updated',
+                'name_fr' => 'Salle de bain mise à jour',
+            ])
+            ->assertRedirect(route('admin.amenities.index'));
+
+        $this->assertDatabaseHas('amenity_categories', ['id' => $category->id, 'name_en' => 'Bathroom updated']);
+    }
+
     public function test_host_is_scoped_to_their_assigned_establishment_only(): void
     {
         $this->seed(DatabaseSeeder::class);
