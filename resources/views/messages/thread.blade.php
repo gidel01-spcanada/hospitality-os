@@ -6,6 +6,9 @@
 @section('content')
     <div class="{{ $isStaff ? 'admin-content' : 'container section' }}">
         <div class="admin-page-header">
+            @if ($isStaff)
+                <a class="btn btn-ghost btn-small" href="{{ route('admin.messages.index') }}">{{ __('messages.admin.back_list') }}</a>
+            @endif
             <h1 class="admin-page-title">{{ $thread->establishment->name }}</h1>
             <p class="admin-page-description">{{ $isStaff ? $thread->customer->name : __('messages.messages.description') }}</p>
         </div>

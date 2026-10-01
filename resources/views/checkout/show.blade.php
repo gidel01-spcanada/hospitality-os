@@ -106,16 +106,19 @@
                         $onlineMethods = collect($paymentMethods)->except(['pay_later', 'interac', 'wise', 'revolut']);
                         $providerOrder = ['paypal', 'fedapay', 'cinetpay', 'mpesa', 'pay_later', 'interac', 'wise', 'revolut'];
                         $orderedMethods = collect($providerOrder)->filter(fn ($provider) => isset($paymentMethods[$provider]))->mapWithKeys(fn ($provider) => [$provider => $paymentMethods[$provider]]);
+                        $selectedProvider = $reservation->paymentAttempts->last()?->provider;
                         $useAccordion = $orderedMethods->count() > 1;
+                        $defaultOpenProvider = $orderedMethods->has($selectedProvider) ? $selectedProvider : $orderedMethods->keys()->first();
                     @endphp
 
                     <div class="space-y-3">
                         @foreach ($orderedMethods as $provider => $method)
                             @php
                                 $providerAttempt = $reservation->paymentAttempts->where('provider', $provider)->last();
+                                $shouldOpenAccordion = $useAccordion && $provider === $defaultOpenProvider;
                             @endphp
                             @if ($useAccordion)
-                                <details class="group rounded-lg border border-slate-200" name="payment-method-accordion" @if($loop->first) open @endif>
+                                <details class="group rounded-lg border border-slate-200" name="payment-method-accordion"@if($shouldOpenAccordion) open @endif>
                                     <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-slate-800">
                                         <span>{{ __('messages.checkout.' . $provider) }}</span>
                                         <span class="text-slate-400 transition-transform group-open:rotate-180">&#9662;</span>

@@ -191,12 +191,14 @@
                                     @if ($reviewAverage)<span class="property-card-rating">★ {{ $reviewAverage }} · {{ __('messages.properties.review_count_short', ['count' => $reviewCount]) }}</span>@else<span class="property-card-rating property-card-new">{{ __('messages.properties.new_listing') }}</span>@endif
                                 </div>
                                 <h3>{{ $property->localized('name') }}</h3>
-                                <p class="property-card-location">{{ implode(', ', array_filter([$property->city, $property->country])) ?: __('messages.properties.location_on_request') }}</p>
-                                <p class="property-card-summary">{{ $property->displaySummary() }}</p>
-                                <p class="property-card-meta">{{ __('messages.properties.guest_summary_full', ['guests' => $property->max_guests, 'bedrooms' => $property->bedrooms, 'beds' => $property->beds, 'bathrooms' => $property->bathrooms]) }}</p>
-                                @if ($amenityNames->isNotEmpty())<p class="property-card-amenities">{{ $amenityNames->implode(' · ') }}@if($property->amenities->count() > $amenityNames->count()) · +{{ $property->amenities->count() - $amenityNames->count() }}@endif</p>@endif
-                                @if ($flexibleCancellation)<p class="property-card-policy">{{ __('messages.properties.flexible_cancellation') }}</p>@endif
-                                @if ($hasDateSearch)<p class="property-card-availability">{{ __('messages.properties.available_for_dates') }}</p>@endif
+                                <div class="property-card-detail-stack">
+                                    <p class="property-card-location">{{ implode(', ', array_filter([$property->city, $property->country])) ?: __('messages.properties.location_on_request') }}</p>
+                                    <p class="property-card-summary">{{ $property->displaySummary() }}</p>
+                                    <p class="property-card-meta">{{ __('messages.properties.guest_summary_full', ['guests' => $property->max_guests, 'bedrooms' => $property->bedrooms, 'beds' => $property->beds, 'bathrooms' => $property->bathrooms]) }}</p>
+                                    @if ($amenityNames->isNotEmpty())<p class="property-card-amenities">{{ $amenityNames->implode(' · ') }}@if($property->amenities->count() > $amenityNames->count()) · +{{ $property->amenities->count() - $amenityNames->count() }}@endif</p>@endif
+                                    @if ($flexibleCancellation)<p class="property-card-policy">{{ __('messages.properties.flexible_cancellation') }}</p>@endif
+                                    @if ($hasDateSearch)<p class="property-card-availability">{{ __('messages.properties.available_for_dates') }}</p>@endif
+                                </div>
                                 <div class="property-card-footer">
                                     <div class="property-price-footer">
                                         @php

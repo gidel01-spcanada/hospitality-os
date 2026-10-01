@@ -31,11 +31,15 @@ class PlatformAdminController extends Controller
 
     public function create(): View
     {
+        abort_unless(config('platform.mode') === 'cloud', 404);
+
         return view('platform.tenants.create');
     }
 
     public function store(Request $request, AccountInvitationService $invitations): RedirectResponse
     {
+        abort_unless(config('platform.mode') === 'cloud', 404);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', 'unique:tenants,slug'],

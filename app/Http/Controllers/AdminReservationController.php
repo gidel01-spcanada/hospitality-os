@@ -165,7 +165,7 @@ class AdminReservationController extends Controller
     {
         $this->ownedReservation($reservation);
 
-        $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
+        $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts', 'receipts']);
         $customerThread = $this->ensureCustomerThread($reservation);
 
         return view('admin.reservations.show', compact('reservation', 'customerThread'));
@@ -309,6 +309,19 @@ class AdminReservationController extends Controller
 
         return redirect()->route('admin.reservations.show', $reservation)
             ->with('status', __('messages.flash.payment_link_queued'));
+    }
+
+    public function generateReceipt(Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+
+        $attempt = $reservation->paymentAttempts()->where('status', 'paid')->latest()->first();
+        abort_unless($attempt, 422, __('messages.receipts.no_paid_attempt'));
+
+        $emailService->issueReceiptAndQueueEmail($reservation, $attempt, auth()->user()?->email);
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('status', __('messages.receipts.generated_and_sent'));
     }
 
     private function tenantProperties()
