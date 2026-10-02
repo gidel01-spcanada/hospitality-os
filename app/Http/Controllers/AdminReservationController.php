@@ -10,6 +10,7 @@ use App\Models\Property;
 use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
+use App\Services\PaymentProofService;
 use App\Services\ReservationEmailService;
 use App\Support\CurrentTenant;
 use Carbon\Carbon;
@@ -19,7 +20,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -136,11 +136,18 @@ class AdminReservationController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
+        $viewOptions = $request->validate([
+            'view' => ['nullable', 'in:list,calendar'],
+            'month' => ['nullable', 'date_format:Y-m'],
+        ]);
+        $viewMode = $viewOptions['view'] ?? 'list';
+        $calendarMonth = Carbon::createFromFormat('!Y-m', $viewOptions['month'] ?? now()->format('Y-m'));
+        $calendarStart = $calendarMonth->copy()->startOfWeek(Carbon::MONDAY);
+        $calendarEnd = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
-        $reservations = Reservation::query()
+        $reservationQuery = Reservation::query()
             ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
             ->when($user && $user->isHost(), fn ($query) => $query->whereHas('property', fn ($q) => $q->whereIn('establishment_id', $user->establishments()->pluck('establishments.id'))))
-            ->with(['property', 'guest'])
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
 
@@ -153,12 +160,30 @@ class AdminReservationController extends Controller
             })
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('check_in', '>=', $request->date('date_from')))
-            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('check_out', '<=', $request->date('date_to')))
+            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('check_out', '<=', $request->date('date_to')));
+
+        $reservations = (clone $reservationQuery)
+            ->with(['property', 'guest'])
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.bookings.index', ['bookings' => $reservations]);
+        $calendarDays = collect();
+        $calendarReservations = collect();
+        if ($viewMode === 'calendar') {
+            for ($day = $calendarStart->copy(); $day->lte($calendarEnd); $day->addDay()) {
+                $calendarDays->push($day->copy());
+            }
+
+            $calendarReservations = (clone $reservationQuery)
+                ->with(['property', 'guest'])
+                ->whereDate('check_in', '<=', $calendarEnd->toDateString())
+                ->whereDate('check_out', '>', $calendarStart->toDateString())
+                ->orderBy('check_in')
+                ->get();
+        }
+
+        return view('admin.bookings.index', compact('reservations', 'calendarReservations', 'calendarDays', 'calendarMonth', 'viewMode') + ['bookings' => $reservations]);
     }
 
     public function show(Reservation $reservation): View
@@ -235,11 +260,6 @@ class AdminReservationController extends Controller
             'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
         ]);
 
-        /** @var UploadedFile $file */
-        $file = $validated['payment_proof'];
-        $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'reservations' . DIRECTORY_SEPARATOR . $reservation->id;
-        File::ensureDirectoryExists($directory);
-
         $attempt = $reservation->paymentAttempts()->latest()->first();
         if (! $attempt) {
             $attempt = $reservation->paymentAttempts()->create([
@@ -253,24 +273,7 @@ class AdminReservationController extends Controller
             ]);
         }
 
-        $oldPath = data_get($attempt->payload, 'payment_proof.path');
-        if ($oldPath && File::exists(public_path($oldPath))) {
-            File::delete(public_path($oldPath));
-        }
-
-        $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . strtolower($file->getClientOriginalExtension());
-        $file->move($directory, $filename);
-        $relativePath = 'uploads/reservations/' . $reservation->id . '/' . $filename;
-        $attempt->update([
-            'payload' => array_merge((array) $attempt->payload, [
-                'payment_proof' => [
-                    'path' => $relativePath,
-                    'original_name' => $file->getClientOriginalName(),
-                    'uploaded_by' => auth()->id(),
-                    'uploaded_at' => now()->toIso8601String(),
-                ],
-            ]),
-        ]);
+        app(PaymentProofService::class)->attach($reservation, $attempt, $validated['payment_proof'], auth()->id());
 
         return back()->with('status', __('messages.receipts.proof_uploaded'));
     }
@@ -282,6 +285,7 @@ class AdminReservationController extends Controller
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'payment_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
         ]);
 
         $oldStatus = $reservation->status;
@@ -289,8 +293,28 @@ class AdminReservationController extends Controller
 
         $reservation->update([
             'status' => $newStatus,
-            'notes' => trim(($reservation->notes ?? '') . PHP_EOL . ($validated['notes'] ?? 'Status updated by admin.')),
         ]);
+
+        if (filled($validated['notes'] ?? null)) {
+            $reservation->update(['notes' => trim(($reservation->notes ?? '') . PHP_EOL . $validated['notes'])]);
+        }
+
+        if (isset($validated['payment_proof'])) {
+            $attempt = $reservation->paymentAttempts()->latest()->first();
+            if (! $attempt) {
+                $attempt = $reservation->paymentAttempts()->create([
+                    'provider' => 'offline',
+                    'provider_reference' => 'offline-' . Str::lower(Str::random(12)),
+                    'currency' => $reservation->currency,
+                    'amount' => $reservation->total_amount,
+                    'status' => 'created',
+                    'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                    'payload' => [],
+                ]);
+            }
+
+            app(PaymentProofService::class)->attach($reservation, $attempt, $validated['payment_proof'], auth()->id());
+        }
 
         if ($oldStatus !== $newStatus) {
             $emailService->queueForReservation($reservation, 'reservation_status_updated');
@@ -298,6 +322,16 @@ class AdminReservationController extends Controller
 
         return redirect()->route('admin.reservations.show', $reservation)
             ->with('status', __('messages.flash.reservation_status_updated'));
+    }
+
+    public function updateNotes(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        $validated = $request->validate(['notes' => ['nullable', 'string', 'max:5000']]);
+        $reservation->update(['notes' => $validated['notes'] ?? null]);
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('status', __('messages.flash.reservation_notes_saved'));
     }
 
     public function sendPaymentLink(Reservation $reservation, ReservationEmailService $emailService): RedirectResponse

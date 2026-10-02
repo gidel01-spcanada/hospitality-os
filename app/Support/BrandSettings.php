@@ -13,7 +13,10 @@ class BrandSettings
     public const DEFAULTS = [
         'site_name' => 'Afrik Appart',
         'site_icon' => 'A',
+        'site_icon_only' => '0',
+        'site_favicon_url' => '',
         'customer_theme' => 'emerald-gold',
+        'homepage_background_image' => 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format',
         'site_tagline' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
         'contact_email' => 'support@afrikappart.example',
         'support_phone' => '+229 00 00 00 00',
@@ -87,6 +90,11 @@ class BrandSettings
                 ]
             );
         }
+    }
+
+    public static function forget(string $key): void
+    {
+        self::query()->where('key', $key)->delete();
     }
 
     private static function query(): \Illuminate\Database\Query\Builder

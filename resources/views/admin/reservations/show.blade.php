@@ -3,9 +3,23 @@
     @section('title', $reservation->reservation_ref . ' | ' . __('messages.admin.reservation'))
 
 @section('content')
-    <div class="admin-page-header">
-        <h1 class="admin-page-title">{{ $reservation->reservation_ref }}</h1>
-        <p class="admin-page-description">{{ $reservation->property?->name ?? __('messages.admin.property') }}</p>
+    <div class="admin-page-header reservation-detail-header">
+        <div>
+            <h1 class="admin-page-title">{{ $reservation->reservation_ref }}</h1>
+            <p class="admin-page-description">{{ $reservation->property?->name ?? __('messages.admin.property') }}</p>
+        </div>
+        <div class="reservation-header-actions">
+            <a class="btn btn-ghost" href="{{ route('admin.reservations.edit', $reservation) }}">{{ __('messages.admin.edit') }}</a>
+            @if ($customerThread)
+                <a href="{{ route('admin.messages.show', $customerThread) }}" class="btn btn-ghost">{{ __('messages.admin.message_customer') }}</a>
+            @endif
+            @if (auth()->user()->isAdmin())
+                <form action="{{ route('admin.reservations.destroy', $reservation) }}" method="POST" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger">{{ __('messages.admin.delete_reservation') }}</button>
+                </form>
+            @endif
+        </div>
     </div>
 
     <x-card>
@@ -74,17 +88,6 @@
             </div>
 
             <aside class="admin-panel">
-                <div class="admin-action-stack">
-                    @if ($customerThread)
-                        <a href="{{ route('admin.messages.show', $customerThread) }}" class="btn btn-ghost btn-full">{{ __('messages.admin.message_customer') }}</a>
-                    @endif
-
-                    <form action="{{ route('admin.reservations.destroy', $reservation) }}" method="POST" data-confirm-message="{{ __('messages.admin.delete_reservation_confirmation') }}">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-full">{{ __('messages.admin.delete_reservation') }}</button>
-                    </form>
-                </div>
-
                 <div class="card" style="margin-top: 1rem;">
                     <div class="admin-note-header">
                         <h2>{{ __('messages.admin.internal_note') }}</h2>
@@ -97,10 +100,19 @@
                     @endif
                 </div>
 
-                <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form" id="reservation-internal-note-editor" style="margin-top: 1rem;">
+                <form action="{{ route('admin.reservations.notes.update', $reservation) }}" method="POST" class="booking-form" id="reservation-internal-note-editor" style="margin-top: 1rem;">
                     @csrf
                     @method('PATCH')
+                    <div>
+                        <label for="notes">{{ __('messages.admin.internal_note') }}</label>
+                        <textarea id="notes" name="notes" rows="4" placeholder="{{ __('messages.admin.add_management_note') }}">{{ old('notes', $reservation->notes) }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_note') }}</button>
+                </form>
 
+                <form action="{{ route('admin.reservations.update-status', $reservation) }}" method="POST" class="booking-form" enctype="multipart/form-data" style="margin-top: 1rem;">
+                    @csrf
+                    @method('PATCH')
                     <div>
                         <label for="status">{{ __('messages.admin.status') }}</label>
                         <select id="status" name="status">
@@ -109,13 +121,11 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div>
-                        <label for="notes">{{ __('messages.admin.internal_note') }}</label>
-                        <textarea id="notes" name="notes" rows="4" placeholder="{{ __('messages.admin.add_management_note') }}">{{ old('notes', $reservation->notes) }}</textarea>
+                        <label for="status_payment_proof">{{ __('messages.receipts.payment_proof') }}</label>
+                        <input id="status_payment_proof" name="payment_proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
                     </div>
-
-                    <button type="submit" class="btn btn-primary btn-full">{{ __('messages.admin.save_status') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ __('messages.admin.save_status') }}</button>
                 </form>
 
                 @if ($reservation->canSendPaymentLink())
@@ -131,13 +141,6 @@
                 @endif
 
                 <div class="payment-link-actions" style="margin-top: 1rem;">
-                    <form action="{{ route('admin.reservations.payment-proof.upload', $reservation) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <label for="payment_proof">{{ __('messages.receipts.payment_proof') }}</label>
-                        <input id="payment_proof" name="payment_proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required>
-                        <button type="submit" class="btn btn-ghost btn-full">{{ __('messages.receipts.upload_proof') }}</button>
-                    </form>
-
                     @php
                         $proofAttempts = $reservation->paymentAttempts
                             ->filter(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path'))
@@ -148,17 +151,10 @@
                             @foreach ($proofAttempts as $attempt)
                                 @php
                                     $proof = data_get($attempt->payload, 'payment_proof');
-                                    $proofUrl = asset(data_get($proof, 'path'));
-                                    $isImage = (bool) preg_match('/\.(jpe?g|png|webp)$/i', (string) data_get($proof, 'path'));
+                                    $proofUrl = route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]);
                                 @endphp
                                 <li style="margin-top: 0.5rem;">
-                                    <a class="inline-link" href="{{ $proofUrl }}" target="_blank" rel="noopener">
-                                        @if ($isImage)
-                                            <img src="{{ $proofUrl }}" alt="{{ __('messages.receipts.view_proof') }}" style="max-width: 160px; max-height: 160px; display: block; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
-                                        @else
-                                            {{ __('messages.receipts.view_proof') }}
-                                        @endif
-                                    </a>
+                                    <a class="inline-link" href="{{ $proofUrl }}">{{ data_get($proof, 'original_name') ?: __('messages.receipts.download_proof') }}</a>
                                     <p class="form-help">{{ __('messages.checkout.' . $attempt->provider) }} — {{ $attempt->created_at?->format('d/m/Y H:i') }}</p>
                                 </li>
                             @endforeach
@@ -167,10 +163,13 @@
                 </div>
 
                 <div class="payment-link-actions" style="margin-top: 1rem;">
-                    <form action="{{ route('admin.reservations.confirm-offline-payment', $reservation) }}" method="POST">
+                    <form action="{{ route('admin.reservations.confirm-offline-payment', $reservation) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <input name="provider_reference" type="text" placeholder="{{ __('messages.receipts.reference_placeholder') }}">
-                        <button type="submit" class="btn btn-primary btn-full">{{ __('messages.receipts.confirm_offline') }}</button>
+                        <label for="confirm_payment_proof">{{ __('messages.receipts.payment_proof') }}</label>
+                        <input id="confirm_payment_proof" name="payment_proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required>
+                        <label for="provider_reference">{{ __('messages.receipts.reference_placeholder') }}</label>
+                        <input id="provider_reference" name="provider_reference" type="text">
+                        <button type="submit" class="btn btn-primary">{{ __('messages.receipts.confirm_offline') }}</button>
                     </form>
                 </div>
 

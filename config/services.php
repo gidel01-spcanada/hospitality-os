@@ -59,6 +59,16 @@ return [
         'daily_limit' => (int) env('PROPERTY_COPY_DAILY_LIMIT', 10),
     ],
 
+    'help_chat' => [
+        'api_key' => env('GROQ_API_KEY'),
+        'base_url' => env('PROPERTY_COPY_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('HELP_CHAT_MODEL', env('PROPERTY_COPY_MODEL', 'openai/gpt-oss-20b')),
+    ],
+
+    'sprintpay' => [
+        'feedback_email' => env('SPRINTPAY_FEEDBACK_EMAIL'),
+    ],
+
     'analytics' => [
         'enabled' => (bool) env('ANALYTICS_ENABLED', false),
         'ga4_measurement_id' => env('GA4_MEASUREMENT_ID'),

@@ -31,7 +31,7 @@
                 <summary>{{ __('messages.messages.start_thread') }}</summary>
                 <form method="POST" action="{{ route('messages.store') }}" class="message-form">
                     @csrf
-                    <label for="establishment_id">{{ __('messages.messages.establishment') }}</label>
+                    <label for="establishment_id">{{ __('messages.messages.send_to') }}</label>
                     <select id="establishment_id" name="establishment_id" required>
                         <option value="">{{ __('messages.messages.select_establishment') }}</option>
                         @foreach ($establishments as $establishment)

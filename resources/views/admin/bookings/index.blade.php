@@ -11,12 +11,18 @@
             <h1 class="admin-page-title">{{ __('messages.admin.reservations') }}</h1>
             <p class="admin-page-description">{{ __('messages.admin.reservations_description') }}</p>
         </div>
-        <x-button tag="a" href="/admin/bookings/create" variant="primary">
-            <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
-                <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75V20.25a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ __('messages.admin.new_booking') }}</span>
-        </x-button>
+        <div class="booking-page-header-actions">
+            <div class="reservation-view-switcher" role="group" aria-label="{{ __('messages.admin.reservation_view') }}">
+                <a class="btn btn-small {{ $viewMode === 'list' ? 'btn-primary' : 'btn-ghost' }}" href="{{ route('admin.bookings.index', array_merge(request()->except(['view', 'month']), ['view' => 'list'])) }}" aria-pressed="{{ $viewMode === 'list' ? 'true' : 'false' }}">{{ __('messages.admin.list_view') }}</a>
+                <a class="btn btn-small {{ $viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost' }}" href="{{ route('admin.bookings.index', array_merge(request()->except(['view', 'month']), ['view' => 'calendar', 'month' => $calendarMonth->format('Y-m')])) }}" aria-pressed="{{ $viewMode === 'calendar' ? 'true' : 'false' }}">{{ __('messages.admin.calendar_view') }}</a>
+            </div>
+            <x-button tag="a" href="/admin/bookings/create" variant="primary">
+                <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+                    <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75V20.25a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ __('messages.admin.new_booking') }}</span>
+            </x-button>
+        </div>
     </div>
 </div>
 
@@ -60,6 +66,35 @@
         </form>
     </div>
     <div class="booking-list-section">
+@if ($viewMode === 'calendar')
+    <section class="reservation-calendar" data-reservation-view="calendar" aria-label="{{ __('messages.admin.calendar_view') }}">
+        <div class="reservation-calendar-toolbar">
+            <a class="btn btn-ghost btn-small" href="{{ route('admin.bookings.index', array_merge(request()->except(['view', 'month']), ['view' => 'calendar', 'month' => $calendarMonth->copy()->subMonth()->format('Y-m')])) }}">{{ __('messages.admin.previous_month') }}</a>
+            <h2>{{ $calendarMonth->translatedFormat('F Y') }}</h2>
+            <a class="btn btn-ghost btn-small" href="{{ route('admin.bookings.index', array_merge(request()->except(['view', 'month']), ['view' => 'calendar', 'month' => $calendarMonth->copy()->addMonth()->format('Y-m')])) }}">{{ __('messages.admin.next_month') }}</a>
+        </div>
+        <div class="reservation-calendar-scroll">
+            <div class="reservation-calendar-grid">
+                @foreach ($calendarDays->take(7) as $weekday)
+                    <div class="reservation-calendar-weekday">{{ $weekday->translatedFormat('D') }}</div>
+                @endforeach
+                @foreach ($calendarDays as $day)
+                    <section class="reservation-calendar-day {{ $day->month === $calendarMonth->month ? '' : 'is-outside-month' }}">
+                        <time datetime="{{ $day->toDateString() }}">{{ $day->day }}</time>
+                        @foreach ($calendarReservations as $booking)
+                            @if ($booking->check_in->lte($day) && $booking->check_out->gt($day))
+                                <a class="reservation-calendar-item" href="{{ route('admin.reservations.show', $booking) }}">
+                                    <strong>{{ $booking->guest?->full_name ?? $booking->email }}</strong>
+                                    <span>{{ $booking->property?->name }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                    </section>
+                @endforeach
+            </div>
+        </div>
+    </section>
+@else
 <!-- Bookings Table -->
     <div class="admin-table-wrap" tabindex="0" role="region" aria-label="{{ __('messages.admin.reservations') }}">
         <table class="admin-table">
@@ -144,6 +179,7 @@
             {{ $bookings->links() }}
         </div>
     @endif
+@endif
     </div>
 </x-card>
 @endsection

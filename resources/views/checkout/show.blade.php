@@ -148,6 +148,9 @@
                                         <span class="text-slate-500">{{ $attempt->status }}</span>
                                     </div>
                                     <div class="mt-1 text-xs text-slate-500">{{ $attempt->provider_reference }}</div>
+                                    @if (data_get($attempt->payload, 'payment_proof.path'))
+                                        <a class="mt-2 inline-block text-sm text-amber-700 underline" href="{{ route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt, 'token' => $token]) }}">{{ data_get($attempt->payload, 'payment_proof.original_name') ?: __('messages.receipts.download_proof') }}</a>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>

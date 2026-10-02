@@ -7,6 +7,7 @@ use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\User;
+use App\Notifications\GuestAccountSetupNotification;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -37,6 +38,94 @@ class PaymentWorkflowTest extends TestCase
             ->assertSee(__('messages.auth.create_account'));
     }
 
+    public function test_customer_can_skip_checkout_password_setup_and_continue_to_payment(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $customer = User::factory()->create([
+            'email' => 'skip-checkout@example.com',
+            'role' => 'customer',
+            'email_verified_at' => null,
+            'last_login_at' => null,
+        ]);
+        $reservation = Reservation::query()->create([
+            'user_id' => $customer->id,
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-SKIP-SETUP-001',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1,
+            'currency' => 'XOF',
+            'email' => $customer->email,
+            'total_amount' => 10000,
+        ]);
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee(__('messages.checkout.identity_title'))
+            ->assertSee(__('messages.checkout.skip_password_setup'))
+            ->assertDontSee('id="checkout-payment"', false);
+
+        $this->post(route('checkout.skip-password-setup', $reservation), ['token' => $reservation->checkout_token])
+            ->assertRedirect($checkoutUrl);
+
+        $this->get($checkoutUrl)->assertOk()->assertSee('id="checkout-payment"', false);
+    }
+
+    public function test_checkout_password_setup_confirms_email_and_returns_to_payment(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $customer = User::factory()->create([
+            'email' => 'setup-checkout@example.com',
+            'role' => 'customer',
+            'email_verified_at' => null,
+            'last_login_at' => null,
+        ]);
+        $reservation = Reservation::query()->create([
+            'user_id' => $customer->id,
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-SETUP-RETURN-001',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1,
+            'currency' => 'XOF',
+            'email' => $customer->email,
+            'total_amount' => 10000,
+        ]);
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+
+        $this->post(route('checkout.password-setup', $reservation), ['token' => $reservation->checkout_token])
+            ->assertRedirect();
+
+        $setupMail = null;
+        \Illuminate\Support\Facades\Notification::assertSentTo($customer, GuestAccountSetupNotification::class, function ($notification) use ($customer, &$setupMail): bool {
+            $setupMail = $notification->toMail($customer);
+
+            return true;
+        });
+        $resetUrl = $setupMail->actionUrl;
+        parse_str((string) parse_url($resetUrl, PHP_URL_QUERY), $resetQuery);
+        $resetToken = basename((string) parse_url($resetUrl, PHP_URL_PATH));
+
+        $this->get($resetUrl)->assertOk()->assertSee('name="checkout_return"', false);
+        $this->post(route('password.update'), [
+            'token' => $resetToken,
+            'email' => $customer->email,
+            'checkout_return' => $resetQuery['checkout_return'],
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
+        ])->assertRedirect($checkoutUrl);
+
+        $this->assertNotNull($customer->fresh()->email_verified_at);
+        $this->assertNotNull($customer->fresh()->last_login_at);
+        $this->get($checkoutUrl)->assertOk()->assertSee('id="checkout-payment"', false);
+    }
+
     public function test_checkout_keeps_last_selected_payment_method_accordion_open_by_default(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -56,8 +145,15 @@ class PaymentWorkflowTest extends TestCase
             'country' => 'Bénin',
             'metadata' => ['source' => 'test'],
         ]);
+        $customer = User::factory()->create([
+            'email' => 'charlie@example.com',
+            'role' => 'customer',
+            'email_verified_at' => now(),
+            'last_login_at' => now(),
+        ]);
 
         $reservation = Reservation::query()->create([
+            'user_id' => $customer->id,
             'property_id' => $property->id,
             'guest_id' => $guest->id,
             'reservation_ref' => 'AFK-PAY-OPEN-001',
@@ -135,7 +231,8 @@ class PaymentWorkflowTest extends TestCase
         $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => str_repeat('0', 64)]))
             ->assertRedirect(route('reservation.access'));
 
-        $this->get($checkoutUrl)
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get($checkoutUrl)
             ->assertOk()
             ->assertSee('Finaliser la réservation');
 
@@ -244,7 +341,8 @@ class PaymentWorkflowTest extends TestCase
 
         $this->app->instance('env', 'production');
 
-        $this->get($checkoutUrl)
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get($checkoutUrl)
             ->assertOk()
             ->assertDontSee(__('messages.checkout.simulate'));
 
@@ -297,7 +395,8 @@ class PaymentWorkflowTest extends TestCase
         ]);
 
         $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
-        $this->get($checkoutUrl)
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get($checkoutUrl)
             ->assertOk()
             ->assertSee('FedaPay')
             ->assertSee('type="hidden" name="provider" value="fedapay"', false)
@@ -329,7 +428,8 @@ class PaymentWorkflowTest extends TestCase
             'subtotal' => 100000, 'fees' => 10000, 'taxes' => 5000, 'total_amount' => 115000, 'source' => 'website',
         ]);
 
-        $this->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
             ->assertOk()
             ->assertSee(__('messages.checkout.wise_email', ['email' => 'wise@afrikappart.test']));
     }
@@ -348,6 +448,7 @@ class PaymentWorkflowTest extends TestCase
             ],
         ]);
         $guest = ReservationGuest::create(['full_name' => 'Proof Guest', 'email' => 'proof-guest@example.com']);
+        $customer = User::factory()->create(['name' => 'Proof Guest', 'email' => $guest->email, 'role' => 'customer']);
         $reservation = Reservation::create([
             'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-PAY-PROOF',
             'status' => 'pending', 'check_in' => now()->addDay()->toDateString(), 'check_out' => now()->addDays(3)->toDateString(),
@@ -358,7 +459,10 @@ class PaymentWorkflowTest extends TestCase
         $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
         $offlineProofUrl = route('checkout.offline-proof', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
 
-        $this->get($checkoutUrl)->assertOk()->assertSee(__('messages.checkout.i_have_paid'));
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee(__('messages.checkout.i_have_paid'));
 
         $this->post($offlineProofUrl, [
             'provider' => 'wise',
@@ -370,6 +474,16 @@ class PaymentWorkflowTest extends TestCase
 
         $attempt = $reservation->paymentAttempts()->where('provider', 'wise')->firstOrFail();
         $this->assertNotEmpty(data_get($attempt->payload, 'payment_proof.path'));
+        $this->get(route('reservations.payment-proof.download', [
+            'reservation' => $reservation,
+            'attempt' => $attempt,
+            'token' => $reservation->checkout_token,
+        ]))->assertDownload('receipt.pdf');
+
+        $this->actingAs($customer)
+            ->get(route('dashboard.reservations.show', $reservation))
+            ->assertOk()
+            ->assertSee(route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]), false);
 
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $this->assertDatabaseHas('email_outbox', [
@@ -385,7 +499,7 @@ class PaymentWorkflowTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))
             ->assertOk()
-            ->assertSee(asset(data_get($attempt->payload, 'payment_proof.path')), false);
+                ->assertSee(route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]), false);
     }
 
     public function test_only_staff_can_simulate_payment_in_production(): void
@@ -597,7 +711,8 @@ class PaymentWorkflowTest extends TestCase
 
         $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
 
-        $this->get($checkoutUrl)
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get($checkoutUrl)
             ->assertOk()
             ->assertSee('Garantie d’annulation requise');
 

@@ -14,6 +14,7 @@ class GuestAccountSetupNotification extends Notification
     public function __construct(
         private readonly string $token,
         private readonly string $reservationReference,
+        private readonly ?string $checkoutReturn = null,
     ) {
     }
 
@@ -37,6 +38,7 @@ class GuestAccountSetupNotification extends Notification
             ->action(__('messages.account_setup.set_password'), route('password.reset', [
                 'token' => $this->token,
                 'email' => $notifiable->getEmailForPasswordReset(),
+                'checkout_return' => $this->checkoutReturn,
             ]))
             ->line(__('messages.account_setup.expiry'));
     }

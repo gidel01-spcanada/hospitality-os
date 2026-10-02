@@ -109,6 +109,16 @@
             </div>
         @endif
 
+        @php($paymentProofAttempts = $reservation->paymentAttempts->filter(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path')))
+        @if ($paymentProofAttempts->isNotEmpty())
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.receipts.payment_proof') }}</h2>
+                @foreach ($paymentProofAttempts as $attempt)
+                    <a class="btn btn-ghost" href="{{ route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]) }}">{{ data_get($attempt->payload, 'payment_proof.original_name') ?: __('messages.receipts.download_proof') }}</a>
+                @endforeach
+            </div>
+        @endif
+
         <div class="summary-card full-width">
             <h2>{{ __('messages.reservation.amounts') }}</h2>
             <ul>

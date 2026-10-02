@@ -36,6 +36,21 @@
                         <input id="site_icon" name="site_icon" type="text" maxlength="3" value="{{ old('site_icon', $brand['site_icon'] ?? 'A') }}">
                     </div>
 
+                    <label class="checkbox-row" for="site_icon_only">
+                        <input id="site_icon_only" name="site_icon_only" type="checkbox" value="1" @checked(old('site_icon_only', $brand['site_icon_only'] ?? '0') === '1')>
+                        <span>{{ __('messages.admin.site_icon_only') }}</span>
+                    </label>
+
+                    <div>
+                        <label for="site_favicon_url">{{ __('messages.admin.site_favicon_url') }}</label>
+                        <input id="site_favicon_url" name="site_favicon_url" type="url" value="{{ old('site_favicon_url', $brand['site_favicon_url'] ?? '') }}" placeholder="https://">
+                    </div>
+
+                    <label class="checkbox-row" for="clear_site_favicon">
+                        <input id="clear_site_favicon" name="clear_site_favicon" type="checkbox" value="1" @checked(old('clear_site_favicon'))>
+                        <span>{{ __('messages.admin.clear_site_favicon') }}</span>
+                    </label>
+
                     @if (config('platform.mode') === 'on_premise')
                         <div>
                             <label for="customer_theme">{{ __('messages.admin.customer_theme') }}</label>
@@ -51,6 +66,16 @@
                         <label for="site_tagline">{{ __('messages.admin.tagline') }}</label>
                         <input id="site_tagline" name="site_tagline" type="text" value="{{ old('site_tagline', $brand['site_tagline'] ?? 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.') }}">
                     </div>
+
+                    <div>
+                        <label for="homepage_background_image">{{ __('messages.admin.homepage_background_image') }}</label>
+                        <input id="homepage_background_image" name="homepage_background_image" type="url" value="{{ old('homepage_background_image', $brand['homepage_background_image'] ?? '') }}" placeholder="https://">
+                    </div>
+
+                    <label class="checkbox-row" for="restore_homepage_background_image">
+                        <input id="restore_homepage_background_image" name="restore_homepage_background_image" type="checkbox" value="1" @checked(old('restore_homepage_background_image'))>
+                        <span>{{ __('messages.admin.restore_homepage_background_image') }}</span>
+                    </label>
 
                     <div>
                         <label for="footer_copyright">{{ __('messages.admin.footer_copyright') }}</label>

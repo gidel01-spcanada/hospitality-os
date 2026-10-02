@@ -198,12 +198,14 @@ class CustomerDashboardTest extends TestCase
             ->assertSee('Générale')
             ->assertSee('Communications par e-mail');
 
-        $this->actingAs($admin)
-            ->post('/admin/settings', [
+        $settings = [
                 'site_name' => 'Maison Bleu',
                 'site_icon' => 'MB',
+                'site_icon_only' => '1',
+                'site_favicon_url' => 'https://images.example.com/favicon.png',
                 'customer_theme' => 'ocean-coral',
                 'site_tagline' => 'Vivez des séjours paisibles en Afrique.',
+            'homepage_background_image' => 'https://images.example.com/home.jpg',
                 'footer_copyright' => '© :year Maison Bleu. Tous droits réservés.',
                 'contact_email' => 'hello@maisonbleu.example',
                 'support_phone' => '+229 97 00 00 00',
@@ -219,23 +221,41 @@ class CustomerDashboardTest extends TestCase
                 'pre_arrival_message' => 'Nous vous attendons bientôt.',
                 'post_stay_subject' => 'Merci pour votre séjour',
                 'post_stay_message' => 'Merci pour votre confiance.',
-            ])
+            ];
+
+        $this->actingAs($admin)
+            ->post('/admin/settings', $settings)
             ->assertRedirect('/admin/settings');
 
         $this->assertDatabaseHas('settings', ['key' => 'site_name', 'value' => 'Maison Bleu']);
         $this->assertDatabaseHas('settings', ['key' => 'site_icon', 'value' => 'MB']);
+        $this->assertDatabaseHas('settings', ['key' => 'site_icon_only', 'value' => '1']);
+        $this->assertDatabaseHas('settings', ['key' => 'site_favicon_url', 'value' => 'https://images.example.com/favicon.png']);
         $this->assertDatabaseHas('settings', ['key' => 'customer_theme', 'value' => 'ocean-coral']);
         $this->assertDatabaseHas('settings', ['key' => 'contact_email', 'value' => 'hello@maisonbleu.example']);
         $this->assertDatabaseHas('settings', ['key' => 'footer_copyright', 'value' => '© :year Maison Bleu. Tous droits réservés.']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_booking_url', 'value' => 'https://www.booking.com/hotel/fr/maison-bleu.html']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_google_url', 'value' => 'https://maps.google.com/?q=Maison+Bleu']);
+        $this->assertDatabaseHas('settings', ['key' => 'homepage_background_image', 'value' => 'https://images.example.com/home.jpg']);
         $this->assertDatabaseHas('settings', ['key' => 'email_sender_name', 'value' => 'Maison Bleu']);
         $this->assertDatabaseHas('settings', ['key' => 'customer_confirmation_subject', 'value' => 'Confirmation de votre demande']);
 
         $this->get('/')
             ->assertOk()
             ->assertSee('data-site-theme="ocean-coral"', false)
-            ->assertSee('class="brand-mark">MB</span>', false);
+            ->assertSee('class="brand-mark">MB</span>', false)
+            ->assertSee('rel="icon" href="https://images.example.com/favicon.png"', false)
+            ->assertSee('brand-icon-only', false)
+            ->assertSee('https://images.example.com/home.jpg');
+
+        $this->actingAs($admin)
+            ->post('/admin/settings', $settings + ['restore_homepage_background_image' => '1'])
+            ->assertRedirect('/admin/settings');
+
+        $this->assertDatabaseMissing('settings', ['key' => 'homepage_background_image']);
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format');
 
         $this->actingAs($admin)
             ->get('/admin/users')
@@ -256,7 +276,7 @@ class CustomerDashboardTest extends TestCase
 
         $this->assertDatabaseHas('site_reviews', ['reviewer_name' => 'Amina D.', 'source' => 'booking']);
 
-        $this->get('/')->assertOk()->assertSee('Amina D.');
+        $this->get('/')->assertOk()->assertDontSee('Amina D.');
     }
 
     public function test_admin_can_import_booking_reviews_from_csv(): void

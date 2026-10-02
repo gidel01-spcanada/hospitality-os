@@ -1,4 +1,5 @@
 {{-- resources/views/layouts/admin.blade.php --}}
+@php($brand = \App\Support\BrandSettings::all())
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" @if(auth()->user()?->theme) data-theme="{{ auth()->user()->theme }}" @endif>
 <head>
@@ -6,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="@yield('description', 'Afrik Appart Admin Dashboard')" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <link rel="icon" href="{{ $brand['site_favicon_url'] ?: asset('favicon.ico') }}">
     
     <title>@yield('title', 'Admin Dashboard') - Afrik Appart</title>
 
@@ -219,6 +221,9 @@
     </script>
 
     @stack('scripts')
+    @if (filled(config('services.help_chat.api_key')))
+        @include('partials.help-chat')
+    @endif
     @include('partials.confirm-dialog')
 </body>
 </html>

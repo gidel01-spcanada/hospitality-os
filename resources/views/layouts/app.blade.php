@@ -3,6 +3,7 @@
     // Cloud mode is one unified brand across every tenant's properties -- never a tenant's own site name.
     $brand['site_name'] = \App\Support\PlatformBrand::name();
     $siteIcon = $brand['site_icon'] ?? 'A';
+    $siteIconOnly = filter_var($brand['site_icon_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
     $customerTheme = config('platform.mode') === 'on_premise' ? ($brand['customer_theme'] ?? 'emerald-gold') : 'emerald-gold';
     $currentLocale = app()->getLocale();
     $availableLocales = ['fr', 'en'];
@@ -25,6 +26,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <link rel="icon" href="{{ $brand['site_favicon_url'] ?: asset('favicon.ico') }}">
         <title>@yield('title', config('app.name', $brand['site_name'] ?? __('messages.brand.default_name')))</title>
         <meta name="description" content="{{ $seoDescription }}">
         <link rel="canonical" href="{{ url()->current() }}">
@@ -49,9 +51,9 @@
     <body class="app-shell">
         <header class="topbar">
             <div class="container topbar-inner">
-                <a href="{{ route('home') }}" class="brand" aria-label="{{ $brand['site_name'] ?? __('messages.brand.default_name') }} homepage">
+                <a href="{{ route('home') }}" class="brand {{ $siteIconOnly ? 'brand-icon-only' : '' }}" aria-label="{{ $brand['site_name'] ?? __('messages.brand.default_name') }} homepage">
                     <span class="brand-mark">{{ $siteIcon }}</span>
-                    <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
+                    @unless ($siteIconOnly)<span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>@endunless
                 </a>
                 <nav class="nav" aria-label="Main navigation">
                     <a href="{{ route('home') }}">{{ __('messages.nav.home') }}</a>
@@ -119,9 +121,9 @@
         <footer class="site-footer" id="contact">
             <div class="container footer-inner">
                 <div>
-                    <div class="brand footer-brand">
+                    <div class="brand footer-brand {{ $siteIconOnly ? 'brand-icon-only' : '' }}">
                         <span class="brand-mark">{{ $siteIcon }}</span>
-                        <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
+                        @unless ($siteIconOnly)<span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>@endunless
                     </div>
                     <p>{{ $brand['site_tagline'] ?? __('messages.brand.default_tagline') }}</p>
                     <p><a href="{{ route('about') }}">{{ __('messages.about.badge') }}</a></p>
@@ -141,8 +143,13 @@
             </div>
             <div class="container footer-copyright">
                 <p>{{ $footerCopyright }}</p>
+                <p class="footer-powered-by">{{ __('messages.brand.powered_by') }}</p>
+                <a class="footer-feedback-link" href="{{ route('feedback.create') }}">{{ __('messages.feedback.link') }}</a>
             </div>
         </footer>
+        @if (filled(config('services.help_chat.api_key')))
+            @include('partials.help-chat')
+        @endif
         @unless ($isPrivatePage)
             @include('partials.analytics-consent')
         @endunless

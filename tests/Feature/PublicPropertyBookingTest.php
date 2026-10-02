@@ -116,6 +116,30 @@ class PublicPropertyBookingTest extends TestCase
         Notification::assertSentTo($unverified, GuestAccountSetupNotification::class);
     }
 
+    public function test_new_guest_email_must_be_confirmed_before_reservation_is_created(): void
+    {
+        Notification::fake();
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('status', 'published')->firstOrFail();
+
+        $this->post('/properties/' . $property->slug . '/reserve', [
+            'full_name' => 'New Guest',
+            'email' => 'new-guest@example.com',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+        ])->assertRedirect()
+            ->assertSessionHas('pending_public_reservation')
+            ->assertSessionHas('status', __('messages.auth.confirm_email_before_reservation'));
+
+        $account = User::query()->where('email', 'new-guest@example.com')->firstOrFail();
+        $this->assertNull($account->email_verified_at);
+        $this->assertDatabaseMissing('reservations', ['email' => 'new-guest@example.com']);
+        Notification::assertSentTo($account, GuestAccountSetupNotification::class);
+    }
+
     public function test_authenticated_customer_can_toggle_property_favorite(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -184,7 +208,15 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('Vérifier la disponibilité')
             ->assertSee('À propos de ce logement');
 
-        $response = $this->post('/properties/appartement-401/reserve', [
+        $account = User::factory()->create([
+            'name' => 'Alice Doe',
+            'email' => 'alice@example.com',
+            'role' => 'customer',
+            'email_verified_at' => now(),
+            'last_login_at' => now(),
+        ]);
+
+        $response = $this->actingAs($account)->post('/properties/appartement-401/reserve', [
             'full_name' => 'Alice Doe',
             'email' => 'alice@example.com',
             'country' => 'Bénin',
@@ -203,9 +235,7 @@ class PublicPropertyBookingTest extends TestCase
         $this->assertDatabaseHas('reservation_guests', ['email' => 'alice@example.com']);
         $this->assertDatabaseHas('reservations', ['email' => 'alice@example.com', 'status' => 'pending']);
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => 'alice@example.com', 'template' => 'reservation_received', 'status' => 'queued']);
-        $account = User::query()->where('email', 'alice@example.com')->firstOrFail();
         $this->assertSame($account->id, $reservation->user_id);
-        Notification::assertSentTo($account, GuestAccountSetupNotification::class);
     }
 
     public function test_unpublished_properties_are_not_customer_visible(): void
@@ -428,8 +458,11 @@ class PublicPropertyBookingTest extends TestCase
             'longitude' => 2.3912,
             'google_maps_url' => 'https://maps.google.com/?q=6.3703,2.3912',
         ]);
+        $otherProperty = Property::where('slug', 'appartement-402')->firstOrFail();
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'property_id' => $otherProperty->id,
             'source' => 'google',
             'reviewer_name' => 'Awa',
             'rating' => 5,
@@ -439,6 +472,8 @@ class PublicPropertyBookingTest extends TestCase
         ]);
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'property_id' => $otherProperty->id,
             'source' => 'booking',
             'reviewer_name' => 'Moussa',
             'rating' => 4,
@@ -448,6 +483,8 @@ class PublicPropertyBookingTest extends TestCase
         ]);
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'property_id' => $otherProperty->id,
             'source' => 'booking',
             'reviewer_name' => 'Fatou',
             'rating' => 5,
@@ -457,6 +494,8 @@ class PublicPropertyBookingTest extends TestCase
         ]);
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'property_id' => $otherProperty->id,
             'source' => 'google',
             'reviewer_name' => 'Jean',
             'rating' => 3,
@@ -466,6 +505,8 @@ class PublicPropertyBookingTest extends TestCase
         ]);
         SiteReview::create([
             'tenant_id' => $property->establishment->tenant_id,
+            'establishment_id' => $property->establishment_id,
+            'property_id' => $property->id,
             'source' => 'google',
             'reviewer_name' => 'Nadia',
             'rating' => 4,
@@ -480,23 +521,24 @@ class PublicPropertyBookingTest extends TestCase
 
         $this->get('/properties/appartement-401')
             ->assertOk()
-            ->assertSee('Wonderful stay')
-            ->assertSee('Excellent location')
             ->assertSee('Le client n’a pas laissé de commentaire.')
-            ->assertSee('11/09/2026')
-            ->assertSee('Basé sur 5 avis ajoutés à la plateforme.')
-            ->assertSee('Afficher les avis (5)')
+            ->assertDontSee('Wonderful stay')
+            ->assertDontSee('Excellent location')
+            ->assertSee('Le client n’a pas laissé de commentaire.')
+            ->assertSee('12/09/2026')
+            ->assertSee('Basé sur 1 avis ajoutés à la plateforme.')
+            ->assertSee('Afficher les avis (1)')
             ->assertSee('id="property-reviews-content" class="property-reviews-content" hidden', false)
             ->assertSee('Voir tous les avis')
             ->assertSee('Bénin')
             ->assertDontSee('>BJ<', false)
             ->assertSee('google')
-            ->assertSee('Booking.com')
             ->assertDontSee('https://www.booking.com/hotel/example', false)
             ->assertDontSee('https://maps.google.com/?cid=example', false)
             ->assertSee('location-map', false)
             ->assertSee('property="og:image"', false)
-            ->assertSee('facebook.com/sharer', false);
+            ->assertSee('facebook.com/sharer', false)
+            ->assertDontSee('Booking.com');
 
             $this->get('/reviews')
                 ->assertOk()
@@ -592,7 +634,21 @@ class PublicPropertyBookingTest extends TestCase
             ->assertHeader('Content-Type', 'application/xml')
             ->assertSee("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset", false)
             ->assertSee('<urlset', false)
-            ->assertSee(route('properties.index'), false);
+            ->assertSee(route('properties.index'), false)
+            ->assertSee(route('establishments.show', Establishment::query()->firstOrFail()), false);
+    }
+
+    public function test_establishment_landing_page_only_shows_its_published_properties(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $establishment = Establishment::query()->firstOrFail();
+        $property = Property::query()->where('establishment_id', $establishment->id)->published()->firstOrFail();
+
+        $this->get(route('establishments.show', $establishment))
+            ->assertOk()
+            ->assertSee($establishment->localized('name'))
+            ->assertSee($property->localized('name'))
+            ->assertSee(route('properties.show', $property), false);
     }
 
     public function test_home_shows_map_only_for_one_establishment(): void

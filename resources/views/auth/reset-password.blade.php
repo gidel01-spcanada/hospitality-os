@@ -17,6 +17,9 @@
 
         <input type="hidden" name="token" value="{{ $token }}">
         <input type="hidden" name="email" value="{{ $email ?? old('email') }}">
+        @if (request()->query('checkout_return'))
+            <input type="hidden" name="checkout_return" value="{{ request()->query('checkout_return') }}">
+        @endif
 
         <p class="form-help">{{ __('messages.account_setup.confirm_password_help') }}</p>
 

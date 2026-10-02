@@ -102,6 +102,26 @@ class AuthAndAdminFlowTest extends TestCase
         $this->assertAuthenticatedAs(User::where('email', 'admin@afrikappart.test')->firstOrFail());
     }
 
+    public function test_login_uses_one_generic_error_for_unknown_email_and_wrong_password(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        foreach ([
+            ['unknown@example.com', 'Password123!'],
+            ['admin@afrikappart.test', 'incorrect-password'],
+        ] as [$email, $password]) {
+            $response = $this->withSession(['locale' => 'en'])
+                ->from('/login')
+                ->followingRedirects()
+                ->post('/login', ['email' => $email, 'password' => $password]);
+
+            $response->assertOk()
+                ->assertSee('Invalid email or password.')
+                ->assertDontSee('We could not find an account');
+            $this->assertSame(1, substr_count($response->getContent(), 'Invalid email or password.'));
+        }
+    }
+
     public function test_admin_can_manage_user_access_and_preferences(): void
     {
         $this->seed(DatabaseSeeder::class);

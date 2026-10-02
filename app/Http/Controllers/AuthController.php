@@ -27,11 +27,9 @@ class AuthController extends Controller
     public function login(Request $request, \App\Services\GoogleRecaptchaVerifier $recaptcha): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email', Rule::exists('users', 'email')],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
             'g-recaptcha-response' => ['nullable', 'string'],
-        ], [
-            'email.exists' => __('messages.errors.account_not_found'),
         ]);
         if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
             throw ValidationException::withMessages(['email' => __('messages.security.captcha_failed')]);
@@ -43,6 +41,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
+            $user?->forceFill(['last_login_at' => now()])->save();
             $locale = $user?->locale ?? session('locale', config('app.locale'));
             app()->setLocale($locale);
             $request->session()->put('locale', $locale);
@@ -214,7 +213,7 @@ class AuthController extends Controller
             __('messages.errors.reservation_access')
         );
 
-        $reservation->load(['property.establishment', 'property.features', 'guest', 'priceLines', 'receipts']);
+        $reservation->load(['property.establishment', 'property.features', 'guest', 'priceLines', 'receipts', 'paymentAttempts']);
         $selectedFeatureIds = $reservation->property->features
             ->filter(fn ($feature) => $reservation->priceLines->contains('label', 'Option: ' . $feature->name))
             ->pluck('id')
@@ -366,7 +365,10 @@ class AuthController extends Controller
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'checkout_return' => ['nullable', 'string', 'max:2048'],
         ]);
+
+        $checkoutReturn = $this->validCheckoutReturn($request, $request->input('checkout_return'));
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
@@ -374,6 +376,7 @@ class AuthController extends Controller
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'email_verified_at' => now(),
+                    'last_login_at' => now(),
                 ])->setRememberToken(str()->random(60));
 
                 $user->save();
@@ -383,10 +386,36 @@ class AuthController extends Controller
         );
 
         if ($status === Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            return $checkoutReturn
+                ? redirect()->to($checkoutReturn)->with('status', __('messages.checkout.password_setup_complete'))
+                : redirect()->route('login')->with('status', __($status));
         }
 
         return back()->withErrors(['email' => __($status)]);
+    }
+
+    private function validCheckoutReturn(Request $request, ?string $target): ?string
+    {
+        if (! $target) {
+            return null;
+        }
+
+        $parts = parse_url($target);
+        if (! $parts || ($parts['host'] ?? null) !== $request->getHost()) {
+            return null;
+        }
+
+        if (! preg_match('#^/reservations/(\d+)/checkout$#', $parts['path'] ?? '', $matches)) {
+            return null;
+        }
+
+        parse_str($parts['query'] ?? '', $query);
+        $reservation = Reservation::query()->find($matches[1]);
+        if (! $reservation || ! hash_equals((string) $reservation->checkout_token, (string) ($query['token'] ?? ''))) {
+            return null;
+        }
+
+        return route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
     }
 
     public function logout(Request $request): RedirectResponse
