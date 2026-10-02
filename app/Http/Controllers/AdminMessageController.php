@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Establishment;
 use App\Models\MessageThread;
+use App\Models\Reservation;
 use App\Services\MessageEmailService;
 use App\Support\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
@@ -24,8 +25,13 @@ class AdminMessageController extends Controller
         abort_unless($this->belongsToCurrentTenant($thread), 403);
 
         $thread->load(['customer', 'establishment', 'messages.sender']);
+        $reservation = Reservation::query()
+            ->where(fn ($query) => $query->where('user_id', $thread->customer_id)->orWhere('email', $thread->customer->email))
+            ->whereHas('property', fn ($query) => $query->where('establishment_id', $thread->establishment_id))
+            ->latest()
+            ->first();
 
-        return view('messages.thread', ['thread' => $thread, 'isStaff' => true]);
+        return view('messages.thread', ['thread' => $thread, 'isStaff' => true, 'reservation' => $reservation]);
     }
 
     public function reply(Request $request, MessageThread $thread, MessageEmailService $emailService): RedirectResponse
@@ -37,7 +43,7 @@ class AdminMessageController extends Controller
         $thread->touch();
         $emailService->queueForMessage($thread, $request->user(), $validated['body']);
 
-        return back()->with('status', __('messages.messages.sent'));
+        return redirect()->route('admin.messages.index')->with('status', __('messages.messages.sent'));
     }
 
     private function tenantThreads()

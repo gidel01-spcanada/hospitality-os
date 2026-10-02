@@ -11,14 +11,6 @@
                 <p>{{ __('messages.auth.login_subtitle', ['brand' => \App\Support\PlatformBrand::name()]) }}</p>
             </div>
 
-            @if ($errors->any())
-                <div class="form-alert form-alert-error" role="alert">
-                    @foreach ($errors->all() as $error)
-                        <span>{{ $error }}</span>
-                    @endforeach
-                </div>
-            @endif
-
             <form class="auth-form" method="POST" action="{{ route('login') }}">
                 @csrf
 

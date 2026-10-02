@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\Amenity;
 use App\Models\Establishment;
-use App\Models\SiteReview;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPriceLine;
@@ -86,7 +85,7 @@ class PublicPropertyController extends Controller
             ->when(isset($filters['min_price']), fn ($query) => $query->where('nightly_rate_xof', '>=', $filters['min_price']))
             ->when(isset($filters['max_price']), fn ($query) => $query->where('nightly_rate_xof', '<=', $filters['max_price']))
             ->when($favoritesOnly && auth()->check(), fn ($query) => $query->whereIn('id', $favoritePropertyIds))
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'translations', 'amenities', 'establishment.reviews' => fn ($query) => $query->active()])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'translations', 'amenities'])
             ->when($favoritePropertyIds, fn ($query) => $query->orderByRaw('CASE WHEN id IN (' . implode(',', array_fill(0, count($favoritePropertyIds), '?')) . ') THEN 0 ELSE 1 END', $favoritePropertyIds))
             ->when(($filters['sort'] ?? 'recommended') === 'price_desc', fn ($query) => $query->orderByDesc('nightly_rate_xof'))
             ->when(($filters['sort'] ?? 'recommended') !== 'price_desc', fn ($query) => $query->orderBy('nightly_rate_xof'))
@@ -122,14 +121,6 @@ class PublicPropertyController extends Controller
         $bookingGuests = $dateFilters['guests'] ?? '';
         $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active()->orderByDesc('reviewed_at'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
         $reviews = $property->reviews;
-        if ($reviews->isEmpty()) {
-            $reviews = SiteReview::query()
-                ->active()
-                ->when($property->establishment?->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
-                ->whereNull('property_id')
-                ->orderByDesc('reviewed_at')
-                ->get();
-        }
         $reviewStats = [
             'count' => $reviews->count(),
             'average' => round((float) $reviews->avg('rating'), 1),
@@ -151,7 +142,7 @@ class PublicPropertyController extends Controller
         $properties = Property::query()
             ->published()
             ->whereIn('id', $validated['properties'])
-            ->with(['amenities', 'reviews' => fn ($query) => $query->active(), 'establishment.reviews' => fn ($query) => $query->active()])
+            ->with(['amenities', 'reviews' => fn ($query) => $query->active()])
             ->get()
             ->sortBy(fn (Property $property) => array_search($property->id, array_map('intval', $validated['properties']), true))
             ->values();
@@ -285,23 +276,10 @@ class PublicPropertyController extends Controller
             })
             ->first();
 
-        if (! $request->user() && $existingAccount && $existingAccount->email_verified_at === null) {
-            $request->session()->put('pending_public_reservation', [
-                'property_id' => $property->id,
-                'data' => $validated,
-            ]);
-
-            try {
-                $existingAccount->notify(new GuestAccountSetupNotification(
-                    Password::broker()->createToken($existingAccount),
-                    $property->localized('name') ?? $property->name,
-                ));
-            } catch (\Throwable $exception) {
-                Log::warning('Guest account setup notification could not be resent.', [
-                    'user_id' => $existingAccount->id,
-                    'exception' => $exception,
-                ]);
-            }
+        if ((! $request->user() && $existingAccount && ! $existingAccount->email_verified_at)
+            || ($request->user() && ! $request->user()->email_verified_at)) {
+            $account = $request->user() ?: $existingAccount;
+            $this->queueReservationAccountSetup($request, $account, $property, $validated);
 
             return back()->withInput()->with('status', __('messages.auth.confirm_email_before_reservation'));
         }
@@ -315,6 +293,22 @@ class PublicPropertyController extends Controller
             return redirect()->route('login')
                 ->withInput(['email' => $email])
                 ->with('status', __('messages.auth.existing_account_login'));
+        }
+
+        if (! $request->user() && ! $existingAccount) {
+            $existingAccount = User::query()->create([
+                'name' => $validated['full_name'],
+                'email' => $email,
+                'password' => Str::password(64),
+                'role' => 'customer',
+                'tenant_id' => $tenantId,
+                'locale' => app()->getLocale(),
+                'email_booking_updates' => true,
+                'email_message_updates' => true,
+            ]);
+            $this->queueReservationAccountSetup($request, $existingAccount, $property, $validated);
+
+            return back()->withInput()->with('status', __('messages.auth.confirm_email_before_reservation'));
         }
 
         $selectedFeatures = $property->features()->whereIn('id', $validated['selected_features'] ?? [])->where('is_active', true)->get();
@@ -414,5 +408,25 @@ class PublicPropertyController extends Controller
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token])
             ->with('status', __('messages.flash.reservation_saved'));
+    }
+
+    private function queueReservationAccountSetup(Request $request, User $account, Property $property, array $validated): void
+    {
+        $request->session()->put('pending_public_reservation', [
+            'property_id' => $property->id,
+            'data' => $validated,
+        ]);
+
+        try {
+            $account->notify(new GuestAccountSetupNotification(
+                Password::broker()->createToken($account),
+                $property->localized('name') ?? $property->name,
+            ));
+        } catch (\Throwable $exception) {
+            Log::warning('Guest account setup notification could not be sent.', [
+                'user_id' => $account->id,
+                'exception' => $exception,
+            ]);
+        }
     }
 }

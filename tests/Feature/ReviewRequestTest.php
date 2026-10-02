@@ -93,7 +93,19 @@ class ReviewRequestTest extends TestCase
         $this->assertStringContainsString('/review/' . $reservation->id, $payload['review_url']);
 
         $reviewUrl = $payload['review_url'];
-        $this->get($reviewUrl)->assertOk();
+        $this->get($reviewUrl)
+            ->assertOk()
+            ->assertDontSee(__('messages.review_request.google_action'));
+
+        $this->post($reviewUrl, ['rating' => 5, 'review_text' => 'Wonderful stay.'])
+            ->assertRedirect();
+
+        $this->get($reviewUrl)
+            ->assertOk()
+            ->assertSee(__('messages.review_request.google_action'))
+            ->assertSee(__('messages.review_request.google_description'))
+            ->assertSee('target="_blank" rel="noopener noreferrer"', false);
+
         $googleUrl = URL::temporarySignedRoute('reviews.submit.google', now()->addMinutes(5), ['reservation' => $reservation]);
         $this->get($googleUrl)->assertRedirect('https://g.page/r/example/review');
 

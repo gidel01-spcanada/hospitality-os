@@ -4,11 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\Property;
 use App\Models\SiteReview;
+use App\Models\Establishment;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StaticPageController extends Controller
 {
+    public function establishment(Establishment $establishment): View
+    {
+        abort_unless($establishment->is_active, 404);
+        $establishment->load('translations');
+        $properties = $establishment->properties()
+            ->published()
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active()->orderByDesc('reviewed_at'), 'translations', 'amenities'])
+            ->orderBy('name')
+            ->get();
+        $propertyIds = $properties->pluck('id');
+        $reviewQuery = SiteReview::query()->active()->whereIn('property_id', $propertyIds);
+        $reviewStats = [
+            'count' => (clone $reviewQuery)->count(),
+            'average' => round((float) (clone $reviewQuery)->avg('rating'), 1),
+        ];
+        $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->limit(6)->get();
+
+        return view('establishments.show', compact('establishment', 'properties', 'reviews', 'reviewStats'));
+    }
+
     public function contact(): View
     {
         return view('contact');

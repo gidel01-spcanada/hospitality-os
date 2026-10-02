@@ -10,8 +10,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicPropertyController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AdminLogController;
+use App\Http\Controllers\PlatformFeedbackController;
+use App\Http\Controllers\HelpChatController;
 use App\Models\Property;
 use App\Models\Establishment;
+use App\Support\BrandSettings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -59,7 +62,7 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
                             ->whereDate('start_date', '<', $homeFilters['check_out'])
                             ->whereDate('end_date', '>', $homeFilters['check_in'])));
             })
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'amenities', 'translations', 'establishment.reviews' => fn ($query) => $query->active()])
+            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active(), 'amenities', 'translations'])
             ->get();
 
         if (($homeFilters['sort'] ?? 'recommended') === 'price_desc') {
@@ -84,7 +87,13 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
     }
 
     if (Schema::hasTable('site_reviews')) {
-        $reviewQuery = \App\Models\SiteReview::query()->where('is_active', true);
+        $propertyIds = Property::query()
+            ->published()
+            ->whereIn('establishment_id', $establishments->pluck('id'))
+            ->pluck('id');
+        $reviewQuery = \App\Models\SiteReview::query()
+            ->active()
+            ->whereIn('property_id', $propertyIds);
         $reviewStats = [
             'count' => (clone $reviewQuery)->count(),
             'average' => round((float) (clone $reviewQuery)->avg('rating'), 1),
@@ -92,7 +101,9 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
         $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
-    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds', 'cardPricing', 'homeFilters'));
+    $homepageBackgroundImage = BrandSettings::get('homepage_background_image');
+
+    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds', 'cardPricing', 'homeFilters', 'homepageBackgroundImage'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
@@ -143,6 +154,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::put('/admin/reservations/{reservation}', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
         Route::get('/admin/reservations/{reservation}', [AdminReservationController::class, 'show'])->name('admin.reservations.show');
         Route::patch('/admin/reservations/{reservation}/status', [AdminReservationController::class, 'updateStatus'])->name('admin.reservations.update-status');
+        Route::patch('/admin/reservations/{reservation}/notes', [AdminReservationController::class, 'updateNotes'])->name('admin.reservations.notes.update');
         Route::delete('/admin/reservations/{reservation}', [AdminReservationController::class, 'destroy'])->middleware('admin')->name('admin.reservations.destroy');
         Route::post('/admin/reservations/{reservation}/payment-link', [AdminReservationController::class, 'sendPaymentLink'])->name('admin.reservations.payment-link.send');
         Route::post('/admin/reservations/{reservation}/payment-proof', [AdminReservationController::class, 'uploadPaymentProof'])->name('admin.reservations.payment-proof.upload');
@@ -261,6 +273,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
 });
 
 Route::middleware('locale')->group(function () {
+    Route::get('/establishments/{establishment:slug}', [\App\Http\Controllers\StaticPageController::class, 'establishment'])->name('establishments.show');
     Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
     Route::get('/properties/compare', [PublicPropertyController::class, 'compare'])->name('properties.compare');
     Route::get('/properties/{property:slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
@@ -270,6 +283,9 @@ Route::middleware('locale')->group(function () {
     Route::get('/about', [\App\Http\Controllers\StaticPageController::class, 'about'])->name('about');
     Route::get('/reviews', [\App\Http\Controllers\StaticPageController::class, 'reviews'])->name('reviews');
     Route::get('/faq', [\App\Http\Controllers\StaticPageController::class, 'faq'])->name('faq');
+    Route::get('/feedback', [PlatformFeedbackController::class, 'create'])->name('feedback.create');
+    Route::post('/feedback', [PlatformFeedbackController::class, 'store'])->middleware('throttle:5,1')->name('feedback.store');
+    Route::post('/help/chat', [HelpChatController::class, 'ask'])->middleware('throttle:10,1')->name('help-chat.ask');
     Route::get('/privacy', [\App\Http\Controllers\StaticPageController::class, 'privacy'])->name('privacy');
     Route::get('/terms', [\App\Http\Controllers\StaticPageController::class, 'terms'])->name('terms');
     Route::get('/cookies', [\App\Http\Controllers\StaticPageController::class, 'cookies'])->name('cookies');
@@ -292,6 +308,15 @@ Route::get('/sitemap.xml', function () {
         $urls = $urls->merge(Property::query()->published()->pluck('slug')->map(fn ($slug) => route('properties.show', ['property' => $slug])));
     }
 
+    if (Schema::hasTable('establishments')) {
+        $establishments = Establishment::query()
+            ->where('is_active', true)
+            ->whereHas('properties', fn ($query) => $query->published())
+            ->pluck('slug')
+            ->map(fn ($slug) => route('establishments.show', ['establishment' => $slug]));
+        $urls = $urls->merge($establishments);
+    }
+
     $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">";
     foreach ($urls->unique() as $url) {
         $xml .= '<url><loc>' . e($url) . '</loc></url>';
@@ -309,6 +334,9 @@ Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningSchedul
 Route::middleware('locale')->group(function () {
     Route::get('/reservations/access', [\App\Http\Controllers\CheckoutController::class, 'accessHelp'])->name('reservation.access');
     Route::get('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('checkout.show');
+    Route::get('/reservations/{reservation}/payment-proofs/{attempt}', [\App\Http\Controllers\ReceiptController::class, 'downloadProof'])->name('reservations.payment-proof.download');
+    Route::post('/reservations/{reservation}/checkout/password-setup', [\App\Http\Controllers\CheckoutController::class, 'requestIdentitySetup'])->name('checkout.password-setup');
+    Route::post('/reservations/{reservation}/checkout/skip-password-setup', [\App\Http\Controllers\CheckoutController::class, 'skipIdentitySetup'])->name('checkout.skip-password-setup');
     Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->name('checkout.start');
     Route::post('/reservations/{reservation}/checkout/paypal/create', [\App\Http\Controllers\CheckoutController::class, 'createPayPalOrder'])->name('checkout.paypal.create');
     Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->name('checkout.paypal.capture');

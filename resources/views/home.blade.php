@@ -5,7 +5,7 @@
 
 @section('content')
     <section class="hero">
-        <div class="container hero-card">
+        <div class="container hero-card" style="--hero-background-image: url({{ json_encode($homepageBackgroundImage, JSON_UNESCAPED_SLASHES) }});">
             <div class="hero-content">
                 <div class="hero-copy">
                     <span class="eyebrow">{{ __('messages.home.eyebrow') }}</span>
@@ -30,10 +30,8 @@
                 <aside class="search-panel" id="booking" aria-label="Recherche de disponibilité">
                     <div class="panel-header">
                         <div>
-                            <p class="kicker">{{ __('messages.home.availability') }}</p>
                             <h2>{{ __('messages.home.book_stay') }}</h2>
                         </div>
-                        <span class="badge badge-gold">{{ __('messages.home.instant_confirmation') }}</span>
                     </div>
                     <form class="search-form" method="GET" action="{{ route('properties.index') }}">
                         <label>
@@ -206,7 +204,6 @@
                         $coverIndex = $coverImage ? $property->images->search(fn ($image) => $image->id === $coverImage->id) : 0;
                         $isFavorite = in_array($property->id, $favoritePropertyIds ?? [], true);
                         $propertyReviews = $property->reviews?->where('is_active', true) ?? collect();
-                        if ($propertyReviews->isEmpty()) $propertyReviews = $property->establishment?->reviews?->where('is_active', true)->whereNull('property_id') ?? collect();
                         $reviewCount = $propertyReviews->count();
                         $reviewAverage = $reviewCount ? number_format((float) $propertyReviews->avg('rating'), 1, ',', ' ') : null;
                         $amenityNames = $property->amenities->pluck('name')->filter()->take(3);

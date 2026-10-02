@@ -163,6 +163,12 @@ class ReservationWorkflowAndEmailTest extends TestCase
             ->assertSee('En attente');
 
         $this->actingAs($admin)
+            ->get('/admin/bookings?view=calendar&month=' . now()->format('Y-m'))
+            ->assertOk()
+            ->assertSee('data-reservation-view="calendar"', false)
+            ->assertSee('Alice Doe');
+
+        $this->actingAs($admin)
             ->get('/admin/reservations/' . $reservation->id)
             ->assertOk();
 
@@ -242,6 +248,61 @@ class ReservationWorkflowAndEmailTest extends TestCase
         $this->actingAs($admin)
             ->post('/admin/reservations/' . $reservation->id . '/payment-link')
             ->assertForbidden();
+    }
+
+    public function test_admin_can_edit_notes_update_status_with_proof_and_confirm_payment_with_reference(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::query()->create(['full_name' => 'Forms Guest', 'email' => 'forms-guest@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-FORMS-001',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'adults' => 1,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'total_amount' => 10000,
+        ]);
+        $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.reservations.show', $reservation))
+            ->assertOk()
+            ->assertSee(route('admin.reservations.notes.update', $reservation), false)
+            ->assertSee('name="payment_proof"', false)
+            ->assertSee('data-confirm-message', false);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.reservations.notes.update', $reservation), ['notes' => 'Guest requested a late arrival.'])
+            ->assertRedirect(route('admin.reservations.show', $reservation));
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'notes' => 'Guest requested a late arrival.']);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.reservations.update-status', $reservation), [
+                'status' => 'confirmed',
+                'payment_proof' => \Illuminate\Http\UploadedFile::fake()->create('status-proof.pdf', 10, 'application/pdf'),
+            ])
+            ->assertRedirect(route('admin.reservations.show', $reservation));
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
+        $this->assertNotEmpty(data_get($reservation->paymentAttempts()->latest()->firstOrFail()->payload, 'payment_proof.path'));
+
+        $this->actingAs($admin)
+            ->post(route('admin.reservations.confirm-offline-payment', $reservation), [
+                'provider_reference' => 'manual-confirm-123',
+                'payment_proof' => \Illuminate\Http\UploadedFile::fake()->create('confirmed-proof.pdf', 10, 'application/pdf'),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('payment_attempts', [
+            'reservation_id' => $reservation->id,
+            'provider' => 'offline',
+            'provider_reference' => 'manual-confirm-123',
+            'status' => 'paid',
+        ]);
     }
 
     public function test_confirmed_payment_automatically_creates_and_emails_receipt(): void

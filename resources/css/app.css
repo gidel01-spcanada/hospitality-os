@@ -604,7 +604,7 @@ button, input, select {
 }
 
 .hero-card {
-    background: linear-gradient(120deg, rgba(12, 22, 20, 0.75), rgba(12, 22, 20, 0.35)), url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    background: linear-gradient(120deg, rgba(12, 22, 20, 0.75), rgba(12, 22, 20, 0.35)), var(--hero-background-image) center/cover no-repeat;
     border-radius: 32px;
     min-height: 620px;
     overflow: hidden;
@@ -1548,7 +1548,7 @@ button, input, select {
     width: 100%;
     justify-items: end;
     color: var(--afrik-muted);
-    font-size: 0.78rem;
+    font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     text-align: right;
@@ -1593,7 +1593,285 @@ button, input, select {
 
 .property-price-footer strong {
     color: var(--afrik-emerald-strong);
+    font-size: 1rem;
+}
+
+.booking-page-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.reservation-detail-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.reservation-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.reservation-view-switcher {
+    display: inline-flex;
+    padding: 0.2rem;
+    border: 1px solid var(--afrik-line);
+    border-radius: 8px;
+    background: white;
+}
+
+.reservation-view-switcher .btn {
+    white-space: nowrap;
+}
+
+.reservation-calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.reservation-calendar-toolbar h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.reservation-calendar-scroll {
+    overflow-x: auto;
+}
+
+.reservation-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(120px, 1fr));
+    min-width: 840px;
+    border-top: 1px solid var(--afrik-line);
+    border-left: 1px solid var(--afrik-line);
+}
+
+.reservation-calendar-weekday,
+.reservation-calendar-day {
+    border-right: 1px solid var(--afrik-line);
+    border-bottom: 1px solid var(--afrik-line);
+}
+
+.reservation-calendar-weekday {
+    padding: 0.65rem;
+    color: var(--afrik-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.reservation-calendar-day {
+    display: flex;
+    min-height: 120px;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.5rem;
+}
+
+.reservation-calendar-day.is-outside-month {
+    background: rgba(19, 31, 35, 0.035);
+    color: var(--afrik-muted);
+}
+
+.reservation-calendar-day > time {
     font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.reservation-calendar-item {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+    border-left: 3px solid var(--afrik-emerald);
+    border-radius: 3px;
+    padding: 0.35rem;
+    background: rgba(15, 91, 76, 0.08);
+    color: var(--afrik-text);
+    font-size: 0.72rem;
+    text-decoration: none;
+}
+
+.reservation-calendar-item strong,
+.reservation-calendar-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.establishment-landing-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+    align-items: start;
+    gap: 2rem;
+}
+
+.establishment-property-count {
+    display: inline-grid;
+    min-width: 2.5rem;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid var(--afrik-line);
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+.establishment-information {
+    position: sticky;
+    top: 1.5rem;
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border: 1px solid var(--afrik-line);
+    border-radius: 8px;
+    background: white;
+}
+
+.establishment-information h2,
+.establishment-information p {
+    margin: 0;
+}
+
+.footer-powered-by,
+.footer-feedback-link {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+}
+
+.feedback-message-field {
+    grid-column: 1 / -1;
+}
+
+.help-chat {
+    position: fixed;
+    z-index: 1000;
+    right: 1.25rem;
+    bottom: 1.25rem;
+}
+
+.help-chat-launcher {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 24px;
+    padding: 0 1.1rem;
+    background: var(--afrik-emerald);
+    box-shadow: 0 8px 24px rgba(19, 31, 35, 0.2);
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.help-chat-launcher::-webkit-details-marker {
+    display: none;
+}
+
+.help-chat-panel {
+    position: absolute;
+    right: 0;
+    bottom: 3.75rem;
+    display: grid;
+    width: min(380px, calc(100vw - 2rem));
+    max-height: min(560px, calc(100dvh - 7rem));
+    grid-template-rows: auto auto minmax(100px, 1fr) auto;
+    gap: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--afrik-line);
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    box-shadow: 0 16px 48px rgba(19, 31, 35, 0.22);
+}
+
+.help-chat-header,
+.help-chat-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.help-chat-header h2,
+.help-chat-privacy,
+.help-chat-form-actions p {
+    margin: 0;
+}
+
+.help-chat-privacy,
+.help-chat-form-actions p {
+    color: var(--afrik-muted);
+    font-size: 0.78rem;
+}
+
+.help-chat-messages {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    overflow-y: auto;
+    border-block: 1px solid var(--afrik-line);
+    padding: 0.75rem 0;
+}
+
+.help-chat-messages p {
+    max-width: 92%;
+    overflow-wrap: anywhere;
+    margin: 0;
+    border-radius: 8px;
+    padding: 0.65rem 0.75rem;
+    background: #f1f5f2;
+    white-space: pre-wrap;
+}
+
+.help-chat-messages .help-chat-question {
+    justify-self: end;
+    background: #e8f2ee;
+}
+
+.help-chat-form {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.help-chat-form textarea {
+    width: 100%;
+    min-height: 64px;
+    resize: vertical;
+}
+
+@media (max-width: 520px) {
+    .help-chat {
+        right: 0.75rem;
+        bottom: 0.75rem;
+    }
+
+    .help-chat-panel {
+        right: -0.25rem;
+        width: calc(100vw - 1.5rem);
+    }
+}
+
+@media (max-width: 880px) {
+    .establishment-landing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .establishment-information {
+        position: static;
+    }
 }
 
 .property-price-footer span {
@@ -2836,6 +3114,16 @@ main #home-location {
 .message-form textarea {
     min-height: 110px;
     resize: vertical;
+}
+
+.message-form button[type="submit"] {
+    width: max-content;
+    max-width: 100%;
+}
+
+.message-reservation-link {
+    margin: 0 0 1rem;
+    color: var(--afrik-muted);
 }
 
 .message-thread-list {

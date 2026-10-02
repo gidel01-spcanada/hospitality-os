@@ -13,6 +13,13 @@
             <p class="admin-page-description">{{ $isStaff ? $thread->customer->name : __('messages.messages.description') }}</p>
         </div>
 
+        @if ($reservation)
+            <p class="message-reservation-link">
+                {{ __('messages.messages.related_reservation') }}
+                <a class="inline-link" href="{{ route($isStaff ? 'admin.reservations.show' : 'dashboard.reservations.show', $reservation) }}">{{ $reservation->reservation_ref }}</a>
+            </p>
+        @endif
+
         @if (session('status'))
             <div class="reservation-success">{{ session('status') }}</div>
         @endif

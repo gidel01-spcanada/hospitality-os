@@ -148,7 +148,6 @@
                         $coverIndex = $coverImage ? $property->images->search(fn ($image) => $image->id === $coverImage->id) : 0;
                         $isFavorite = in_array($property->id, $favoritePropertyIds ?? [], true);
                         $propertyReviews = $property->reviews?->where('is_active', true) ?? collect();
-                        if ($propertyReviews->isEmpty()) $propertyReviews = $property->establishment?->reviews?->where('is_active', true)->whereNull('property_id') ?? collect();
                         $reviewCount = $propertyReviews->count();
                         $reviewAverage = $reviewCount ? number_format((float) $propertyReviews->avg('rating'), 1, ',', ' ') : null;
                         $nights = ($filters['check_in'] ?? null) && ($filters['check_out'] ?? null)

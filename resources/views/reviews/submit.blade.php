@@ -16,8 +16,8 @@
             <div class="form-actions"><button class="btn btn-primary" type="submit">{{ __('messages.review_request.submit') }}</button></div>
         </form></x-card>
     @endif
-    @if(in_array($channel, ['google', 'both'], true) && $googleUrl)
-        <div class="review-google-action"><h2>{{ __('messages.review_request.google_title') }}</h2><p>{{ __('messages.review_request.google_description') }}</p><a class="btn btn-ghost" href="{{ route('reviews.submit.google', ['reservation' => $reservation, 'signature' => request('signature'), 'expires' => request('expires')]) }}">{{ __('messages.review_request.google_action') }}</a></div>
+    @if((session('review_submitted') || $existingReview) && $googleUrl)
+        <div class="review-google-action"><h2>{{ __('messages.review_request.google_title') }}</h2><p>{{ __('messages.review_request.google_description') }}</p><a class="btn btn-ghost" href="{{ route('reviews.submit.google', ['reservation' => $reservation, 'signature' => request('signature'), 'expires' => request('expires')]) }}" target="_blank" rel="noopener noreferrer">{{ __('messages.review_request.google_action') }}</a></div>
     @endif
 </div></section>
 @endsection

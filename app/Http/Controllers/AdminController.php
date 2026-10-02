@@ -215,6 +215,9 @@ class AdminController extends Controller
         $rules = [
             'site_name' => ['required', 'string', 'max:255'],
             'site_icon' => ['required', 'string', 'max:3'],
+            'site_favicon_url' => ['nullable', 'url', 'max:2048'],
+            'clear_site_favicon' => ['nullable', 'boolean'],
+            'site_icon_only' => ['nullable', 'boolean'],
             'site_tagline' => ['nullable', 'string', 'max:255'],
             'footer_copyright' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['required', 'email', 'max:255'],
@@ -239,9 +242,29 @@ class AdminController extends Controller
             ? ['required', 'in:emerald-gold,ocean-coral,terracotta-teal,sunrise-ink']
             : ['nullable', 'in:emerald-gold,ocean-coral,terracotta-teal,sunrise-ink'];
 
+        $rules['homepage_background_image'] = ['nullable', 'url', 'max:2048'];
+        $rules['restore_homepage_background_image'] = ['nullable', 'boolean'];
+
+        if ($request->boolean('restore_homepage_background_image')) {
+            unset($rules['homepage_background_image']);
+        }
+
         $validated = $request->validate($rules);
 
+        $clearSiteFavicon = $request->boolean('clear_site_favicon');
+        unset($validated['clear_site_favicon']);
+        $validated['site_icon_only'] = $request->boolean('site_icon_only') ? '1' : '0';
+
+        $restoreHomepageBackground = $request->boolean('restore_homepage_background_image');
+        unset($validated['restore_homepage_background_image']);
+
         BrandSettings::set($validated);
+        if ($clearSiteFavicon) {
+            BrandSettings::forget('site_favicon_url');
+        }
+        if ($restoreHomepageBackground) {
+            BrandSettings::forget('homepage_background_image');
+        }
         config()->set('app.name', $validated['site_name']);
 
         return redirect()->route('admin.settings')->with('status', __('messages.flash.settings_saved'));

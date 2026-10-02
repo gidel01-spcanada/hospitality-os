@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
+use App\Models\User;
+use App\Notifications\GuestAccountSetupNotification;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\ReservationEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -26,11 +29,60 @@ class CheckoutController extends Controller
 
         $token = $this->authorizeCheckout($request, $reservation);
         $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
+        $customer = $reservation->user ?: User::query()->where('email', strtolower((string) $reservation->email))->first();
+        $requiresIdentitySetup = ! $request->user()?->canManageReservations()
+            && (! $customer
+                || ! $customer->email_verified_at
+                || (! $request->user() && ! $customer->last_login_at));
+        $skippedReservations = $request->session()->get('checkout_identity_skipped', []);
+        if ($requiresIdentitySetup && ! in_array($reservation->id, $skippedReservations, true)) {
+            return view('checkout.identity', compact('reservation', 'token'));
+        }
+
         $paymentMethods = $this->paymentMethods($reservation);
         $isDevEnvironment = app()->environment(['local', 'testing']);
         $linkExpired = $this->isPayable($reservation) && $this->isLinkExpired($reservation);
 
         return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment', 'linkExpired'));
+    }
+
+    public function requestIdentitySetup(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        $customer = User::query()->firstOrCreate(
+            ['email' => strtolower((string) $reservation->email)],
+            [
+                'name' => $reservation->guest?->full_name ?: $reservation->email,
+                'password' => Str::password(64),
+                'role' => 'customer',
+                'tenant_id' => $reservation->property?->establishment?->tenant_id,
+                'locale' => $reservation->locale ?? app()->getLocale(),
+                'email_booking_updates' => true,
+                'email_message_updates' => true,
+            ]
+        );
+
+        if ($reservation->user_id !== $customer->id) {
+            $reservation->update(['user_id' => $customer->id]);
+        }
+
+        $customer->notify(new GuestAccountSetupNotification(
+            Password::broker()->createToken($customer),
+            $reservation->reservation_ref,
+            route('checkout.show', ['reservation' => $reservation, 'token' => $token]),
+        ));
+
+        return back()->with('status', __('messages.checkout.password_setup_link_sent'));
+    }
+
+    public function skipIdentitySetup(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $token = $this->authorizeCheckout($request, $reservation);
+        $skippedReservations = $request->session()->get('checkout_identity_skipped', []);
+        $skippedReservations[] = $reservation->id;
+        $request->session()->put('checkout_identity_skipped', array_values(array_unique($skippedReservations)));
+
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token]);
     }
 
     public function accessHelp(): View

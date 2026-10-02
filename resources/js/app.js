@@ -123,6 +123,59 @@ if (mobileMenuToggle && mobileNavActions) {
 	});
 }
 
+const helpChat = document.querySelector('[data-help-chat]');
+if (helpChat) {
+	const form = helpChat.querySelector('[data-help-chat-form]');
+	const textarea = form?.querySelector('textarea[name="message"]');
+	const messages = helpChat.querySelector('[data-help-chat-messages]');
+	const status = helpChat.querySelector('[data-help-chat-status]');
+	const history = [];
+
+	const appendMessage = (className, content) => {
+		const message = document.createElement('p');
+		message.className = className;
+		message.textContent = content;
+		messages.appendChild(message);
+		messages.scrollTop = messages.scrollHeight;
+	};
+
+	helpChat.querySelector('[data-help-chat-close]')?.addEventListener('click', () => { helpChat.open = false; });
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const message = textarea.value.trim();
+		if (!message) return;
+
+		appendMessage('help-chat-question', message);
+		textarea.value = '';
+		const submit = form.querySelector('button[type="submit"]');
+		submit.disabled = true;
+		status.textContent = '';
+
+		try {
+			const response = await fetch(form.action, {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+				},
+				body: JSON.stringify({ message, history }),
+			});
+			const result = await response.json();
+			if (!response.ok) throw new Error(result.message || '');
+
+			appendMessage('help-chat-answer', result.answer);
+			history.push({ role: 'user', content: message }, { role: 'assistant', content: result.answer });
+			if (history.length > 10) history.splice(0, history.length - 10);
+		} catch (error) {
+			status.textContent = error.message || form.dataset.errorMessage;
+		} finally {
+			submit.disabled = false;
+			textarea.focus();
+		}
+	});
+}
+
 document.querySelector('[data-account-tabs] .is-active')?.scrollIntoView({
 	block: 'nearest',
 	inline: 'center',
