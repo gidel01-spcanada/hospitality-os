@@ -4,6 +4,7 @@
     $brand['site_name'] = \App\Support\PlatformBrand::name();
     $siteIcon = $brand['site_icon'] ?? 'A';
     $siteIconOnly = filter_var($brand['site_icon_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $siteIconImage = $siteIconOnly && filled($brand['site_favicon_url'] ?? null) ? $brand['site_favicon_url'] : null;
     $customerTheme = config('platform.mode') === 'on_premise' ? ($brand['customer_theme'] ?? 'emerald-gold') : 'emerald-gold';
     $currentLocale = app()->getLocale();
     $availableLocales = ['fr', 'en'];
@@ -51,9 +52,9 @@
     <body class="app-shell">
         <header class="topbar">
             <div class="container topbar-inner">
-                <a href="{{ route('home') }}" class="brand {{ $siteIconOnly ? 'brand-icon-only' : '' }}" aria-label="{{ $brand['site_name'] ?? __('messages.brand.default_name') }} homepage">
-                    <span class="brand-mark">{{ $siteIcon }}</span>
-                    @unless ($siteIconOnly)<span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>@endunless
+                <a href="{{ route('home') }}" class="brand {{ $siteIconImage ? 'brand-has-image' : '' }}" aria-label="{{ $brand['site_name'] ?? __('messages.brand.default_name') }} homepage">
+                    @if ($siteIconImage)<img class="brand-mark brand-mark-image" src="{{ $siteIconImage }}" alt="" width="40" height="40">@else<span class="brand-mark">{{ $siteIcon }}</span>@endif
+                    <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
                 </a>
                 <nav class="nav" aria-label="Main navigation">
                     <a href="{{ route('home') }}">{{ __('messages.nav.home') }}</a>
@@ -121,9 +122,9 @@
         <footer class="site-footer" id="contact">
             <div class="container footer-inner">
                 <div>
-                    <div class="brand footer-brand {{ $siteIconOnly ? 'brand-icon-only' : '' }}">
-                        <span class="brand-mark">{{ $siteIcon }}</span>
-                        @unless ($siteIconOnly)<span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>@endunless
+                    <div class="brand footer-brand {{ $siteIconImage ? 'brand-has-image' : '' }}">
+                        @if ($siteIconImage)<img class="brand-mark brand-mark-image" src="{{ $siteIconImage }}" alt="" width="40" height="40">@else<span class="brand-mark">{{ $siteIcon }}</span>@endif
+                        <span>{{ $brand['site_name'] ?? __('messages.brand.default_name') }}</span>
                     </div>
                     <p>{{ $brand['site_tagline'] ?? __('messages.brand.default_tagline') }}</p>
                     <p><a href="{{ route('about') }}">{{ __('messages.about.badge') }}</a></p>
@@ -132,6 +133,21 @@
                     <h3>{{ __('messages.brand.contact') }}</h3>
                     <p><a href="mailto:{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}">{{ $brand['contact_email'] ?? 'support@afrikappart.example' }}</a></p>
                     <p><a href="tel:{{ preg_replace('/[^+\d]/', '', $brand['support_phone'] ?? '+229 00 00 00 00') }}">{{ $brand['support_phone'] ?? '+229 00 00 00 00' }}</a></p>
+                    @php
+                        $socialNetworks = ['facebook', 'instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'whatsapp'];
+                        $activeSocialNetworks = collect($socialNetworks)
+                            ->filter(fn ($network) => filled($brand['social_' . $network . '_url'] ?? null));
+                    @endphp
+                    @if ($activeSocialNetworks->isNotEmpty())
+                        <nav class="footer-social-links" aria-label="{{ __('messages.admin.social_networks') }}">
+                            @foreach ($activeSocialNetworks as $network)
+                                @php($socialLabel = __('messages.admin.social_' . $network))
+                                <a href="{{ $brand['social_' . $network . '_url'] }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $socialLabel }}" title="{{ $socialLabel }}">
+                                    <x-social-icon :network="$network" />
+                                </a>
+                            @endforeach
+                        </nav>
+                    @endif
                     <p><a href="{{ route('faq') }}">{{ __('messages.faq.title') }}</a></p>
                 </div>
                 <div>
@@ -141,10 +157,12 @@
                     <p><a href="{{ route('cookies') }}">{{ __('messages.legal.cookies') }}</a></p>
                 </div>
             </div>
-            <div class="container footer-copyright">
-                <p>{{ $footerCopyright }}</p>
-                <p class="footer-powered-by">{{ __('messages.brand.powered_by') }}</p>
-                <a class="footer-feedback-link" href="{{ route('feedback.create') }}">{{ __('messages.feedback.link') }}</a>
+            <div class="footer-copyright">
+                <div class="footer-copyright-content">
+                    <p>{{ $footerCopyright }}</p>
+                    <p class="footer-powered-by">{{ __('messages.brand.powered_by') }}</p>
+                    <a class="footer-feedback-link" href="{{ route('feedback.create') }}">{{ __('messages.feedback.link') }}</a>
+                </div>
             </div>
         </footer>
         @if (filled(config('services.help_chat.api_key')))

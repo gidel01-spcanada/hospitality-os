@@ -21,7 +21,7 @@ class PlatformFeedbackReceived extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Afrik Appart platform feedback',
+            subject: __('messages.transactional.feedback_title', ['brand' => \App\Support\PlatformBrand::name()]),
             replyTo: [new Address($this->feedback->email, $this->feedback->name)],
         );
     }

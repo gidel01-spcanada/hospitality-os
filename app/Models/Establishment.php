@@ -19,6 +19,7 @@ class Establishment extends Model
         'city',
         'currency',
         'is_active',
+        'is_published',
         'secondary_currency',
         'secondary_currency_rate',
         'description',
@@ -62,6 +63,7 @@ class Establishment extends Model
         'service_fee_percent' => 'decimal:2',
         'electricity_billed_separately' => 'boolean',
         'is_active' => 'boolean',
+        'is_published' => 'boolean',
         'secondary_currency_rate' => 'decimal:6',
         'google_reviews_last_sync_at' => 'datetime',
     ];
@@ -69,6 +71,11 @@ class Establishment extends Model
     public function properties(): HasMany
     {
         return $this->hasMany(Property::class);
+    }
+
+    public function scopePublished(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('is_active', true)->where('is_published', true);
     }
 
     public function translations(): HasMany
@@ -92,6 +99,17 @@ class Establishment extends Model
         $translation = $this->translations->firstWhere('locale', $locale);
 
         return $translation?->{$field} ?: $this->{$field};
+    }
+
+    public function publicImagePaths(): array
+    {
+        return collect([$this->cover_image])
+            ->merge((array) data_get($this->metadata, 'gallery_images', []))
+            ->filter(fn ($path) => is_string($path) && filled($path))
+            ->unique()
+            ->take(16)
+            ->values()
+            ->all();
     }
 
     public function secondaryDisplayAmount(float $amount): ?float

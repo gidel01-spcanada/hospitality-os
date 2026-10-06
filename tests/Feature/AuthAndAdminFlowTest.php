@@ -44,7 +44,8 @@ class AuthAndAdminFlowTest extends TestCase
         $this->withSession(['locale' => 'fr'])
             ->get('/')
             ->assertSee('href="' . route('language.switch', ['locale' => 'en']) . '"', false)
-            ->assertDontSee('href="' . route('language.switch', ['locale' => 'fr']) . '"', false);
+            ->assertDontSee('href="' . route('language.switch', ['locale' => 'fr']) . '"', false)
+            ->assertSee('Séjours premium pour des escapades sereines en Afrique de l’Ouest.');
 
         $this->withSession(['locale' => 'fr'])
             ->get('/language/en')
@@ -52,7 +53,11 @@ class AuthAndAdminFlowTest extends TestCase
             ->assertCookie('locale', 'en');
 
         $this->assertSame('en', session('locale'));
-        $this->withCookie('locale', 'en')->get('/')->assertSee('Home');
+        $this->withCookie('locale', 'en')
+            ->get('/')
+            ->assertSee('Home')
+            ->assertSee('Premium stays for peaceful getaways in West Africa.')
+            ->assertDontSee('Séjours premium pour des escapades sereines en Afrique de l’Ouest.');
     }
 
     public function test_authenticated_user_uses_saved_locale_and_sees_no_language_switcher(): void

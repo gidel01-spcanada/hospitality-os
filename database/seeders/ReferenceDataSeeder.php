@@ -21,7 +21,7 @@ class ReferenceDataSeeder extends Seeder
 
         $settings = [
             ['key' => 'site_name', 'value' => 'Afrik Appart', 'type' => 'string'],
-            ['key' => 'site_tagline', 'value' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.', 'type' => 'string'],
+            ['key' => 'site_tagline', 'value' => 'messages.brand.default_tagline', 'type' => 'string'],
             ['key' => 'contact_email', 'value' => 'support@afrikappart.example', 'type' => 'string'],
             ['key' => 'support_phone', 'value' => '+229 00 00 00 00', 'type' => 'string'],
             ['key' => 'default_locale', 'value' => 'fr', 'type' => 'string'],

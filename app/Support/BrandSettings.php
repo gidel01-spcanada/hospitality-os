@@ -17,9 +17,16 @@ class BrandSettings
         'site_favicon_url' => '',
         'customer_theme' => 'emerald-gold',
         'homepage_background_image' => 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format',
-        'site_tagline' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
+        'site_tagline' => 'messages.brand.default_tagline',
         'contact_email' => 'support@afrikappart.example',
         'support_phone' => '+229 00 00 00 00',
+        'social_facebook_url' => '',
+        'social_instagram_url' => '',
+        'social_tiktok_url' => '',
+        'social_youtube_url' => '',
+        'social_x_url' => '',
+        'social_linkedin_url' => '',
+        'social_whatsapp_url' => '',
         'default_locale' => 'fr',
         'secondary_locale' => 'en',
         'review_source_booking_url' => '',
@@ -34,7 +41,7 @@ class BrandSettings
         'pre_arrival_message' => 'Nous vous souhaitons la bienvenue et nous sommes ravis de vous accueillir très bientôt.',
         'post_stay_subject' => 'Merci pour votre séjour',
         'post_stay_message' => 'Merci d’avoir choisi Afrik Appart. Nous espérons vous revoir bientôt.',
-        'footer_copy' => 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.',
+        'footer_copy' => 'messages.brand.default_tagline',
         'footer_copyright' => '© :year :site_name. Tous droits réservés.',
     ];
 
@@ -42,12 +49,12 @@ class BrandSettings
     {
         try {
             if (! Schema::hasTable('settings')) {
-                return self::DEFAULTS;
+                return self::localizeDefaultTaglines(self::DEFAULTS);
             }
 
             $rows = self::query()->select(['key', 'value'])->get()->keyBy('key');
         } catch (\Throwable) {
-            return self::DEFAULTS;
+            return self::localizeDefaultTaglines(self::DEFAULTS);
         }
 
         $settings = [];
@@ -58,6 +65,23 @@ class BrandSettings
         foreach ($rows as $key => $row) {
             if (! array_key_exists($key, $settings)) {
                 $settings[$key] = (string) $row->value;
+            }
+        }
+
+        return self::localizeDefaultTaglines($settings);
+    }
+
+    private static function localizeDefaultTaglines(array $settings): array
+    {
+        $defaultTaglines = [
+            'messages.brand.default_tagline',
+            __('messages.brand.default_tagline', [], 'fr'),
+            __('messages.brand.default_tagline', [], 'en'),
+        ];
+
+        foreach (['site_tagline', 'footer_copy'] as $key) {
+            if (in_array($settings[$key] ?? null, $defaultTaglines, true)) {
+                $settings[$key] = __('messages.brand.default_tagline');
             }
         }
 

@@ -340,6 +340,10 @@ class AuthController extends Controller
 
         $status = Password::sendResetLink($request->only('email'));
 
+        if ($status === Password::RESET_THROTTLED) {
+            return back()->withInput($request->only('email'))->withErrors(['email' => __('messages.auth.reset_throttled')]);
+        }
+
         if ($status === Password::RESET_LINK_SENT) {
             EmailOutbox::query()->create([
                 'template' => 'password_reset_requested',
@@ -347,11 +351,10 @@ class AuthController extends Controller
                 'status' => 'queued',
                 'payload' => ['subject' => 'Réinitialisation du mot de passe'],
             ]);
-
-            return back()->with('status', __($status));
         }
 
-        return back()->withErrors(['email' => __($status)]);
+        // Same answer whether or not the account exists, so the form cannot be used to discover emails.
+        return back()->with('status', __('messages.auth.reset_link_sent'));
     }
 
     public function showResetPasswordForm(Request $request, string $token): View
@@ -387,11 +390,18 @@ class AuthController extends Controller
 
         if ($status === Password::PASSWORD_RESET) {
             return $checkoutReturn
-                ? redirect()->to($checkoutReturn)->with('status', __('messages.checkout.password_setup_complete'))
-                : redirect()->route('login')->with('status', __($status));
+                ? redirect()->to($checkoutReturn)->with('status', __('messages.checkout.password_setup_complete'))->with('checkout_login_prompt', true)
+                : redirect()->route('login')->withInput(['email' => $request->input('email')])->with('status', __('messages.auth.reset_complete'));
         }
 
-        return back()->withErrors(['email' => __($status)]);
+        if (in_array($status, [Password::INVALID_TOKEN, Password::INVALID_USER], true)) {
+            // Expired, already used, or superseded by a newer email: let the user request a fresh link right away.
+            return redirect()->route('password.request')
+                ->withInput(['email' => $request->input('email')])
+                ->withErrors(['email' => __('messages.auth.reset_link_invalid')]);
+        }
+
+        return back()->withErrors(['email' => __('messages.auth.reset_throttled')]);
     }
 
     private function validCheckoutReturn(Request $request, ?string $target): ?string

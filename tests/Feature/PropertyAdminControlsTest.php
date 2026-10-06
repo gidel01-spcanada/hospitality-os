@@ -663,10 +663,9 @@ class PropertyAdminControlsTest extends TestCase
             'source' => 'google',
         ]);
 
-        $bookingCsv = implode("\n", [
-            '"Date","Nom du client","Numéro","Titre","Positif","Négatif","Note"',
-            '"2026-09-09 15:17:26","KOFFI","6659892745","","Très propre","","10"',
-        ]);
+        $bookingCsv = "\"Date du commentaire\",\"Nom du client\",\"Num??ro de r??servation\",\"Titre du commentaire\",\"Commentaire positif\",\"Commentaire n??gatif\",\"Note des commentaires\",\"Personnel\",\"Propret??\",\"Situation g??ographique\",\"??quipements\",\"Confort\",\"Rapport qualit??/prix\",\"R??ponse de l'??tablissement\",\"Num�ro de propriete\"\n"
+            . "\"7-21-2024 23:04\",\"Youssaou\",\"4930482205\",\"Appartement agréable\",\"Très joli logement\",\"\",8,10,10,7.5,10,10,10,,\"Appartement 401\"\n"
+            . "\"8-25-2024 22:03\",\"Marie Paule\",\"4931602569\",\"Séjour\",\"Propre et confortable.\nCuisine bien équipée.\",\"\",10,10,10,10,10,10,10,,\"Appartement 402\"";
 
         $this->actingAs($admin)
             ->post(route('admin.establishments.reviews.import', $establishment), [
@@ -677,10 +676,20 @@ class PropertyAdminControlsTest extends TestCase
 
         $this->assertDatabaseHas('site_reviews', [
             'establishment_id' => $establishment->id,
-            'reviewer_name' => 'KOFFI',
+            'property_id' => Property::where('slug', 'appartement-401')->value('id'),
+            'reviewer_name' => 'Youssaou',
             'source' => 'booking',
-            'rating' => 5,
+            'rating' => 4,
+            'reviewed_at' => '2024-07-21 23:04:00',
         ]);
+        $this->assertDatabaseHas('site_reviews', [
+            'establishment_id' => $establishment->id,
+            'property_id' => Property::where('slug', 'appartement-402')->value('id'),
+            'reviewer_name' => 'Marie Paule',
+            'rating' => 5,
+            'reviewed_at' => '2024-08-25 22:03:00',
+        ]);
+        $this->assertStringContainsString("Cuisine bien équipée.", SiteReview::where('reviewer_name', 'Marie Paule')->value('review_text'));
 
         $airbnbCsv = implode("\n", [
             'Date,Reviewer,Overall rating,Public review',

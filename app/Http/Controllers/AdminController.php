@@ -222,6 +222,13 @@ class AdminController extends Controller
             'footer_copyright' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['required', 'email', 'max:255'],
             'support_phone' => ['nullable', 'string', 'max:255'],
+            'social_facebook_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_instagram_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_tiktok_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_youtube_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_x_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_linkedin_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
+            'social_whatsapp_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
             'default_locale' => ['required', 'in:fr,en'],
             'secondary_locale' => ['required', 'in:fr,en'],
             'review_source_booking_url' => ['nullable', 'url', 'max:2048'],
@@ -259,6 +266,12 @@ class AdminController extends Controller
         unset($validated['restore_homepage_background_image']);
 
         BrandSettings::set($validated);
+        foreach (['facebook', 'instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'whatsapp'] as $network) {
+            $key = 'social_' . $network . '_url';
+            if (blank($validated[$key] ?? null)) {
+                BrandSettings::forget($key);
+            }
+        }
         if ($clearSiteFavicon) {
             BrandSettings::forget('site_favicon_url');
         }

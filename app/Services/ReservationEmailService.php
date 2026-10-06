@@ -9,6 +9,7 @@ use App\Models\PaymentAttempt;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use App\Support\ReservationSummary;
 
 class ReservationEmailService
 {
@@ -45,6 +46,7 @@ class ReservationEmailService
             ];
         }
         $locale = $reservation->locale ?: config('app.locale');
+        $summary = ReservationSummary::make($reservation, $locale);
 
         EmailOutbox::query()->create([
             'template' => $template,
@@ -52,8 +54,10 @@ class ReservationEmailService
             'status' => 'queued',
             'payload' => [
                 'locale' => $locale,
+                'reservation_id' => $reservation->id,
+                'reservation_summary' => $summary,
                 'reservation_ref' => $reservation->reservation_ref,
-                'property_name' => $reservation->property?->name ?? 'Afrik Appart',
+                'property_name' => $summary['property']['name'],
                 'subject' => $subject ?? $this->subjectFor($template, $reservation, $locale),
                 'checkout_url' => $this->localizedUrl(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $locale),
                 'check_in' => $reservation->check_in?->toDateString(),
@@ -102,6 +106,7 @@ class ReservationEmailService
     {
         $reservation->loadMissing('priceLines');
         $locale = $reservation->locale ?: config('app.locale');
+        $summary = ReservationSummary::make($reservation, $locale);
         $previousLocale = app()->getLocale();
         app()->setLocale($locale);
         $subject = __('messages.payment_link.email_subject', ['reference' => $reservation->reservation_ref]);
@@ -113,8 +118,10 @@ class ReservationEmailService
             'status' => 'queued',
             'payload' => [
                 'locale' => $locale,
+                'reservation_id' => $reservation->id,
+                'reservation_summary' => $summary,
                 'reservation_ref' => $reservation->reservation_ref,
-                'property_name' => $reservation->property?->name ?? 'Afrik Appart',
+                'property_name' => $summary['property']['name'],
                 'subject' => $subject,
                 'checkout_url' => $this->localizedUrl(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $locale),
                 'register_url' => route('register', ['email' => $reservation->email]),
@@ -138,6 +145,7 @@ class ReservationEmailService
     {
         $reservation = $receipt->reservation()->with(['property', 'priceLines'])->firstOrFail();
         $locale = $reservation->locale ?: config('app.locale');
+        $summary = ReservationSummary::make($reservation, $locale);
         $previousLocale = app()->getLocale();
         app()->setLocale($locale);
         $subject = __('messages.receipts.email_subject', ['reference' => $reservation->reservation_ref]);
@@ -149,8 +157,12 @@ class ReservationEmailService
             'status' => 'queued',
             'payload' => [
                 'locale' => $locale,
+                'reservation_id' => $reservation->id,
+                'reservation_summary' => $summary,
+                'receipt_id' => $receipt->id,
+                'transaction' => $this->receiptTransaction($receipt),
                 'reservation_ref' => $reservation->reservation_ref,
-                'property_name' => $reservation->property?->name ?? 'Afrik Appart',
+                'property_name' => $summary['property']['name'],
                 'receipt_number' => $receipt->receipt_number,
                 'amount' => (string) $receipt->amount,
                 'currency' => $receipt->currency,
@@ -165,6 +177,31 @@ class ReservationEmailService
         ]);
     }
 
+    public function receiptTransaction(Receipt $receipt): array
+    {
+        $receipt->load('paymentAttempt');
+        $attempt = $receipt->paymentAttempt;
+        $verified = $attempt
+            && $attempt->reservation_id === $receipt->reservation_id
+            && $attempt->currency === $receipt->currency
+            && (string) $attempt->amount === (string) $receipt->amount
+            && in_array($attempt->status, ['paid', 'completed'], true)
+            && ! (bool) data_get($attempt->payload, 'is_guarantee', false);
+
+        return [
+            'verified' => (bool) $verified,
+            'transaction_number' => $attempt ? 'TX-' . str_pad((string) $attempt->id, 6, '0', STR_PAD_LEFT) : null,
+            'paid_at' => $verified ? $attempt->updated_at?->toIso8601String() : null,
+            'status' => $attempt?->status ?? 'unknown',
+            'is_guarantee' => (bool) data_get($attempt?->payload, 'is_guarantee', false),
+            'reference' => $attempt?->provider_reference,
+            'method' => $attempt?->provider,
+            'recorded_at' => $receipt->issued_at?->toIso8601String(),
+            'amount' => (string) $receipt->amount,
+            'currency' => $receipt->currency,
+        ];
+    }
+
     public function queueOfflineProofNotification(Reservation $reservation, PaymentAttempt $attempt): void
     {
         $reservation->loadMissing('property.establishment');
@@ -177,6 +214,7 @@ class ReservationEmailService
         $recipients = User::query()
             ->where('tenant_id', $tenantId)
             ->whereIn('role', ['admin', 'concierge', 'host'])
+            ->where(fn ($query) => $query->where('role', '!=', 'host')->orWhereHas('establishments', fn ($establishmentQuery) => $establishmentQuery->where('establishments.id', $reservation->property->establishment_id)))
             ->get();
 
         foreach ($recipients as $recipient) {
@@ -188,9 +226,10 @@ class ReservationEmailService
                 'status' => 'queued',
                 'payload' => [
                     'locale' => $locale,
+                    'recipient_name' => $recipient->name,
                     'subject' => __('messages.receipts.proof_notification_subject', ['reference' => $reservation->reservation_ref], $locale),
                     'reservation_ref' => $reservation->reservation_ref,
-                    'property_name' => $reservation->property?->name ?? 'Afrik Appart',
+                    'property_name' => $reservation->property?->localized('name', $locale) ?? __('messages.checkout.property', [], $locale),
                     'provider' => $attempt->provider,
                     'amount' => (string) $attempt->amount,
                     'currency' => $attempt->currency,

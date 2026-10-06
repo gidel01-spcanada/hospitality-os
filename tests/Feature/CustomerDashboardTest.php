@@ -32,6 +32,7 @@ class CustomerDashboardTest extends TestCase
         ]);
 
         $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->features()->update(['is_active' => false]);
         $guest = ReservationGuest::query()->create([
             'full_name' => 'Amina Diallo',
             'email' => 'amina@example.com',
@@ -91,7 +92,20 @@ class CustomerDashboardTest extends TestCase
             ->get('/dashboard/reservations/' . $reservation->id)
             ->assertOk()
             ->assertSee('Détails')
-            ->assertSee('Confirmée');
+            ->assertSee('Confirmée')
+            ->assertSee(__('messages.reservation.taxes'))
+            ->assertSee('7 500 XOF')
+            ->assertDontSee(__('messages.properties.extra_options'))
+            ->assertSee(route('dashboard.reservations.show', ['reservation' => $reservation, 'view' => 'edit']))
+            ->assertSee(__('messages.messages.contact_concierge'))
+            ->assertDontSee('modification_check_in');
+
+        $this->actingAs($user)
+            ->get(route('dashboard.reservations.show', ['reservation' => $reservation, 'view' => 'edit']))
+            ->assertOk()
+            ->assertSee('modification_check_in')
+            ->assertSee(__('messages.messages.contact_concierge'))
+            ->assertSee(__('messages.messages.send'));
     }
 
     public function test_customer_can_modify_reservation_dates_and_guests(): void
@@ -196,6 +210,7 @@ class CustomerDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Paramètres du site')
             ->assertSee('Générale')
+            ->assertSee('Réseaux sociaux')
             ->assertSee('Communications par e-mail');
 
         $settings = [
@@ -209,6 +224,8 @@ class CustomerDashboardTest extends TestCase
                 'footer_copyright' => '© :year Maison Bleu. Tous droits réservés.',
                 'contact_email' => 'hello@maisonbleu.example',
                 'support_phone' => '+229 97 00 00 00',
+                'social_instagram_url' => 'https://instagram.com/maisonbleu',
+                'social_whatsapp_url' => 'https://wa.me/22997000000',
                 'default_locale' => 'fr',
                 'secondary_locale' => 'en',
                 'review_source_booking_url' => 'https://www.booking.com/hotel/fr/maison-bleu.html',
@@ -233,6 +250,8 @@ class CustomerDashboardTest extends TestCase
         $this->assertDatabaseHas('settings', ['key' => 'site_favicon_url', 'value' => 'https://images.example.com/favicon.png']);
         $this->assertDatabaseHas('settings', ['key' => 'customer_theme', 'value' => 'ocean-coral']);
         $this->assertDatabaseHas('settings', ['key' => 'contact_email', 'value' => 'hello@maisonbleu.example']);
+        $this->assertDatabaseHas('settings', ['key' => 'social_instagram_url', 'value' => 'https://instagram.com/maisonbleu']);
+        $this->assertDatabaseHas('settings', ['key' => 'social_whatsapp_url', 'value' => 'https://wa.me/22997000000']);
         $this->assertDatabaseHas('settings', ['key' => 'footer_copyright', 'value' => '© :year Maison Bleu. Tous droits réservés.']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_booking_url', 'value' => 'https://www.booking.com/hotel/fr/maison-bleu.html']);
         $this->assertDatabaseHas('settings', ['key' => 'review_source_google_url', 'value' => 'https://maps.google.com/?q=Maison+Bleu']);
@@ -243,10 +262,25 @@ class CustomerDashboardTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('data-site-theme="ocean-coral"', false)
-            ->assertSee('class="brand-mark">MB</span>', false)
+            ->assertSee('class="brand-mark brand-mark-image" src="https://images.example.com/favicon.png"', false)
+            ->assertDontSee('class="brand-mark">MB</span>', false)
             ->assertSee('rel="icon" href="https://images.example.com/favicon.png"', false)
-            ->assertSee('brand-icon-only', false)
+            ->assertSee('Maison Bleu')
+            ->assertSee('href="https://instagram.com/maisonbleu"', false)
+            ->assertSee('href="https://wa.me/22997000000"', false)
+            ->assertSee('aria-label="Réseaux sociaux"', false)
+            ->assertSee('aria-label="Instagram" title="Instagram"', false)
+            ->assertSee('aria-label="WhatsApp" title="WhatsApp"', false)
+            ->assertSee('<svg', false)
             ->assertSee('https://images.example.com/home.jpg');
+
+        $settingsWithoutSocial = array_replace($settings, ['social_instagram_url' => '', 'social_whatsapp_url' => '']);
+        $this->actingAs($admin)->post('/admin/settings', $settingsWithoutSocial)->assertRedirect('/admin/settings');
+        $this->assertDatabaseMissing('settings', ['key' => 'social_instagram_url']);
+        $this->get('/')->assertOk()->assertDontSee('aria-label="Réseaux sociaux"', false);
+
+        $this->actingAs($admin)->post('/admin/settings', array_replace($settings, ['social_instagram_url' => 'javascript:alert(1)']))
+            ->assertSessionHasErrors('social_instagram_url');
 
         $this->actingAs($admin)
             ->post('/admin/settings', $settings + ['restore_homepage_background_image' => '1'])

@@ -33,32 +33,14 @@
                             <h2>{{ __('messages.home.book_stay') }}</h2>
                         </div>
                     </div>
-                    <form class="search-form" method="GET" action="{{ route('properties.index') }}">
-                        <label>
-                            <span>{{ __('messages.home.destination') }}</span>
-                            <select name="destination" aria-label="{{ __('messages.home.destination') }}">
-                                <option value="">{{ __('messages.properties.all_destinations') }}</option>
-                                @foreach ($destinations as $destination)
-                                    <option value="{{ $destination }}" @selected(request('destination') === $destination)>{{ $destination }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <div class="date-range-picker" data-date-range-picker data-incomplete-message="{{ __('messages.home.select_both_dates') }}" data-past-message="{{ __('messages.home.past_dates') }}" data-start-label="{{ __('messages.home.arrival') }}" data-end-label="{{ __('messages.home.departure') }}" data-placeholder="{{ __('messages.home.select_dates') }}">
-                            <span>{{ __('messages.home.dates') }}</span>
-                            <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
-                                <span data-date-range-label>{{ request('check_in') && request('check_out') ? request('check_in') . ' → ' . request('check_out') : __('messages.home.select_dates') }}</span>
-                            </button>
-                            <input type="hidden" name="check_in" value="{{ request('check_in') }}" data-date-range-start>
-                            <input type="hidden" name="check_out" value="{{ request('check_out') }}" data-date-range-end>
-                            <div class="date-range-popover" data-date-range-popover hidden></div>
-                        </div>
-                        <label>
-                            <span>{{ __('messages.home.travelers') }}</span>
-                            <input name="guests" type="number" min="1" max="100" step="1" inputmode="numeric" list="traveler-suggestions" aria-label="{{ __('messages.home.travelers') }}" value="{{ request('guests', '1') }}">
-                            <datalist id="traveler-suggestions"><option value="1">1 voyageur</option><option value="2">2 voyageurs</option><option value="3">3 voyageurs</option><option value="4">4 voyageurs</option></datalist>
-                        </label>
-                        <button type="submit" class="btn btn-primary btn-full">{{ __('messages.home.search') }}</button>
-                    </form>
+                    <x-property-filters
+                        variant="home"
+                        :action="route('properties.index')"
+                        :filters="$homeFilters"
+                        :destinations="$destinations"
+                        :establishments="$establishments"
+                        :search-label="__('messages.home.search')"
+                    />
                 </aside>
             </div>
         </div>
@@ -178,7 +160,16 @@
                     <span class="badge badge-gold">{{ __('messages.nav.properties') }}</span>
                         <h2>{{ __('messages.home.properties_heading') }}</h2>
                 </div>
-                <a href="{{ route('properties.index') }}" class="btn btn-ghost">{{ __('messages.home.view_all') }}</a>
+                <div class="home-section-actions">
+                    @if ($publicEstablishments->isNotEmpty())
+                        @if ($publicEstablishments->count() === 1)
+                            <a href="{{ route('establishments.show', $publicEstablishments->first()) }}" class="btn btn-ghost">{{ __('messages.home.view_establishment') }}</a>
+                        @else
+                            <a href="{{ route('establishments.index') }}" class="btn btn-ghost">{{ __('messages.home.view_establishments') }}</a>
+                        @endif
+                    @endif
+                    <a href="{{ route('properties.index') }}" class="btn btn-ghost">{{ __('messages.home.view_all') }}</a>
+                </div>
             </div>
             @if ($establishments->count() > 1)
                 <form method="GET" action="{{ route('home') }}" class="establishment-filter">
@@ -253,9 +244,9 @@
                                     <div class="property-price-footer">
                                         @if (isset($cardPricing[$property->id]))
                                             <strong>{{ number_format($cardPricing[$property->id]['total_amount'], 0, ',', ' ') }} {{ $cardPricing[$property->id]['currency'] }} {{ __('messages.properties.for_nights', ['nights' => $cardPricing[$property->id]['nights']]) }}</strong>
-                                            <span>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</span>
+                                            <span><x-display-price :amount="$property->nightly_rate_xof" :property="$property" /> / {{ __('messages.properties.night_short') }}</span>
                                         @else
-                                            <strong>{{ number_format($property->nightly_rate_xof, 0, ',', ' ') }} {{ $property->currency }} / {{ __('messages.properties.night_short') }}</strong>
+                                            <strong><x-display-price :amount="$property->nightly_rate_xof" :property="$property" /> / {{ __('messages.properties.night_short') }}</strong>
                                         @endif
                                         @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                             <span>≈ {{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</span>

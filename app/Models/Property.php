@@ -71,7 +71,7 @@ class Property extends Model
     {
         return $query->where('status', 'published')
             ->where('is_active', true)
-            ->whereHas('establishment', fn (Builder $establishmentQuery) => $establishmentQuery->where('is_active', true));
+            ->whereHas('establishment', fn (Builder $establishmentQuery) => $establishmentQuery->published());
     }
 
     /**

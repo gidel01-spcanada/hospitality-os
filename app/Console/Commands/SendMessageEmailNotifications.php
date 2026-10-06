@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\EmailOutbox;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Reservation;
+use App\Support\ReservationSummary;
 
 class SendMessageEmailNotifications extends Command
 {
@@ -28,6 +30,25 @@ class SendMessageEmailNotifications extends Command
                 $previousLocale = app()->getLocale();
                 app()->setLocale($locale);
 
+                $payload = $notification->payload ?? [];
+                if (isset($payload['reservation_summary'], $payload['reservation_id'])) {
+                    $reservation = Reservation::query()->find($payload['reservation_id']);
+                    if ($reservation && strtolower((string) $reservation->email) === strtolower($notification->recipient_email)) {
+                        $payload['reservation_summary'] = ReservationSummary::make($reservation, $locale);
+                        $payload['property_name'] = $payload['reservation_summary']['property']['name'];
+                        $payload['status'] = $reservation->status;
+                        if ($notification->template === 'receipt_issued' && isset($payload['receipt_id'])) {
+                            $receipt = $reservation->receipts()->find($payload['receipt_id']);
+                            $payload['transaction'] = $receipt ? app(\App\Services\ReservationEmailService::class)->receiptTransaction($receipt) : null;
+                        }
+                    }
+                }
+
+                // Mail::send() overwrites the `$message` view variable with the mail object.
+                if (isset($payload['message']) && is_string($payload['message'])) {
+                    $payload['message_body'] = $payload['message'];
+                }
+
                 $view = match ($notification->template) {
                     'payment_link' => 'emails.payment-link',
                     'reservation_created' => 'emails.reservation-created',
@@ -38,7 +59,7 @@ class SendMessageEmailNotifications extends Command
                     default => 'emails.message-received',
                 };
 
-                Mail::send($view, $notification->payload ?? [], function ($mail) use ($notification): void {
+                Mail::send($view, $payload, function ($mail) use ($notification): void {
                     $mail->to($notification->recipient_email)
                         ->subject($notification->payload['subject'] ?? __('messages.messages.email_subject'));
                 });

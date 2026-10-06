@@ -1,31 +1,23 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<body style="font-family: Arial, sans-serif; color: #1d2a2d; line-height: 1.6;">
-    <h1>{{ __('messages.reservation_created.email_heading') }}</h1>
-    <p>{{ __('messages.reservation_created.email_intro', ['reference' => $reservation_ref, 'property' => $property_name]) }}</p>
+@extends('emails.layouts.reservation')
 
-    @if (!empty($price_lines))
-        <table style="width: 100%; max-width: 500px; border-collapse: collapse; margin: 15px 0; font-size: 14px;">
-            <thead>
-                <tr style="background-color: #f6f3ec; border-bottom: 2px solid #0f5b4c;">
-                    <th style="text-align: left; padding: 8px;">{{ __('messages.checkout.mode') }}</th>
-                    <th style="text-align: right; padding: 8px;">{{ __('messages.reservation.total') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($price_lines as $line)
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 8px;">{{ $line['label'] }}</td>
-                        <td style="text-align: right; padding: 8px;">{{ number_format((float) $line['amount'], 0, ',', ' ') }} {{ $line['currency'] }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+@php($emailEstablishmentName = $reservation_summary['establishment']['name'] ?? null)
+@section('email-preheader', __('messages.reservation_created.email_subject', ['reference' => $reservation_ref]))
+@section('email-eyebrow', __('messages.transactional.eyebrow_booking'))
+@section('email-title', __('messages.reservation_created.email_heading'))
+
+@section('email-content')
+    <p style="margin:0 0 10px;font-size:17px;font-weight:bold;color:#0a3f35;">{{ __('messages.transactional.welcome', ['brand' => \App\Support\PlatformBrand::name()]) }}</p>
+    <p style="margin:0 0 20px;">{{ $emailEstablishmentName ? __('messages.transactional.booking_context', ['brand' => \App\Support\PlatformBrand::name(), 'establishment' => $emailEstablishmentName]) : __('messages.transactional.booking_context_generic', ['brand' => \App\Support\PlatformBrand::name()]) }}</p>
+
+    @if (!empty($reservation_summary))
+        @include('emails.partials.reservation-summary')
+    @else
+        <p>{{ __('messages.reservation_created.email_intro', ['reference' => $reservation_ref, 'property' => $property_name]) }}</p>
+        @include('emails.partials.legacy-price-lines')
     @endif
 
-    <p>{{ __('messages.reservation_created.email_amount', ['amount' => number_format((float) $total_amount, 0, ',', ' '), 'currency' => $currency]) }}</p>
     @if (!empty($checkout_url))
-        <p><a href="{{ $checkout_url }}">{{ __('messages.reservation_created.email_action') }}</a></p>
+        <x-email.button :href="$checkout_url">{{ __('messages.reservation_created.email_action') }}</x-email.button>
     @endif
-</body>
-</html>
+    @if ($emailEstablishmentName)<p style="margin:20px 0 0;">{{ __('messages.transactional.closing_stay', ['establishment' => $emailEstablishmentName]) }}</p>@endif
+@endsection

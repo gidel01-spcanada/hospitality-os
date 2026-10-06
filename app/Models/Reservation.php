@@ -17,6 +17,7 @@ class Reservation extends Model
         'user_id',
         'reservation_ref',
         'checkout_token',
+        'account_setup_deferred',
         'status',
         'check_in',
         'check_out',
@@ -36,6 +37,7 @@ class Reservation extends Model
     ];
 
     protected $casts = [
+        'account_setup_deferred' => 'boolean',
         'check_in' => 'date',
         'check_out' => 'date',
         'subtotal' => 'decimal:2',
@@ -95,6 +97,11 @@ class Reservation extends Model
     public function receipts(): HasMany
     {
         return $this->hasMany(Receipt::class);
+    }
+
+    public function internalNotes(): HasMany
+    {
+        return $this->hasMany(ReservationNote::class)->latest('id');
     }
 
     public function canSendPaymentLink(): bool

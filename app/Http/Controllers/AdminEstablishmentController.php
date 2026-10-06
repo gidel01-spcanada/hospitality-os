@@ -76,6 +76,7 @@ class AdminEstablishmentController extends Controller
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? []);
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : true;
+        $validated['is_published'] = $request->boolean('is_published', true);
         $validated['secondary_currency'] = $validated['secondary_currency'] ?? null;
         $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? 1) : null;
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
@@ -105,6 +106,7 @@ class AdminEstablishmentController extends Controller
         $validated = $this->coordinatesFromGoogleMapsUrl($validated);
         $validated['payment_methods'] = $this->normalizePaymentMethods($validated['payment_methods'] ?? $establishment->payment_methods ?? []);
         $validated['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : (bool) $establishment->is_active;
+        $validated['is_published'] = $request->boolean('is_published', (bool) $establishment->is_published);
         $validated['secondary_currency'] = $request->has('secondary_currency') ? ($validated['secondary_currency'] ?? null) : $establishment->secondary_currency;
         $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? $establishment->secondary_currency_rate ?? 1) : null;
         $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
@@ -155,6 +157,7 @@ class AdminEstablishmentController extends Controller
             'source_url' => ['nullable', 'url', 'max:2048'],
             'reviewed_at' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_published' => ['sometimes', 'boolean'],
         ]);
 
         $establishment->reviews()->create([

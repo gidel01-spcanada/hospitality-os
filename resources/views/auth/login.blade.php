@@ -14,6 +14,10 @@
             <form class="auth-form" method="POST" action="{{ route('login') }}">
                 @csrf
 
+                @if (session('status'))
+                    <div class="form-alert form-alert-success" role="status">{{ session('status') }}</div>
+                @endif
+
                 <label>
                     <span>{{ __('messages.auth.email') }}</span>
                     <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" required @error('email') class="is-error" aria-invalid="true" aria-describedby="login-email-error" @enderror>
