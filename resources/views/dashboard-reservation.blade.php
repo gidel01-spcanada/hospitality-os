@@ -13,14 +13,61 @@
     </section>
 
     <section class="container dashboard-grid">
+        @php
+            $canModifyReservation = ! in_array($reservation->status, ['cancelled', 'completed'], true);
+            $activeReservationView = $canModifyReservation && request()->query('view') === 'edit' ? 'edit' : 'details';
+        @endphp
+        <div class="section-tabs-shell full-width">
+            <nav class="section-tabs" aria-label="{{ __('messages.reservation.view_navigation') }}">
+                <a href="{{ route('dashboard.reservations.show', ['reservation' => $reservation, 'view' => 'details']) }}" class="{{ $activeReservationView === 'details' ? 'is-active' : '' }}" @if ($activeReservationView === 'details') aria-current="page" @endif>{{ __('messages.reservation.details') }}</a>
+                @if ($canModifyReservation)
+                    <a href="{{ route('dashboard.reservations.show', ['reservation' => $reservation, 'view' => 'edit']) }}" class="{{ $activeReservationView === 'edit' ? 'is-active' : '' }}" @if ($activeReservationView === 'edit') aria-current="page" @endif>{{ __('messages.reservation.modify') }}</a>
+                @endif
+            </nav>
+        </div>
+
+        @if ($activeReservationView === 'details')
         <div class="summary-card full-width">
-            <h2>{{ __('messages.reservation.details') }}</h2>
+            <div class="reservation-card-heading">
+                <h2>{{ __('messages.reservation.details') }}</h2>
+                @if ($canModifyReservation)
+                    <a class="btn btn-ghost btn-small" href="{{ route('dashboard.reservations.show', ['reservation' => $reservation, 'view' => 'edit']) }}">{{ __('messages.reservation.modify') }}</a>
+                @endif
+            </div>
             <ul>
                 <li><strong>{{ __('messages.reservation.status') }}</strong><span>{{ __('messages.admin.status_' . $reservation->status) }}</span></li>
                 <li><strong>{{ __('messages.reservation.dates') }}</strong><span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span></li>
                 <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</span></li>
                 <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
                 <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
+            </ul>
+        </div>
+
+        @php
+            $stayNotes = \App\Support\ReservationSummary::stayNotes($reservation->property?->establishment, app()->getLocale());
+        @endphp
+        @if ($stayNotes)
+            <div class="summary-card full-width" data-stay-notes>
+                <h2>{{ __('messages.transactional.important_notes') }}</h2>
+                @foreach ($stayNotes as $note)
+                    <p class="cancellation-policy-note {{ $note['type'] === 'electricity' ? 'electricity-policy-note' : '' }}">{{ $note['type'] === 'electricity' ? '⚡ ' : '' }}{{ $note['text'] }}</p>
+                @endforeach
+            </div>
+        @endif
+
+        <div class="summary-card full-width">
+            <h2>{{ __('messages.reservation.amounts') }}</h2>
+            <ul>
+                @foreach($reservation->priceLines as $line)
+                    <li><strong>{{ $line->label }}</strong><span>{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency ?: $reservation->currency }}</span></li>
+                @endforeach
+                @if ((float) $reservation->taxes > 0 && ! $reservation->priceLines->contains(fn ($line) =>
+                    in_array($line->label, [__('messages.pricing.city_tax', [], 'fr'), __('messages.pricing.city_tax', [], 'en')], true)
+                    || str_starts_with((string) $line->label, 'TVA (')
+                    || str_starts_with((string) $line->label, 'VAT (')
+                ))
+                    <li><strong>{{ __('messages.reservation.taxes') }}</strong><span>{{ number_format((float) $reservation->taxes, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
+                @endif
             </ul>
         </div>
 
@@ -42,7 +89,53 @@
             </div>
         @endif
 
-        @if (! in_array($reservation->status, ['cancelled', 'completed'], true))
+        @if ($reservation->receipts->isNotEmpty())
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.receipts.title') }}</h2>
+                @foreach ($reservation->receipts as $receipt)
+                    <a class="btn btn-primary" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.receipts.download', ['number' => $receipt->receipt_number]) }}</a>
+                @endforeach
+            </div>
+        @endif
+
+        @php($paymentProofAttempts = $reservation->paymentAttempts->filter(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path')))
+        @if ($paymentProofAttempts->isNotEmpty())
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.receipts.payment_proof') }}</h2>
+                @foreach ($paymentProofAttempts as $attempt)
+                    <a class="btn btn-ghost" href="{{ route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]) }}">{{ data_get($attempt->payload, 'payment_proof.original_name') ?: __('messages.receipts.download_proof') }}</a>
+                @endforeach
+            </div>
+        @endif
+
+        @php($refundProofAttempts = $reservation->paymentAttempts->filter(fn ($attempt) => data_get($attempt->payload, 'refund_proof.path')))
+        @if ($refundProofAttempts->isNotEmpty())
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.receipts.refund_proof') }}</h2>
+                @foreach ($refundProofAttempts as $attempt)
+                    <a class="btn btn-ghost" href="{{ route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt, 'type' => 'refund']) }}">{{ data_get($attempt->payload, 'refund_proof.original_name') ?: __('messages.receipts.refund_proof') }}</a>
+                    @if (data_get($attempt->payload, 'refund_reference'))<p>{{ __('messages.receipts.refund_reference') }} : {{ data_get($attempt->payload, 'refund_reference') }}</p>@endif
+                @endforeach
+            </div>
+        @endif
+
+        @if (auth()->user()?->role === 'customer' && $reservation->property?->establishment)
+            <div class="summary-card full-width">
+                <h2>{{ __('messages.messages.contact_concierge') }}</h2>
+                <form method="POST" action="{{ route('messages.store') }}" class="message-form">
+                    @csrf
+                    <input type="hidden" name="establishment_id" value="{{ $reservation->property->establishment->id }}">
+                    <input type="hidden" name="reservation_id" value="{{ $reservation->id }}">
+                    <label for="reservation-message-body-details">{{ __('messages.messages.message') }}</label>
+                    <textarea id="reservation-message-body-details" name="body" rows="4" maxlength="5000" required></textarea>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
+                    </div>
+                </form>
+            </div>
+        @endif
+        @else
+        @if ($canModifyReservation)
             <div class="summary-card full-width">
                 <h2>{{ __('messages.reservation.modify') }}</h2>
                 <form method="POST" action="{{ route('dashboard.reservations.update', $reservation) }}" class="reservation-modification-form">
@@ -75,7 +168,7 @@
                         </div>
                     </div>
 
-                    @if ($reservation->property->features->isNotEmpty())
+                    @if ($reservation->property->features->where('is_active', true)->isNotEmpty())
                         <fieldset class="feature-choice-box">
                             <legend>{{ __('messages.properties.extra_options') }}</legend>
                             @foreach ($reservation->property->features->where('is_active', true) as $feature)
@@ -99,48 +192,21 @@
             </div>
         @endif
 
-
-        @if ($reservation->receipts->isNotEmpty())
-            <div class="summary-card full-width">
-                <h2>{{ __('messages.receipts.title') }}</h2>
-                @foreach ($reservation->receipts as $receipt)
-                    <a class="btn btn-primary" href="{{ route('reservations.receipt', $reservation) }}">{{ __('messages.receipts.download', ['number' => $receipt->receipt_number]) }}</a>
-                @endforeach
-            </div>
-        @endif
-
-        @php($paymentProofAttempts = $reservation->paymentAttempts->filter(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path')))
-        @if ($paymentProofAttempts->isNotEmpty())
-            <div class="summary-card full-width">
-                <h2>{{ __('messages.receipts.payment_proof') }}</h2>
-                @foreach ($paymentProofAttempts as $attempt)
-                    <a class="btn btn-ghost" href="{{ route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]) }}">{{ data_get($attempt->payload, 'payment_proof.original_name') ?: __('messages.receipts.download_proof') }}</a>
-                @endforeach
-            </div>
-        @endif
-
-        <div class="summary-card full-width">
-            <h2>{{ __('messages.reservation.amounts') }}</h2>
-            <ul>
-                @foreach($reservation->priceLines as $line)
-                                    <li><strong>{{ $line->label }}</strong><span>{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency ?: $reservation->currency }}</span></li>
-                @endforeach
-            </ul>
-        </div>
-
         @if (auth()->user()?->role === 'customer' && $reservation->property?->establishment)
             <div class="summary-card full-width">
                 <h2>{{ __('messages.messages.contact_concierge') }}</h2>
                 <form method="POST" action="{{ route('messages.store') }}" class="message-form">
                     @csrf
                     <input type="hidden" name="establishment_id" value="{{ $reservation->property->establishment->id }}">
-                    <label for="reservation-message-body">{{ __('messages.messages.message') }}</label>
-                    <textarea id="reservation-message-body" name="body" rows="4" maxlength="5000" required></textarea>
+                    <input type="hidden" name="reservation_id" value="{{ $reservation->id }}">
+                    <label for="reservation-message-body-edit">{{ __('messages.messages.message') }}</label>
+                    <textarea id="reservation-message-body-edit" name="body" rows="4" maxlength="5000" required></textarea>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">{{ __('messages.messages.send') }}</button>
                     </div>
                 </form>
             </div>
+        @endif
         @endif
     </section>
 @endsection

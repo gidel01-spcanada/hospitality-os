@@ -9,8 +9,8 @@ use App\Services\Payments\PaymentGatewayManager;
 use App\Services\ReservationEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -28,14 +28,15 @@ class CheckoutController extends Controller
         }
 
         $token = $this->authorizeCheckout($request, $reservation);
-        $reservation->load(['property.establishment', 'guest', 'paymentAttempts']);
+        $reservation->load(['property.establishment.translations', 'property.translations', 'property.images' => fn ($query) => $query->orderBy('sort_order'), 'guest', 'paymentAttempts', 'priceLines']);
         $customer = $reservation->user ?: User::query()->where('email', strtolower((string) $reservation->email))->first();
+        $accountActivationRequired = $reservation->account_setup_deferred && $customer && ! $customer->email_verified_at;
         $requiresIdentitySetup = ! $request->user()?->canManageReservations()
             && (! $customer
                 || ! $customer->email_verified_at
                 || (! $request->user() && ! $customer->last_login_at));
         $skippedReservations = $request->session()->get('checkout_identity_skipped', []);
-        if ($requiresIdentitySetup && ! in_array($reservation->id, $skippedReservations, true)) {
+        if ($requiresIdentitySetup && ! $accountActivationRequired && ! in_array($reservation->id, $skippedReservations, true)) {
             return view('checkout.identity', compact('reservation', 'token'));
         }
 
@@ -43,7 +44,7 @@ class CheckoutController extends Controller
         $isDevEnvironment = app()->environment(['local', 'testing']);
         $linkExpired = $this->isPayable($reservation) && $this->isLinkExpired($reservation);
 
-        return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment', 'linkExpired'));
+        return view('checkout.show', compact('reservation', 'paymentMethods', 'token', 'isDevEnvironment', 'linkExpired', 'accountActivationRequired'));
     }
 
     public function requestIdentitySetup(Request $request, Reservation $reservation): RedirectResponse
@@ -66,13 +67,24 @@ class CheckoutController extends Controller
             $reservation->update(['user_id' => $customer->id]);
         }
 
-        $customer->notify(new GuestAccountSetupNotification(
-            Password::broker()->createToken($customer),
-            $reservation->reservation_ref,
-            route('checkout.show', ['reservation' => $reservation, 'token' => $token]),
-        ));
+        try {
+            $customer->notify(new GuestAccountSetupNotification(
+                Password::broker()->createToken($customer),
+                $reservation->reservation_ref,
+                route('checkout.show', ['reservation' => $reservation, 'token' => $token]),
+            ));
+        } catch (\Throwable $exception) {
+            if (! $reservation->account_setup_deferred) {
+                throw $exception;
+            }
+            Log::warning('Deferred checkout activation email could not be sent.', ['reservation_id' => $reservation->id, 'exception' => $exception]);
 
-        return back()->with('status', __('messages.checkout.password_setup_link_sent'));
+            return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
+                ->with('account_activation_email_failed', true);
+        }
+
+        return back()->with('status', __('messages.checkout.password_setup_link_sent'))
+            ->with('account_activation_email_failed', false);
     }
 
     public function skipIdentitySetup(Request $request, Reservation $reservation): RedirectResponse
@@ -270,6 +282,7 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'provider' => ['required', 'string', 'in:interac,wise,revolut'],
             'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'provider_reference' => ['nullable', 'string', 'max:120'],
         ]);
 
         $paymentMethods = $this->paymentMethods($reservation);
@@ -288,25 +301,10 @@ class CheckoutController extends Controller
             ]);
         }
 
-        /** @var \Illuminate\Http\UploadedFile $file */
-        $file = $validated['payment_proof'];
-        $directory = rtrim(config('filesystems.public_upload_path'), '/\\') . DIRECTORY_SEPARATOR . 'reservations' . DIRECTORY_SEPARATOR . $reservation->id;
-        File::ensureDirectoryExists($directory);
-        $filename = now()->format('YmdHisv') . '-' . Str::lower(Str::random(12)) . '.' . strtolower($file->getClientOriginalExtension());
-        $file->move($directory, $filename);
-        $relativePath = 'uploads/reservations/' . $reservation->id . '/' . $filename;
-
-        $attempt->update([
+        app(\App\Services\PaymentProofService::class)->attach($reservation, $attempt, $validated['payment_proof'], 'guest', array_filter([
             'status' => 'awaiting_validation',
-            'payload' => array_merge((array) $attempt->payload, [
-                'payment_proof' => [
-                    'path' => $relativePath,
-                    'original_name' => $file->getClientOriginalName(),
-                    'uploaded_by' => 'guest',
-                    'uploaded_at' => now()->toIso8601String(),
-                ],
-            ]),
-        ]);
+            'provider_reference' => filled($validated['provider_reference'] ?? null) ? trim($validated['provider_reference']) : null,
+        ]));
 
         $reservation->update([
             'status' => 'pending_validation',

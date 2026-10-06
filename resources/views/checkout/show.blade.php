@@ -16,6 +16,12 @@
         @if (session('status'))
             <div class="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                 {{ session('status') }}
+                @if (session('checkout_login_prompt'))
+                    @guest
+                        <span data-checkout-login-prompt>{{ __('messages.checkout.password_setup_login_prompt') }}</span>
+                        <a class="font-semibold underline" href="{{ route('login') }}">{{ __('messages.checkout.password_setup_login_action') }}</a>
+                    @endguest
+                @endif
             </div>
         @endif
 
@@ -23,62 +29,18 @@
             <div class="checkout-mobile-summary">
                 <div>
                     <span>{{ __('messages.reservation.total') }}</span>
-                    <strong>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</strong>
+                    <strong>{{ number_format((float) $reservation->total_amount, (float) $reservation->total_amount == round((float) $reservation->total_amount) ? 0 : 2, app()->getLocale() === 'en' ? '.' : ',', app()->getLocale() === 'en' ? ',' : ' ') }} {{ $reservation->currency }}</strong>
                 </div>
                 <a class="btn btn-primary" href="#checkout-payment">{{ __('messages.checkout.continue_to_payment') }}</a>
             </div>
         @endif
 
+        @if ($accountActivationRequired ?? false)
+            @include('checkout.partials.account-activation')
+        @endif
+
         <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="mb-6 flex items-center justify-between border-b border-slate-200 pb-4">
-                    <div>
-                        <p class="text-sm text-slate-500">{{ __('messages.checkout.reference') }}</p>
-                        <h2 class="text-xl font-semibold">{{ $reservation->reservation_ref }}</h2>
-                    </div>
-                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{{ __('messages.admin.status_' . $reservation->status) }}</span>
-                </div>
-
-                <dl class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.establishment') }}</dt>
-                        <dd class="mt-1 font-medium">{{ $reservation->property?->establishment?->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.property') }}</dt>
-                        <dd class="mt-1 font-medium">{{ $reservation->property?->name ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.reservation.dates') }}</dt>
-                        <dd class="mt-1">{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.reservation.total') }}</dt>
-                        <dd class="mt-1 font-semibold">{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</dd>
-                        @if ($reservation->property?->establishment?->secondary_currency && $reservation->property?->establishment?->secondaryDisplayAmount((float) $reservation->total_amount) !== null)
-                            <dd class="mt-1 text-sm text-slate-500">≈ {{ number_format($reservation->property->establishment->secondaryDisplayAmount((float) $reservation->total_amount), 2, ',', ' ') }} {{ $reservation->property->establishment->secondary_currency }}</dd>
-                        @endif
-                    </div>
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-500">{{ __('messages.checkout.client') }}</dt>
-                        <dd class="mt-1">{{ $reservation->guest?->full_name ?? $reservation->email }}</dd>
-                    </div>
-                </dl>
-
-                @if ($reservation->priceLines->isNotEmpty())
-                    <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <h3 class="text-md font-semibold text-slate-900">{{ __('messages.reservation.amounts') }}</h3>
-                        <ul class="mt-3 space-y-2 text-sm text-slate-700">
-                            @foreach ($reservation->priceLines as $line)
-                                <li class="flex items-center justify-between border-b border-slate-200/60 pb-1.5 last:border-b-0 last:pb-0">
-                                    <span>{{ $line->label }}</span>
-                                    <span class="font-medium">{{ number_format((float) $line->amount, 0, ',', ' ') }} {{ $line->currency }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-            </section>
+            @include('checkout.partials.order-summary')
 
             <aside id="checkout-payment" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 @php

@@ -1,8 +1,11 @@
 <details class="help-chat" data-help-chat>
-    <summary class="help-chat-launcher">{{ __('messages.help_chat.open') }}</summary>
+    <summary class="help-chat-launcher" aria-label="{{ __('messages.help_chat.open') }}" title="{{ __('messages.help_chat.open') }}">
+        <span class="help-chat-launcher-compact" aria-hidden="true">?</span>
+    </summary>
     <section class="help-chat-panel" aria-label="{{ __('messages.help_chat.title') }}">
         <header class="help-chat-header">
             <h2>{{ __('messages.help_chat.title') }}</h2>
+            <button type="button" class="btn btn-ghost btn-small" data-help-chat-minimize aria-label="{{ __('messages.help_chat.minimize') }}">−</button>
             <button type="button" class="btn btn-ghost btn-small" data-help-chat-close aria-label="{{ __('messages.help_chat.close') }}">×</button>
         </header>
         <p class="help-chat-privacy">{{ __('messages.help_chat.privacy') }}</p>

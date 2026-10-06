@@ -69,9 +69,9 @@
     <section class="property-show-header">
         <div class="container">
             <div class="property-show-topline">
-                <a href="{{ route('properties.index') }}" class="inline-link">← {{ __('messages.properties.back_to_list') }}</a>
+                <a href="{{ $listingUrl ?? route('properties.index') }}" class="inline-link" data-listing-back-link>← {{ __('messages.properties.back_to_list') }}</a>
                 @if ($property->establishment)
-                    <span class="badge badge-emerald">{{ $property->establishment->localized('name') }}</span>
+                    <a class="badge badge-emerald" href="{{ route('establishments.show', $property->establishment) }}">{{ $property->establishment->localized('name') }}</a>
                 @endif
             </div>
             <div class="property-title-block">
@@ -81,27 +81,11 @@
             <div class="mobile-booking-summary">
                 <div>
                     <span>{{ __('messages.properties.from') }}</span>
-                    <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
+                    <strong><x-display-price :amount="$property->nightly_rate_xof" :property="$property" /> / {{ __('messages.properties.night_short') }}</strong>
                 </div>
                 <a class="btn btn-primary" href="#booking-panel">{{ __('messages.properties.request_reservation') }}</a>
             </div>
-            @php
-                $shareUrl = url()->current();
-                $encodedShareUrl = urlencode($shareUrl);
-                $encodedShareTitle = urlencode($shareTitle);
-            @endphp
-            <details class="share-panel">
-                <summary>{{ __('messages.properties.share') }}</summary>
-                <div class="share-links">
-                    <a href="https://wa.me/?text={{ $encodedShareTitle }}%20{{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_whatsapp') }}</a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_facebook') }}</a>
-                    <a href="https://twitter.com/intent/tweet?text={{ $encodedShareTitle }}&url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_x') }}</a>
-                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ $encodedShareUrl }}" target="_blank" rel="noopener noreferrer">{{ __('messages.properties.share_linkedin') }}</a>
-                    <button type="button" data-copy-share-link="{{ $shareUrl }}" data-copy-share-link-success="{{ __('messages.properties.share_link_copied') }}" data-copy-share-link-error="{{ __('messages.properties.share_link_copy_failed') }}">{{ __('messages.properties.share_instagram') }}</button>
-                    <button type="button" data-copy-share-link="{{ $shareUrl }}" data-copy-share-link-success="{{ __('messages.properties.share_link_copied') }}" data-copy-share-link-error="{{ __('messages.properties.share_link_copy_failed') }}">{{ __('messages.properties.share_tiktok') }}</button>
-                </div>
-                <p class="form-help" data-copy-share-link-status aria-live="polite" hidden></p>
-            </details>
+            <x-share-panel :title="$shareTitle" state="[data-share-booking-form]" params="check_in,check_out,adults:guests" />
             <div class="property-show-layout">
                 <div class="gallery-panel">
                     @php
@@ -168,9 +152,13 @@
                 <aside class="booking-panel" id="booking-panel">
                     <div class="booking-card">
                         <div class="price-summary">
-                            <div class="price-row">
+                            <div class="price-row nightly-rate-row">
                                 <span class="price-label">{{ __('messages.properties.from') }}</span>
-                                <strong>{{ __('messages.properties.nightly_price', ['price' => number_format($property->nightly_rate_xof, 0, ',', ' '), 'currency' => $property->currency]) }}</strong>
+                                <strong><x-display-price :amount="$property->nightly_rate_xof" :property="$property" /> / {{ __('messages.properties.night_short') }}</strong>
+                            </div>
+                            <div class="price-row validated-stay-total" data-validated-stay-total @if (!$bookingPricing) hidden @endif>
+                                <span>{{ __('messages.properties.validated_stay_total') }}</span>
+                                <strong data-validated-stay-total-value>@if ($bookingPricing){{ number_format($bookingPricing['total_amount'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</strong>
                             </div>
                             @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                 <div class="price-row muted-row">
@@ -179,6 +167,32 @@
                                 </div>
                             @endif
                         </div>
+                        <section class="stay-pricing-breakdown" data-pricing-breakdown @if (!$bookingPricing) hidden @endif aria-label="{{ __('messages.properties.pricing_breakdown') }}">
+                            <h3>{{ __('messages.properties.pricing_breakdown') }}</h3>
+                            <p class="stay-pricing-currency">{{ __('messages.properties.currency_used') }} <span data-pricing-currency>{{ $bookingPricing['currency'] ?? $property->currency }}</span></p>
+                            <dl class="stay-pricing-lines" data-pricing-breakdown-content>
+                                <div><dt>{{ __('messages.properties.night_count') }}</dt><dd data-pricing-nights>{{ $bookingPricing['nights'] ?? '' }}</dd></div>
+                                <div><dt>{{ __('messages.properties.nightly_rate') }}</dt><dd data-pricing-nightly-rate>@if ($bookingPricing){{ number_format($bookingPricing['nightly_rate'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</dd></div>
+                                <div><dt>{{ __('messages.properties.accommodation_subtotal') }}</dt><dd data-pricing-room-subtotal>@if ($bookingPricing){{ number_format($bookingPricing['room_subtotal'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</dd></div>
+                                <div data-pricing-extras @if (empty($bookingPricing['extra_lines'] ?? [])) hidden @endif>
+                                    @foreach ($bookingPricing['extra_lines'] ?? [] as $line)
+                                        <div><dt>{{ $line['label'] }}</dt><dd>{{ number_format($line['amount'], 0, ',', ' ') }} {{ $line['currency'] }}</dd></div>
+                                    @endforeach
+                                </div>
+                                <div data-pricing-fees @if (!$bookingPricing || (float) $bookingPricing['fees'] <= 0) hidden @endif><dt>{{ __('messages.properties.fees') }}</dt><dd data-pricing-fees-value>@if ($bookingPricing && (float) $bookingPricing['fees'] > 0){{ number_format($bookingPricing['fees'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</dd></div>
+                                <div data-pricing-taxes @if (empty($bookingPricing['tax_lines'] ?? [])) hidden @endif>
+                                    @foreach ($bookingPricing['tax_lines'] ?? [] as $line)
+                                        <div><dt>{{ $line['label'] }}</dt><dd>{{ number_format($line['amount'], 0, ',', ' ') }} {{ $line['currency'] }}</dd></div>
+                                    @endforeach
+                                </div>
+                                <div data-pricing-discounts @if (empty($bookingPricing['discount_lines'] ?? [])) hidden @endif>
+                                    @foreach ($bookingPricing['discount_lines'] ?? [] as $line)
+                                        <div><dt>{{ $line['label'] }}</dt><dd>−{{ number_format($line['amount'], 0, ',', ' ') }} {{ $line['currency'] }}</dd></div>
+                                    @endforeach
+                                </div>
+                                <div class="stay-pricing-final-total"><dt>{{ __('messages.properties.final_total') }}</dt><dd data-pricing-final-total>@if ($bookingPricing){{ number_format($bookingPricing['total_amount'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</dd></div>
+                            </dl>
+                        </section>
 
                         @if (auth()->user()?->role === 'customer' && $property->establishment)
                             <div class="message-new-panel">
@@ -199,7 +213,7 @@
                             </div>
                         @endif
 
-                        <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable') }}" data-availability-minimum-stay="{{ __('messages.properties.minimum_stay_error', ['nights' => $property->minimum_stay]) }}">
+                        <form method="POST" action="{{ route('properties.reserve', $property) }}" class="booking-form" data-share-booking-form data-availability-url="{{ route('properties.availability', $property) }}" data-availability-available="{{ __('messages.properties.availability_available') }}" data-availability-unavailable="{{ __('messages.properties.availability_unavailable_reselect') }}" data-availability-minimum-stay="{{ __('messages.properties.minimum_stay_error', ['nights' => $property->minimum_stay]) }}" data-availability-checking="{{ __('messages.properties.availability_checking') }}" data-availability-failed="{{ __('messages.properties.availability_failed') }}" data-pricing-nights-label="{{ __('messages.properties.night_count') }}" data-pricing-nightly-rate-label="{{ __('messages.properties.nightly_rate') }}" data-pricing-room-subtotal-label="{{ __('messages.properties.accommodation_subtotal') }}" data-pricing-fees-label="{{ __('messages.properties.fees') }}" data-pricing-discount-label="{{ __('messages.properties.discount') }}" data-pricing-final-total-label="{{ __('messages.properties.final_total') }}">
                             @csrf
                             @if (! auth()->check() || auth()->user()->role !== 'customer')
                                 <div class="input-group">
@@ -294,7 +308,7 @@
                             <div class="form-actions">
                                 @include('partials.recaptcha')
                                 <button type="button" class="btn btn-ghost btn-full" data-check-availability>{{ __('messages.properties.check_availability') }}</button>
-                                <p class="form-help" data-availability-result role="status" aria-live="polite"></p>
+                                <p class="form-help availability-result" data-availability-result @if ($bookingAvailability) data-availability-state="{{ $bookingAvailability['state'] }}" @endif role="status" aria-live="polite">{{ $bookingAvailability['message'] ?? '' }}</p>
                                 <button type="submit" class="btn btn-primary btn-full">{{ __('messages.properties.request_reservation') }}</button>
                                 @guest
                                     <label class="account-choice">

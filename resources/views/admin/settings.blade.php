@@ -17,7 +17,7 @@
 
             <div class="property-editor-tabs settings-editor-tabs" data-property-tabs>
                 <div class="property-tab-list" role="tablist" aria-label="{{ __('messages.admin.settings_sections') }}">
-                    @foreach (['general' => __('messages.admin.general_information'), 'email' => __('messages.admin.email_communications')] as $tab => $label)
+                    @foreach (['general' => __('messages.admin.general_information'), 'social' => __('messages.admin.social_networks'), 'email' => __('messages.admin.email_communications')] as $tab => $label)
                         <button type="button" class="property-tab {{ $loop->first ? 'is-active' : '' }}" role="tab" aria-selected="{{ $loop->first ? 'true' : 'false' }}" aria-controls="settings-panel-{{ $tab }}" data-property-tab="{{ $tab }}">{{ $label }}</button>
                     @endforeach
                 </div>
@@ -64,7 +64,7 @@
 
                     <div>
                         <label for="site_tagline">{{ __('messages.admin.tagline') }}</label>
-                        <input id="site_tagline" name="site_tagline" type="text" value="{{ old('site_tagline', $brand['site_tagline'] ?? 'Séjours premium pour des escapades sereines en Afrique de l’Ouest.') }}">
+                        <input id="site_tagline" name="site_tagline" type="text" value="{{ old('site_tagline', $brand['site_tagline'] ?? __('messages.brand.default_tagline')) }}">
                     </div>
 
                     <div>
@@ -117,6 +117,20 @@
                         <label for="review_source_google_url">{{ __('messages.admin.google_reviews_url') }}</label>
                         <input id="review_source_google_url" name="review_source_google_url" type="url" value="{{ old('review_source_google_url', $brand['review_source_google_url'] ?? '') }}" placeholder="https://maps.google.com/...">
                     </div>
+                        </div>
+                    </div>
+
+                    <div id="settings-panel-social" class="property-tab-panel settings-tab-panel" role="tabpanel" data-property-panel="social" hidden>
+                        <h2 style="margin-bottom: var(--space-4);">{{ __('messages.admin.social_networks') }}</h2>
+                        <p class="form-help">{{ __('messages.admin.social_networks_help') }}</p>
+                        <div class="form-grid">
+                            @foreach (['facebook', 'instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'whatsapp'] as $network)
+                                <div>
+                                    <label for="social_{{ $network }}_url">{{ __('messages.admin.social_' . $network) }}</label>
+                                    <input id="social_{{ $network }}_url" name="social_{{ $network }}_url" type="url" value="{{ old('social_' . $network . '_url', $brand['social_' . $network . '_url'] ?? '') }}" placeholder="https://">
+                                    @error('social_' . $network . '_url')<span class="form-error">{{ $message }}</span>@enderror
+                                </div>
+                            @endforeach
                         </div>
                     </div>
 

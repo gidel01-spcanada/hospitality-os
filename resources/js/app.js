@@ -139,6 +139,13 @@ if (helpChat) {
 		messages.scrollTop = messages.scrollHeight;
 	};
 
+	helpChat.querySelector('[data-help-chat-minimize]')?.addEventListener('click', () => {
+		helpChat.open = false;
+		helpChat.classList.add('is-minimized');
+	});
+	helpChat.querySelector('summary')?.addEventListener('click', () => {
+		helpChat.classList.remove('is-minimized');
+	});
 	helpChat.querySelector('[data-help-chat-close]')?.addEventListener('click', () => { helpChat.open = false; });
 	form?.addEventListener('submit', async (event) => {
 		event.preventDefault();
@@ -287,6 +294,8 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	let currentIndex = Number(gallery.dataset.galleryStart || 0);
 	const image = gallery.querySelector('[data-gallery-image]') || gallery.querySelector('.property-image');
 	const counter = gallery.querySelector('[data-gallery-counter]');
+	const caption = gallery.querySelector('[data-gallery-caption]');
+	const stage = gallery.querySelector('[data-gallery-stage]') || gallery;
 	const isImgElement = image.matches('img');
 	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -316,6 +325,12 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 	};
 
 	const applyMeta = (source) => {
+		if (caption) {
+			caption.textContent = altOf(source);
+			gallery.closest('.gallery-panel')?.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
+				thumb.setAttribute('aria-pressed', String(Number(thumb.dataset.galleryThumb) === currentIndex));
+			});
+		}
 		const tag = gallery.querySelector('[data-gallery-tag]');
 		if (tag) {
 			const value = tagOf(source);
@@ -368,7 +383,7 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
 			layer.className = 'gallery-fade-layer';
 			layer.dataset.index = currentIndex;
 			layer.style.backgroundImage = backgroundFor(url);
-			gallery.appendChild(layer);
+			stage.appendChild(layer);
 			activeLayer = layer;
 
 			requestAnimationFrame(() => {
@@ -415,6 +430,7 @@ document.querySelectorAll('[data-video-embed]').forEach((button) => {
 });
 
 document.querySelectorAll('form').forEach((form) => {
+	if (form.hasAttribute('data-comparison-controls')) return;
 	const pairs = [['effective_from', 'effective_to'], ['date_from', 'date_to'], ['check_in', 'check_out']];
 	for (const [startName, endName] of pairs) {
 		const startInput = form.querySelector(`input[type="date"][name="${startName}"]`);
@@ -454,6 +470,7 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 
 	const formatDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 	const displayDate = (value) => value ? new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+	label.textContent = start && end ? `${displayDate(start)} → ${displayDate(end)}` : start ? `${displayDate(start)} → ${picker.dataset.endLabel}` : picker.dataset.placeholder;
 	const render = (focusSelector = null) => {
 		const year = visibleMonth.getFullYear();
 		const month = visibleMonth.getMonth();
@@ -482,6 +499,7 @@ document.querySelectorAll('[data-date-range-picker]').forEach((picker) => {
 				}
 				startInput.value = start;
 				endInput.value = end;
+				endInput.dispatchEvent(new Event('change', { bubbles: true }));
 				label.textContent = start && end ? `${displayDate(start)} → ${displayDate(end)}` : start ? `${displayDate(start)} → ${picker.dataset.endLabel}` : picker.dataset.placeholder;
 				if (start && end) {
 					trigger.removeAttribute('aria-invalid');
@@ -618,9 +636,29 @@ document.querySelectorAll('[data-ai-copy-assistant]').forEach((assistant) => {
 });
 
 document.querySelectorAll('[data-check-availability]').forEach((button) => {
-	button.addEventListener('click', async () => {
-		const form = button.closest('form');
-		const result = form.querySelector('[data-availability-result]');
+	const form = button.closest('form');
+	const result = form.querySelector('[data-availability-result]');
+	const bookingCard = form.closest('.booking-card');
+	const stayTotal = bookingCard?.querySelector('[data-validated-stay-total]');
+	const stayTotalValue = stayTotal?.querySelector('[data-validated-stay-total-value]');
+	const breakdown = bookingCard?.querySelector('[data-pricing-breakdown]');
+	const breakdownContent = breakdown?.querySelector('[data-pricing-breakdown-content]');
+	let requestSequence = 0;
+	const money = (amount, currency) => `${new Intl.NumberFormat(document.documentElement.lang, { maximumFractionDigits: 0 }).format(amount)} ${currency}`;
+	const appendPricingLine = (label, value, className = '') => {
+		const row = document.createElement('div');
+		if (className) row.className = className;
+		const term = document.createElement('dt');
+		term.textContent = label;
+		const amount = document.createElement('dd');
+		amount.textContent = value;
+		row.append(term, amount);
+		breakdownContent.appendChild(row);
+	};
+	const checkAvailability = async () => {
+		if (!form.elements.check_in.value || !form.elements.check_out.value) return;
+		const currentRequest = ++requestSequence;
+
 		form.querySelectorAll('.form-error-box, .reservation-success').forEach((el) => el.remove());
 		const payload = new FormData();
 		payload.append('check_in', form.elements.check_in.value);
@@ -629,11 +667,15 @@ document.querySelectorAll('[data-check-availability]').forEach((button) => {
 		payload.append('children', form.elements.children?.value || '0');
 		form.querySelectorAll('input[name="selected_features[]"]:checked').forEach((feature) => payload.append('selected_features[]', feature.value));
 		button.disabled = true;
-		result.textContent = '';
+		if (stayTotal) stayTotal.hidden = true;
+		if (breakdown) breakdown.hidden = true;
+		result.dataset.availabilityState = 'checking';
+		result.textContent = form.dataset.availabilityChecking;
 
 		try {
 			const response = await fetch(form.dataset.availabilityUrl, {
 				method: 'POST',
+				cache: 'no-store',
 				headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value },
 				body: payload,
 			});
@@ -641,13 +683,41 @@ document.querySelectorAll('[data-check-availability]').forEach((button) => {
 				throw new Error('Availability request failed');
 			}
 			const data = await response.json();
-			result.textContent = data.reason === 'minimum_stay' ? form.dataset.availabilityMinimumStay : (data.available ? (data.message || form.dataset.availabilityAvailable) : form.dataset.availabilityUnavailable);
+			if (currentRequest !== requestSequence) return;
+			result.dataset.availabilityState = data.reason === 'minimum_stay' ? 'minimum-stay' : (data.available ? 'available' : 'unavailable');
+			result.textContent = data.reason === 'minimum_stay' ? form.dataset.availabilityMinimumStay : (data.message || form.dataset.availabilityAvailable);
+			if (data.available && data.breakdown) {
+				const pricing = data.breakdown;
+				stayTotalValue.textContent = money(pricing.total_amount, pricing.currency);
+				stayTotal.hidden = false;
+				breakdownContent.replaceChildren();
+				breakdown.querySelector('[data-pricing-currency]').textContent = pricing.currency;
+				appendPricingLine(form.dataset.pricingNightsLabel, pricing.nights);
+				appendPricingLine(form.dataset.pricingNightlyRateLabel, money(pricing.nightly_rate, pricing.currency));
+				appendPricingLine(form.dataset.pricingRoomSubtotalLabel, money(pricing.room_subtotal, pricing.currency));
+				pricing.extra_lines.forEach((line) => appendPricingLine(line.label, money(line.amount, line.currency)));
+				if (pricing.fees > 0) appendPricingLine(form.dataset.pricingFeesLabel, money(pricing.fees, pricing.currency));
+				pricing.tax_lines.forEach((line) => appendPricingLine(line.label, money(line.amount, line.currency)));
+				pricing.discount_lines.forEach((line) => appendPricingLine(line.label, `−${money(line.amount, line.currency)}`));
+				appendPricingLine(form.dataset.pricingFinalTotalLabel, money(pricing.total_amount, pricing.currency), 'stay-pricing-final-total');
+				breakdown.hidden = false;
+			}
 		} catch {
-			result.textContent = form.dataset.availabilityUnavailable;
+			if (currentRequest !== requestSequence) return;
+			result.dataset.availabilityState = 'error';
+			result.textContent = form.dataset.availabilityFailed;
 		} finally {
-			button.disabled = false;
+			if (currentRequest === requestSequence) button.disabled = false;
 		}
-	});
+	};
+	button.addEventListener('click', checkAvailability);
+	const recheckAvailability = () => {
+		if (form.elements.check_in.value && form.elements.check_out.value) checkAvailability();
+	};
+	form.elements.check_out?.addEventListener('change', recheckAvailability);
+	form.elements.adults?.addEventListener('change', recheckAvailability);
+	form.elements.children?.addEventListener('change', recheckAvailability);
+	form.querySelectorAll('input[name="selected_features[]"]').forEach((feature) => feature.addEventListener('change', recheckAvailability));
 });
 
 document.querySelectorAll('[data-property-tab]').forEach((tab) => {
@@ -892,26 +962,294 @@ document.querySelectorAll('[data-copy-share-link]').forEach((button) => {
 	});
 });
 
+document.querySelectorAll('[data-share-panel]').forEach((panel) => {
+	const sensitive = new Set(['_token', '_method', 'token', 'signature', 'expires', 'checkout_return', 'page', 'password', 'password_confirmation', 'email', 'full_name', 'phone', 'customer_note', 'g-recaptcha-response']);
+	const stateForm = panel.dataset.shareState ? document.querySelector(panel.dataset.shareState) : null;
+	const allowed = panel.dataset.shareParams
+		? Object.fromEntries(panel.dataset.shareParams.split(',').map((entry) => {
+			const [from, to] = entry.trim().split(':');
+			return [from, to || from];
+		}))
+		: null;
+
+	const shareUrl = () => {
+		const url = new URL(panel.dataset.shareUrl, window.location.href);
+		if (!stateForm) return url.toString();
+
+		const values = new Map();
+		for (const field of stateForm.elements) {
+			if (!field.name || field.disabled || sensitive.has(field.name) || ['file', 'password', 'submit', 'button'].includes(field.type)) continue;
+				if (field.name === 'sort' && field.value === 'recommended') continue;
+			if (allowed && !(field.name in allowed)) continue;
+			const target = allowed ? allowed[field.name] : field.name;
+			if (!values.has(target)) values.set(target, []);
+			if ((field.type === 'checkbox' || field.type === 'radio') && !field.checked) continue;
+			if (field.value !== '') values.get(target).push(field.value);
+		}
+
+		values.forEach((list, name) => {
+			[...url.searchParams.keys()].filter((key) => key === name || key.startsWith(`${name.replace(/\[\]$/, '')}[`)).forEach((key) => url.searchParams.delete(key));
+			list.forEach((value) => url.searchParams.append(name, value));
+		});
+
+		return url.toString();
+	};
+
+	const refresh = () => {
+		const url = shareUrl();
+		const title = panel.dataset.shareTitle ?? document.title;
+		const encodedUrl = encodeURIComponent(url);
+		const encodedTitle = encodeURIComponent(title);
+		const links = {
+			whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+			facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+			x: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+			linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+			email: `mailto:?subject=${encodedTitle}&body=${encodedUrl}`,
+		};
+		panel.querySelectorAll('[data-share-network]').forEach((link) => {
+			link.href = links[link.dataset.shareNetwork] ?? link.href;
+		});
+		panel.querySelectorAll('[data-copy-share-link]').forEach((button) => {
+			button.dataset.copyShareLink = url;
+		});
+
+		return { url, title };
+	};
+
+	panel.addEventListener('toggle', () => { if (panel.open) refresh(); });
+	panel.querySelectorAll('[data-share-network], [data-copy-share-link]').forEach((control) => {
+		control.addEventListener('pointerdown', refresh);
+		control.addEventListener('focus', refresh);
+	});
+
+	const nativeShare = panel.querySelector('[data-native-share]');
+	if (nativeShare && typeof navigator.share === 'function') {
+		nativeShare.hidden = false;
+		nativeShare.addEventListener('click', async () => {
+			const { url, title } = refresh();
+			try {
+				await navigator.share({ title, url });
+			} catch {
+				// The user closed the share sheet.
+			}
+		});
+	}
+});
+
+document.querySelectorAll('[data-number-stepper]').forEach((stepper) => {
+	const input = stepper.querySelector('[data-step-input]');
+	if (!input) return;
+	stepper.querySelectorAll('[data-step]').forEach((button) => {
+		button.addEventListener('click', () => {
+			const minimum = Number(input.min || 0);
+			const maximum = Number(input.max || Number.MAX_SAFE_INTEGER);
+			const current = input.value === '' ? minimum - Number(button.dataset.step) : Number(input.value);
+			const next = Math.min(maximum, Math.max(minimum, current + Number(button.dataset.step)));
+			input.value = next === minimum && Number(button.dataset.step) < 0 ? '' : String(next);
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+			input.dispatchEvent(new Event('change', { bubbles: true }));
+		});
+	});
+});
+
+document.querySelectorAll('[data-price-range]').forEach((group) => {
+	const minRange = group.querySelector('[data-price-range-min]');
+	const maxRange = group.querySelector('[data-price-range-max]');
+	const minInput = group.closest('form')?.querySelector('[data-price-number-min]');
+	const maxInput = group.closest('form')?.querySelector('[data-price-number-max]');
+	const summary = group.closest('form')?.querySelector('[data-price-summary]');
+	if (!minRange || !maxRange || !minInput || !maxInput) return;
+	const updateSummary = () => {
+		if (!summary) return;
+		const formatter = new Intl.NumberFormat(document.documentElement.lang || 'fr', { maximumFractionDigits: 0 });
+		const minimum = minInput.value === '' ? 0 : Number(minInput.value);
+		const maximum = maxInput.value === '' ? Number(group.dataset.priceCeiling) : Number(maxInput.value);
+		summary.textContent = summary.dataset.template
+			.replace('__MIN__', formatter.format(minimum))
+			.replace('__MAX__', formatter.format(maximum));
+	};
+
+	const syncRangeToNumbers = () => {
+		minInput.value = minRange.value === '0' ? '' : minRange.value;
+		maxInput.value = maxRange.value === group.dataset.priceCeiling ? '' : maxRange.value;
+		minInput.dispatchEvent(new Event('input', { bubbles: true }));
+	};
+	const syncNumberToRange = (input, range, isMinimum) => {
+		if (input.value === '') {
+			range.value = isMinimum ? '0' : group.dataset.priceCeiling;
+		} else {
+			range.value = String(Math.min(Number(group.dataset.priceCeiling), Number(input.value)));
+		}
+	};
+	minRange.addEventListener('input', () => {
+		if (Number(minRange.value) > Number(maxRange.value)) maxRange.value = minRange.value;
+		syncRangeToNumbers();
+	});
+	maxRange.addEventListener('input', () => {
+		if (Number(maxRange.value) < Number(minRange.value)) minRange.value = maxRange.value;
+		syncRangeToNumbers();
+	});
+	minInput.addEventListener('input', () => syncNumberToRange(minInput, minRange, true));
+	maxInput.addEventListener('input', () => syncNumberToRange(maxInput, maxRange, false));
+	group.addEventListener('input', updateSummary);
+	minInput.addEventListener('input', updateSummary);
+	maxInput.addEventListener('input', updateSummary);
+});
+
+document.querySelectorAll('[data-amenities-section]').forEach((section) => {
+	const countBadge = section.querySelector('[data-amenity-count]');
+	const updateAmenityCount = () => {
+		const count = section.querySelectorAll('input[name="amenities[]"]:checked').length;
+		if (!countBadge) return;
+		countBadge.hidden = count === 0;
+		countBadge.textContent = countBadge.dataset.countTemplate.replace('__COUNT__', String(count));
+	};
+	section.addEventListener('change', updateAmenityCount);
+	section.querySelectorAll('[data-amenity-more]').forEach((button) => {
+		button.dataset.moreLabel = button.textContent.trim();
+		button.addEventListener('click', () => {
+			const category = button.closest('[data-amenity-category]');
+			const extras = [...(category?.querySelectorAll('[data-amenity-extra]') ?? [])];
+			const show = extras.some((item) => item.hidden);
+			if (category) category.dataset.expanded = String(show);
+			extras.forEach((item) => { item.hidden = !show; });
+			button.textContent = show ? button.dataset.lessLabel : button.dataset.moreLabel;
+		});
+		button.dataset.lessLabel = button.getAttribute('data-less-label') ?? button.dataset.moreLabel;
+	});
+
+	const search = section.querySelector('[data-amenity-search]');
+	search?.addEventListener('input', () => {
+		const query = search.value.trim().toLocaleLowerCase();
+		section.querySelectorAll('[data-amenity-option]').forEach((option) => {
+			const matches = !query || (option.dataset.amenitySearchText ?? '').includes(query);
+			const extraCollapsed = option.hasAttribute('data-amenity-extra') && option.closest('[data-amenity-category]')?.dataset.expanded !== 'true';
+			option.hidden = query ? !matches : extraCollapsed;
+			if (query && matches) {
+				const category = option.closest('[data-amenity-category]');
+				if (category) category.open = true;
+			}
+		});
+		section.querySelectorAll('[data-amenity-more]').forEach((button) => { button.hidden = Boolean(query); });
+		section.querySelectorAll('[data-amenity-category]').forEach((category) => {
+			category.hidden = Boolean(query) && !category.querySelector('[data-amenity-option]:not([hidden])');
+		});
+	});
+});
+
+document.querySelectorAll('[data-filter-drawer]').forEach((drawer) => {
+	const form = drawer.querySelector('form');
+	const countBadge = drawer.querySelector('.filter-count-badge');
+	const apply = drawer.querySelector('[data-filter-apply]');
+	const resultCount = drawer.querySelector('[data-filter-result-count]');
+	const syncBodyLock = () => {
+		if (window.matchMedia('(max-width: 760px)').matches && drawer.open) document.body.classList.add('filter-drawer-open');
+		else document.body.classList.remove('filter-drawer-open');
+	};
+	drawer.addEventListener('toggle', syncBodyLock);
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && drawer.open && window.matchMedia('(max-width: 760px)').matches) drawer.open = false;
+	});
+	window.addEventListener('resize', syncBodyLock);
+	if (!form) return;
+
+	const sync = () => {
+		const min = form.querySelector('[data-price-number-min]');
+		const max = form.querySelector('[data-price-number-max]');
+		if (min && max) {
+			const invalidPriceRange = min.value !== '' && max.value !== '' && Number(min.value) > Number(max.value);
+			min.setCustomValidity(invalidPriceRange ? min.dataset.rangeError ?? 'Invalid range' : '');
+			max.setCustomValidity(invalidPriceRange ? max.dataset.rangeError ?? 'Invalid range' : '');
+		}
+		const start = form.querySelector('[data-date-range-start]')?.value ?? '';
+		const end = form.querySelector('[data-date-range-end]')?.value ?? '';
+		const invalidDates = Boolean(start) !== Boolean(end);
+		const names = new Set();
+		[...form.elements].forEach((field) => {
+			if (!field.name || field.disabled || ['submit', 'button', 'range'].includes(field.type)) return;
+			if ((field.type === 'checkbox' || field.type === 'radio') && !field.checked) return;
+			if (field.name === 'sort' && field.value === 'recommended') return;
+			if (field.name === 'check_in' || field.name === 'check_out') {
+				if (start && end) names.add('dates');
+				return;
+			}
+			if (field.name === 'min_price' || field.name === 'max_price') {
+				if (min?.value || max?.value) names.add('price');
+				return;
+			}
+			if (field.value !== '') names.add(field.name.startsWith('amenities') ? `${field.name}-${field.value}` : field.name);
+		});
+		const count = names.size;
+		drawer.dataset.activeCount = String(count);
+		if (countBadge) countBadge.textContent = drawer.dataset.filterCountTemplate.replace('__COUNT__', String(count));
+		if (apply) apply.disabled = invalidDates || Boolean(min?.validationMessage) || Boolean(max?.validationMessage);
+	};
+	const markResultsStale = () => {
+		if (resultCount?.dataset.staleLabel) resultCount.textContent = resultCount.dataset.staleLabel;
+	};
+	form.addEventListener('input', () => { sync(); markResultsStale(); });
+	form.addEventListener('change', () => { sync(); markResultsStale(); });
+	form.addEventListener('submit', (event) => {
+		if (event.defaultPrevented) return;
+		sync();
+		if (apply?.disabled || !form.reportValidity()) {
+			event.preventDefault();
+			return;
+		}
+		event.preventDefault();
+		const url = new URL(form.action, window.location.href);
+		for (const [name, value] of new FormData(form).entries()) {
+			if (value === '' || name === '_token' || name === '_method' || name === 'page' || (name === 'sort' && value === 'recommended')) continue;
+			url.searchParams.append(name, value);
+		}
+		window.location.assign(url.toString());
+	});
+	sync();
+});
+
+document.querySelectorAll('[data-establishment-review-filters]').forEach((form) => {
+	const origin = form.querySelector('[data-review-origin]');
+	const home = form.querySelector('[data-review-home]');
+	if (!origin || !home) return;
+	const updateReviewHomeFilter = () => { home.disabled = origin.value === 'establishment'; };
+	origin.addEventListener('change', updateReviewHomeFilter);
+	updateReviewHomeFilter();
+});
+
+import './property-comparison';
+
 const compareForm = document.querySelector('#compare-form');
 if (compareForm) {
 	const compareOptions = [...document.querySelectorAll('[data-compare-option][form="compare-form"]')];
 	const compareCount = compareForm.querySelector('[data-compare-count]');
 	const compareSubmit = compareForm.querySelector('button[type="submit"]');
+	const selectionLimit = () => window.matchMedia('(max-width: 760px)').matches ? 3 : 4;
+	try {
+		const remembered = JSON.parse(localStorage.getItem('afrikappart-compare') || '[]');
+		compareOptions.forEach((option) => { option.checked = remembered.includes(option.value); });
+	} catch {}
 	const updateCompareState = () => {
 		const selected = compareOptions.filter((option) => option.checked);
 		compareOptions.forEach((option) => {
-			option.disabled = !option.checked && selected.length >= 3;
+			option.disabled = !option.checked && selected.length >= selectionLimit();
 		});
 		if (compareCount) {
 			compareCount.textContent = compareCount.dataset.template?.replace(':count', selected.length) || `${selected.length} selected`;
 		}
-		if (compareSubmit) compareSubmit.disabled = selected.length < 2;
+		if (compareSubmit) compareSubmit.disabled = selected.length < 2 || selected.length > selectionLimit();
+		try { localStorage.setItem('afrikappart-compare', JSON.stringify(selected.map((option) => option.value))); } catch {}
 	};
 	compareCount?.setAttribute('data-template', compareCount.textContent.replace(/\d+/, ':count'));
 	compareOptions.forEach((option) => option.addEventListener('change', updateCompareState));
 	compareForm.addEventListener('submit', (event) => {
-		if (compareOptions.filter((option) => option.checked).length < 2) event.preventDefault();
+		const count = compareOptions.filter((option) => option.checked).length;
+		if (count < 2 || count > selectionLimit()) event.preventDefault();
+		else {
+			try { sessionStorage.setItem('afrikappart-compare-return', window.location.href); } catch {}
+		}
 	});
+	window.addEventListener('resize', updateCompareState);
 	updateCompareState();
 }
 

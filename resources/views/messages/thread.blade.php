@@ -15,8 +15,7 @@
 
         @if ($reservation)
             <p class="message-reservation-link">
-                {{ __('messages.messages.related_reservation') }}
-                <a class="inline-link" href="{{ route($isStaff ? 'admin.reservations.show' : 'dashboard.reservations.show', $reservation) }}">{{ $reservation->reservation_ref }}</a>
+                <a class="inline-link" href="{{ route($isStaff ? 'admin.reservations.show' : 'dashboard.reservations.show', $reservation) }}">{{ __('messages.messages.return_to_reservation', ['reference' => $reservation->reservation_ref]) }}</a>
             </p>
         @endif
 

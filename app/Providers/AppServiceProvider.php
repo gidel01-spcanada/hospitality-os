@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        ResetPassword::toMailUsing(function ($notifiable, string $token): MailMessage {
+            return (new MailMessage)
+                ->subject(__('messages.transactional.reset_title'))
+                ->action(__('messages.transactional.reset_action'), route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]))
+                ->view('emails.password-reset', [
+                    'recipient_name' => $notifiable->name,
+                    'action_url' => route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]),
+                    'expiry_minutes' => config('auth.passwords.' . config('auth.defaults.passwords') . '.expire', 60),
+                ]);
+        });
 
         Event::listen('eloquent.created: *', function (string $event, array $payload): void {
             $model = $payload[0] ?? null;

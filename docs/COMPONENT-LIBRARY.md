@@ -6,6 +6,18 @@ This document describes all reusable Blade components available in the Afrik App
 
 Components are located in `resources/views/components/` and can be used with the `<x-component-name>` syntax in Blade templates.
 
+## Transactional Emails
+
+All transactional email views extend `emails.layouts.reservation`, including account setup, password reset, messaging, and platform feedback. The shared frame owns platform branding, the personalized greeting, responsive table layout, support details, and legal links. Establishment identity belongs in the message content, not the platform header.
+
+Booking, payment-link, and receipt emails include `emails.partials.reservation-summary` with data from `App\Support\ReservationSummary::make`. This projection uses saved invoice lines and confirmed payment attempts; never derive email totals from current catalog prices or assume that a confirmed reservation proves payment. Foreign-currency payments without saved reconciliation keep an unknown balance.
+
+Receipt transaction details come from `ReservationEmailService::receiptTransaction`. A paid badge requires a linked, matching-amount, matching-currency payment for the same reservation, with status `paid` or `completed` and no guarantee flag. Receipt issue time is not bank settlement time. The outbox dispatcher refreshes financial data before sending to the matching reservation recipient.
+
+Message emails use the most recent explicitly reservation-tagged message, validate the customer and establishment, and never substitute the newest booking. Hosts only receive notifications for their assigned establishments. Notification preferences and existing checkout, review, receipt, thread, and security URLs must remain intact.
+
+Use inline email-safe styles and escaped message content. Translate labels through the FR/EN `messages.transactional.*` keys and use the recipient locale. Preserve conditional fallbacks for older outbox payloads without the new summaries; an unverified legacy receipt must not announce a confirmed payment.
+
 ---
 
 ## Button Component

@@ -34,7 +34,14 @@ class PlatformFeedbackTest extends TestCase
             'message' => 'Please add a monthly reservation calendar.',
         ]);
 
-        Mail::assertSent(PlatformFeedbackReceived::class, fn (PlatformFeedbackReceived $mail): bool => $mail->hasTo('feedback@sprintpay.example'));
+        Mail::assertSent(PlatformFeedbackReceived::class, function (PlatformFeedbackReceived $mail): bool {
+            $html = $mail->render();
+            $this->assertStringContainsString(__('messages.transactional.feedback_context'), $html);
+            $this->assertStringContainsString(route('privacy'), $html);
+            $this->assertStringContainsString('Please add a monthly reservation calendar.', $html);
+            $this->assertSame('amina@example.com', $mail->envelope()->replyTo[0]->address);
+            return $mail->hasTo('feedback@sprintpay.example');
+        });
     }
 
     public function test_feedback_form_reports_when_sprint_pay_delivery_is_not_configured(): void

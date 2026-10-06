@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\SiteReview;
+use App\Models\Establishment;
+use App\Models\Property;
 use App\Support\CurrentTenant;
 use Carbon\Carbon;
 
@@ -81,44 +83,99 @@ class ReviewImportService
      *
      * @return array{inserted: int, updated: int, skipped: int}
      */
-    public function importBookingCsv(string $csv, ?int $tenantId, ?int $establishmentId): array
+    public function importBookingCsv(string $csv, ?int $tenantId, ?int $establishmentId, bool $dryRun = false): array
     {
         $inserted = 0;
         $updated = 0;
         $skipped = 0;
 
-        $lines = preg_split('/\r\n|\r|\n/', trim($csv));
-        array_shift($lines); // header row
+        $stream = fopen('php://temp', 'r+');
+        fwrite($stream, preg_replace('/^\xEF\xBB\xBF/', '', $csv));
+        rewind($stream);
+        $header = fgetcsv($stream, null, ',', '"', '');
+        if ($header === false) {
+            fclose($stream);
 
-        foreach ($lines as $line) {
-            if (trim((string) $line) === '') {
+            return ['inserted' => 0, 'updated' => 0, 'skipped' => 0];
+        }
+
+        $normalizedHeader = array_map(fn ($value) => $this->normalizeCsvValue((string) $value), $header);
+        $columns = [
+            'date' => $this->headerColumn($normalizedHeader, ['date', 'review date', 'reviewed at', 'date du commentaire'], 0),
+            'reviewer' => $this->headerColumn($normalizedHeader, ['reviewer name', 'reviewer', 'guest name', 'nom du client'], 1),
+            'title' => $this->headerColumn($normalizedHeader, ['title', 'review title', 'titre du commentaire'], 3),
+            'positive' => $this->headerColumn($normalizedHeader, ['positive', 'positive comments', 'commentaire positif'], 4),
+            'negative' => $this->headerColumn($normalizedHeader, ['negative', 'negative comments', 'commentaire negatif', 'commentaire n gatif'], 5),
+            'score' => $this->headerColumn($normalizedHeader, ['score', 'review score', 'rating', 'note', 'note des commentaires'], 6),
+            'property' => $this->propertyHeaderColumn($normalizedHeader),
+        ];
+
+        $establishment = $establishmentId ? Establishment::query()->with('properties.translations')->find($establishmentId) : null;
+        $tenantId ??= $establishment?->tenant_id;
+        $propertyColumn = $columns['property'];
+        $properties = $establishment?->properties;
+        if (! $establishment && $propertyColumn !== null) {
+            $properties = Property::query()
+                ->with(['translations', 'establishment'])
+                ->when($tenantId, fn ($query) => $query->whereHas('establishment', fn ($establishmentQuery) => $establishmentQuery->where('tenant_id', $tenantId)))
+                ->get();
+        }
+        $properties ??= collect();
+        $propertyMap = $properties
+            ->flatMap(function (Property $property): array {
+                $names = collect([$property->name, $property->slug])
+                    ->merge($property->translations->pluck('name'))
+                    ->filter();
+
+                return $names->map(fn ($name) => [$this->normalizeCsvValue((string) $name), $property])->all();
+            })
+            ->keyBy(fn ($pair) => $pair[0]) ?? collect();
+
+        while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+            if (count($row) === 1 && trim((string) $row[0]) === '') {
                 continue;
             }
 
-            $row = str_getcsv($line, ',');
             if (count($row) < 7) {
                 $skipped++;
                 continue;
             }
 
-            $reviewedAt = trim((string) ($row[0] ?? ''));
-            $reviewerName = trim((string) ($row[1] ?? ''));
-            $title = trim((string) ($row[3] ?? ''));
-            $positive = trim((string) ($row[4] ?? ''));
-            $negative = trim((string) ($row[5] ?? ''));
-            $score = (float) str_replace(',', '.', (string) ($row[6] ?? '0'));
+            $reviewedAtText = trim((string) ($row[$columns['date']] ?? ''));
+            $reviewerName = trim((string) ($row[$columns['reviewer']] ?? ''));
+            $title = trim((string) ($row[$columns['title']] ?? ''));
+            $positive = trim((string) ($row[$columns['positive']] ?? ''));
+            $negative = trim((string) ($row[$columns['negative']] ?? ''));
+            $score = (float) str_replace(',', '.', trim((string) ($row[$columns['score']] ?? '0')));
 
-            if ($reviewedAt === '' || $reviewerName === '' || $score <= 0) {
+            if ($reviewedAtText === '' || $reviewerName === '' || $score <= 0) {
                 $skipped++;
                 continue;
             }
 
-            $reviewedAt = Carbon::parse($reviewedAt);
+            try {
+                $reviewedAt = $this->parseBookingDate($reviewedAtText);
+            } catch (\Throwable) {
+                $skipped++;
+                continue;
+            }
+
+            $property = null;
+            if ($propertyColumn !== null) {
+                $propertyName = $this->normalizeCsvValue((string) ($row[$propertyColumn] ?? ''));
+                $property = $propertyName !== '' ? $propertyMap->get($propertyName)[1] ?? null : null;
+                if (! $property) {
+                    $skipped++;
+                    continue;
+                }
+            }
+
             $reviewText = $this->bookingReviewText($title, $positive, $negative);
             $rating = max(1, min(5, (int) round($score / 2)));
             $attributes = [
-                'tenant_id' => $tenantId,
-                'establishment_id' => $establishmentId,
+                'tenant_id' => $property?->establishment?->tenant_id ?? $tenantId,
+                'establishment_id' => $property?->establishment_id ?? $establishmentId,
+                'property_id' => $property?->id,
                 'source' => 'booking',
                 'reviewer_name' => $reviewerName,
                 'reviewed_at' => $reviewedAt,
@@ -132,10 +189,61 @@ class ReviewImportService
                 'review_text' => $reviewText !== '' ? $reviewText : null,
                 'source_url' => null,
                 'is_active' => true,
-            ])->save();
+            ]);
+            if (! $dryRun) {
+                $review->save();
+            }
         }
 
+        fclose($stream);
+
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
+    }
+
+    private function headerColumn(array $header, array $aliases, int $fallback): int
+    {
+        foreach ($header as $index => $value) {
+            if (in_array($value, $aliases, true)) {
+                return $index;
+            }
+        }
+
+        return $fallback;
+    }
+
+    private function propertyHeaderColumn(array $header): ?int
+    {
+        foreach ($header as $index => $value) {
+            if (str_contains($value, 'propriet') || str_contains($value, 'property') || in_array($value, ['room', 'room name'], true)) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeCsvValue(string $value): string
+    {
+        $value = preg_replace('/^\xEF\xBB\xBF/', '', trim($value));
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        $value = strtolower($ascii !== false ? $ascii : $value);
+
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
+    }
+
+    private function parseBookingDate(string $value): Carbon
+    {
+        foreach (['n-j-Y H:i', 'n-j-Y H:i:s', 'm-d-Y H:i', 'm-d-Y H:i:s', 'Y-m-d H:i', 'Y-m-d H:i:s', 'Y-m-d'] as $format) {
+            try {
+                $date = Carbon::createFromFormat('!' . $format, $value);
+                if ($date !== false) {
+                    return $date;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return Carbon::parse($value);
     }
 
     /**

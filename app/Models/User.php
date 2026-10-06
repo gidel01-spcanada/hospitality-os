@@ -7,8 +7,9 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasLocalePreference
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -70,6 +71,11 @@ class User extends Authenticatable
     public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function preferredLocale(): string
+    {
+        return $this->locale ?: config('app.locale');
     }
 
     public function favoriteProperties(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

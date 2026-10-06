@@ -64,6 +64,8 @@ class PricingCalculator
 
         // Price Lines for display & database storage
         $priceLines = [];
+        $extraLines = [];
+        $taxLines = [];
 
         $priceLines[] = [
             'label' => __('messages.pricing.room_nights', ['count' => $nights]),
@@ -72,11 +74,13 @@ class PricingCalculator
         ];
 
         foreach ($extrasCollection as $feature) {
-            $priceLines[] = [
+            $extraLine = [
                 'label' => __('messages.pricing.extra_option', ['name' => $feature->name]),
                 'amount' => (float) $feature->cost_xof,
                 'currency' => $currency,
             ];
+            $extraLines[] = $extraLine;
+            $priceLines[] = $extraLine;
         }
 
         if ($fees > 0) {
@@ -91,30 +95,40 @@ class PricingCalculator
         if ($vatPercent > 0) {
             $formattedVatPercent = rtrim(rtrim(number_format($vatPercent, 2, ',', ' '), '0'), ',');
             if ($vatIncluded) {
-                $priceLines[] = [
+                $vatLine = [
                     'label' => __('messages.pricing.vat_included', ['percent' => $formattedVatPercent]),
                     'amount' => $vatAmount,
                     'currency' => $currency,
+                    'included' => true,
                 ];
             } else {
-                $priceLines[] = [
+                $vatLine = [
                     'label' => __('messages.pricing.vat_excluded', ['percent' => $formattedVatPercent]),
                     'amount' => $vatAmount,
                     'currency' => $currency,
+                    'included' => false,
                 ];
             }
+            $taxLines[] = $vatLine;
+            unset($vatLine['included']);
+            $priceLines[] = $vatLine;
         }
 
         if ($localTax > 0) {
-            $priceLines[] = [
+            $taxLine = [
                 'label' => __('messages.pricing.city_tax'),
                 'amount' => $localTax,
                 'currency' => $currency,
+                'included' => false,
             ];
+            $taxLines[] = $taxLine;
+            unset($taxLine['included']);
+            $priceLines[] = $taxLine;
         }
 
         return [
             'nights' => $nights,
+            'nightly_rate' => $baseRate,
             'guests' => $totalGuests,
             'room_subtotal' => $roomSubtotal,
             'extras_subtotal' => $extrasSubtotal,
@@ -128,6 +142,10 @@ class PricingCalculator
             'city_tax_amount' => $cityTaxAmount,
             'local_tax_amount' => $localTax,
             'taxes' => $taxes,
+            'tax_lines' => $taxLines,
+            'extra_lines' => $extraLines,
+            'discount_lines' => [],
+            'discount_total' => 0.00,
             'total_amount' => $totalAmount,
             'currency' => $currency,
             'price_lines' => $priceLines,

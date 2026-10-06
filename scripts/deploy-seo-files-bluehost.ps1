@@ -20,7 +20,7 @@ if ($config.password -like 'REPLACE_*') {
     throw 'The credentials file still contains the placeholder password.'
 }
 
-$seoFiles = @('robots.txt', 'sitemap.xml')
+$seoFiles = @('robots.txt', '.htaccess')
 $publicRelease = Join-Path $ReleaseRoot 'public'
 foreach ($seoFile in $seoFiles) {
     if (-not (Test-Path (Join-Path $publicRelease $seoFile) -PathType Leaf)) {

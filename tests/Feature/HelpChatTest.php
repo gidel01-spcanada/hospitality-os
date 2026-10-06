@@ -20,9 +20,17 @@ class HelpChatTest extends TestCase
         config()->set('services.help_chat.base_url', 'https://api.groq.test/v1');
         config()->set('services.help_chat.model', 'test-model');
 
-        $this->get('/')
+        $response = $this->get('/')
             ->assertOk()
-            ->assertSee('data-help-chat', false);
+            ->assertSee('data-help-chat', false)
+            ->assertSee('data-help-chat-minimize', false);
+
+        $document = new \DOMDocument();
+        @$document->loadHTML('<?xml encoding="UTF-8">' . $response->getContent());
+        $launcher = (new \DOMXPath($document))->query('//summary[@class="help-chat-launcher"]')->item(0);
+        $this->assertSame('?', trim($launcher->textContent));
+        $this->assertSame(__('messages.help_chat.open'), $launcher->getAttribute('title'));
+        $this->assertSame(__('messages.help_chat.open'), $launcher->getAttribute('aria-label'));
 
         $this->postJson(route('help-chat.ask'), [
             'message' => 'How do I book a stay?',

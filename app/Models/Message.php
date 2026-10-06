@@ -9,7 +9,7 @@ class Message extends \Illuminate\Database\Eloquent\Model
 {
     use HasFactory;
 
-    protected $fillable = ['message_thread_id', 'sender_id', 'body'];
+    protected $fillable = ['message_thread_id', 'sender_id', 'reservation_id', 'body'];
 
     public function thread(): BelongsTo
     {
@@ -19,5 +19,10 @@ class Message extends \Illuminate\Database\Eloquent\Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function reservation(): BelongsTo
+    {
+        return $this->belongsTo(Reservation::class);
     }
 }

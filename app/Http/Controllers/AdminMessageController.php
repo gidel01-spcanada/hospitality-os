@@ -24,8 +24,12 @@ class AdminMessageController extends Controller
     {
         abort_unless($this->belongsToCurrentTenant($thread), 403);
 
-        $thread->load(['customer', 'establishment', 'messages.sender']);
-        $reservation = Reservation::query()
+        $thread->load(['customer', 'establishment', 'messages.sender', 'messages.reservation']);
+        $reservation = $thread->messages
+            ->filter(fn ($message) => $message->reservation !== null)
+            ->sortByDesc('created_at')
+            ->first()?->reservation;
+        $reservation ??= Reservation::query()
             ->where(fn ($query) => $query->where('user_id', $thread->customer_id)->orWhere('email', $thread->customer->email))
             ->whereHas('property', fn ($query) => $query->where('establishment_id', $thread->establishment_id))
             ->latest()

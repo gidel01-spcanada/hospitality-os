@@ -23,6 +23,13 @@
 
         <p class="form-help">{{ __('messages.account_setup.confirm_password_help') }}</p>
 
+        @if ($errors->hasAny(['email', 'token']))
+            <div class="form-alert form-alert-error" role="alert" data-reset-error>
+                {{ $errors->first('email') ?: $errors->first('token') }}
+                <a class="inline-link" href="{{ route('password.request') }}">{{ __('messages.auth.request_new_link') }}</a>
+            </div>
+        @endif
+
         <div class="field-group">
             <label for="password">{{ __('messages.security.new_password') }}</label>
             <input id="password" type="password" name="password" required @error('password') class="is-error" aria-invalid="true" aria-describedby="reset-password-error" @enderror>

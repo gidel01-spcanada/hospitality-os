@@ -59,6 +59,7 @@ class ReportingTest extends TestCase
             'amount' => 100000,
             'status' => 'paid',
         ]);
+        $attempt->forceFill(['created_at' => CarbonImmutable::parse('2026-09-06 12:00:00')])->save();
         Receipt::query()->create([
             'reservation_id' => $confirmed->id,
             'payment_attempt_id' => $attempt->id,

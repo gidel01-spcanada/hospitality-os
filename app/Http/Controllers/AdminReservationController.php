@@ -190,10 +190,48 @@ class AdminReservationController extends Controller
     {
         $this->ownedReservation($reservation);
 
-        $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts', 'receipts']);
+        $reservation->load(['property.establishment', 'guest', 'user', 'priceLines', 'paymentAttempts', 'receipts', 'internalNotes.user']);
         $customerThread = $this->ensureCustomerThread($reservation);
+        $overview = \App\Support\ReservationAdminOverview::make($reservation);
+        $user = auth()->user();
+        $customerReservations = Reservation::query()
+            ->with('property')
+            ->whereKeyNot($reservation->id)
+            ->where(fn ($query) => $query->where('email', $reservation->email)->when($reservation->user_id, fn ($inner) => $inner->orWhere('user_id', $reservation->user_id)))
+            ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user->isHost(), fn ($query) => $query->whereHas('property', fn ($inner) => $inner->whereIn('establishment_id', $user->establishments()->pluck('establishments.id'))))
+            ->latest('check_in')
+            ->get();
 
-        return view('admin.reservations.show', compact('reservation', 'customerThread'));
+        return view('admin.reservations.show', compact('reservation', 'customerThread', 'customerReservations') + $overview);
+    }
+
+    public function storeInternalNote(Request $request, Reservation $reservation): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        $validated = $request->validate(['body' => ['required', 'string', 'max:5000']]);
+        $reservation->internalNotes()->create(['user_id' => auth()->id(), 'body' => trim($validated['body'])]);
+
+        return redirect()->to(route('admin.reservations.show', $reservation) . '#reservation-notes')
+            ->with('status', __('messages.admin.internal_note_added'));
+    }
+
+    public function validatePayment(Reservation $reservation, \App\Models\PaymentAttempt $attempt, ReservationEmailService $emailService): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        abort_unless((int) $attempt->reservation_id === (int) $reservation->id, 404);
+
+        if (! $this->validateSubmittedProof($reservation, $attempt)) {
+            return redirect()->route('admin.reservations.show', $reservation)->with('status', __('messages.receipts.no_paid_attempt'));
+        }
+        if (in_array($reservation->status, ['pending', 'pending_payment', 'pending_validation', 'payment_failed'], true)) {
+            $reservation->update(['status' => 'confirmed']);
+            $emailService->queueStatusUpdate($reservation, 'confirmed');
+        }
+        $emailService->issueReceiptAndQueueEmail($reservation, $attempt->fresh(), auth()->user()?->email);
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('status', __('messages.admin.payment_validated'));
     }
 
     private function ensureCustomerThread(Reservation $reservation): ?MessageThread
@@ -234,10 +272,7 @@ class AdminReservationController extends Controller
 
         DB::transaction(function () use ($reservation): void {
             foreach ($reservation->paymentAttempts as $attempt) {
-                $proofPath = data_get($attempt->payload, 'payment_proof.path');
-                if ($proofPath && File::exists(public_path($proofPath))) {
-                    File::delete(public_path($proofPath));
-                }
+                app(PaymentProofService::class)->delete($reservation, $attempt);
             }
 
             $guest = $reservation->guest;
@@ -286,17 +321,23 @@ class AdminReservationController extends Controller
             'status' => ['required', 'string', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
             'payment_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'refund_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'refund_reference' => ['nullable', 'string', 'max:120'],
         ]);
 
         $oldStatus = $reservation->status;
         $newStatus = $validated['status'];
+        $refundableAttempts = $newStatus === 'cancelled' && $oldStatus !== 'cancelled' ? $this->refundableOfflineAttempts($reservation) : collect();
+        if ($refundableAttempts->isNotEmpty() && ! isset($validated['refund_proof'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['refund_proof' => __('messages.receipts.refund_proof_required')]);
+        }
 
         $reservation->update([
             'status' => $newStatus,
         ]);
 
         if (filled($validated['notes'] ?? null)) {
-            $reservation->update(['notes' => trim(($reservation->notes ?? '') . PHP_EOL . $validated['notes'])]);
+            $reservation->internalNotes()->create(['user_id' => auth()->id(), 'body' => trim($validated['notes'])]);
         }
 
         if (isset($validated['payment_proof'])) {
@@ -316,8 +357,26 @@ class AdminReservationController extends Controller
             app(PaymentProofService::class)->attach($reservation, $attempt, $validated['payment_proof'], auth()->id());
         }
 
+        foreach ($refundableAttempts as $attempt) {
+            app(PaymentProofService::class)->attach($reservation, $attempt, $validated['refund_proof'], auth()->id(), [], PaymentProofService::REFUND);
+            $attempt->update([
+                'status' => 'refunded',
+                'payload' => array_merge((array) $attempt->fresh()->payload, array_filter([
+                    'refunded_by' => auth()->id(),
+                    'refunded_at' => now()->toIso8601String(),
+                    'refund_reference' => filled($validated['refund_reference'] ?? null) ? trim($validated['refund_reference']) : null,
+                ])),
+            ]);
+        }
+
         if ($oldStatus !== $newStatus) {
             $emailService->queueForReservation($reservation, 'reservation_status_updated');
+        }
+
+        $paidStatuses = ['confirmed', 'checked_in', 'completed'];
+        if (in_array($newStatus, $paidStatuses, true) && ! in_array($oldStatus, $paidStatuses, true)
+            && ($attempt = $this->validateSubmittedProof($reservation))) {
+            $emailService->issueReceiptAndQueueEmail($reservation, $attempt, auth()->user()?->email);
         }
 
         return redirect()->route('admin.reservations.show', $reservation)
@@ -345,17 +404,71 @@ class AdminReservationController extends Controller
             ->with('status', __('messages.flash.payment_link_queued'));
     }
 
-    public function generateReceipt(Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
+    public function generateReceipt(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
     {
         $this->ownedReservation($reservation);
+        $validated = $request->validate(['provider_reference' => ['nullable', 'string', 'max:120']]);
 
-        $attempt = $reservation->paymentAttempts()->where('status', 'paid')->latest()->first();
-        abort_unless($attempt, 422, __('messages.receipts.no_paid_attempt'));
+        $attempt = $reservation->paymentAttempts()->whereIn('status', ['paid', 'completed'])->latest('id')->get()
+            ->first(fn ($attempt) => ! data_get($attempt->payload, 'is_guarantee'));
+        if (! $attempt && ($attempt = $this->validateSubmittedProof($reservation))
+            && in_array($reservation->status, ['pending', 'pending_payment', 'pending_validation', 'payment_failed'], true)) {
+            $reservation->update(['status' => 'confirmed']);
+            $emailService->queueStatusUpdate($reservation, 'confirmed');
+        }
+
+        if (! $attempt) {
+            return redirect()->route('admin.reservations.show', $reservation)
+                ->with('status', __('messages.receipts.no_paid_attempt'));
+        }
+
+        if (filled($validated['provider_reference'] ?? null)) {
+            $attempt->update(['provider_reference' => trim($validated['provider_reference'])]);
+        }
 
         $emailService->issueReceiptAndQueueEmail($reservation, $attempt, auth()->user()?->email);
 
         return redirect()->route('admin.reservations.show', $reservation)
             ->with('status', __('messages.receipts.generated_and_sent'));
+    }
+
+    public function updatePaymentReference(Request $request, Reservation $reservation, \App\Models\PaymentAttempt $attempt): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        abort_unless((int) $attempt->reservation_id === (int) $reservation->id, 404);
+        $validated = $request->validate(['provider_reference' => ['required', 'string', 'max:120']]);
+
+        $attempt->update([
+            'provider_reference' => trim($validated['provider_reference']),
+            'payload' => array_merge((array) $attempt->payload, ['reference_updated_by' => auth()->id(), 'reference_updated_at' => now()->toIso8601String()]),
+        ]);
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('status', __('messages.receipts.reference_updated'));
+    }
+
+    private function refundableOfflineAttempts(Reservation $reservation): \Illuminate\Support\Collection
+    {
+        return $reservation->paymentAttempts()->whereIn('status', ['paid', 'completed'])
+            ->whereIn('provider', PaymentProofService::REFUND_PROOF_PROVIDERS)->get()
+            ->reject(fn ($attempt) => (bool) data_get($attempt->payload, 'is_guarantee'))
+            ->values();
+    }
+
+    /** Generating a receipt or confirming the stay is the staff validation of the guest's submitted proof. */
+    private function validateSubmittedProof(Reservation $reservation, ?\App\Models\PaymentAttempt $only = null): ?\App\Models\PaymentAttempt
+    {
+        $attempt = $reservation->paymentAttempts()->whereIn('status', ['awaiting_validation', 'pending_validation'])
+            ->when($only, fn ($query) => $query->whereKey($only->id))
+            ->latest('id')->get()
+            ->first(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path') && ! data_get($attempt->payload, 'is_guarantee'));
+
+        $attempt?->update([
+            'status' => 'paid',
+            'payload' => array_merge((array) $attempt->payload, ['confirmed_by' => auth()->id(), 'confirmed_at' => now()->toIso8601String()]),
+        ]);
+
+        return $attempt;
     }
 
     private function tenantProperties()

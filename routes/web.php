@@ -30,18 +30,19 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
         'establishment' => ['nullable', 'integer'],
         'destination' => ['nullable', 'string', 'max:120'],
         'guests' => ['nullable', 'integer', 'min:1', 'max:100'],
+        'property_type' => ['nullable', 'in:apartment,house,villa,studio,room,other'],
         'check_in' => ['nullable', 'date', 'after_or_equal:today'],
         'check_out' => ['nullable', 'date', 'after:check_in'],
-        'sort' => ['nullable', 'in:recommended,price_asc,price_desc'],
+        'sort' => ['nullable', 'in:recommended,price_asc,price_desc,rating,newest'],
     ]);
 
-    if (collect(['establishment', 'destination', 'guests', 'check_in', 'check_out', 'sort'])
+    if (collect(['establishment', 'destination', 'guests', 'property_type', 'check_in', 'check_out', 'sort'])
         ->contains(fn (string $key): bool => $request->query->has($key))) {
         return redirect()->route('properties.index', array_filter($homeFilters, static fn ($value) => $value !== null && $value !== ''));
     }
 
     if (Schema::hasTable('properties')) {
-        $establishments = Establishment::query()->where('is_active', true)->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
+        $establishments = Establishment::query()->published()->with('translations')->withCount(['properties' => fn ($query) => $query->published()])->orderBy('name')->get();
         $destinations = Property::query()->published()->whereNotNull('city')->distinct()->orderBy('city')->pluck('city');
         $properties = Property::query()
             ->published()
@@ -69,6 +70,10 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
             $properties = $properties->sortByDesc('nightly_rate_xof')->values();
         } elseif (($homeFilters['sort'] ?? 'recommended') === 'price_asc') {
             $properties = $properties->sortBy('nightly_rate_xof')->values();
+        } elseif (($homeFilters['sort'] ?? 'recommended') === 'newest') {
+            $properties = $properties->sortByDesc('created_at')->values();
+        } elseif (($homeFilters['sort'] ?? 'recommended') === 'rating') {
+            $properties = $properties->sortByDesc(fn ($property) => $property->reviews->avg('rating') ?? 0)->values();
         } else {
             $properties = app(\App\Services\PropertyRecommendationService::class)->sort($properties, $favoritePropertyIds);
         }
@@ -103,7 +108,9 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
 
     $homepageBackgroundImage = BrandSettings::get('homepage_background_image');
 
-    return view('home', compact('properties', 'establishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds', 'cardPricing', 'homeFilters', 'homepageBackgroundImage'));
+    $publicEstablishments = $establishments->filter(fn ($establishment) => (int) $establishment->properties_count > 0)->values();
+
+    return view('home', compact('properties', 'establishments', 'publicEstablishments', 'reviews', 'reviewStats', 'destinations', 'favoritePropertyIds', 'cardPricing', 'homeFilters', 'homepageBackgroundImage'));
 })->name('home');
 
 Route::get('/language/{locale}', [AuthController::class, 'switchLanguage'])->name('language.switch');
@@ -160,6 +167,9 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/reservations/{reservation}/payment-proof', [AdminReservationController::class, 'uploadPaymentProof'])->name('admin.reservations.payment-proof.upload');
         Route::post('/admin/reservations/{reservation}/confirm-offline-payment', [\App\Http\Controllers\ReceiptController::class, 'confirmOfflinePayment'])->name('admin.reservations.confirm-offline-payment');
         Route::post('/admin/reservations/{reservation}/receipt', [AdminReservationController::class, 'generateReceipt'])->name('admin.reservations.receipt.generate');
+        Route::patch('/admin/reservations/{reservation}/payment-attempts/{attempt}/reference', [AdminReservationController::class, 'updatePaymentReference'])->name('admin.reservations.payment-reference.update');
+        Route::post('/admin/reservations/{reservation}/payment-attempts/{attempt}/validate', [AdminReservationController::class, 'validatePayment'])->name('admin.reservations.payment.validate');
+        Route::post('/admin/reservations/{reservation}/internal-notes', [AdminReservationController::class, 'storeInternalNote'])->name('admin.reservations.internal-notes.store');
         Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
         Route::post('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'reply'])->name('admin.messages.reply');
@@ -273,6 +283,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
 });
 
 Route::middleware('locale')->group(function () {
+    Route::get('/establishments', [\App\Http\Controllers\StaticPageController::class, 'establishments'])->name('establishments.index');
     Route::get('/establishments/{establishment:slug}', [\App\Http\Controllers\StaticPageController::class, 'establishment'])->name('establishments.show');
     Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
     Route::get('/properties/compare', [PublicPropertyController::class, 'compare'])->name('properties.compare');
@@ -294,6 +305,7 @@ Route::middleware('locale')->group(function () {
 Route::get('/sitemap.xml', function () {
     $urls = collect([
         route('home'),
+        route('establishments.index'),
         route('properties.index'),
         route('about'),
         route('contact'),
@@ -310,8 +322,7 @@ Route::get('/sitemap.xml', function () {
 
     if (Schema::hasTable('establishments')) {
         $establishments = Establishment::query()
-            ->where('is_active', true)
-            ->whereHas('properties', fn ($query) => $query->published())
+            ->published()
             ->pluck('slug')
             ->map(fn ($slug) => route('establishments.show', ['establishment' => $slug]));
         $urls = $urls->merge($establishments);

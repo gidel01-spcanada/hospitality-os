@@ -55,32 +55,71 @@ class ReceiptController extends Controller
         return back()->with('status', __('messages.receipts.confirmed_and_sent'));
     }
 
-    public function download(Request $request, Reservation $reservation): Response
+    public function download(Request $request, Reservation $reservation, ReservationEmailService $emailService): Response
     {
         $this->authorizeReservation($request, $reservation);
         $receipt = $reservation->receipts()->latest('issued_at')->firstOrFail();
         $reservation->load(['property', 'guest', 'priceLines']);
+        $summary = \App\Support\ReservationSummary::make($reservation);
+        $transaction = $emailService->receiptTransaction($receipt);
+        $images = [
+            'establishment' => $this->pdfImage($summary['establishment']['image'] ?? null),
+            'property' => $this->pdfImage($summary['property']['image'] ?? null),
+        ];
 
-        return Pdf::loadView('receipts.show', compact('receipt', 'reservation'))
+        return Pdf::loadView('receipts.show', compact('receipt', 'reservation', 'summary', 'transaction', 'images'))
+            ->setPaper('a4')
             ->download($receipt->receipt_number . '.pdf');
     }
 
-    public function downloadProof(Request $request, Reservation $reservation, PaymentAttempt $attempt): BinaryFileResponse
+    /** Inline local images as data URIs so the PDF renderer never fetches remote URLs. */
+    private function pdfImage(?string $url): ?string
+    {
+        $base = rtrim(asset(''), '/');
+        if (! $url || ! str_starts_with($url, $base . '/')) {
+            return null;
+        }
+
+        $relative = ltrim(substr($url, strlen($base)), '/');
+        $uploadRoot = rtrim((string) config('filesystems.public_upload_path'), '/\\');
+        $candidates = [public_path($relative)];
+        if (str_starts_with($relative, 'uploads/') && $uploadRoot !== '') {
+            $candidates[] = $uploadRoot . '/' . substr($relative, strlen('uploads/'));
+        }
+
+        $allowedRoots = array_filter([realpath(public_path()), $uploadRoot !== '' ? realpath($uploadRoot) : false]);
+
+        foreach ($candidates as $path) {
+            $real = realpath($path);
+            if (! $real || ! is_file($real) || filesize($real) > 5 * 1024 * 1024
+                || ! collect($allowedRoots)->contains(fn ($root) => str_starts_with($real, $root . DIRECTORY_SEPARATOR))) {
+                continue;
+            }
+            $mime = mime_content_type($real);
+            if (in_array($mime, ['image/jpeg', 'image/png', 'image/gif'], true)) {
+                return 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($real));
+            }
+        }
+
+        return null;
+    }
+
+    public function downloadProof(Request $request, Reservation $reservation, PaymentAttempt $attempt, PaymentProofService $proofs): BinaryFileResponse
     {
         $this->authorizeReservation($request, $reservation, allowCheckoutToken: true);
-        abort_unless($attempt->reservation_id === $reservation->id, 404);
+        abort_unless((int) $attempt->reservation_id === (int) $reservation->id, 404);
 
-        $relativePath = (string) data_get($attempt->payload, 'payment_proof.path');
-        $proofDirectory = realpath(public_path('uploads/reservations/' . $reservation->id));
-        $proofPath = $relativePath ? realpath(public_path($relativePath)) : false;
-        abort_unless(
-            $proofDirectory && $proofPath && str_starts_with($proofPath, $proofDirectory . DIRECTORY_SEPARATOR) && is_file($proofPath),
-            404
-        );
+        $key = $request->query('type') === 'refund' ? PaymentProofService::REFUND : PaymentProofService::PAYMENT;
+        $proofPath = $proofs->resolve($reservation, $attempt, $key);
+        abort_unless($proofPath, 404);
 
-        $downloadName = basename((string) data_get($attempt->payload, 'payment_proof.original_name', basename($proofPath)));
+        $downloadName = basename((string) data_get($attempt->payload, $key . '.original_name', basename($proofPath)));
 
-        return response()->download($proofPath, $downloadName);
+        return response()->file($proofPath, [
+            'Content-Disposition' => \Symfony\Component\HttpFoundation\HeaderUtils::makeDisposition('inline', $downloadName, Str::ascii($downloadName) ?: 'payment-proof'),
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     private function authorizeReservation(Request $request, Reservation $reservation, bool $allowCheckoutToken = false): void
@@ -96,9 +135,19 @@ class ReceiptController extends Controller
                 $reservation->user_id === $request->user()->id
                 || strtolower((string) $reservation->email) === strtolower((string) $request->user()->email)
             ))
-                || ($request->user()?->canManageReservations())
+                || ($request->user()?->canManageReservations() && $this->staffCanAccess($request->user(), $reservation))
                 || $hasValidCheckoutToken,
             403
         );
+    }
+
+    private function staffCanAccess(\App\Models\User $user, Reservation $reservation): bool
+    {
+        $establishment = $reservation->property?->establishment;
+        if (! $establishment || ($user->tenant_id && $establishment->tenant_id !== $user->tenant_id)) {
+            return false;
+        }
+
+        return ! $user->isHost() || $user->managesEstablishment($establishment->id);
     }
 }

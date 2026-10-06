@@ -17,6 +17,66 @@ class PaymentWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_checkout_invoice_uses_saved_prices_and_distinct_establishment_property_photos(): void
+    {
+        $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $establishment = \App\Models\Establishment::create([
+            'tenant_id' => $tenant->id, 'name' => 'Résidence Facture', 'slug' => 'residence-facture', 'currency' => 'XOF',
+            'city' => 'Cotonou', 'address' => '12 Avenue Marina', 'country_code' => 'BJ', 'cover_image' => 'uploads/establishments/reception.jpg',
+            'payment_methods' => ['pay_later' => ['enabled' => true, 'mode' => 'manual', 'instructions' => 'Paiement sur place.']],
+        ]);
+        $establishment->translations()->create(['locale' => 'en', 'name' => 'Invoice Residence']);
+        $property = $establishment->properties()->create([
+            'name' => 'Suite Facture', 'slug' => 'suite-facture', 'status' => 'published', 'is_active' => true, 'currency' => 'XOF',
+            'nightly_rate_xof' => 99999, 'max_guests' => 4, 'bedrooms' => 2, 'beds' => 2, 'bathrooms' => 1,
+        ]);
+        $property->translations()->create(['locale' => 'en', 'name' => 'Invoice Suite']);
+        $property->images()->create(['file_path' => 'uploads/properties/suite-header.jpg', 'file_name' => 'suite.jpg', 'is_cover' => true]);
+        $customer = User::factory()->create(['role' => 'customer', 'locale' => 'fr', 'email_verified_at' => now(), 'last_login_at' => now()]);
+        $guest = ReservationGuest::create(['full_name' => $customer->name, 'email' => $customer->email]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'user_id' => $customer->id, 'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-SAVED-INVOICE', 'status' => 'pending_payment', 'email' => $customer->email,
+            'check_in' => now()->addDays(30)->toDateString(), 'check_out' => now()->addDays(32)->toDateString(),
+            'adults' => 2, 'children' => 1, 'infants' => 1, 'currency' => 'XOF',
+            'subtotal' => 53000, 'fees' => 5000, 'taxes' => 1000, 'total_amount' => 56500,
+        ]);
+        $reservation->priceLines()->createMany([
+            ['label' => 'Nuit(s) x 2', 'amount' => 50000, 'currency' => 'XOF'],
+            ['label' => 'Option: Petit-déjeuner', 'amount' => 3000, 'currency' => 'XOF'],
+            ['label' => 'Frais de service', 'amount' => 5000, 'currency' => 'XOF'],
+            ['label' => 'TVA (18% inclue)', 'amount' => 8084.75, 'currency' => 'XOF'],
+            ['label' => 'Taxe locale / séjour', 'amount' => 1000, 'currency' => 'XOF'],
+            ['label' => 'Promotion réservée', 'amount' => -2500, 'currency' => 'XOF'],
+        ]);
+        $url = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $response = $this->actingAs($customer)->get($url)->assertOk()
+            ->assertSee('Résidence Facture')->assertSee('Suite Facture')->assertSee('12 Avenue Marina')
+            ->assertSee('2 nuit(s) × 25 000 XOF / nuit')->assertSee('Option: Petit-déjeuner')->assertSee('Promotion réservée')
+            ->assertSee('8 084,75 XOF')->assertSee('56 500 XOF')->assertDontSee('99 999 XOF')
+            ->assertSee(__('messages.checkout.review_before_payment'));
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(asset('uploads/establishments/reception.jpg'), $xpath->query('//img[@class="checkout-establishment-image"]')->item(0)->getAttribute('src'));
+        $this->assertSame(asset('uploads/properties/suite-header.jpg'), $xpath->query('//img[@class="checkout-property-image"]')->item(0)->getAttribute('src'));
+        $this->assertSame(6, $xpath->query('//tr[@data-invoice-line]')->length);
+        $this->assertSame('56500.00', $xpath->query('//*[@data-checkout-order-total]')->item(0)->getAttribute('data-amount'));
+        $this->assertEquals(56500, (float) $reservation->fresh()->total_amount);
+
+        $customer->update(['locale' => 'en']);
+        $this->get($url)->assertOk()->assertSee('Invoice Residence')->assertSee('Invoice Suite')
+            ->assertSee('2 night(s) × 25,000 XOF / night')->assertSee('56,500 XOF');
+        $reservation->priceLines()->delete();
+        $this->get($url)->assertOk()->assertSee(__('messages.checkout.saved_subtotal'))->assertSee('53,000 XOF')->assertSee('56,500 XOF')
+            ->assertSee(__('messages.checkout.saved_adjustment'))->assertSee('-2,500 XOF');
+        $reservation->update(['total_amount' => 56500.25]);
+        $this->get($url)->assertOk()->assertSee('<strong>56,500.25 XOF</strong>', false);
+        $reservation->update(['total_amount' => 56500]);
+        $this->post($url, ['provider' => 'pay_later'])->assertRedirect();
+        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'amount' => 56500, 'currency' => 'XOF', 'provider' => 'pay_later']);
+    }
+
     public function test_invalid_checkout_link_redirects_to_account_access_recovery_page(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -436,6 +496,7 @@ class PaymentWorkflowTest extends TestCase
 
     public function test_guest_can_submit_offline_payment_proof_and_host_is_notified(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('local');
         $this->seed(DatabaseSeeder::class);
         $property = Property::where('slug', 'appartement-401')->with('establishment')->firstOrFail();
         $property->establishment->update([
@@ -467,23 +528,49 @@ class PaymentWorkflowTest extends TestCase
         $this->post($offlineProofUrl, [
             'provider' => 'wise',
             'payment_proof' => UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf'),
+            'provider_reference' => ' WISE-TRANSFER-789 ',
         ])->assertRedirect($checkoutUrl);
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_validation']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'wise', 'status' => 'awaiting_validation']);
 
         $attempt = $reservation->paymentAttempts()->where('provider', 'wise')->firstOrFail();
-        $this->assertNotEmpty(data_get($attempt->payload, 'payment_proof.path'));
+        $this->assertSame('WISE-TRANSFER-789', $attempt->provider_reference);
+        $this->assertStringStartsWith('payment-proofs/' . $reservation->id . '/', data_get($attempt->payload, 'payment_proof.path'));
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists(data_get($attempt->payload, 'payment_proof.path'));
+        $proofUrl = route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]);
         $this->get(route('reservations.payment-proof.download', [
             'reservation' => $reservation,
             'attempt' => $attempt,
             'token' => $reservation->checkout_token,
-        ]))->assertDownload('receipt.pdf');
+        ]))->assertOk()->assertHeader('Content-Disposition', 'inline; filename=receipt.pdf');
+        $this->get($proofUrl)->assertForbidden();
 
         $this->actingAs($customer)
             ->get(route('dashboard.reservations.show', $reservation))
             ->assertOk()
-            ->assertSee(route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt]), false);
+            ->assertSee($proofUrl, false);
+        $this->actingAs($customer)->get($proofUrl)->assertOk();
+
+        $tenantId = $property->establishment->tenant_id;
+        $assignedHost = User::factory()->create(['role' => 'host', 'tenant_id' => $tenantId]);
+        $assignedHost->establishments()->attach($property->establishment);
+        $otherHost = User::factory()->create(['role' => 'host', 'tenant_id' => $tenantId]);
+        $this->actingAs($assignedHost)->get($proofUrl)->assertOk();
+        $this->actingAs($otherHost)->get($proofUrl)->assertForbidden();
+
+        $legacyRoot = storage_path('framework/testing/legacy-web-root/uploads');
+        config(['filesystems.public_upload_path' => $legacyRoot]);
+        \Illuminate\Support\Facades\File::ensureDirectoryExists($legacyRoot . '/reservations/' . $reservation->id);
+        file_put_contents($legacyRoot . '/reservations/' . $reservation->id . '/legacy.pdf', '%PDF-1.4 legacy');
+        $legacyAttempt = $reservation->paymentAttempts()->create([
+            'provider' => 'wise', 'provider_reference' => 'legacy-proof', 'idempotency_key' => 'legacy-proof', 'currency' => 'XOF',
+            'amount' => 1, 'status' => 'awaiting_validation',
+            'payload' => ['payment_proof' => ['path' => 'uploads/reservations/' . $reservation->id . '/legacy.pdf', 'original_name' => 'legacy.pdf']],
+        ]);
+        $this->actingAs($assignedHost)->get(route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $legacyAttempt]))->assertOk();
+        \Illuminate\Support\Facades\File::deleteDirectory(storage_path('framework/testing/legacy-web-root'));
+        $this->actingAs($customer);
 
         $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
         $this->assertDatabaseHas('email_outbox', [
@@ -764,5 +851,109 @@ class PaymentWorkflowTest extends TestCase
         $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))
             ->assertOk()
             ->assertDontSee(__('messages.receipts.generate'));
+    }
+
+    public function test_receipt_can_be_generated_from_a_guest_payment_proof(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $proofService = app(\App\Services\PaymentProofService::class);
+
+        foreach (['generate', 'status'] as $index => $action) {
+            $guest = ReservationGuest::create(['full_name' => 'Proof Receipt Guest', 'email' => "proof-receipt-{$action}@example.com"]);
+            $reservation = Reservation::create([
+                'property_id' => $property->id, 'guest_id' => $guest->id, 'reservation_ref' => 'AFK-PROOF-RCT-' . $index,
+                'status' => 'pending_validation', 'check_in' => now()->addDays(10 + $index * 5)->toDateString(), 'check_out' => now()->addDays(12 + $index * 5)->toDateString(),
+                'adults' => 2, 'currency' => 'XOF', 'email' => $guest->email,
+                'subtotal' => 100000, 'total_amount' => 100000, 'source' => 'website',
+            ]);
+            $attempt = $reservation->paymentAttempts()->create([
+                'provider' => 'wise', 'provider_reference' => 'wise-proof-' . $action, 'idempotency_key' => 'wise-proof-' . $action,
+                'currency' => 'XOF', 'amount' => 100000, 'status' => 'awaiting_validation', 'payload' => [],
+            ]);
+            $proofService->attach($reservation, $attempt, UploadedFile::fake()->create('proof.pdf', 10, 'application/pdf'), 'guest');
+
+            $request = $this->actingAs($admin);
+            $response = $action === 'generate'
+                ? $request->post(route('admin.reservations.receipt.generate', $reservation), ['provider_reference' => 'ADMIN-REF-1'])
+                : $request->patch(route('admin.reservations.update-status', $reservation), ['status' => 'confirmed']);
+            $response->assertRedirect(route('admin.reservations.show', $reservation));
+
+            $this->assertSame('paid', $attempt->fresh()->status);
+            $this->assertSame('confirmed', $reservation->fresh()->status);
+            $this->assertDatabaseHas('receipts', ['reservation_id' => $reservation->id, 'payment_attempt_id' => $attempt->id]);
+            $this->assertDatabaseHas('email_outbox', ['recipient_email' => $guest->email, 'template' => 'receipt_issued']);
+            $this->assertSame('0.00', \App\Support\ReservationSummary::make($reservation->fresh())['due']);
+            $this->assertSame($action === 'generate' ? 'ADMIN-REF-1' : 'wise-proof-status', $attempt->fresh()->provider_reference);
+
+            $this->actingAs($admin)->patch(route('admin.reservations.payment-reference.update', ['reservation' => $reservation, 'attempt' => $attempt]), ['provider_reference' => ' FIXED-REF-' . $index . ' '])
+                ->assertRedirect(route('admin.reservations.show', $reservation));
+            $this->assertSame('FIXED-REF-' . $index, $attempt->fresh()->provider_reference);
+            $this->actingAs($admin)->get(route('reservations.receipt', $reservation))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+            $receiptHtml = view('receipts.show', ['receipt' => $reservation->receipts()->firstOrFail(), 'reservation' => $reservation->fresh()])->render();
+            foreach (['FIXED-REF-' . $index, $reservation->reservation_ref, __('messages.transactional.status_paid'), __('messages.transactional.paid_confirmed'), __('messages.transactional.transaction_number'), $guest->email] as $expected) {
+                $this->assertStringContainsString(e($expected), $receiptHtml);
+            }
+            $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))->assertOk()->assertSee('value="FIXED-REF-' . $index . '"', false);
+            $previousReservation ??= $reservation;
+            if ($previousReservation->isNot($reservation)) {
+                $this->actingAs($admin)->patch(route('admin.reservations.payment-reference.update', ['reservation' => $previousReservation, 'attempt' => $attempt]), ['provider_reference' => 'WRONG'])->assertNotFound();
+            }
+        }
+    }
+
+    public function test_cancelling_a_paid_offline_reservation_requires_a_refund_proof_except_cash(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        foreach (['wise', 'pay_later'] as $index => $provider) {
+            $customer = User::factory()->create(['role' => 'customer', 'email' => "refund-{$provider}@example.com"]);
+            $reservation = Reservation::create([
+                'property_id' => $property->id, 'user_id' => $customer->id, 'reservation_ref' => 'AFK-REFUND-' . $index,
+                'status' => 'confirmed', 'check_in' => now()->addDays(20 + $index * 5)->toDateString(), 'check_out' => now()->addDays(22 + $index * 5)->toDateString(),
+                'adults' => 1, 'currency' => 'XOF', 'email' => $customer->email, 'subtotal' => 50000, 'total_amount' => 50000, 'source' => 'website',
+            ]);
+            $attempt = $reservation->paymentAttempts()->create([
+                'provider' => $provider, 'provider_reference' => 'refund-' . $provider, 'idempotency_key' => 'refund-' . $provider,
+                'currency' => 'XOF', 'amount' => 50000, 'status' => 'paid', 'payload' => [],
+            ]);
+            $statusUrl = route('admin.reservations.update-status', $reservation);
+
+            if ($provider === 'pay_later') {
+                $this->actingAs($admin)->patch($statusUrl, ['status' => 'cancelled'])->assertSessionHasNoErrors();
+                $this->assertSame('cancelled', $reservation->fresh()->status);
+                $this->assertSame('paid', $attempt->fresh()->status);
+                continue;
+            }
+
+            $this->actingAs($admin)->get(route('admin.reservations.show', $reservation))->assertOk()->assertSee('data-refund-proof-fields', false);
+            $this->actingAs($admin)->from(route('admin.reservations.show', $reservation))->patch($statusUrl, ['status' => 'cancelled'])
+                ->assertSessionHasErrors('refund_proof');
+            $this->assertSame('confirmed', $reservation->fresh()->status);
+
+            $this->actingAs($admin)->patch($statusUrl, [
+                'status' => 'cancelled',
+                'refund_proof' => UploadedFile::fake()->create('refund.pdf', 10, 'application/pdf'),
+                'refund_reference' => 'REFUND-123',
+            ])->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasNoErrors();
+
+            $attempt->refresh();
+            $this->assertSame('cancelled', $reservation->fresh()->status);
+            $this->assertSame('refunded', $attempt->status);
+            $this->assertSame('REFUND-123', data_get($attempt->payload, 'refund_reference'));
+            $refundUrl = route('reservations.payment-proof.download', ['reservation' => $reservation, 'attempt' => $attempt, 'type' => 'refund']);
+            $this->actingAs($customer)->get(route('dashboard.reservations.show', $reservation))->assertOk()->assertSee($refundUrl, false);
+            $this->actingAs($customer)->get($refundUrl)->assertOk()->assertHeader('Content-Disposition', 'inline; filename=refund.pdf');
+            $summary = \App\Support\ReservationSummary::make($reservation->fresh());
+            $this->assertSame('50000.00', $summary['refunded']);
+            $payload = \App\Models\EmailOutbox::where('template', 'reservation_status_updated')->where('recipient_email', $customer->email)->latest('id')->firstOrFail()->payload;
+            $payload['reservation_summary'] = $summary;
+            $this->assertStringContainsString('data-email-refunded', view('emails.reservation-status-updated', $payload)->render());
+        }
     }
 }

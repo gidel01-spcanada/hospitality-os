@@ -104,6 +104,8 @@
                 <input type="hidden" name="provider" value="{{ $provider }}">
                 <label class="block text-xs font-medium text-slate-700" for="payment_proof_{{ $provider }}">{{ __('messages.checkout.upload_proof_label') }}</label>
                 <input id="payment_proof_{{ $provider }}" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm">
+                <label class="block text-xs font-medium text-slate-700" for="provider_reference_{{ $provider }}">{{ __('messages.receipts.reference_placeholder') }}</label>
+                <input id="provider_reference_{{ $provider }}" type="text" name="provider_reference" maxlength="120" value="{{ old('provider_reference') }}" autocomplete="off" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
                 <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
                     {{ __('messages.checkout.upload_proof_submit') }}
                 </button>

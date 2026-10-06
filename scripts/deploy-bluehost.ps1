@@ -279,7 +279,7 @@ function Get-RelativeRemotePath([string]$fromPath, [string]$toPath) {
 
 function New-PublicUploadRoot() {
     $publicSource = Join-Path $ReleaseRoot 'public'
-    foreach ($requiredFile in @('robots.txt', 'sitemap.xml')) {
+    foreach ($requiredFile in @('robots.txt', '.htaccess')) {
         if (-not (Test-Path (Join-Path $publicSource $requiredFile))) {
             throw "Required public SEO file is missing from the release: $requiredFile"
         }

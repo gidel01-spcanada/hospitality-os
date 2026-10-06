@@ -17,6 +17,304 @@ class ReservationWorkflowAndEmailTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_stay_notes_appear_in_confirmation_email_checkout_and_customer_reservation_page(): void
+    {
+        $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $establishment = \App\Models\Establishment::create([
+            'tenant_id' => $tenant->id, 'name' => 'Notes residence', 'slug' => 'notes-residence', 'currency' => 'XOF',
+            'electricity_billed_separately' => true, 'electricity_policy_note' => 'Électricité facturée au compteur : 150 XOF/kWh.',
+            'cancellation_fee_percent' => 20, 'cancellation_fee_days' => 7,
+        ]);
+        $property = $establishment->properties()->create(['name' => 'Notes suite', 'slug' => 'notes-suite', 'currency' => 'XOF']);
+        $customer = User::factory()->create(['role' => 'customer', 'locale' => 'fr']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'user_id' => $customer->id, 'reservation_ref' => 'NOTES-001', 'status' => 'pending_payment',
+            'email' => $customer->email, 'locale' => 'fr', 'check_in' => now()->addDays(10), 'check_out' => now()->addDays(12),
+            'adults' => 1, 'currency' => 'XOF', 'subtotal' => 50000, 'total_amount' => 50000,
+        ]);
+        app()->setLocale('fr');
+        $cancellationNote = __('messages.properties.cancellation_fee_note', ['percent' => '20', 'days' => 7]);
+
+        app(\App\Services\ReservationEmailService::class)->queueForReservation($reservation, 'reservation_created');
+        $payload = \App\Models\EmailOutbox::latest('id')->firstOrFail()->payload;
+        $html = html_entity_decode(view('emails.reservation-created', $payload)->render());
+        $this->assertStringContainsString('Électricité facturée au compteur : 150 XOF/kWh.', $html);
+        $this->assertStringContainsString($cancellationNote, $html);
+        $this->assertStringContainsString(__('messages.transactional.important_notes'), $html);
+
+        $checkout = html_entity_decode($this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))->assertOk()->getContent());
+        $this->assertStringContainsString('Électricité facturée au compteur : 150 XOF/kWh.', $checkout);
+        $this->assertStringContainsString($cancellationNote, $checkout);
+
+        $this->actingAs($customer)->get(route('dashboard.reservations.show', $reservation))->assertOk()
+            ->assertSee('data-stay-notes', false)
+            ->assertSee('Électricité facturée au compteur : 150 XOF/kWh.');
+
+        $establishment->update(['electricity_billed_separately' => false, 'cancellation_fee_percent' => 0]);
+        $this->assertSame([], \App\Support\ReservationSummary::make($reservation->fresh())['stay_notes']);
+    }
+    public function test_reservation_summary_uses_only_verified_same_currency_payments_and_saved_prices(): void
+    {
+        $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $establishment = \App\Models\Establishment::create(['tenant_id' => $tenant->id, 'name' => 'Summary residence', 'slug' => 'summary-residence', 'currency' => 'EUR']);
+        $property = $establishment->properties()->create(['name' => 'Summary home', 'slug' => 'summary-home', 'currency' => 'EUR', 'nightly_rate_xof' => 99999]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'reservation_ref' => 'SUMMARY-001', 'status' => 'pending_payment',
+            'email' => 'summary@example.com', 'check_in' => now()->addDays(3), 'check_out' => now()->addDays(5),
+            'adults' => 2, 'currency' => 'EUR', 'subtotal' => 200, 'fees' => 30, 'taxes' => 20, 'total_amount' => 250,
+        ]);
+        $reservation->priceLines()->create(['label' => 'Nuit(s) x 2', 'amount' => 200, 'currency' => 'EUR']);
+        $summary = \App\Support\ReservationSummary::make($reservation, 'fr');
+        $this->assertSame('0.00', $summary['paid']);
+        $this->assertSame('250.00', $summary['due']);
+        $this->assertSame('pending', $summary['payment_status']);
+        $this->assertSame('100.00', $summary['lines'][0]['nightly_rate']);
+        $attempt = $reservation->paymentAttempts()->create(['provider' => 'wise', 'provider_reference' => 'summary-paid-1', 'idempotency_key' => 'summary-paid-1', 'status' => 'paid', 'currency' => 'EUR', 'amount' => 100]);
+        $reservation->paymentAttempts()->create(['provider' => 'paypal', 'provider_reference' => 'summary-hold', 'idempotency_key' => 'summary-hold', 'status' => 'paid', 'currency' => 'EUR', 'amount' => 250, 'payload' => ['is_guarantee' => true]]);
+        $summary = \App\Support\ReservationSummary::make($reservation);
+        $this->assertSame('100.00', $summary['paid']);
+        $this->assertSame('150.00', $summary['due']);
+        $this->assertSame('partial', $summary['payment_status']);
+        $reservation->update(['status' => 'pending_validation']);
+        $this->assertSame('pending_validation', \App\Support\ReservationSummary::make($reservation)['payment_status']);
+        $attempt->update(['amount' => 250]);
+        $reservation->update(['status' => 'confirmed']);
+        $summary = \App\Support\ReservationSummary::make($reservation);
+        $this->assertSame('0.00', $summary['due']);
+        $this->assertSame('confirmed', $summary['payment_status']);
+        $attempt->update(['amount' => 100]);
+        $reservation->paymentAttempts()->create(['provider' => 'paypal', 'provider_reference' => 'foreign-payment', 'idempotency_key' => 'foreign-payment', 'status' => 'paid', 'currency' => 'USD', 'amount' => 50]);
+        $summary = \App\Support\ReservationSummary::make($reservation);
+        $this->assertNull($summary['due']);
+        $this->assertSame('unreconciled', $summary['payment_status']);
+        app(\App\Services\ReservationEmailService::class)->queueForReservation($reservation, 'reservation_received');
+        $notification = \App\Models\EmailOutbox::latest('id')->firstOrFail();
+        $html = view('emails.reservation-received', $notification->payload)->render();
+        $this->assertStringContainsString(__('messages.reservation_summary.balance_unknown'), $html);
+        $this->assertStringContainsString('50 USD', $html);
+        $attempt->update(['amount' => 250]);
+        $this->assertSame('0.00', \App\Support\ReservationSummary::make($reservation)['due']);
+        $this->assertEquals(250, (float) $reservation->fresh()->total_amount);
+    }
+
+    public function test_booking_email_and_checkout_share_summary_for_all_payment_states_and_delayed_sending(): void
+    {
+        $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $establishment = \App\Models\Establishment::create([
+            'tenant_id' => $tenant->id, 'name' => 'Résidence Email', 'slug' => 'email-residence', 'currency' => 'EUR',
+            'cover_image' => 'uploads/establishments/email-cover.jpg', 'city' => 'Cotonou', 'address' => '12 Avenue Marina',
+            'payment_methods' => ['pay_later' => ['enabled' => true, 'mode' => 'manual']],
+        ]);
+        $establishment->translations()->create(['locale' => 'en', 'name' => 'Email Residence']);
+        $property = $establishment->properties()->create(['name' => 'Suite Email', 'slug' => 'email-suite', 'currency' => 'EUR', 'nightly_rate_xof' => 99999, 'max_guests' => 4, 'bedrooms' => 2, 'beds' => 2, 'bathrooms' => 1]);
+        $property->translations()->create(['locale' => 'en', 'name' => 'Email Suite']);
+        $property->images()->create(['file_path' => 'uploads/properties/email-suite.jpg', 'file_name' => 'suite.jpg', 'is_cover' => true]);
+        $customer = User::factory()->create(['role' => 'customer', 'locale' => 'en', 'email_verified_at' => now(), 'last_login_at' => now()]);
+        $guest = ReservationGuest::create(['full_name' => $customer->name, 'email' => $customer->email]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'user_id' => $customer->id, 'guest_id' => $guest->id,
+            'reservation_ref' => 'MAIL-SUMMARY-001', 'email' => $customer->email, 'locale' => 'en', 'status' => 'pending_payment',
+            'check_in' => now()->addDays(3), 'check_out' => now()->addDays(5), 'adults' => 2, 'children' => 1, 'infants' => 0,
+            'currency' => 'EUR', 'subtotal' => 220, 'fees' => 20, 'taxes' => 20, 'total_amount' => 250,
+        ]);
+        $reservation->priceLines()->createMany([
+            ['label' => 'Nuit(s) x 2', 'amount' => 200, 'currency' => 'EUR'],
+            ['label' => 'Option: Breakfast', 'amount' => 20, 'currency' => 'EUR'],
+            ['label' => 'Service fee', 'amount' => 20, 'currency' => 'EUR'],
+            ['label' => 'VAT (18% incl.)', 'amount' => 33.56, 'currency' => 'EUR'],
+            ['label' => 'City tax', 'amount' => 20, 'currency' => 'EUR'],
+            ['label' => 'Promotion', 'amount' => -10, 'currency' => 'EUR'],
+        ]);
+        $checkoutUrl = route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
+        $firstNotification = null;
+        foreach ([['pending_payment', 0, 'pending', '250.00'], ['confirmed', 250, 'confirmed', '0.00'], ['pending_payment', 100, 'partial', '150.00'], ['pending_validation', 100, 'pending_validation', '150.00']] as [$status, $paid, $paymentStatus, $due]) {
+            $reservation->paymentAttempts()->delete();
+            $reservation->update(['status' => $status]);
+            if ($paid) {
+                $reservation->paymentAttempts()->create(['provider' => 'wise', 'provider_reference' => 'state-' . $paymentStatus, 'idempotency_key' => 'state-' . $paymentStatus, 'status' => 'paid', 'currency' => 'EUR', 'amount' => $paid]);
+            }
+            if ($status === 'pending_validation') {
+                $reservation->paymentAttempts()->create(['provider' => 'wise', 'provider_reference' => 'proof-only', 'idempotency_key' => 'proof-only', 'status' => 'pending_validation', 'currency' => 'EUR', 'amount' => 150]);
+            }
+            app(\App\Services\ReservationEmailService::class)->queueForReservation($reservation, 'reservation_received');
+            $notification = \App\Models\EmailOutbox::latest('id')->firstOrFail();
+            $firstNotification ??= $notification;
+            $summary = $notification->payload['reservation_summary'];
+            $this->assertSame(number_format($paid, 2, '.', ''), $summary['paid']);
+            $this->assertSame($due, $summary['due']);
+            $this->assertSame($paymentStatus, $summary['payment_status']);
+            $this->assertSame('Email Residence', $summary['establishment']['name']);
+            $this->assertSame('Email Suite', $summary['property']['name']);
+            $this->assertSame(asset('uploads/establishments/email-cover.jpg'), $summary['establishment']['image']);
+            $this->assertSame(asset('uploads/properties/email-suite.jpg'), $summary['property']['image']);
+            app()->setLocale('en');
+            foreach (['emails.reservation-received', 'emails.reservation-created', 'emails.reservation-status-updated'] as $template) {
+                $html = view($template, $notification->payload)->render();
+                $this->assertStringContainsString('2 night(s) × 100 EUR / night', $html);
+                $this->assertStringContainsString('33.56 EUR', $html);
+                $this->assertStringContainsString('Promotion', $html);
+                $this->assertStringContainsString('data-email-payment-status="' . $paymentStatus . '"', $html);
+                $this->assertStringContainsString(htmlspecialchars($notification->payload['checkout_url'], ENT_QUOTES), $html);
+                $this->assertStringNotContainsString('99,999', $html);
+                $this->assertSame($paymentStatus === 'pending_validation', str_contains($html, 'data-email-validating'));
+                $this->assertSame($paymentStatus !== 'pending_validation', str_contains($html, 'data-email-due'));
+                if ($paymentStatus === 'pending_validation') {
+                    $this->assertStringContainsString(__('messages.transactional.validation_detail', ['amount' => '150 EUR']), $html);
+                }
+            }
+            $checkout = $this->actingAs($customer)->get($checkoutUrl)->assertOk();
+            $document = new \DOMDocument();
+            @$document->loadHTML($checkout->getContent());
+            $xpath = new \DOMXPath($document);
+            $this->assertSame(\App\Support\ReservationSummary::money($summary['paid'], 'EUR', 'en'), trim($xpath->query('//*[@data-paid-amount]')->item(0)->textContent));
+            $this->assertSame(\App\Support\ReservationSummary::money($paymentStatus === 'pending_validation' ? '0.00' : $due, 'EUR', 'en'), trim($xpath->query('//*[@data-remaining-amount]')->item(0)->textContent));
+            $validatingNode = $xpath->query('//*[@data-validating-amount]')->item(0);
+            $this->assertSame($paymentStatus === 'pending_validation' ? '150 EUR' : null, $validatingNode ? trim($validatingNode->textContent) : null);
+        }
+        $reservation->paymentAttempts()->delete();
+        $reservation->paymentAttempts()->create(['provider' => 'wise', 'provider_reference' => 'late-paid', 'idempotency_key' => 'late-paid', 'status' => 'paid', 'currency' => 'EUR', 'amount' => 250]);
+        $reservation->update(['status' => 'confirmed']);
+        $sentPayload = null;
+        \Illuminate\Support\Facades\Mail::shouldReceive('send')->once()->andReturnUsing(function ($template, $payload) use (&$sentPayload): void {
+            $sentPayload = $payload;
+            view($template, $payload)->render();
+        });
+        app()->setLocale('fr');
+        $this->artisan('messages:send-email-notifications', ['--limit' => 1])->assertExitCode(0);
+        $this->assertSame('0.00', $sentPayload['reservation_summary']['due']);
+        $this->assertSame('confirmed', $sentPayload['reservation_summary']['payment_status']);
+        $this->assertSame('sent', $firstNotification->fresh()->status);
+        $this->assertSame('fr', app()->getLocale());
+    }
+
+    public function test_legacy_reservation_email_payload_and_existing_review_links_remain_supported(): void
+    {
+        $payload = [
+            'reservation_ref' => 'LEGACY-EMAIL', 'property_name' => 'Legacy home', 'status' => 'completed',
+            'total_amount' => '250.00', 'currency' => 'EUR',
+            'price_lines' => [['label' => 'Saved accommodation', 'amount' => '250.00', 'currency' => 'EUR']],
+            'checkout_url' => 'https://example.com/reservations/1/checkout?token=legacy',
+            'review_url' => 'https://example.com/review/1?signature=legacy',
+            'google_review_url' => 'https://example.com/google-review', 'review_channel' => 'both',
+        ];
+        foreach (['emails.reservation-created', 'emails.reservation-received', 'emails.reservation-status-updated'] as $template) {
+            $html = view($template, $payload)->render();
+            $this->assertStringContainsString('LEGACY-EMAIL', $html);
+            $this->assertStringContainsString('Legacy home', $html);
+            $this->assertStringContainsString(htmlspecialchars($payload['checkout_url'], ENT_QUOTES), $html);
+            $this->assertStringContainsString(__('messages.transactional.greeting_generic'), $html);
+            $this->assertStringContainsString(route('contact'), $html);
+            $this->assertStringContainsString(route('privacy'), $html);
+            $this->assertStringContainsString(\App\Support\PlatformBrand::name(), $html);
+        }
+        $html = view('emails.reservation-status-updated', $payload)->render();
+        $this->assertStringContainsString(htmlspecialchars($payload['review_url'], ENT_QUOTES), $html);
+        $this->assertStringContainsString($payload['google_review_url'], $html);
+    }
+
+    public function test_legacy_transactional_payloads_render_without_inventing_verified_payment(): void
+    {
+        app()->setLocale('en');
+        $payload = [
+            'reservation_ref' => 'LEGACY-TRANSACTION', 'property_name' => 'Legacy suite',
+            'price_lines' => [['label' => 'Saved accommodation', 'amount' => '250.50', 'currency' => 'EUR']],
+            'total_amount' => '250.50', 'amount' => '250.50', 'currency' => 'EUR',
+            'receipt_number' => 'RCT-LEGACY', 'receipt_url' => 'https://example.com/receipt',
+            'checkout_url' => 'https://example.com/checkout', 'register_url' => 'https://example.com/register',
+            'reservation_url' => 'https://example.com/reservation', 'thread_url' => 'https://example.com/thread',
+            'sender_name' => 'Legacy host', 'establishment_name' => 'Legacy residence',
+            'message' => '<script>private message</script>', 'provider' => 'wise',
+        ];
+        foreach (['emails.reservation-created', 'emails.reservation-received', 'emails.payment-link', 'emails.receipt-issued', 'emails.payment-proof-submitted', 'emails.message-received'] as $template) {
+            $html = view($template, $payload)->render();
+            $this->assertStringContainsString('Hello,', $html);
+            $this->assertStringContainsString(route('contact'), $html);
+            $this->assertStringNotContainsString('messages.transactional.', $html);
+            $this->assertStringNotContainsString(__('messages.transactional.paid_confirmed'), $html);
+            if ($template !== 'emails.message-received') {
+                $this->assertStringContainsString('250.50 EUR', $html);
+            }
+        }
+        $receiptHtml = view('emails.receipt-issued', $payload)->render();
+        $this->assertStringNotContainsString('has been confirmed', $receiptHtml);
+        $this->assertStringNotContainsString('Amount paid:', $receiptHtml);
+        $this->assertStringContainsString($payload['receipt_url'], $receiptHtml);
+        $this->assertStringContainsString('&lt;script&gt;', view('emails.message-received', $payload)->render());
+    }
+
+    public function test_receipt_emails_verify_the_linked_transaction_and_refresh_before_sending(): void
+    {
+        $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $establishment = \App\Models\Establishment::create(['tenant_id' => $tenant->id, 'name' => 'Receipt residence', 'slug' => 'receipt-residence']);
+        $property = $establishment->properties()->create(['name' => 'Receipt suite', 'slug' => 'receipt-suite']);
+        $customer = User::factory()->create(['name' => 'Amina Customer', 'locale' => 'en']);
+        $reservation = Reservation::create([
+            'user_id' => $customer->id, 'property_id' => $property->id, 'reservation_ref' => 'RECEIPT-EMAIL',
+            'email' => $customer->email, 'locale' => 'en', 'status' => 'confirmed', 'currency' => 'EUR',
+            'check_in' => now()->addDays(3), 'check_out' => now()->addDays(5), 'adults' => 2,
+            'subtotal' => 250, 'total_amount' => 250,
+        ]);
+        $attempt = $reservation->paymentAttempts()->create([
+            'provider' => 'wise', 'provider_reference' => 'WISE-REAL-REFERENCE', 'idempotency_key' => 'receipt-email',
+            'amount' => 100, 'currency' => 'EUR', 'status' => 'paid',
+        ]);
+        $receipt = $reservation->receipts()->create([
+            'payment_attempt_id' => $attempt->id, 'receipt_number' => 'RCT-EMAIL',
+            'amount' => 100, 'currency' => 'EUR', 'issued_at' => now(),
+        ]);
+        $service = app(\App\Services\ReservationEmailService::class);
+        app()->setLocale('en');
+        foreach ([
+            ['paid', false, 100, 100, 'EUR', true, '150.00'],
+            ['completed', false, 250, 250, 'EUR', true, '0.00'],
+            ['pending_validation', false, 100, 100, 'EUR', false, '250.00'],
+            ['authorized', false, 100, 100, 'EUR', false, '250.00'],
+            ['failed', false, 100, 100, 'EUR', false, '250.00'],
+            ['paid', true, 250, 250, 'EUR', false, '250.00'],
+            ['paid', false, 100, 100, 'USD', true, null],
+            ['paid', false, 100, 250, 'EUR', false, '150.00'],
+        ] as [$status, $guarantee, $paid, $receiptAmount, $currency, $verified, $due]) {
+            $attempt->update(['status' => $status, 'amount' => $paid, 'currency' => $currency, 'payload' => ['is_guarantee' => $guarantee]]);
+            $receipt->update(['amount' => $receiptAmount, 'currency' => $currency]);
+            $service->queueReceipt($receipt->fresh());
+            $payload = \App\Models\EmailOutbox::latest('id')->firstOrFail()->payload;
+            $this->assertSame($verified, $payload['transaction']['verified']);
+            $this->assertSame($due, $payload['reservation_summary']['due']);
+            $html = view('emails.receipt-issued', $payload)->render();
+            $this->assertStringContainsString('Hello Amina,', $html);
+            $this->assertStringContainsString('WISE-REAL-REFERENCE', $html);
+            $this->assertStringContainsString('Receipt issued on', $html);
+            $this->assertStringContainsString(htmlspecialchars($payload['receipt_url'], ENT_QUOTES), $html);
+            $this->assertStringNotContainsString('messages.transactional.', $html);
+            $this->assertSame($due === '0.00', str_contains($html, __('messages.transactional.status_paid')));
+            if ($verified) {
+                $this->assertStringContainsString(__('messages.transactional.paid_confirmed'), $html);
+                $this->assertStringContainsString(__('messages.transactional.transaction_number'), $html);
+            } else {
+                $this->assertStringNotContainsString(__('messages.transactional.paid_confirmed'), $html);
+                $this->assertStringNotContainsString(__('messages.receipts.email_intro', ['reference' => $reservation->reservation_ref, 'property' => $payload['property_name']]), $html);
+            }
+        }
+        \App\Models\EmailOutbox::query()->delete();
+        $attempt->update(['status' => 'paid', 'amount' => 100, 'currency' => 'EUR', 'payload' => []]);
+        $receipt->update(['amount' => 100, 'currency' => 'EUR']);
+        $service->queueReceipt($receipt->fresh());
+        $attempt->update(['status' => 'failed']);
+        $sentPayload = null;
+        \Illuminate\Support\Facades\Mail::shouldReceive('send')->once()->andReturnUsing(function ($template, $payload) use (&$sentPayload): void {
+            $sentPayload = $payload;
+            view($template, $payload)->render();
+        });
+        app()->setLocale('fr');
+        $this->artisan('messages:send-email-notifications')->assertExitCode(0);
+        $this->assertFalse($sentPayload['transaction']['verified']);
+        $this->assertSame('250.00', $sentPayload['reservation_summary']['due']);
+        $this->assertSame('fr', app()->getLocale());
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertSame('250.00', $reservation->fresh()->total_amount);
+    }
+
     public function test_admin_can_set_guest_preferred_locale_and_email_is_queued_in_that_language(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -252,6 +550,7 @@ class ReservationWorkflowAndEmailTest extends TestCase
 
     public function test_admin_can_edit_notes_update_status_with_proof_and_confirm_payment_with_reference(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('local');
         $this->seed(DatabaseSeeder::class);
         $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
         $guest = ReservationGuest::query()->create(['full_name' => 'Forms Guest', 'email' => 'forms-guest@example.com']);
