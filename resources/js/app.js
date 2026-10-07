@@ -117,10 +117,66 @@ const mobileNavActions = document.querySelector('.nav-actions');
 
 if (mobileMenuToggle && mobileNavActions) {
 	mobileNavActions.id = 'mobile-nav-actions';
+	const closeMobileMenu = () => {
+		mobileNavActions.classList.remove('is-open');
+		mobileMenuToggle.setAttribute('aria-expanded', 'false');
+	};
 	mobileMenuToggle.addEventListener('click', () => {
 		const isOpen = mobileNavActions.classList.toggle('is-open');
 		mobileMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 	});
+	mobileNavActions.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMobileMenu));
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') closeMobileMenu();
+	});
+}
+
+const portalNavToggle = document.querySelector('[data-portal-nav-toggle]');
+const portalSidebar = document.querySelector('[data-portal-sidebar]');
+
+if (portalNavToggle && portalSidebar) {
+	const closePortalNav = () => {
+		portalSidebar.classList.remove('is-open');
+		portalNavToggle.setAttribute('aria-expanded', 'false');
+	};
+	portalNavToggle.addEventListener('click', () => {
+		const isOpen = portalSidebar.classList.toggle('is-open');
+		portalNavToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+	});
+	portalSidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', closePortalNav));
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') closePortalNav();
+	});
+}
+
+const portalForms = Array.from(document.querySelectorAll('[data-portal-form]'));
+const portalFormSnapshots = new Map(portalForms.map((form) => [form, new URLSearchParams(new FormData(form)).toString()]));
+const portalFormsHaveChanges = () => portalForms.some((form) => new URLSearchParams(new FormData(form)).toString() !== portalFormSnapshots.get(form));
+
+portalForms.forEach((form) => {
+	form.addEventListener('submit', (event) => {
+		if (form.dataset.portalSaving === 'true') {
+			event.preventDefault();
+			return;
+		}
+		form.dataset.portalSaving = 'true';
+		form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((button) => { button.disabled = true; });
+	});
+});
+
+if (portalForms.length) {
+	window.addEventListener('beforeunload', (event) => {
+		if (!portalFormsHaveChanges()) return;
+		event.preventDefault();
+		event.returnValue = '';
+	});
+}
+
+const topbar = document.querySelector('.topbar');
+if (topbar) {
+	const updateTopbarScrollState = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
+	updateTopbarScrollState();
+	window.addEventListener('scroll', updateTopbarScrollState, { passive: true });
 }
 
 const helpChat = document.querySelector('[data-help-chat]');
@@ -1215,6 +1271,12 @@ document.querySelectorAll('[data-establishment-review-filters]').forEach((form) 
 	const updateReviewHomeFilter = () => { home.disabled = origin.value === 'establishment'; };
 	origin.addEventListener('change', updateReviewHomeFilter);
 	updateReviewHomeFilter();
+});
+
+document.querySelectorAll('[data-property-filter-form]').forEach((form) => {
+	form.addEventListener('submit', () => {
+		try { window.localStorage.removeItem('afrikappart-compare'); } catch {}
+	});
 });
 
 import './property-comparison';

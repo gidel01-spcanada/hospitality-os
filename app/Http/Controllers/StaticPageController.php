@@ -136,7 +136,7 @@ class StaticPageController extends Controller
             'count' => (clone $reviewQuery)->count(),
             'average' => round((float) (clone $reviewQuery)->avg('rating'), 1),
         ];
-        $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->paginate(18)->withQueryString();
+        $reviews = (clone $reviewQuery)->with(['property.translations', 'property.establishment'])->orderByDesc('reviewed_at')->paginate(18)->withQueryString();
         $returnProperty = $request->filled('property')
             ? Property::query()->published()->where('slug', $request->string('property')->toString())->first()
             : null;

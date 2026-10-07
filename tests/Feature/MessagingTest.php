@@ -82,8 +82,11 @@ class MessagingTest extends TestCase
         $this->actingAs($customer)
             ->get(route('messages.show', $thread))
             ->assertOk()
+            ->assertSee('class="portal-conversation-list"', false)
+            ->assertSee('aria-current="page"', false)
             ->assertSee(route('dashboard.reservations.show', $reservation), false)
             ->assertDontSee(route('dashboard.reservations.show', $newerReservation), false)
+            ->assertSee(__('messages.admin.customer'))
             ->assertSee(__('messages.messages.return_to_reservation', ['reference' => $reservation->reservation_ref]));
 
         $this->actingAs($staff)

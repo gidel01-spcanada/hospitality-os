@@ -160,7 +160,7 @@
                                 <span>{{ __('messages.properties.validated_stay_total') }}</span>
                                 <strong data-validated-stay-total-value>@if ($bookingPricing){{ number_format($bookingPricing['total_amount'], 0, ',', ' ') }} {{ $bookingPricing['currency'] }}@endif</strong>
                             </div>
-                            @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
+                            @if ($property->establishment?->secondary_currency && $property->establishment->secondary_currency !== $property->currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                 <div class="price-row muted-row">
                                     <span>≈</span>
                                     <strong>{{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</strong>
@@ -425,6 +425,7 @@
                                             <strong>{{ $review->reviewer_name }}</strong>
                                             <span class="review-source">{{ $review->source_label }}</span>
                                         </div>
+                                        <x-review-property :review="$review" />
                                         @if ($review->review_text)
                                             <p class="review-quote">{{ $review->review_text }}</p>
                                         @else

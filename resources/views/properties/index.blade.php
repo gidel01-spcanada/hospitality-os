@@ -4,8 +4,8 @@
 @section('seo_description', __('messages.seo.properties_description'))
 
 @section('content')
-    <section class="page-hero">
-        <div class="container narrow-shell">
+    <section class="page-hero property-search-hero">
+        <div class="container">
             <span class="eyebrow eyebrow-dark">{{ __('messages.properties.badge') }}</span>
             <h1>{{ __('messages.properties.heading') }}</h1>
             <p>{{ __('messages.properties.subtitle') }}</p>
@@ -13,7 +13,7 @@
         </div>
     </section>
 
-    <section class="section">
+    <section class="section property-search-results">
         <div class="container">
             <x-property-filters
                 variant="catalog"

@@ -32,7 +32,7 @@
                             <p class="comparison-rating">{{ $column['rating'] === null ? __('messages.properties.new_listing') : number_format($column['rating'], 1, app()->getLocale() === 'fr' ? ',' : '.', ' ') . ' / 5' }} · {{ trans_choice('messages.properties.review_count_short', $column['review_count'], ['count' => $column['review_count']]) }}</p>
                             <strong class="comparison-price" title="{{ (float) $property->nightly_rate_xof > 0 ? \App\Support\ReservationSummary::money($property->nightly_rate_xof, $property->currency) : __('messages.comparison.price_missing') }}">{{ (float) $property->nightly_rate_xof > 0 ? $money($property->nightly_rate_xof, $property) : __('messages.comparison.price_missing') }}</strong>
                             <small>{{ __('messages.properties.night_short') }}@if ($currency !== $property->currency) · {{ __('messages.comparison.approximate') }}@endif</small>
-                            @if ($currency === $property->currency && $property->establishment?->secondary_currency && (float) $property->establishment->secondary_currency_rate > 0 && (float) $property->nightly_rate_xof > 0)
+                            @if ($currency === $property->currency && $property->establishment?->secondary_currency && $property->establishment->secondary_currency !== $currency && (float) $property->establishment->secondary_currency_rate > 0 && (float) $property->nightly_rate_xof > 0)
                                 <small>≈ {{ \App\Support\DisplayCurrency::label((float) $property->nightly_rate_xof, $property, $property->establishment->secondary_currency) }} · {{ __('messages.comparison.approximate') }}</small>
                             @endif
                             @if ($column['pricing'])

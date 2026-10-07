@@ -1,6 +1,6 @@
 <details class="help-chat" data-help-chat>
     <summary class="help-chat-launcher" aria-label="{{ __('messages.help_chat.open') }}" title="{{ __('messages.help_chat.open') }}">
-        <span class="help-chat-launcher-compact" aria-hidden="true">?</span>
+        <svg class="help-chat-launcher-compact" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.4-.76L4 20l1.25-4.1A7.5 7.5 0 1 1 20 11.5Z" /></svg>
     </summary>
     <section class="help-chat-panel" aria-label="{{ __('messages.help_chat.title') }}">
         <header class="help-chat-header">

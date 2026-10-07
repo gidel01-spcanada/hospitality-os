@@ -77,9 +77,11 @@
                         @php
                             $priceNotes = array_filter([
                                 $pricing ? __('messages.properties.taxes_fees_included') : null,
-                                $property->establishment?->secondary_currency && $internationalAmount !== null ? '≈ ' . number_format($internationalAmount, 2, ',', ' ') . ' ' . $property->establishment->secondary_currency : null,
                             ]);
                         @endphp
+                        @if ($property->establishment?->secondary_currency && $property->establishment->secondary_currency !== $property->currency && $internationalAmount !== null)
+                            <span class="property-price-converted {{ $pricing ? 'is-calculated' : '' }}">≈ {{ number_format($internationalAmount, 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</span>
+                        @endif
                         @if ($priceNotes)<span class="property-price-note">{{ implode(' · ', $priceNotes) }}</span>@endif
                     </div>
                 </div>

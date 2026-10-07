@@ -151,8 +151,8 @@ body.admin-layout textarea {
     gap: var(--space-4);
     height: var(--topbar-height);
     padding: 0 var(--space-6);
-    background-color: white;
-    border-bottom: 1px solid var(--color-slate-200);
+    background-color: var(--afrik-header-sage);
+    border-bottom: 1px solid rgba(15, 91, 76, 0.2);
     position: fixed;
     left: 0;
     right: 0;
@@ -173,10 +173,34 @@ body.admin-layout textarea {
 }
 
 .admin-topbar-brand {
-    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--afrik-header-ink);
     font-size: var(--font-lg);
     font-weight: var(--font-bold);
     text-decoration: none;
+}
+
+.admin-topbar-brand img {
+    display: block;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.admin-topbar-brand-mark {
+    display: inline-grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    place-items: center;
+    border: 1px solid rgba(15, 91, 76, 0.2);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--afrik-emerald-strong);
+    font-size: var(--font-sm);
+    font-weight: var(--font-bold);
 }
 
 .admin-user-menu-toggle {

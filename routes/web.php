@@ -103,7 +103,7 @@ Route::middleware('locale')->get('/', function (\Illuminate\Http\Request $reques
             'count' => (clone $reviewQuery)->count(),
             'average' => round((float) (clone $reviewQuery)->avg('rating'), 1),
         ];
-        $reviews = (clone $reviewQuery)->orderByDesc('reviewed_at')->limit(3)->get();
+        $reviews = (clone $reviewQuery)->with(['property.translations', 'property.establishment'])->orderByDesc('reviewed_at')->limit(3)->get();
     }
 
     $homepageBackgroundImage = BrandSettings::get('homepage_background_image');
