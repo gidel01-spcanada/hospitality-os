@@ -112,6 +112,7 @@
                                     <span class="review-stars" aria-label="{{ __('messages.home.rating_stars', ['rating' => $review->rating]) }}">{{ str_repeat('★', (int) $review->rating) }}{{ str_repeat('☆', 5 - (int) $review->rating) }}</span>
                                 </div>
                                 <h3>{{ $review->reviewer_name }}</h3>
+                                <x-review-property :review="$review" />
                                 @if($review->reviewed_at)
                                     <time class="review-date" datetime="{{ $review->reviewed_at->toDateString() }}">{{ $review->reviewed_at->format('d/m/Y') }}</time>
                                 @endif
@@ -248,7 +249,7 @@
                                         @else
                                             <strong><x-display-price :amount="$property->nightly_rate_xof" :property="$property" /> / {{ __('messages.properties.night_short') }}</strong>
                                         @endif
-                                        @if ($property->establishment?->secondary_currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
+                                        @if ($property->establishment?->secondary_currency && $property->establishment->secondary_currency !== $property->currency && $property->establishment?->secondaryDisplayAmount((float) $property->nightly_rate_xof) !== null)
                                             <span>≈ {{ number_format($property->establishment->secondaryDisplayAmount((float) $property->nightly_rate_xof), 2, ',', ' ') }} {{ $property->establishment->secondary_currency }}</span>
                                         @endif
                                     </div>

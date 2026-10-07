@@ -3,16 +3,21 @@
 @section('title', __('messages.reservation.title'))
 
 @section('content')
-    <section class="page-hero compact-hero">
-        <div class="container">
-            <span class="badge badge-emerald">{{ __('messages.reservation.badge') }}</span>
-            <h1>{{ $reservation->reservation_ref }}</h1>
-            <p>{{ $reservation->property?->name ?? __('messages.checkout.property') }}</p>
-            <a href="{{ route('dashboard') }}" class="inline-link">← {{ __('messages.dashboard.reservations') }}</a>
+    <section class="container portal-reservation-detail-head">
+        <a href="{{ route('dashboard') }}" class="inline-link">← {{ __('messages.dashboard.reservations') }}</a>
+        <div class="portal-reservation-property">
+            @if ($reservationSummary['property']['image'])
+                <img src="{{ $reservationSummary['property']['image'] }}" alt="{{ $reservationSummary['property']['name'] }}">
+            @endif
+            <div>
+                <span class="portal-status-badge status-{{ $reservation->status }}">{{ __('messages.admin.status_' . $reservation->status) }}</span>
+                <h1>{{ $reservationSummary['property']['name'] }}</h1>
+                <p>{{ $reservation->reservation_ref }}@if ($reservationSummary['property']['location']) · {{ $reservationSummary['property']['location'] }}@endif</p>
+            </div>
         </div>
     </section>
 
-    <section class="container dashboard-grid">
+    <section class="container dashboard-grid portal-reservation-detail">
         @php
             $canModifyReservation = ! in_array($reservation->status, ['cancelled', 'completed'], true);
             $activeReservationView = $canModifyReservation && request()->query('view') === 'edit' ? 'edit' : 'details';
@@ -35,11 +40,14 @@
                 @endif
             </div>
             <ul>
-                <li><strong>{{ __('messages.reservation.status') }}</strong><span>{{ __('messages.admin.status_' . $reservation->status) }}</span></li>
                 <li><strong>{{ __('messages.reservation.dates') }}</strong><span>{{ $reservation->check_in?->format('d/m/Y') }} → {{ $reservation->check_out?->format('d/m/Y') }}</span></li>
+                <li><strong>{{ __('messages.dashboard.nights') }}</strong><span>{{ $reservationSummary['nights'] }}</span></li>
                 <li><strong>{{ __('messages.reservation.travelers') }}</strong><span>{{ __('messages.reservation.travelers_summary', ['adults' => $reservation->adults, 'children' => $reservation->children, 'infants' => $reservation->infants]) }}</span></li>
                 <li><strong>{{ __('messages.reservation.name') }}</strong><span>{{ $reservation->guest?->full_name ?? '—' }}</span></li>
-                <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ number_format((float) $reservation->total_amount, 0, ',', ' ') }} {{ $reservation->currency }}</span></li>
+                <li><strong>{{ __('messages.reservation.total') }}</strong><span>{{ \App\Support\ReservationSummary::money($reservation->total_amount, $reservation->currency) }}</span></li>
+                <li><strong>{{ __('messages.dashboard.payment_status') }}</strong><span>{{ __('messages.dashboard.payment_' . $reservationSummary['payment_status']) }}</span></li>
+                <li><strong>{{ __('messages.reservation.paid') }}</strong><span>{{ \App\Support\ReservationSummary::money($reservationSummary['paid'], $reservation->currency) }}</span></li>
+                <li><strong>{{ __('messages.reservation.due') }}</strong><span>{{ $reservationSummary['due'] === null ? __('messages.reservation_summary.balance_unknown') : \App\Support\ReservationSummary::money($reservationSummary['due'], $reservation->currency) }}</span></li>
             </ul>
         </div>
 

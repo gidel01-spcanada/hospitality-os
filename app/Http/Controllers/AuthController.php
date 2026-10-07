@@ -50,7 +50,7 @@ class AuthController extends Controller
                 return redirect()->route('reservation.resume');
             }
 
-            return redirect($user && $user->canManageReservations() ? route('admin.dashboard') : route('dashboard'));
+            return redirect($user && $user->isAdmin() ? route('admin.dashboard') : route('dashboard'));
         }
 
         return back()->withErrors([
@@ -107,30 +107,55 @@ class AuthController extends Controller
         app()->setLocale($locale);
         session()->put('locale', $locale);
 
+        $periods = ['upcoming', 'current', 'completed', 'cancelled'];
+        $periodFilter = $request->string('period')->toString();
+        if (! in_array($periodFilter, $periods, true)) {
+            $periodFilter = 'upcoming';
+        }
+
         $statuses = ['pending', 'pending_payment', 'pending_validation', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
         $statusFilter = $request->string('status')->toString();
 
-        if (! in_array($statusFilter, [...$statuses, 'all'], true)) {
-            $statusFilter = 'active';
+        if (! in_array($statusFilter, [...$statuses, 'active', 'all'], true)) {
+            $statusFilter = 'all';
         }
 
-        $reservations = Reservation::query()
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id)
-                    ->orWhereRaw('LOWER(email) = ?', [strtolower($user->email)]);
-            })
-            ->when($statusFilter === 'active', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
-            ->when(in_array($statusFilter, $statuses, true), fn ($query) => $query->where('status', $statusFilter))
-            ->with(['property', 'receipts'])
-            ->orderByDesc('created_at')
-            ->get();
-        $favoriteProperties = $user->favoriteProperties()
-            ->published()
-            ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
-            ->orderByDesc('property_favorites.created_at')
-            ->get();
+        $reservations = $user->role === 'customer'
+            ? Reservation::query()
+                ->where(function ($query) use ($user) {
+                    $query->where('user_id', $user->id)
+                        ->orWhereRaw('LOWER(email) = ?', [strtolower($user->email)]);
+                })
+                ->when($periodFilter === 'upcoming', fn ($query) => $query->whereDate('check_in', '>', today())->whereNotIn('status', ['cancelled', 'completed']))
+                ->when($periodFilter === 'current', fn ($query) => $query->where(function ($current) {
+                    $current->where('status', 'checked_in')->orWhere(function ($dates) {
+                        $dates->whereDate('check_in', '<=', today())->whereDate('check_out', '>', today())->whereNotIn('status', ['cancelled', 'completed']);
+                    });
+                }))
+                ->when($periodFilter === 'completed', fn ($query) => $query->where(function ($completed) {
+                    $completed->where('status', 'completed')->orWhere(function ($dates) {
+                        $dates->whereDate('check_out', '<=', today())->where('status', '!=', 'cancelled');
+                    });
+                }))
+                ->when($periodFilter === 'cancelled', fn ($query) => $query->where('status', 'cancelled'))
+                ->when($statusFilter === 'active', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
+                ->when(in_array($statusFilter, $statuses, true), fn ($query) => $query->where('status', $statusFilter))
+                ->with(['property.establishment.translations', 'property.translations', 'property.images', 'receipts', 'paymentAttempts', 'guest', 'user', 'priceLines'])
+                ->orderByDesc('created_at')
+                ->get()
+            : collect();
+        $reservationSummaries = $reservations->mapWithKeys(fn (Reservation $reservation) => [
+            $reservation->id => \App\Support\ReservationSummary::make($reservation),
+        ]);
+        $favoriteProperties = $user->role === 'customer'
+            ? $user->favoriteProperties()
+                ->published()
+                ->with(['images' => fn ($query) => $query->orderBy('sort_order'), 'translations'])
+                ->orderByDesc('property_favorites.created_at')
+                ->get()
+            : collect();
 
-        return view('dashboard', compact('user', 'reservations', 'favoriteProperties', 'statuses', 'statusFilter'));
+        return view('dashboard', compact('user', 'reservations', 'favoriteProperties', 'statuses', 'statusFilter', 'periods', 'periodFilter', 'reservationSummaries'));
     }
 
     public function accountProfile(): View
@@ -218,8 +243,9 @@ class AuthController extends Controller
             ->filter(fn ($feature) => $reservation->priceLines->contains('label', 'Option: ' . $feature->name))
             ->pluck('id')
             ->all();
+        $reservationSummary = \App\Support\ReservationSummary::make($reservation);
 
-        return view('dashboard-reservation', compact('user', 'reservation', 'selectedFeatureIds'));
+        return view('dashboard-reservation', compact('user', 'reservation', 'selectedFeatureIds', 'reservationSummary'));
     }
 
     public function updateReservation(Request $request, Reservation $reservation, AvailabilityService $availabilityService): RedirectResponse

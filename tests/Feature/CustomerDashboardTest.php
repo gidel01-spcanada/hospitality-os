@@ -85,6 +85,10 @@ class CustomerDashboardTest extends TestCase
         $this->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
+            ->assertSee('data-portal-sidebar', false)
+            ->assertSee(route('messages.index'), false)
+            ->assertSee(route('account.preferences'), false)
+            ->assertDontSee(route('admin.reservations.index'), false)
             ->assertSee('AFK-CUST-001')
             ->assertSee('AFK-CUST-002');
 
@@ -106,6 +110,89 @@ class CustomerDashboardTest extends TestCase
             ->assertSee('modification_check_in')
             ->assertSee(__('messages.messages.contact_concierge'))
             ->assertSee(__('messages.messages.send'));
+    }
+
+    public function test_customer_reservation_periods_show_only_matching_stays(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::factory()->create(['role' => 'customer', 'email' => 'periods@example.com']);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => $user->name, 'email' => $user->email]);
+        $reservations = [
+            ['reference' => 'AFK-PERIOD-UPCOMING', 'status' => 'pending_payment', 'check_in' => now()->addDays(8), 'check_out' => now()->addDays(10)],
+            ['reference' => 'AFK-PERIOD-CURRENT', 'status' => 'checked_in', 'check_in' => now()->subDay(), 'check_out' => now()->addDay()],
+            ['reference' => 'AFK-PERIOD-COMPLETED', 'status' => 'completed', 'check_in' => now()->subDays(5), 'check_out' => now()->subDays(3)],
+            ['reference' => 'AFK-PERIOD-CANCELLED', 'status' => 'cancelled', 'check_in' => now()->addDays(12), 'check_out' => now()->addDays(14)],
+        ];
+
+        foreach ($reservations as $item) {
+            Reservation::create([
+                'property_id' => $property->id,
+                'guest_id' => $guest->id,
+                'user_id' => $user->id,
+                'reservation_ref' => $item['reference'],
+                'status' => $item['status'],
+                'check_in' => $item['check_in']->toDateString(),
+                'check_out' => $item['check_out']->toDateString(),
+                'adults' => 1,
+                'children' => 0,
+                'infants' => 0,
+                'currency' => 'XOF',
+                'email' => $user->email,
+                'subtotal' => 50000,
+                'total_amount' => 50000,
+                'source' => 'website',
+            ]);
+        }
+
+        foreach ([
+            'upcoming' => ['AFK-PERIOD-UPCOMING', ['AFK-PERIOD-CURRENT', 'AFK-PERIOD-COMPLETED', 'AFK-PERIOD-CANCELLED']],
+            'current' => ['AFK-PERIOD-CURRENT', ['AFK-PERIOD-UPCOMING', 'AFK-PERIOD-COMPLETED', 'AFK-PERIOD-CANCELLED']],
+            'completed' => ['AFK-PERIOD-COMPLETED', ['AFK-PERIOD-UPCOMING', 'AFK-PERIOD-CURRENT', 'AFK-PERIOD-CANCELLED']],
+            'cancelled' => ['AFK-PERIOD-CANCELLED', ['AFK-PERIOD-UPCOMING', 'AFK-PERIOD-CURRENT', 'AFK-PERIOD-COMPLETED']],
+        ] as $period => [$visible, $hidden]) {
+            $response = $this->actingAs($user)->get(route('dashboard', ['period' => $period]))->assertOk()->assertSee($visible);
+            foreach ($hidden as $reference) {
+                $response->assertDontSee($reference);
+            }
+        }
+    }
+
+    public function test_concierge_dashboard_does_not_show_customer_reservations_matching_their_email(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $concierge = User::factory()->create([
+            'email' => 'shared-staff-booking@example.com',
+            'role' => 'concierge',
+            'is_admin' => false,
+            'tenant_id' => $property->establishment->tenant_id,
+        ]);
+        $guest = ReservationGuest::create(['full_name' => 'Staff Email Guest', 'email' => $concierge->email]);
+        Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-STAFF-EMAIL-COLLISION',
+            'status' => 'confirmed',
+            'check_in' => now()->addDays(10)->toDateString(),
+            'check_out' => now()->addDays(12)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $concierge->email,
+            'subtotal' => 50000,
+            'total_amount' => 50000,
+            'source' => 'website',
+        ]);
+
+        $this->actingAs($concierge)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-portal-sidebar', false)
+            ->assertDontSee('AFK-STAFF-EMAIL-COLLISION')
+            ->assertSee(route('admin.reservations.index'), false)
+            ->assertSee(route('admin.messages.index'), false)
+            ->assertDontSee(route('admin.properties.index'), false);
     }
 
     public function test_customer_can_modify_reservation_dates_and_guests(): void

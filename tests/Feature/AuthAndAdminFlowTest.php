@@ -107,6 +107,23 @@ class AuthAndAdminFlowTest extends TestCase
         $this->assertAuthenticatedAs(User::where('email', 'admin@afrikappart.test')->firstOrFail());
     }
 
+    public function test_concierge_login_redirects_to_the_authenticated_portal(): void
+    {
+        $concierge = User::factory()->create([
+            'email' => 'portal-concierge@example.com',
+            'password' => 'Password123!',
+            'role' => 'concierge',
+            'is_admin' => false,
+        ]);
+
+        $this->post('/login', [
+            'email' => $concierge->email,
+            'password' => 'Password123!',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($concierge);
+    }
+
     public function test_login_uses_one_generic_error_for_unknown_email_and_wrong_password(): void
     {
         $this->seed(DatabaseSeeder::class);

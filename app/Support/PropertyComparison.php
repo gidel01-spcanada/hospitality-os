@@ -41,7 +41,7 @@ class PropertyComparison
             ];
         })->values();
         $currencies = $properties->flatMap(fn ($property) => [$property->currency, $property->establishment?->secondary_currency])->filter()->unique()->values();
-        $currency = $criteria['currency'] ?? session('display_currency') ?? $properties->first()?->currency ?? 'XOF';
+        $currency = $criteria['currency'] ?? session('comparison_currency') ?? $properties->first()?->currency ?? 'XOF';
         if (! $currencies->contains($currency)) {
             $currency = $properties->first()?->currency ?? 'XOF';
         }

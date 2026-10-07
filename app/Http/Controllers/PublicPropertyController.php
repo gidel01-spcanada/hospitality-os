@@ -182,6 +182,7 @@ class PublicPropertyController extends Controller
             }
         }
         $reviews = $property->reviews;
+        $reviews->load(['property.translations', 'property.establishment']);
         $reviewStats = [
             'count' => $reviews->count(),
             'average' => round((float) $reviews->avg('rating'), 1),
@@ -215,7 +216,7 @@ class PublicPropertyController extends Controller
             throw ValidationException::withMessages(['currency' => __('messages.comparison.rate_missing')]);
         }
         if (filled($validated['currency'] ?? null) && $comparison['currencies']->contains($validated['currency'])) {
-            $request->session()->put('display_currency', $validated['currency']);
+            $request->session()->put('comparison_currency', $validated['currency']);
         }
         $candidates = Property::query()->published()->with('translations')->orderBy('name')->get();
         $missingCount = count($selectedIds) - $properties->count();

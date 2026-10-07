@@ -27,8 +27,11 @@ class HelpChatTest extends TestCase
 
         $document = new \DOMDocument();
         @$document->loadHTML('<?xml encoding="UTF-8">' . $response->getContent());
-        $launcher = (new \DOMXPath($document))->query('//summary[@class="help-chat-launcher"]')->item(0);
-        $this->assertSame('?', trim($launcher->textContent));
+        $xpath = new \DOMXPath($document);
+        $launcher = $xpath->query('//summary[@class="help-chat-launcher"]')->item(0);
+        $icon = $xpath->query('.//svg[@class="help-chat-launcher-compact"]', $launcher)->item(0);
+        $this->assertNotNull($icon);
+        $this->assertSame('true', $icon->getAttribute('aria-hidden'));
         $this->assertSame(__('messages.help_chat.open'), $launcher->getAttribute('title'));
         $this->assertSame(__('messages.help_chat.open'), $launcher->getAttribute('aria-label'));
 

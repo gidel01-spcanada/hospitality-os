@@ -797,8 +797,9 @@ class PublicPropertyBookingTest extends TestCase
         $expected = \App\Services\PricingCalculator::calculate($properties[1], \Carbon\Carbon::parse($arrival), \Carbon\Carbon::parse($departure), 2);
         $this->assertSame($expected['total_amount'], $columns[1]['pricing']['total_amount']);
         $this->assertSame($expected['taxes'], $columns[1]['pricing']['taxes']);
-        $this->assertSame('EUR', session('display_currency'));
-        $this->get(route('properties.show', $properties[1]))->assertOk()->assertSee('data-display-currency="EUR"', false);
+        $this->assertSame('EUR', session('comparison_currency'));
+        $this->assertNull(session('display_currency'));
+        $this->get(route('properties.show', $properties[1]))->assertOk()->assertDontSee('data-display-currency="EUR"', false);
 
         $query['check_in'] = now()->addDays(60)->toDateString();
         $query['check_out'] = now()->addDays(64)->toDateString();
@@ -807,6 +808,81 @@ class PublicPropertyBookingTest extends TestCase
         $this->assertStringNotContainsString('comparison-availability is-unavailable', $updated->json('html'));
         $this->assertSame(1, Reservation::where('reservation_ref', 'COMPARE-BLOCK')->count());
         $this->assertSame('confirmed', Reservation::where('reservation_ref', 'COMPARE-BLOCK')->value('status'));
+    }
+
+    public function test_comparison_currency_is_remembered_without_changing_home_catalog_establishment_or_property_prices(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $properties = Property::published()->with('establishment')->take(2)->get();
+        $property = $properties->first();
+        $property->establishment->update(['secondary_currency' => 'EUR', 'secondary_currency_rate' => 0.002]);
+        $this->withSession(['display_currency' => 'EUR']);
+        $selection = ['properties' => $properties->pluck('id')->all()];
+        $this->get(route('properties.compare', $selection))->assertOk()->assertViewHas('currency', 'XOF');
+        $dates = ['check_in' => now()->addDays(30)->toDateString(), 'check_out' => now()->addDays(34)->toDateString(), 'guests' => 2];
+        $urls = [
+            route('home'),
+            route('properties.index', $dates),
+            route('establishments.show', ['establishment' => $property->establishment, ...$dates]),
+            route('properties.show', ['property' => $property, ...$dates]),
+        ];
+        $prices = function ($response): array {
+            $document = new \DOMDocument();
+            @$document->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($document);
+            $nodes = $xpath->query('//*[contains(@class, "property-price-footer") or contains(@class, "price-summary") or contains(@class, "mobile-booking-summary")]');
+            $values = [];
+            foreach ($nodes as $node) {
+                $values[] = trim(preg_replace('/\s+/u', ' ', $node->textContent));
+            }
+            $this->assertNotEmpty($values);
+
+            return $values;
+        };
+        $before = [];
+        foreach ($urls as $url) {
+            $before[$url] = $prices($this->get($url)->assertOk()->assertDontSee('data-display-currency="EUR"', false));
+        }
+        $this->get(route('properties.compare', $selection + ['currency' => 'EUR']))->assertOk()->assertViewHas('currency', 'EUR');
+        $this->assertSame('EUR', session('comparison_currency'));
+        $this->get(route('properties.compare', $selection))->assertOk()->assertViewHas('currency', 'EUR');
+        foreach ($urls as $url) {
+            $this->assertSame($before[$url], $prices($this->get($url)->assertOk()), $url);
+        }
+    }
+
+    public function test_same_currency_secondary_prices_are_not_repeated(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $properties = Property::published()->with('establishment')->take(2)->get();
+        $property = $properties->first();
+        $property->establishment->update(['secondary_currency' => 'XOF', 'secondary_currency_rate' => 1]);
+        $dates = ['check_in' => now()->addDays(30)->toDateString(), 'check_out' => now()->addDays(34)->toDateString(), 'guests' => 2];
+        foreach ([
+            route('home'),
+            route('properties.index', $dates),
+            route('establishments.show', ['establishment' => $property->establishment, ...$dates]),
+            route('properties.show', ['property' => $property, ...$dates]),
+            route('properties.compare', ['properties' => $properties->pluck('id')->all(), 'currency' => 'XOF']),
+        ] as $url) {
+            $response = $this->get($url)->assertOk();
+            $document = new \DOMDocument();
+            @$document->loadHTML('<?xml encoding="UTF-8">' . $response->getContent());
+            $xpath = new \DOMXPath($document);
+            $nodes = $xpath->query('//*[contains(@class, "property-price-footer") or contains(@class, "price-summary") or contains(@class, "comparison-product")]');
+            foreach ($nodes as $node) {
+                $this->assertStringNotContainsString('≈', $node->textContent, $url);
+            }
+        }
+        $reservation = Reservation::create([
+            'property_id' => $property->id, 'reservation_ref' => 'SAME-CURRENCY-CHECKOUT',
+            'status' => 'pending_payment', 'email' => 'same-currency@example.com', 'currency' => 'XOF',
+            'check_in' => $dates['check_in'], 'check_out' => $dates['check_out'], 'adults' => 2,
+            'subtotal' => 100000, 'total_amount' => 100000,
+        ]);
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))->assertOk()
+            ->assertDontSee('class="checkout-order-conversion"', false);
     }
 
     public function test_comparison_handles_small_selections_invalid_dates_and_missing_rates(): void
@@ -823,7 +899,7 @@ class PublicPropertyBookingTest extends TestCase
         Property::whereKey($ids[1])->update(['currency' => 'USD']);
         $this->get(route('properties.compare', ['properties' => $ids]))->assertOk()->assertSee(__('messages.comparison.rate_missing'));
         $this->getJson(route('properties.compare', ['properties' => $ids, 'currency' => 'ZZZ']))->assertUnprocessable()->assertJsonValidationErrors('currency');
-        $this->assertNull(session('display_currency'));
+        $this->assertNull(session('comparison_currency'));
         $this->withSession(['locale' => 'en'])->get(route('properties.compare', ['properties' => $ids]))->assertOk()
             ->assertSee('Differences only')->assertSee('Exchange rate unavailable')->assertDontSee('messages.comparison.');
         Property::whereKey($ids[0])->update(['nightly_rate_xof' => 0]);
@@ -925,6 +1001,7 @@ class PublicPropertyBookingTest extends TestCase
             ->assertSee('12/09/2026')
             ->assertSee('Basé sur 1 avis ajoutés à la plateforme.')
             ->assertSee('Afficher les avis (1)')
+            ->assertSee('data-review-property="' . $property->id . '"', false)
             ->assertSee('id="property-reviews-content" class="property-reviews-content" hidden', false)
             ->assertSee('Voir tous les avis')
             ->assertSee('Bénin')
@@ -948,6 +1025,7 @@ class PublicPropertyBookingTest extends TestCase
                 ->assertSee('Booking.com')
                 ->assertSee('Fatou')
                 ->assertSee('Jean')
+                ->assertSee('data-review-property="' . $otherProperty->id . '"', false)
                 ->assertSee('Basé sur 5 avis ajoutés à la plateforme.');
 
             $this->get(route('reviews', ['property' => $property->slug]))
@@ -958,7 +1036,36 @@ class PublicPropertyBookingTest extends TestCase
             $this->get('/')
                 ->assertOk()
                 ->assertSee('Nadia')
+                ->assertSee('data-review-property="' . $property->id . '"', false)
                 ->assertSee('Le client n’a pas laissé de commentaire.');
+    }
+
+    public function test_reviews_show_the_linked_property_name_without_inventing_links_for_missing_or_inactive_properties(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->translations()->updateOrCreate(['locale' => 'en'], ['name' => 'Marina Apartment 401']);
+        $inactive = Property::where('slug', 'appartement-402')->firstOrFail();
+        $inactive->update(['is_active' => false]);
+        foreach (['Linked Guest' => $property->id, 'Unlinked Guest' => null, 'Inactive Guest' => $inactive->id] as $name => $propertyId) {
+            SiteReview::create([
+                'tenant_id' => $property->establishment->tenant_id, 'establishment_id' => $property->establishment_id,
+                'property_id' => $propertyId, 'reviewer_name' => $name, 'source' => 'booking',
+                'rating' => 5, 'is_active' => true, 'reviewed_at' => now(),
+            ]);
+        }
+        $response = $this->withSession(['locale' => 'en'])->get(route('reviews'))->assertOk()->assertSee('Marina Apartment 401');
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $linkedCard = $xpath->query('//article[h3="Linked Guest"]')->item(0);
+        $this->assertSame(1, $xpath->query('.//*[@data-review-property]/a', $linkedCard)->length);
+        $inactiveCard = $xpath->query('//article[h3="Inactive Guest"]')->item(0);
+        $this->assertSame(1, $xpath->query('.//*[@data-review-property]', $inactiveCard)->length);
+        $this->assertSame(0, $xpath->query('.//*[@data-review-property]/a', $inactiveCard)->length);
+        $unlinkedCard = $xpath->query('//article[h3="Unlinked Guest"]')->item(0);
+        $this->assertSame(0, $xpath->query('.//*[@data-review-property]', $unlinkedCard)->length);
+        $this->get(route('home'))->assertOk()->assertSee('Marina Apartment 401')->assertSee('data-review-property="' . $property->id . '"', false);
     }
 
     public function test_public_property_pages_replace_draft_placeholder_copy(): void
@@ -1165,7 +1272,8 @@ class PublicPropertyBookingTest extends TestCase
         $tenant = \App\Models\Tenant::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
         $establishment = Establishment::create([
             'tenant_id' => $tenant->id, 'name' => 'Shared cards residence', 'slug' => 'shared-cards-residence',
-            'currency' => 'XOF', 'is_active' => true, 'is_published' => true,
+            'currency' => 'XOF', 'secondary_currency' => 'EUR', 'secondary_currency_rate' => 0.002,
+            'is_active' => true, 'is_published' => true,
             'description' => 'A clear description outside the gallery.',
             'cover_image' => 'uploads/properties/appartement-402/1-card.webp',
         ]);
@@ -1208,6 +1316,9 @@ class PublicPropertyBookingTest extends TestCase
             $this->assertSame($cards[0], $cards[1]);
         }
         $catalogXPath = new \DOMXPath($documents[0]);
+        $simpleConvertedPrice = $catalogXPath->query('//article[@data-property-id]//span[contains(@class, "property-price-converted")]')->item(0);
+        $this->assertNotNull($simpleConvertedPrice);
+        $this->assertStringNotContainsString('is-calculated', $simpleConvertedPrice->getAttribute('class'));
         $this->assertFalse($catalogXPath->query('//details[@class="property-filters"]')->item(0)->hasAttribute('open'));
         $establishmentXPath = new \DOMXPath($documents[1]);
         $this->assertFalse($establishmentXPath->query('//*[@data-establishment-filters]')->item(0)->hasAttribute('open'));
@@ -1222,6 +1333,9 @@ class PublicPropertyBookingTest extends TestCase
         $document = new \DOMDocument();
         @$document->loadHTML($filtered->getContent());
         $xpath = new \DOMXPath($document);
+        $calculatedConvertedPrice = $xpath->query('//article[@data-property-id]//span[contains(@class, "property-price-converted")]')->item(0);
+        $this->assertNotNull($calculatedConvertedPrice);
+        $this->assertStringContainsString('is-calculated', $calculatedConvertedPrice->getAttribute('class'));
         $this->assertFalse($xpath->query('//details[@class="property-filters"]')->item(0)->hasAttribute('open'));
         $establishmentFiltered = $this->get(route('establishments.show', ['establishment' => $establishment, 'check_in' => $checkIn, 'check_out' => $checkOut, 'guests' => 2]))->assertOk();
         $establishmentFiltered->assertSee('name="check_in" value="' . $checkIn . '"', false)
@@ -1420,6 +1534,10 @@ class PublicPropertyBookingTest extends TestCase
             ->assertOk()
             ->assertSee('Apartments designed for stress-free stays.')
             ->assertSee('A stay experience designed for simplicity')
+            ->assertSee('© ' . now()->year . ' Afrik Appart. All rights reserved.')
+            ->assertSee('This site is powered by Sprint Pay Canada.')
+            ->assertSee('Send feedback to Sprint Pay Canada')
+            ->assertDontSee('Tous droits réservés.')
             ->assertSee('Search');
     }
 }

@@ -108,7 +108,7 @@
             <span>{{ __('messages.reservation_summary.total') }}</span>
             <strong data-checkout-order-total data-amount="{{ $reservation->total_amount }}" data-currency="{{ $reservation->currency }}">{{ $summaryMoney($reservation->total_amount, $reservation->currency) }}</strong>
         </div>
-        @if ($summaryEstablishment?->secondary_currency && $summaryEstablishment->secondaryDisplayAmount((float) $reservation->total_amount) !== null)
+        @if ($summaryEstablishment?->secondary_currency && $summaryEstablishment->secondary_currency !== $reservation->currency && $summaryEstablishment->secondaryDisplayAmount((float) $reservation->total_amount) !== null)
             <p class="checkout-order-conversion">≈ {{ number_format($summaryEstablishment->secondaryDisplayAmount((float) $reservation->total_amount), 2, ',', ' ') }} {{ $summaryEstablishment->secondary_currency }}</p>
         @endif
         <div class="checkout-payment-balance" data-payment-summary data-payment-status="{{ $checkoutSummary['payment_status'] }}">

@@ -1,5 +1,12 @@
 {{-- resources/views/layouts/admin.blade.php --}}
-@php($brand = \App\Support\BrandSettings::all())
+@php
+    $brand = \App\Support\BrandSettings::all();
+    $brand['site_name'] = \App\Support\PlatformBrand::name();
+    $siteIconOnly = filter_var($brand['site_icon_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    $siteLogoImage = $siteIconOnly && filled($brand['site_favicon_url'] ?? null) ? $brand['site_favicon_url'] : null;
+    $siteIcon = $brand['site_icon'] ?? 'A';
+@endphp
+@if (auth()->user()?->isAdmin())
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" @if(auth()->user()?->theme) data-theme="{{ auth()->user()->theme }}" @endif>
 <head>
@@ -24,8 +31,13 @@
                     <x-admin-icon name="menu" class="icon icon-md" />
                 </button>
                 
-                <a href="/admin" class="admin-topbar-brand">
-                    {{ __('messages.admin.title') }}
+                <a href="{{ route('admin.dashboard') }}" class="admin-topbar-brand" aria-label="{{ $brand['site_name'] }} — {{ __('messages.admin.dashboard') }}">
+                    @if ($siteLogoImage)
+                        <img src="{{ $siteLogoImage }}" alt="" width="44" height="44">
+                    @else
+                        <span class="admin-topbar-brand-mark" aria-hidden="true">{{ $siteIcon }}</span>
+                    @endif
+                    <span>{{ $brand['site_name'] }}</span>
                 </a>
             </div>
 
@@ -227,3 +239,6 @@
     @include('partials.confirm-dialog')
 </body>
 </html>
+@else
+    @include('layouts.app')
+@endif

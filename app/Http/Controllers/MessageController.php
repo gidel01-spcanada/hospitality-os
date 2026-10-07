@@ -32,7 +32,8 @@ class MessageController extends Controller
         $this->authorizeCustomer($request);
         abort_unless($thread->customer_id === $request->user()->id, 403);
 
-        $thread->load(['customer', 'establishment', 'messages.sender', 'messages.reservation']);
+        $thread->load(['customer', 'establishment']);
+        $thread->load(['messages' => fn ($query) => $query->with(['sender', 'reservation'])->orderBy('created_at')]);
         $reservation = $thread->messages
             ->filter(fn ($message) => $message->reservation !== null)
             ->sortByDesc('created_at')
@@ -42,8 +43,13 @@ class MessageController extends Controller
             ->whereHas('property', fn ($query) => $query->where('establishment_id', $thread->establishment_id))
             ->latest()
             ->first();
+        $threads = MessageThread::query()
+            ->where('customer_id', $request->user()->id)
+            ->with(['establishment', 'messages' => fn ($query) => $query->latest()->limit(1)])
+            ->latest('updated_at')
+            ->get();
 
-        return view('messages.thread', ['thread' => $thread, 'isStaff' => false, 'reservation' => $reservation]);
+        return view('messages.thread', ['thread' => $thread, 'threads' => $threads, 'isStaff' => false, 'reservation' => $reservation]);
     }
 
     public function store(Request $request, MessageEmailService $emailService): RedirectResponse
