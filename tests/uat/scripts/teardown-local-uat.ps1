@@ -20,5 +20,9 @@ try {
   }
   git checkout -- seed-assets/properties/manifest.json public/uploads/properties 2>$null
 } finally { Pop-Location }
-Remove-Item (Join-Path $env:TEMP 'uat-run') -Recurse -Force -ErrorAction SilentlyContinue
+foreach ($try in 1..3) {
+  Remove-Item (Join-Path $env:TEMP 'uat-run') -Recurse -Force -ErrorAction SilentlyContinue
+  if (-not (Test-Path (Join-Path $env:TEMP 'uat-run'))) { break }
+  Start-Sleep 2
+}
 git -C $repo status --short
