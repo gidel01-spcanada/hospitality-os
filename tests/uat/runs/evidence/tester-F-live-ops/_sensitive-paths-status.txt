@@ -1,0 +1,44 @@
+GET /.env => 406 ct=text/html; charset=iso-8859-1 size=226
+GET /public/.env => 406 ct=text/html; charset=iso-8859-1 size=226
+GET /.git/config => 404 ct=text/html; charset=utf-8 size=909
+GET /.git/HEAD => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/logs/laravel.log => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/logs/errors.log => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/logs/error.log => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/framework/sessions/ => 301 ct=text/html; charset=iso-8859-1 size=298
+GET /storage/framework/ => 301 ct=text/html; charset=iso-8859-1 size=289
+GET /composer.json => 404 ct=text/html; charset=utf-8 size=909
+GET /composer.lock => 404 ct=text/html; charset=utf-8 size=909
+GET /artisan => 404 ct=text/html; charset=utf-8 size=909
+GET /vendor/autoload.php => 404 ct=text/html; charset=utf-8 size=909
+GET /phpunit.xml => 404 ct=text/html; charset=utf-8 size=909
+GET /package.json => 404 ct=text/html; charset=utf-8 size=909
+GET /.env.example => 404 ct=text/html; charset=utf-8 size=909
+GET /afrikappart_db.txt => 404 ct=text/html; charset=utf-8 size=909
+GET /afrik-appart-mysql-seed-export.sql => 406 ct=text/html; charset=iso-8859-1 size=226
+GET /.bluehost-credentials.template.json => 404 ct=text/html; charset=utf-8 size=909
+GET /.phpunit.result.cache => 404 ct=text/html; charset=utf-8 size=909
+GET /uploads/reservations/1/ => 301 ct=text/html; charset=iso-8859-1 size=294
+GET /uploads/ => 403 ct=text/html; charset=iso-8859-1 size=358
+GET /uploads/properties/ => 403 ct=text/html; charset=iso-8859-1 size=358
+GET /build/ => 403 ct=text/html; charset=iso-8859-1 size=358
+GET /bootstrap/cache/config.php => 404 ct=text/html; charset=utf-8 size=909
+GET /database/schema.sql => 406 ct=text/html; charset=iso-8859-1 size=226
+GET /tests/ => 301 ct=text/html; charset=iso-8859-1 size=277
+GET /index.php/../.env => 406 ct=text/html; charset=iso-8859-1 size=226
+GET //.env => 406 ct=text/html; charset=iso-8859-1 size=226
+GET /test-failure-full.txt => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/framework/sessions => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/framework => 404 ct=text/html; charset=utf-8 size=909
+GET /tests => 404 ct=text/html; charset=utf-8 size=909
+GET /uploads/reservations/1 => 404 ct=text/html; charset=utf-8 size=909
+HTTP root: HTTP/1.1 200 OK
+health1 {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"2026-11-22T21:31:32+00:00"}
+health2 {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"2026-11-22T21:31:35+00:00"}
+GET /storage/framework/sessions => 404 ct=text/html; charset=utf-8 size=909
+GET /storage/framework => 404 ct=text/html; charset=utf-8 size=909
+GET /tests => 404 ct=text/html; charset=utf-8 size=909
+GET /uploads/reservations/1 => 404 ct=text/html; charset=utf-8 size=909
+HTTP root: HTTP/1.1 200 OK
+health(en) {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"2026-11-22T21:31:45+00:00"}
+health(fr, 3s later) {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"2026-11-22T21:31:49+00:00"}

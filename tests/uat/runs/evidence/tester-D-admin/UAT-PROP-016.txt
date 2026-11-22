@@ -1,0 +1,5 @@
+﻿setup: own server restarted with GROQ_API_KEY=<dummy>, PROPERTY_COPY_BASE_URL=http://127.0.0.1:8194 (local stub), PROPERTY_COPY_DAILY_LIMIT=2. Property 26 translations before: []
+step1 POST improve-copy -> 200 (0s) {"suggestion":{"summary_fr":"Appartement lumineux.","description_fr":"Appartement lumineux pres du centre, 2 chambres.","summary_en":"Bright apartment.","description_en":"Bright apartment near the centre, 2 bedrooms."}}
+step2 translations after (not applied): [] ; unchanged=True
+step3 save the suggested texts through the normal form -> 302; DB: [{"locale":"en","summary":"Bright apartment."},{"locale":"fr","summary":"Appartement lumineux."}]
+step5 identical request again -> 200 (0s) {"suggestion":{"summary_fr":"Appartement lumineux.","description_fr":"Appartement lumineux pres du centre, 2 chambres.","summary_en":"Bright apartment.","description_en":"Bright apartment near the centre, 2 bedrooms."}} ; stub requests before/after: 1/1

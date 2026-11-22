@@ -1,0 +1,8 @@
+﻿[workaround] S1 failed webhook -> 200 {"ok":true,"provider":"fedapay","status":"failed"}
+S2 DB: {"status":"payment_failed","attempts":[{"id":25,"provider":"fedapay","provider_reference":"fedapay-sandbox-DUR0AU6M810S","status":"failed","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued"]}
+S3 flush outbox: payment_failed mail sent to guest: True
+  last mail has checkout link: True; subject: Subject: Mise =?utf-8?Q?=C3=A0?= jour de votre =?utf-8?Q?r=C3=A9servation?MIME-Version: 1.0
+S4 checkout shows options again: True
+S5 retry fedapay -> 302; new attempt ref differs from A: True
+[workaround] S6 paid for B -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S6 DB: {"status":"confirmed","attempts":[{"id":25,"provider":"fedapay","provider_reference":"fedapay-sandbox-DUR0AU6M810S","status":"failed","amount":"138000.00","currency":"XOF"},{"id":26,"provider":"fedapay","provider_reference":"fedapay-sandbox-ZMWXLAZXHT4U","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/sent","reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}; receipt attempt link: [26]

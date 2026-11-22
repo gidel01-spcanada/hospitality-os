@@ -1,0 +1,8 @@
+﻿step1 R11=43 payment-link form visible: True
+step2 send -> 302 | es du site Journaux Entités Succès : Le lien de paiement a été ajouté à la file  | outbox subject: Lien de paiement pour la r├⌐servation AFK-DC95BN-261122
+step3 send command ran; mail for d-r11 found in log: False; subject line: ; checkout link: ; register link present: False
+step4 anonymous GET checkout with token -> 200 (identity/checkout page; body has reservation ref: True)
+step5 R12=44 confirmed: payment-link form visible: False
+step6 POST payment-link for R12 -> 403
+step7 R11 with a 'verified' attempt (DB insert): form visible: False; POST -> 403
+step3 corrected (mail block bounded to the d-r11 message, lines 29611-29659): checkout link: reservations/43/checkout?token=<token>&amp;lang=fr ; register link: register?email=d-r11%40example.test ; contains 'Nuit': True

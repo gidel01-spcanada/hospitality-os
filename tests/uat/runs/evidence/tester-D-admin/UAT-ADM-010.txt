@@ -1,0 +1,24 @@
+﻿forms: /logout, /admin/preferences/profile, /admin/preferences/locale, /admin/preferences/theme, /admin/preferences/password
+step1 profile wrong current_password -> 302 |  | name: UAT Admin One
+step2 correct -> 302 | tion Amenities Site parameters Journaux Success: Your profil | header shows name: False
+step3 another user's email -> 302 | already been taken.
+step4 locale en tz Africa/Porto-Novo -> 302 | tion Amenities Site parameters Journaux Success: Language an tion Amenities Site parameters Journaux Success: Language an | DB: en Africa/Porto-Novo | html lang: <html lang="en"
+step5 tz Mars/Base -> 302 |  (not found: time)
+step5 locale de -> 302 |  (not found: invalid)
+step6 theme dark-admin -> 302 | DB admin_theme= | (not found: invalid)
+step6 theme emerald -> 302 | DB admin_theme= | (not found: invalid)
+step6 theme gold -> 302 | DB admin_theme= | (not found: invalid)
+step6 theme light-admin -> 302 | DB admin_theme= | (not found: invalid)
+step6 theme pink -> 302 | DB admin_theme= | (not found: invalid)
+step7 wrong current -> 302 |  ord (to make changes) * The password is incorrect. Save Lang
+step7 new 7 chars -> 302 | must be at least 8 characters.  New password * The password must be at least 8 characters. 
+step7 mismatch -> 302 | confirmation does not match.  password * New password * The password confirmation does no
+step8 valid -> 302 |  Site parameters Journaux Success: Your password has been up
+  new password login -> http://127.0.0.1:8104/admin; old password login -> http://127.0.0.1:8104/login
+  after re-login: {"name":"UAT Admin Renamed","locale":"en","timezone":"Africa\/Porto-Novo","admin_theme":null}
+concierge /admin/preferences -> 403; /admin/profile alias (host) -> 200
+step6 recheck theme=dark-admin -> 302 | tion Amenities Site parameters Journaux  (not found: invalid) | checked after: dark-admin
+step6 recheck theme=emerald -> 302 | tion Amenities Site parameters Journaux  (not found: invalid) | checked after: emerald
+step6 recheck theme=gold -> 302 | tion Amenities Site parameters Journaux  (not found: invalid) | checked after: gold
+step6 recheck theme=light-admin -> 302 | tion Amenities Site parameters Journaux  (not found: invalid) | checked after: light-admin
+step6 recheck theme=pink -> 302 | (not found: Success) (not found: invalid) | checked after: light-admin

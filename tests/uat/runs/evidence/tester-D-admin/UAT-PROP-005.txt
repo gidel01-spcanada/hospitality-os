@@ -1,0 +1,13 @@
+﻿step1 guest /properties/d-uat-loft-01 (draft) -> 404; listed: False
+step2 set published -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#general flash: (not found: Property updated)
+step3 guest /properties/d-uat-loft-01 -> 200; listed on /properties: True
+step4 DB: {"status":"published","is_published":false,"is_active":true}
+step5a untick is_active (browser omits checkbox; hidden is_active=0 present in form) -> 302; DB: {"status":"published","is_published":false,"is_active":true}
+step5 is_active=0 -> 302; DB: {"status":"published","is_published":false,"is_active":false}
+  guest detail -> 404; listed: False
+  setup reservation on property 6 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/1
+step6 property 6 archived -> 302; DB: {"status":"archived","is_published":true,"is_active":true}; guest detail -> 404; listed: False
+  reservation still in admin list: False
+step7 ?status=archived -> 200; lists UAT Loft d-uat-loft-02: True; lists Appartement 401: False
+  ?status=live -> 302 Loc=http://127.0.0.1:8104/admin/properties?status=archived | 
+  restore 6 to published; is_published now: 1; public -> 200

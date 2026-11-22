@@ -1,0 +1,6 @@
+﻿Groq key configured on instance: no-key
+S1 all fields empty -> 422 {"message":"Saisissez au moins un r\u00e9sum\u00e9 ou une description \u00e0 am\u00e9liorer.","errors":{"copy":["Saisissez au moins un r\u00e9sum\u00e9 ou une d
+S2 Part A text, no key -> 503 {"message":"L\u2019assistant de r\u00e9daction n\u2019est pas encore configur\u00e9."}
+S5 host with no establishment assignment POST -> 419
+host login -> 302 http://127.0.0.1:8102/admin; csrf obtained: True
+S5 host not assigned to the property's establishment (only one establishment is seeded, so used an unassigned host) POST -> 403 { "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis." }

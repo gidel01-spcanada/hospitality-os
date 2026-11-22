@@ -1,0 +1,5 @@
+﻿step1 delete UAT Wellness Plus (has amenities) -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8 | (not found: avant de supprimer) | still exists: [{"id":8,"name_en":"UAT Wellness Plus","name_fr":"UAT Bien-etre Plus","slug":"uat-wellness","sort_order":80}]
+step1 retry: DELETE category 8 (5 amenities) -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8 | ctez les équipements de cette catégorie avant de la supprimer. Nom de l’équipement (anglais) Nom de l’équipeme
+step2 deleted its amenities (70,71,72,74,75), then category -> 302 Loc=http://127.0.0.1:8104/admin/amenities | nts Paramètres du site Journaux Entités Succès : Catégorie d’équipemen
+step3 (earlier) UAT Empty created and deleted at once -> 302 to /admin/amenities; row gone.
+step4 reload deleted category 8 -> 404

@@ -1,0 +1,7 @@
+case a unknown-uat@example.test: POST -> 302 http://127.0.0.1:8103/login; page error: [Adresse e-mail ou mot de passe invalide.]; email prefilled=True ; pw value empty=True; dashboard after: 302
+case b admin@afrikappart.test: POST -> 302 http://127.0.0.1:8103/login; page error: [Adresse e-mail ou mot de passe invalide.]; email prefilled=True ; pw value empty=True; dashboard after: 302
+identical messages: True
+empty submit: 302 errs=[Le champ adresse email est obligatoire. | Le champ mot de passe est obligatoire.]
+EN locale after /language/en: lang=fr err=[Adresse e-mail ou mot de passe invalide.]
+FR default: lang=fr err=[Adresse e-mail ou mot de passe invalide.]
+EN (via /language/en, same jar): lang=en err=[Invalid email or password.]

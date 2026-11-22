@@ -1,0 +1,5 @@
+﻿S1 start fedapay (sandbox gateway) -> 302; flash: Paiement initié via fedapay. Une tentative de paiement a été enregistrée.; status: pending_payment
+S3 return before webhook -> 302; landing page shows 'Payment is awaiting confirmation' message: False; status: pending_payment
+S4 as real provider (no session/CSRF) signed paid -> 419
+[workaround] S4 signed paid -> 200 {"ok":true,"provider":"fedapay","status":"paid"}; {"status":"confirmed","attempts":[{"id":43,"provider":"fedapay","provider_reference":"fedapay-sandbox-VSXMAQH88E9U","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}
+S5 reload: confirmed label: True; options hidden: True; attempt shown paid: True

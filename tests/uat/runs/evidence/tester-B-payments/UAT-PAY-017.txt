@@ -1,0 +1,6 @@
+﻿S1 rate 0.001524, total 100 000 XOF: 
+S2 same establishment, secondary currency removed: approximate line present: False (only one establishment is seeded, so a second establishment was not available)
+S3 stored rate 0.001524 -> 100000*0.001524=152.40; baseline 100000/655.957=152.45; difference 0.05 EUR as expected.
+S1 (re-run) rate 0.001524, total 100 000 XOF: ≈ 152,40 EUR
+S2 (re-run) secondary currency removed: approximate line present: False
+S2 (re-run, no secondary currency): approximate line present: False

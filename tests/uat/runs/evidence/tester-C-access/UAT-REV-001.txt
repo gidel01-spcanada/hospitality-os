@@ -1,0 +1,5 @@
+setup: staff reservation page -> 200; status form fields: status options: pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled
+1 PATCH status completed -> 302 /admin/reservations/12; status now: {"status":"completed"}
+2 outbox reservation_status_updated to uat-cust@example.test: review_channel=internal review_url present=True google_review_url= url shape=/review/12?expires=1797976538&signature=<sig>
+4 res 10 -> confirmed: status->confirmed 302; emails: review_url=False google= channel=
+3 channel both + google URL, res 10 -> completed: status->completed 302; emails: review_url=True google=https://g.page/r/example/review channel=both

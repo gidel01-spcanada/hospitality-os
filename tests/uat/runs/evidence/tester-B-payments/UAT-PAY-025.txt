@@ -1,0 +1,1 @@
+﻿S1 CinetPay sandbox start: attempt created (see UAT-INT-012 evidence: reference cinetpay-sandbox-*, status created, reservation pending_payment); sandbox gateway ignores webhooks (status ignored). Steps 2-4 need production-mode gateway and CinetPay sandbox: not executed.

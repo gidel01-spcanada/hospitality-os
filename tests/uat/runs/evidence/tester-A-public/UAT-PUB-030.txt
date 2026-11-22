@@ -1,0 +1,8 @@
+﻿1 POST reserve =>  HTTP 302 -> http://127.0.0.1:8101/properties/uat-apt-a
+message: Un compte existe déjà avec cet email mais n’a jamais été confirmé. Nous venons de vous envoyer un nouvel email : confirmez votre adresse et créez votre mot de passe avant de finaliser cette réservation. Nom complet Email Arrivée / Départ 2027-05-11 → 2027-05-14
+3 double submit => 302, 302 (no 429)
+mails to unverified address in log tail: 3
+DB: user id=7 role=customer tenant=null locale=fr verified=n
+DB: reservations by email: 0 guests rows: 0
+DB: reset tokens rows: 1
+DB: 

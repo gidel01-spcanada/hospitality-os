@@ -1,0 +1,19 @@
+﻿S1 upload proof-uat.pdf (20 KB) -> 302 http://127.0.0.1:8102/reservations/132/checkout?token=<token>
+   flash: Preuve de paiement envoyée. Votre réservation est en attente de validation.
+S2 DB: {"status":"pending_validation","attempts":[{"id":54,"provider":"wise","provider_reference":"wise-23ulttjaxqge","status":"awaiting_validation","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued"]}; notes: Guest submitted payment proof for wise.; payload: {"path":"uploads\/reservations\/132\/20261122210549887-lw92kff5pave.pdf","original_name":"proof-uat.pdf","uploaded_by":"guest","uploaded_at":"2026-11-22T21:05:49+00:00"}
+S3 notice shown: True; options hidden: True; proof link by original name: True
+S1 upload proof-uat.pdf (20 KB) -> 302 http://127.0.0.1:8102/reservations/134/checkout?token=<token>
+   flash: Preuve de paiement envoyée. Votre réservation est en attente de validation.
+S5 download with token -> 404; disposition: ; starts %PDF: False
+S6 stored path: uploads/reservations/132/20261122210549887-lw92kff5pave.pdf ; exists on disk: True ; random-name pattern ok: True
+   direct anonymous GET /uploads/reservations/132/20261122210549887-lw92kff5pave.pdf -> 200 (security observation: stored proofs reachable by URL if guessed)
+S4 host notification outbox: outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued"]}
+S2 DB: {"status":"pending_validation","attempts":[{"id":55,"provider":"wise","provider_reference":"wise-jbebkfy9kol5","status":"awaiting_validation","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued"]}; notes: Guest submitted payment proof for wise.; payload: {"path":"uploads\/reservations\/134\/20261122210554763-ykthx4r8hygq.pdf","original_name":"proof-uat.pdf","uploaded_by":"guest","uploaded_at":"2026-11-22T21:05:54+00:00"}
+S3 notice shown: True; options hidden: True; proof link by original name: True
+S5 download with token -> 404; disposition: ; starts %PDF: False
+S7 PNG upload on another reservation -> 302; status: pending_validation
+S6 stored path: uploads/reservations/134/20261122210554763-ykthx4r8hygq.pdf ; exists on disk: True ; random-name pattern ok: True
+   direct anonymous GET /uploads/reservations/134/20261122210554763-ykthx4r8hygq.pdf -> 200 (security observation: stored proofs reachable by URL if guessed)
+S4 host notification outbox: outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued"]}
+S7 PNG upload on another reservation -> 302; status: pending_validation
+S5 (manual re-run, token link): GET /reservations/134/payment-proofs/55?token=<token> -> 200, Content-Disposition: attachment; filename=proof-uat.pdf (the first scripted attempt 404 was a test-script URL typo, not an app result).

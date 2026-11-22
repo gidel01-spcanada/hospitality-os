@@ -1,0 +1,18 @@
+﻿before: E1 {"currency":"XOF","payment_methods":null,"vat_percent":"18.00","service_fee_percent":"10.00"} props currencies: ["XOF"] reservation 1 currency: XOF
+step1 currency XAF -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit | (not found: Succ)
+step2 property currencies now: ["XOF"] count=25
+step3 public appartement-401 shows XAF: False, shows XOF: True
+step4 reservation 1 currency still: XOF; admin detail shows: True
+step5 name only -> 302; after: {"name":"Afrik Appart Cotonou","currency":"XOF","vat_percent":"18.00","service_fee_percent":"10.00","city_tax_type":"percent"} pay_later enabled:     ErrorException     Trying to access array offset on null    at C:\Users\gfoumbi\AppData\Local\Temp\uat-run\d-q.php:6       2Γûò chdir('c:/Users/gfoumbi/Downloads/Afrik Appart/repository');       3Γûò require 'vendor/autoload.php';       4Γûò $app = require 'bootstrap/app.php';       5Γûò $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();   Γ₧£   6Γûò eval(file_get_contents($argv[1]));       7Γûò    1   C:\Users\gfoumbi\AppData\Local\Temp\uat-run\d-q.php:6       Illuminate\Foundation\Bootstrap\HandleExceptions::{closure:Illuminate\Foundation\Bootstrap\HandleExceptions::forwardsTo():261}()   2   C:\Users\gfoumbi\AppData\Local\Temp\uat-run\d-q.php:6 
+step6 untick is_active (browser omits checkbox, no hidden 0 field) -> 302; DB is_active=1
+step6b crafted is_active=0 -> 302; DB is_active=1; public /properties lists Appartement 401: True; /establishments/afrik-appart-cotonou -> 200
+restore E1: {"name":"Afrik Appart Cotonou","currency":"XOF","is_active":true}
+--- diagnosis: saving E1 unchanged except currency -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit | errors: Le champ adresse email doit être une adresse email valide.
+step1 retry with valid email (seed has '[TO BE PROVIDED]') -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit#general | nts Paramètres du site Journaux Entités Succès : Établissement mis à j
+step2 property currencies now: ["XAF"]
+step3 public appartement-401 shows XAF: True, XOF: False
+step4 reservation 1 currency: XOF
+step5 name only -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit#general; after: {"name":"Afrik Appart Cotonou UAT","currency":"XAF","vat_percent":"18.00","service_fee_percent":"10.00","city_tax_type":"percent","city_tax_amount":"5.00"} payment_methods.pay_later: {"enabled":true,"mode":"manual","instructions":"Merci de pr\u00e9voir des esp\u00e8ces (cash) en monnaie locale : le montant total de la r\u00e9servation est payable \u00e0 votre arriv\u00e9e.","email":"","security_question":"","security_answer":""}
+step6 untick is_active (checkbox omitted, no hidden 0 in form) -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit#general; DB is_active=1
+step6b crafted is_active=0 -> 302; DB is_active=0; public /properties lists Appartement 401: False; /properties/appartement-401 -> 404; /establishments/afrik-appart-cotonou -> 404
+restore E1 (email kept cotonou@example.test): {"name":"Afrik Appart Cotonou","currency":"XOF","is_active":true,"email":"cotonou@example.test"} props: ["XOF"]

@@ -1,0 +1,17 @@
+1 PATCH confirmed+notes -> 200; DB: {"status":"confirmed","notes":"UAT note"}; outbox new: {"template":"reservation_status_updated","recipient_email":"uat-checkout@example.test"}
+2 same status again -> 200; new outbox rows: 0
+3 payment_failed: 422
+4 bogus: 422; {}: 422
+5 notes 501: 422; notes 500: 200
+6 without notes keeps notes: {"notes":"keep me"}
+7 completed -> 200; outbox rows: 1: reservation_status_updated review_url=True
+8 transitions completed->cancelled->confirmed: 200 then 200 (no transition validation)
+1 PATCH confirmed+notes -> 200 {"data":{"id":2,"reference":"AFK-H9CENY-261122","status":"confirmed","check_in":"2027-02-20","check_out":"2027-02-23","total_amount":"134550.00","curr
+   DB: ; outbox new: 
+2 same status again -> 200; new outbox rows: 0
+3 payment_failed: 422
+4a bogus: 422; {}: 422
+5a notes 501: 422; notes 500: 200
+6 without notes keeps notes: 
+7 completed -> 200; outbox:  review_url=False
+   transitions: cancelled -> confirmed: 200 then 200 (no transition validation)

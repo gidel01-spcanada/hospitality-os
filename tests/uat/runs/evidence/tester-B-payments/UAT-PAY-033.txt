@@ -1,0 +1,4 @@
+﻿status=confirmed -> 422 { "message": "Impossible d\u2019envoyer une preuve de paiement pour cette r\u00e9servation." } | files stored: 0
+status=cancelled -> 422 { "message": "Impossible d\u2019envoyer une preuve de paiement pour cette r\u00e9servation." } | files stored: 0
+status=pending_validation -> 422 { "message": "Impossible d\u2019envoyer une preuve de paiement pour cette r\u00e9servation." } | files stored: 0
+expired (50 h) -> 410 { "message": "Ce lien de paiement a expir\u00e9. Merci de nous contacter pour finaliser votre r\u00e9servation | files stored: 0

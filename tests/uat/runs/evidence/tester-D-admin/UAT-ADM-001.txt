@@ -1,0 +1,74 @@
+﻿--- anonymous
+GET /admin -> 302 Location: http://127.0.0.1:8104/login
+GET /admin/reservations -> 302 Location: http://127.0.0.1:8104/login
+GET /admin/properties -> 302 Location: http://127.0.0.1:8104/login
+--- customer(guest@)
+GET /admin -> 403
+GET /admin/reservations -> 403
+GET /admin/properties -> 403
+GET /admin/reports -> 403
+GET /admin/users -> 403
+GET /admin/logs -> 403
+--- concierge
+GET /admin -> 200
+GET /admin/reservations -> 200
+GET /admin/messages -> 200
+GET /admin/cleaning -> 200
+--- concierge 4
+GET /admin/properties -> 403
+GET /admin/establishments -> 403
+GET /admin/reports -> 403
+GET /admin/preferences -> 403
+GET /admin/properties/1/calendar -> 403
+--- concierge 5
+GET /admin/users -> 403
+GET /admin/settings -> 403
+GET /admin/amenities -> 403
+GET /admin/reviews -> 403
+GET /admin/audit-logs -> 403
+GET /admin/logs -> 403
+msg4 has 'Administrator or host access is required': False
+msg5 has 'Administrator access is required': False
+--- host 6
+GET /admin -> 200
+GET /admin/reservations -> 200
+GET /admin/properties -> 200
+GET /admin/reports -> 200
+GET /admin/establishments -> 200
+GET /admin/preferences -> 200
+GET /admin/cleaning -> 200
+--- host 7
+GET /admin/users -> 403
+GET /admin/settings -> 403
+GET /admin/amenities -> 403
+GET /admin/reviews -> 403
+GET /admin/audit-logs -> 403
+GET /admin/logs -> 403
+GET /admin/establishments/create -> 403
+--- admin 8
+GET /admin -> 200
+GET /admin/reservations -> 200
+GET /admin/messages -> 200
+GET /admin/cleaning -> 200
+GET /admin/properties -> 200
+GET /admin/establishments -> 200
+GET /admin/reports -> 200
+GET /admin/preferences -> 200
+GET /admin/properties/1/calendar -> 200
+GET /admin/users -> 200
+GET /admin/settings -> 200
+GET /admin/amenities -> 200
+GET /admin/reviews -> 200
+GET /admin/audit-logs -> 200
+GET /admin/logs -> 200
+GET /admin/establishments/create -> 200
+--- admin 9 (admin is also platform admin in seed)
+GET /platform/tenants -> 200
+concierge GET /admin/properties (Accept: application/json) -> 403 body: {
+    "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis."
+}
+concierge GET /admin/users (Accept: application/json) -> 403 body: {
+    "message": "Un acc\u00e8s administrateur est requis."
+}
+HTML 403 body text: ès refusé | Afrik Appart A Afrik Appart Erreur 403 Accès refusé Vous n’avez pas les permissions nécessaires pour accéder à cette page. Retour à l’accueil 
+step 9: non-platform admin dadmin-1@example.test GET /platform/tenants -> 403

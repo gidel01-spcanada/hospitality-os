@@ -1,0 +1,14 @@
+guest GET /dashboard -> 302 http://127.0.0.1:8103/login
+guest GET /account -> 302 http://127.0.0.1:8103/login
+guest GET /account/preferences -> 302 http://127.0.0.1:8103/login
+guest GET /account/security -> 302 http://127.0.0.1:8103/login
+guest GET /messages -> 302 http://127.0.0.1:8103/login
+guest GET /admin -> 302 http://127.0.0.1:8103/login
+guest GET /platform/tenants -> 302 http://127.0.0.1:8103/login
+guest GET /reservations/999999/receipt -> 302 http://127.0.0.1:8103/login
+guest GET /dashboard/reservations/1 -> 302 http://127.0.0.1:8103/login
+guest POST /logout -> 302 http://127.0.0.1:8103/login
+customer GET /login -> 302 http://127.0.0.1:8103/dashboard
+customer GET /register -> 302 http://127.0.0.1:8103/dashboard
+customer GET /forgot-password -> 302 http://127.0.0.1:8103/dashboard
+customer GET /host/register -> 302 http://127.0.0.1:8103/dashboard

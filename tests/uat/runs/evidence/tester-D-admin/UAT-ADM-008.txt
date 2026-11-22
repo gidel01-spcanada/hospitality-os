@@ -1,0 +1,8 @@
+﻿step1 users visible total 16; page 1 rows: 15; page=2 link: True
+step2 ?search=dhost ids: 14,13,12,9,8,7,6,3,4,1 emails: ["admin@afrikappart.test","concierge@afrikappart.test","host@afrikappart.test","dhost-1@example.test","dconcierge-1@example.test","dadmin-1@example.test","dcustomer-2@example.test","d-feat@example.test","dhost-2@example.test","dhost-6@example.test"]
+step3 ?role=host roles: {"admin":2,"concierge":2,"host":5,"customer":1}
+step4 ?search=ZZZ-no-match rows: 10
+note ?role=host&search=dhost-2 -> emails: ["admin@afrikappart.test","concierge@afrikappart.test","host@afrikappart.test","dhost-1@example.test","dconcierge-1@example.test","dadmin-1@example.test","dcustomer-2@example.test","d-feat@example.test","dhost-2@example.test","dhost-6@example.test"]
+  ?role=customer roles: {"customer":7,"concierge":2,"host":5,"admin":1}
+step5 multi-tenant check: done in cloud mode (PLAT-008).
+step5 (cloud) default admin users list shows tenant B admin: False

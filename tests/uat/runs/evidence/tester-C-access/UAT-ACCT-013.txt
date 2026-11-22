@@ -1,0 +1,11 @@
+1 guest /properties favorite control: sign-in prompt=True link->login=True toggle forms=0
+   property page guest: toggle form=False sign-in prompt=False
+2 add P1: 302 /properties/appartement-401; flash=[Apartment added to favorites.]
+3 dashboard lists P1 in favorites: True ; DB favorites: {"property_id":1}
+4 remove: 302; flash=[]; DB: {"c":0}
+5 toggle unpublished P(id 3): 404
+6 favorited property 2 unpublished: still in dashboard favorites: False ; dashboard favorites text: Favorite apartments You have not saved any apartments yet. Discover stays A Afrik Appart Séjours premium pour des escapades sereines en Afr
+7 /properties?favorites=1 -> 200; property cards: appartement-401,appartement-402 (favorites: 401 + 402)
+   /properties?favorites_only=1 cards: appartement-401,appartement-402,appartement-403,appartement-404
+   filter control name in list page: favorites
+4 (re-run) toggle1 flash=[Apartment removed from favorites.] toggle2 flash=[Apartment added to favorites.]; button label on property page when favorited: 

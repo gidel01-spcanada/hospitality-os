@@ -1,0 +1,6 @@
+1 thread shows customer + staff messages with sender names: customer name=True staff name=True reply form body=True
+2 reply -> 302 /messages; flash=[]; first thread in list=5
+3 new message at end: True
+4 empty -> 302 /messages/5; 5001 -> 302; messages +0; error text on thread page: []
+5 outbox for the customer's reply: {"template":"message_received","recipient_email":"uat-admin2@example.test"} {"template":"message_received","recipient_email":"tenant-admin-uat@example.test"} {"template":"message_received","recipient_email":"concierge@afrikappart.test"} {"template":"message_received","recipient_email":"host@afrikappart.test"} {"template":"message_received","recipient_email":"uat-extrahost@example.test"} {"template":"message_received","recipient_email":"uat-bulk-host@example.test"}
+   staff link in email: admin\\\/messages\\\/5

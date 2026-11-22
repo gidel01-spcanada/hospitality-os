@@ -1,0 +1,8 @@
+﻿1 provider 500 => 502 in 0.6s {"message":"Je ne peux pas r\u00e9pondre pour le moment. R\u00e9essayez ou utilisez la page Contact."}
+2 empty content => 502 in 0.4s {"message":"Je ne peux pas r\u00e9pondre pour le moment. R\u00e9essayez ou utilisez la page Contact."}
+invalid JSON body => 502 in 0.4s {"message":"Je ne peux pas r\u00e9pondre pour le moment. R\u00e9essayez ou utilisez la page Contact."}
+4 provider 401 => 502 in 0.4s {"message":"Je ne peux pas r\u00e9pondre pour le moment. R\u00e9essayez ou utilisez la page Contact."}
+3 hang >25s => 502 in 25.4s {"message":"Je ne peux pas r\u00e9pondre pour le moment. R\u00e9essayez ou utilisez la page Contact."}
+5 normal after errors => 200 in 5s {"answer":"STUB-ANSWER (from FAQ): Une r\u00e9servation non finalis\u00e9e peut \u00eatre annul\u00e9e depuis votre espace client ou la page de paiement. Selon l\u2019\u00e9tablissement, des frais d\u2019annulation non r
+6 laravel.log: 'Help chat provider' warnings: Help chat provider returned an unsuccessful response. {"status":500}  Help chat provider returned an unsuccessful response. {"status":401}  Help chat provider request failed. {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionExc; api key in log: False
+(A second accidental repeat run within the same minute hit the throttle and is omitted.)

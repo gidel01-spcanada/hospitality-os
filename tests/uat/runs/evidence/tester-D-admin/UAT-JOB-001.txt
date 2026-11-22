@@ -1,0 +1,20 @@
+﻿setup (dates set via admin edit, which allows past dates; app timezone UTC; run at 2026-11-22 22:08 UTC, grace 6 h -> cutoff date 2026-11-22): J1=confirmed/2026-11-20 J2=checked_in/2026-11-10 J3=confirmed/2026-11-22 J4=confirmed/2027-03-15 J5=pending/2026-10-31 J6=cancelled/2026-10-21 J7=confirmed/2027-03-24
+step1 -> exit 0: Past reservations completed.
+after: J1=completed/2026-11-20 J2=completed/2026-11-10 J3=confirmed/2026-11-22 J4=confirmed/2027-03-15 J5=pending/2026-10-31 J6=cancelled/2026-10-21 J7=confirmed/2027-03-24
+  J1 notes tail: Stay automatically completed after check-out.
+  J2 notes tail: Stay automatically completed after check-out.
+  J7 notes tail: 
+step2 emails queued by the run: [{"template":"reservation_status_updated","recipient_email":"d-job-1@example.test"},{"template":"reservation_status_updated","recipient_email":"d-job-2@example.test"}]
+  J1 email has review_url: True
+step5 J7 (checkout yesterday): run happened after 06:00 UTC so cutoff = today; before-06:00 run not possible without clock change.
+step6 second run -> Past reservations completed.; new emails: 0; J1=completed/2026-11-20 J2=completed/2026-11-10 J3=confirmed/2026-11-22 J4=confirmed/2027-03-15 J5=pending/2026-10-31 J6=cancelled/2026-10-21 J7=confirmed/2027-03-24
+step7 grace 0 (process env), J8 checkout yesterday -> Past reservations completed.; J8 status: confirmed
+step8 (first attempt) bulk insert failed on UNIQUE checkout_token in the setup script (tester error); redone below
+step9 audit rows for J1: []
+step10 reports page shows 'Termin' (completed): True ; cleaning generation check: not run (covered by CLN-006)
+--- correction: J4, J7, J8 edits above were rejected as overlaps on the same property (dates stayed in the future); recreated on separate properties
+setup J4=76 confirmed/2026-11-23, J7=77 confirmed/2026-11-21, J8=78 confirmed/2026-11-21
+rerun (grace 6, 22:09 UTC) -> Past reservations completed.: J4 confirmed/2026-11-23; J7 completed/2026-11-21; J8 completed/2026-11-21; emails: ["d-job-7@example.test","d-job-8@example.test"]
+step7 grace 0 (process env), J9 checkout yesterday -> Past reservations completed.: J9 completed/2026-11-21 (note: with grace 6 at this hour the result is the same, so grace 0 cannot be distinguished here)
+step8 inserted 150 past confirmed reservations (DB, property 19) -> run: Past reservations completed.; bulk confirmed: 0 completed: 150
+step9 audit rows for J7: [{"action":"updated","user_id":null,"details":"{\"old\":{\"status\":\"confirmed\",\"notes\":null,\"updated_at\":\"2026-11-22 22:09:32\"},\"new\":{\"status\":\"completed\",\"notes\":\"Stay automatically completed after check-out.\",\"updated_at\":\"2026-11-22 22:09:40\"},\"url\":\"http:\\\/\\\/127.0.0.1:8104\",\"ip\":\"127.0.0.1\",\"user_agent\":\"Symfony\"}"}]

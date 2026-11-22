@@ -1,0 +1,4 @@
+﻿S1 skip -> 302; checkout shows payment options: True
+S2 refresh -> payment options: True
+S3 new session -> identity page again: True
+S4 same session, other reservation R4 -> identity page: True

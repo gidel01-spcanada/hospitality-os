@@ -1,0 +1,9 @@
+1 fields: locale,email_booking_updates,email_message_updates,email_marketing,email_newsletter ; options: fr,en
+2 en + booking only: 302 /dashboard flash=[] DB={"locale":"en","a":1,"b":0,"c":0,"d":0}
+   UI lang=en
+3 fr + all: 302 /dashboard flash=[] DB={"locale":"fr","a":1,"b":1,"c":1,"d":1}
+   UI lang=fr
+4 none: 302 /dashboard flash=[] DB={"locale":"fr","a":0,"b":0,"c":0,"d":0}
+5a locale=de: 302 /account/preferences flash=[] DB={"locale":"fr","a":0,"b":0,"c":0,"d":0}
+5b locale empty: 302 /account/preferences flash=[] DB={"locale":"fr","a":0,"b":0,"c":0,"d":0}
+6 fr cookie then login with saved en -> UI lang=en

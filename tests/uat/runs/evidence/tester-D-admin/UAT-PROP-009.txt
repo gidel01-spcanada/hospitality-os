@@ -1,0 +1,14 @@
+﻿photo-order form fields: _token, _method, image_order[61], image_tags[61], cover_image_id, image_order[62], image_tags[62], image_order[63], image_tags[63], image_order[64], image_tags[64]
+before: 61:1:1: 62:2:0: 63:3:0: 64:4:0:  cover_image=20261122205954510-zihtmbf1d4ms.jpg
+step1 order 62=1,61=2,63=3,64=4 cover 62 tag Living room -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#photos | ètres du site Journaux Entités Succès : Photos de la proprié  | 62:1:1:Living room 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+step2 public detail first image ref: uploads/properties/d-uat-loft-01/20261122205955099-gsln0qe16jpl.png
+step2 /properties card image near link: uploads/properties/d-uat-loft-01/20261122205955099-gsln0qe16jpl.png
+step3 duplicate order values -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la)  | 62:1:1:Living room 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+step4 order 0 -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la) doit être au moins égal à 1. | 62:1:1:Living room 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+step5 tag 101 chars -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la) caractères. | 62:1:1:Living room 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+step5 tag 100 chars -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#photos | ètres du site Journaux Entités Succès : Photos de la proprié  | 62:1:1:tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+step6 include Z1=89 (other property) -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la)  | 62:1:1:tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+  message:  ce logement Les images sélectionnées n’appartiennent pas à cette propriété. Gén
+step7 cover_image_id=Z1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la)  | 62:1:1:tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png
+  message:  ce logement Les images sélectionnées n’appartiennent pas à cette propriété. Gén
+step8 omit cover_image_id -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | (not found: Photos de la) obligatoire. | 62:1:1:tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt 61:2:0: 63:3:0: 64:4:0:  cover_image=20261122205955099-gsln0qe16jpl.png

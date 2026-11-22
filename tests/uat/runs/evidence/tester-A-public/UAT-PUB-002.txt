@@ -1,0 +1,7 @@
+﻿GET /?destination=Cotonou&guests=1&check_in=2026-12-06&check_out=2026-12-09&sort= =>  HTTP 302 -> http://127.0.0.1:8101/properties?destination=Cotonou&guests=1&check_in=2026-12-06&check_out=2026-12-09
+GET listing => 200; slugs: appartement-401,appartement-402,appartement-403,uat-apt-a,appartement-404,uat-apt-e,uat-villa-c
+guests=3 => 200; slugs: appartement-402,appartement-403,uat-apt-a,appartement-404,uat-villa-c
+blank form on /properties => 200 slugs: uat-apt-f,uat-apt-g,appartement-401,uat-apt-b,appartement-402,appartement-403,uat-apt-a,appartement-404,uat-apt-e,uat-villa-c
+GET /?blank =>  HTTP 302 -> http://127.0.0.1:8101/properties
+form action on home: search-form GET /properties (observed in HTML)
+GET /properties?guests=3&dates (no destination) => 200 slugs: appartement-402,appartement-403,uat-apt-a,appartement-404,uat-villa-c

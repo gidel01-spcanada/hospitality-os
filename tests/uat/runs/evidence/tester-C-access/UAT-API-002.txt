@@ -1,0 +1,10 @@
+1 wrong password: 422 {"message":"Invalid credentials."}
+2 unknown email: 422 {"message":"Invalid credentials."}
+3 inactive account correct password: 422 {"message":"Invalid credentials."}
+4 empty body: 422 {"message":"Le champ adresse email est obligatoire. (and 1 more error)","errors":{"email":["Le champ adresse email est obligatoire."],"password":["Le champ mot de passe est obligatoire."]}}
+5 email=abc: 422 {"message":"Le champ adresse email doit \u00eatre une adresse email valide.","errors":{"email":["Le champ adresse email doit \u00eatre une a
+6a device_name 101: 422 {"message":"Le champ device name ne peut pas d\u00e9passer 100 caract\u00e8res.","errors":{"device_name":["Le champ device name ne peut pas 
+6b device_name 100: 201
+7 password array: 422 {"message":"Le champ mot de passe doit \u00eatre une cha\u00eene de caract\u00e8res.","errors":{"password":["Le champ mot de passe doit \u00eatre une cha\u00een
+8 GET /auth/login: 404
+9 suspended tenant: see cloud phase (API-014)

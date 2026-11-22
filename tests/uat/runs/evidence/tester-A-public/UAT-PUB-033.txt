@@ -1,0 +1,9 @@
+﻿1 A check: {"available":true,"estimated_total":138000,"currency":"XOF","message":"These dates are available. Estimated total: 138 000 XOF."}
+1 B check: {"available":true,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+2 A reserve => 302 http://127.0.0.1:8101/reservations/19/checkout?token=<token>
+3 B reserve => 302 http://127.0.0.1:8101/properties/uat-apt-a; error:  Ces dates ne sont pas disponibles. 
+4 B 1-night => 302; error:  Ce logement nécessite un séjour minimum de 2 nuit(s). 
+5a A cancel => 302
+5b B retry after cancel => 302 http://127.0.0.1:8101/reservations/20/checkout?token=<token>
+6 B reserve inside admin block D+50..52 => 302; error:  Ces dates ne sont pas disponibles. 
+7 race (2 customers submit same dates D+195..198 simultaneously): a.customer.uat1@example.test => 302 http://127.0.0.1:8101/reservations/21/checkout?token=<token> | a.customer.uat2@example.test => 302 http://127.0.0.1:8101/properties/uat-apt-a

@@ -1,0 +1,5 @@
+﻿login host =>  HTTP 302 -> http://127.0.0.1:8101/admin
+1 host view: full_name input=True email input=True concierge form=False
+2 host submit => 302 http://127.0.0.1:8101/reservations/25/checkout?token=<token>
+flash after: Votre demande de réservation a bien été enregistrée. Nom complet Email Arrivée / Départ Choisir les dates Adultes Pays Enfants Bébés Remarque pour la réservation Options supplémentaires Airport pickup
+DB: reservation 25 user_id=8 (a.host.uat1, role host), reservations.email=a.guest.new2@example.test, guest row a.guest.new2, status pending; no user account created for a.guest.new2.

@@ -1,0 +1,19 @@
+﻿S1 anonymous -> 302 http://127.0.0.1:8102/login
+S2 other customer -> 403
+S3 owner -> 302 text/html; charset=utf-8 (PDF library missing: see laravel.log 'Class Barryvdh\DomPDF\Facade\Pdf not found')
+S4 staff (admin) -> 404
+S5 owner, reservation without receipt -> 302
+S6 anonymous + checkout token -> 302 http://127.0.0.1:8102/login
+S1 anonymous -> 302 http://127.0.0.1:8102/login
+S2 other customer -> 403
+S3 owner -> 404 text/html; charset=utf-8 (PDF library missing: see laravel.log 'Class Barryvdh\DomPDF\Facade\Pdf not found')
+S4 staff (admin) -> 404
+S5 owner, reservation without receipt -> 404
+S6 anonymous + checkout token -> 302 http://127.0.0.1:8102/login
+setup: R-conf=165 (confirmed, receipts=1); R-nopaid=166
+S1 anonymous -> 302 http://127.0.0.1:8102/login
+S2 other customer -> 403
+S3 owner -> 500 text/html; charset=utf-8 (500 = PDF library barryvdh/laravel-dompdf missing from vendor/)
+S4 staff (admin) -> 500
+S5 owner, reservation without receipt -> 404
+S6 anonymous + checkout token -> 302 http://127.0.0.1:8102/login

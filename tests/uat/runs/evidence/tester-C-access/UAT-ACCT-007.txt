@@ -1,0 +1,13 @@
+before: {"status":"pending_payment","check_in":"2027-07-01 00:00:00","check_out":"2027-07-05 00:00:00","adults":2,"children":0,"infants":0,"total_amount":115000}
+1 1 night (min stay 2): 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+2a adults2+children1=3 > capacity 2: 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+2b adults=1, children=1, infants=2 (infants not counted): 302 /dashboard/reservations/7  ; {"status":"pending_payment","check_in":"2027-07-01 00:00:00","check_out":"2027-07-05 00:00:00","adults":1,"children":1,"infants":2,"total_amount":115000}
+3 dates overlapping res 11 (offset 260-263 on property 1): 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+4 inside own current dates 222-224 (own reservation excluded): 302 /dashboard/reservations/7  ; {"status":"pending_payment","check_in":"2027-07-02 00:00:00","check_out":"2027-07-04 00:00:00","adults":2,"children":0,"infants":0,"total_amount":57500}
+5a PUT on cancelled res 9: 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+5b PUT on completed res 8: 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+ACCT-006 step 2: check_in=today, 2 nights: 302 /dashboard/reservations/7  ; {"status":"pending_payment","check_in":"2026-11-22 00:00:00","check_out":"2026-11-24 00:00:00","adults":2,"children":0,"infants":0,"total_amount":57500}
+ACCT-006 step 4c adults=8 (field rule ok; capacity 422 expected): 422  Error 422 Invalid data The form contains incorrect or incomplete information. Back to home
+ACCT-006 step 5d infants=4: 302 /dashboard/reservations/7  ; {"status":"pending_payment","check_in":"2027-07-01 00:00:00","check_out":"2027-07-05 00:00:00","adults":2,"children":0,"infants":4,"total_amount":115000}
+6 FR 1 night: 422  
+final state: {"status":"pending_payment","check_in":"2027-07-01 00:00:00","check_out":"2027-07-05 00:00:00","adults":2,"children":0,"infants":4,"total_amount":115000}

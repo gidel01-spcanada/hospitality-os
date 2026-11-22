@@ -1,0 +1,1 @@
+﻿Not executed: needs ANALYTICS_ENABLED=true with a test GTM/GA4 id on the instance and a browser (localStorage, network tab). INT-041 default-off state observed instead.

@@ -1,0 +1,10 @@
+GET /register -> 200; fields: name=True email=True locale=True password=True conf=True
+POST /register -> 302 Location: http://127.0.0.1:8103/dashboard
+GET /dashboard -> 200 lang=en greeting: Hello, Amina UAT. customer-acct=True
+GET /account/preferences -> 200
+  <option value="en" selected>
+  <input type="checkbox" name="email_booking_updates" value="1" checked>
+  <input type="checkbox" name="email_message_updates" value="1" checked>
+  <input type="checkbox" name="email_marketing" value="1" >
+  <input type="checkbox" name="email_newsletter" value="1" >
+DB: {"role":"customer","is_admin":0,"tenant_id":null,"locale":"en","is_active":1,"is_platform_admin":0}

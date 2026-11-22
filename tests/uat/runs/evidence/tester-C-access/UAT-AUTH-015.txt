@@ -1,0 +1,4 @@
+1 12 failed web logins (status codes): 302,302,302,302,302,302,302,302,302,302,302,302
+2 correct password right after: 302 http://127.0.0.1:8103/dashboard
+3 (corrected) 12 failed API logins: 422,422,422,422,422,422,422,422,422,422,422,422 ; last body: {"message":"Invalid credentials."}; rate-limit headers: 
+   correct API login -> 201 keys: token,user,id,name,email,role,locale

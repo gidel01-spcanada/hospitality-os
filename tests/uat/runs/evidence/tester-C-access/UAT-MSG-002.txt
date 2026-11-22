@@ -1,0 +1,4 @@
+1 second message E1 -> 302; threads for customer on E1: {"c":1}; messages in it: {"body":"Hello, is early check-in possible? (UAT)"} | {"body":"Another question (UAT)"}
+3 message to E2 -> 302; customer threads: {"id":5,"establishment_id":1} {"id":6,"establishment_id":2}
+2 list order (thread ids by position): 6,5 (newest-updated first expected: E2 thread then E1 thread 5)
+   thread 5 shows both messages in order: True

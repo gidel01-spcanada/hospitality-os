@@ -1,0 +1,18 @@
+1 empty body: 302 /messages errs=[] msgs +0 threads +0
+2a 5000 chars: 302 /messages errs=[] msgs +1 threads +0
+2b 5001 chars: 302 /messages errs=[] msgs +0 threads +0
+3 whitespace only: 302 /messages errs=[] msgs +0 threads +0
+4a est empty: 302 /messages errs=[] msgs +0 threads +0
+4b est=0: 302 /messages errs=[] msgs +0 threads +0
+4c est=abc: 302 /messages errs=[] msgs +0 threads +0
+4d est=999999: 302 /messages errs=[] msgs +0 threads +0
+5 html/script body: 302 /messages errs=[] msgs +1 threads +0
+   customer thread raw script=False escaped=True
+   admin thread raw script=False escaped=True (status 200)
+6 accents/emoji: 302 /messages errs=[] msgs +1 threads +0
+   customer view shows accents: True; emoji: True
+   admin view shows accents: True
+7 same message twice: messages +2
+6 accents/emoji -> 302; customer view shows 'יאü': True; admin view: True; emoji bytes present customer view: True
+7 same message twice -> messages +2
+5000-char boundary: stored body length: {"l":5000}

@@ -1,0 +1,7 @@
+﻿S1 empty csv => 302 -> http://127.0.0.1:8105/admin/reviews; 'Le contenu CSV est requis.' shown on page: False
+S2 import sample: 302 -> http://127.0.0.1:8105/admin/reviews | Success: 3 reviews imported. || 3 reviews imported. | 
+S3/S4 rows: UAT Anna src=booking r=5 est=null tenant=1 at=2026-11-22 21:53:06 active=1 text=[Very clean] url=https://example.test/r/1 |  UAT Ben src=google r=5 est=null tenant=1 at=2026-11-22 21:53:06 active=1 text=[Rating too high] url= |  UAT Chloe src=google r=3 est=null tenant=1 at=2026-11-22 21:53:06 active=1 text=[Unknown source] url=https://example.test/r/3 |  ; UAT Dan rows: 0
+S5 re-import: 302 -> http://127.0.0.1:8105/admin/reviews | Success: 3 reviews imported. || 3 reviews imported. |  ; UAT Anna rows now: 2
+S6 rating 0 / abc: 302 -> http://127.0.0.1:8105/admin/reviews | Success: 2 reviews imported. || 2 reviews imported. |  ; UAT Zero src=google r=1 est=null tenant=1 at=2026-11-22 21:53:11 active=1 text=[zero] url= |  UAT Abc src=google r=1 est=null tenant=1 at=2026-11-22 21:53:11 active=1 text=[abc] url= | 
+S7 host POST => 403; concierge POST => 403
+Note: imported generic rows on public /reviews: UAT Anna shown: True

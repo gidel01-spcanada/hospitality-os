@@ -1,0 +1,7 @@
+1 logout with T1 -> 204; body length 0
+2 GET /me with T1 after logout -> 200 {"data":{"id":47,"name":"Pw UAT","email":"uat-pw@example.test","role":"customer"
+3 GET /me with T2 -> 200
+4 token rows for user before/after logout: 3 -> 3 (T1 row removed if fewer)
+5 after web password change, GET /me with T2 -> 200
+6 user deactivated -> 401
+7 delete user: covered by RBAC-005 (old token -> 401, token rows 0)

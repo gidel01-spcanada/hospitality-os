@@ -1,0 +1,6 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.  QUEUE_CONNECTION=database set in the process env.
+Step1 schedule:list: hourly closure (routes/console.php:12), App\Jobs\CompletePastReservations (hourly), php artisan messages:send-email-notifications --limit=50 (every minute), 6-hourly closure (routes/console.php:29).
+Step5: two overdue confirmed reservations (UAT-CRON-001/002); dispatch(new CompletePastReservations) => jobs table count 1, reservations still confirmed.
+Step6: php artisan queue:work --stop-when-empty => job RUNNING/DONE; both reservations completed; jobs=0. A worker (or QUEUE_CONNECTION=sync) is required.
+Step7: reservations:complete-past => "Past reservations completed."; UAT-CRON-003 completed immediately. email_outbox rows = 3.
+Not executed: steps 2, 3, 4, 8 (real cron on a host).

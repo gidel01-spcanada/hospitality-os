@@ -1,0 +1,24 @@
+﻿step1 establishment options: 1:Afrik Appart Cotonou, 5:UAT Flash Est, 2:UAT Residence Ouidah, 4:UAT Val ABC, 3:UAT Val Est &lt;b&gt;x&lt;/b&gt; | amenity inputs in create form: 0 | video_urls field: False
+step2 POST draft d-uat-loft-01 -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | flash: site Journaux Entités Succès : Property created successfully 
+step4 POST published d-uat-loft-02 -> 302 Loc=http://127.0.0.1:8104/admin/properties/6/edit
+step5 POST archived d-uat-loft-03 -> 302 Loc=http://127.0.0.1:8104/admin/properties/7/edit
+{"id":5,"slug":"d-uat-loft-01","establishment_id":1,"currency":"XOF","status":"draft","is_published":false,"is_active":true,"video_urls":["https:\/\/example.test\/v1.mp4"]} amenities=[1,2]
+{"id":6,"slug":"d-uat-loft-02","establishment_id":1,"currency":"XOF","status":"published","is_published":true,"is_active":true,"video_urls":["https:\/\/example.test\/v1.mp4"]} amenities=[1,2]
+{"id":7,"slug":"d-uat-loft-03","establishment_id":1,"currency":"XOF","status":"archived","is_published":false,"is_active":true,"video_urls":["https:\/\/example.test\/v1.mp4"]} amenities=[1,2]
+public /properties -> 200; contains d-uat-loft-01: False; d-uat-loft-02: True; d-uat-loft-03: False
+public GET /properties/d-uat-loft-01 -> 404
+public GET /properties/d-uat-loft-02 -> 200
+public GET /properties/d-uat-loft-03 -> 404
+audit page -> 200; mentions Property created: True ; amenities_synced: True
+{"id":247,"action":"amenities_synced","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":246,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":245,"action":"amenities_synced","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":244,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":243,"action":"amenities_synced","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":242,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":241,"action":"updated","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":240,"action":"updated","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":239,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":238,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":237,"action":"created","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}
+{"id":236,"action":"updated","\"auditable_type\"":"auditable_type","\"auditable_id\"":"auditable_id","user_id":1}

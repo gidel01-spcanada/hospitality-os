@@ -1,0 +1,3 @@
+﻿S0 KES reservation mpesa start -> 302; attempt ref present: True
+S1 XOF reservation: M-Pesa offered: False
+[workaround] S2 Part A signed callback -> 200 {"ok":true,"provider":"mpesa","status":"ignored"}; {"status":"pending_payment","attempts":[{"id":32,"provider":"mpesa","provider_reference":"mpesa-sandbox-DSAGECFLFLDC","status":"created","amount":"10000.00","currency":"KES"}],"lines":[],"receipts":0,"outbox":[]}

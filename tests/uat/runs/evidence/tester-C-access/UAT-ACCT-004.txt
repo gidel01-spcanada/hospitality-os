@@ -1,0 +1,14 @@
+1 pending_payment res 6 -> 200: ref=True payNow=True cancelForm=True modifyForm=False receipt=False messageForm=True priceLines=True
+1b pending res 5 -> 200: ref=True payNow=True cancelForm=True modifyForm=False receipt=False messageForm=True priceLines=True
+2 confirmed res 7 -> 200: ref=True payNow=False cancelForm=False modifyForm=False receipt=True messageForm=True priceLines=True
+3 completed res 8 -> 200: ref=True payNow=False cancelForm=False modifyForm=False receipt=False messageForm=True priceLines=True
+4 cancelled res 9 -> 200: ref=True payNow=False cancelForm=False modifyForm=False receipt=False messageForm=True priceLines=True
+5 unknown id -> 404
+6 other customer's reservation 10 -> 403
+   Pay now link target: <token>
+recheck modify form res 5: PUT form=True check_in input=True adults input=True
+recheck modify form res 6: PUT form=True check_in input=True adults input=True
+recheck modify form res 7: PUT form=True check_in input=True adults input=True
+recheck modify form res 8: PUT form=False check_in input=False adults input=False
+recheck modify form res 9: PUT form=False check_in input=False adults input=False
+   cancelled res 9 cancellation fee line: False

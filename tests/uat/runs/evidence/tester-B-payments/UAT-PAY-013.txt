@@ -1,0 +1,5 @@
+﻿S1 POST pay_later -> 302; flash: Paiement | Afrik Appart A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Paiement Finaliser la réservation Paiement initié via pay_later. Une tentative de paiement a été enregistrée.
+S2 DB: {"status":"pending_payment","attempts":[{"id":3,"provider":"pay_later","provider_reference":"pay-later-RKVRKGZ6RFIK","status":"created","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]} payload={"provider":"pay_later","mode":"manual","reservation_ref":"AFK-B4317E765","hold_minutes":20}
+S3 reload: recorded text: e tentative de paiement a été enregistrée. | attempts section lists pay_later: True
+S4 not confirmed: status in DB above is pending_payment.
+S5 provider=foo -> html 302 (redirect back with errors); json -> 422: {"message":"La valeur s\u00e9lectionn\u00e9e pour provider est invalide.","errors":{"provider":["La valeur s\u00e9lectionn\u00e9e pour provider est invalide."]}

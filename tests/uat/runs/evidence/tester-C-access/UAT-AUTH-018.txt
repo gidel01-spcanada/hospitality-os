@@ -1,0 +1,8 @@
+request link -> We have emailed your password reset link.
+1 open link -> 200; h1 contains reset: True; hidden token=True hidden email=True; password fields=True
+2 submit -> 302 http://127.0.0.1:8103/login; login page status shown: False []
+3 old pw -> 302 http://127.0.0.1:8103/login err=[Adresse e-mail ou mot de passe invalide.]
+4 new pw -> 302 http://127.0.0.1:8103/dashboard
+5 reuse link -> POST 302 http://127.0.0.1:8103/reset-password/<token>?email=uat-brute%40example.test; login with the 3rd password -> 302 http://127.0.0.1:8103/login (expect login failure)
+   token rows left: {"c":0}
+

@@ -1,0 +1,13 @@
+﻿setup: drained pre-existing queued rows: dated notification to d-e2res@example.test. | Processed 8 email notification(s).
+  supported-template queued rows now: 0
+step1 --limit=2 -> exit 0: Sent reservation_created notification to d-mq-1@example.test. | Sent reservation_created notification to d-mq-2@example.test. | Processed 2 email notification(s).
+  rows: 1=[{"id":113,"template":"reservation_created","status":"sent"}] 2=[{"id":114,"template":"reservation_created","status":"sent"}] 3=[{"id":115,"template":"reservation_created","status":"queued"}]
+step2 no limit -> Sent reservation_created notification to d-mq-3@example.test. | Processed 1 email notification(s). ; row3 [{"id":115,"template":"reservation_created","status":"sent"}]
+step3 again -> Processed 0 email notification(s).
+step4 staff_account_invitation rows: [{"status":"queued","c":9}]
+step5 --limit=0 -> Sent reservation_created notification to d-mq-4@example.test. | Processed 1 email notification(s).
+step5 --limit=-5 -> Sent reservation_created notification to d-mq-5@example.test. | Processed 1 email notification(s).
+step6 mail capture d-mq-1: Subject: Confirmation de votre =?utf-8?Q?réservation? AFK-ZXELPW-261122 ; count of 'To: d-mq-1' lines: 1
+step6 mail capture d-mq-2: Subject: Confirmation de votre =?utf-8?Q?réservation? AFK-FNYVUE-261122 ; count of 'To: d-mq-2' lines: 1
+step6 mail capture d-mq-3: Subject: Confirmation de votre =?utf-8?Q?réservation? AFK-TLKXV5-261122 ; count of 'To: d-mq-3' lines: 1
+step7 no admin screen for outbox status found in routes (no /admin/outbox or similar); verified via DB only.

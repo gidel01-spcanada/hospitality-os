@@ -1,0 +1,4 @@
+﻿/admin/audit-logs : admin=200 host=403 concierge=403 customer=403 anonymous=302->http://127.0.0.1:8105/login
+/admin/logs : admin=200 host=403 concierge=403 customer=403 anonymous=302->http://127.0.0.1:8105/login
+S5 nav links: host dashboard contains href to audit-logs: False / logs: False; concierge: audit=False logs=False ; host /admin status 200, concierge /admin status 200
+S5 host menu on /admin/reports: audit link=False logs link=False 'Journaux' text=False

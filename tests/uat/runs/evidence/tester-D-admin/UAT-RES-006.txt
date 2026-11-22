@@ -1,0 +1,18 @@
+﻿step1 total reservations 34; page 1 row links: 15; first ids: 34,33,32,31,30; pager page=2 link: True
+step2 ?search=DCSR6Q -> 200 ids: 16
+step2 ?search=uat-guest-1 -> 200 ids: 17,16
+step2 ?search=UAT+Tax+Prop -> 200 ids: 34,15,14,13,12,11,10
+step2 ?search=UAT+Guest+Renamed -> 200 ids: 
+step3 ?status=confirmed ids: 33,25,8 statuses: ["confirmed"]
+step3 ?status=zzz -> 200 rows: 0
+step4 date_from=T date_to=T+30 ids: 27,28,25,20,18,17,16,8 ; DB check (check_in>=T and check_out<=T+30): [28,27,25,20,18,17,16,8]
+step5 calendar month=2026-12 -> 200; weekday header sample: is précédent décembre 2026 Mois suivant lun. mar. mer. jeu.  ; reservation chips (links): 14
+step6 ?view=calendar&month=2026-13 -> 302 Loc=http://127.0.0.1:8104/admin/reservations?month=2026-12&view=calendar
+step6 ?view=calendar&month=abc -> 302 Loc=http://127.0.0.1:8104/admin/reservations?month=2026-13&view=calendar
+step6 ?view=grid -> 302 Loc=http://127.0.0.1:8104/admin/reservations?month=abc&view=calendar
+step7 ?search=UAT&page=2 -> 200; pager links keep search: True
+step8 host list ids: 0 establishments: []
+step9 ?search=%25 -> 200 rows: 15
+step9 ?search=_ -> 200 rows: 15
+step2 retry guest-name search ?search=UAT+R2+Renamed -> 200 ids: 33
+step8 retry: host list contains E1 'UAT PA' rows: True; contains E2 'UAT Tax Prop': False; host ?search=UAT+Tax shows E2 rows: False

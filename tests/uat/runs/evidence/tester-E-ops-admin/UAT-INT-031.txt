@@ -1,0 +1,20 @@
+﻿add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Success: Calendar feed saved and synced. || Calendar feed saved and synced.
+setup: feed last_successful_sync_at = 20 min ago, fixture host now answers HTTP 500. setting calendar_freshness_minutes = "15"
+grep calendar_freshness in app/routes/config: no matches
+S1 public reserve free dates D+400..D+402 => 302 -> http://127.0.0.1:8105/properties/appartement-401 ; reservations 6 -> 6 ; page:  Appartement 401 - Appartement 1 chambre(s) à Cotonou | Afrik Appart A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte ← Retour au
+   reservation: 
+S2 property editor shows feed status text: UAT Feed A disabled Other Needs resync Never synchronized Sync Edit De
+S2 admin dashboard mentions stale/calendar feed warning: False
+S3 /admin/logs => 200; contains 'calendar' error lines: False
+--- retry: anonymous reserve only queues account confirmation (no reservation); using verified customer login
+S1 logged-in customer guest@ reserve free dates D+400..D+402 while feed stale (last success 20 min ago, host returning 500) => 0 -> 
+   landing page => 0; message: 
+   reservations 6 -> 6
+   new row: 
+--- retry: anonymous reserve only queues account confirmation (no reservation); using verified customer login
+S1 logged-in customer guest@ reserve free dates D+400..D+402 while feed stale (last success 20 min ago, host returning 500) => 302 -> http://127.0.0.1:8105/reservations/8/checkout?token=<token>
+   landing page => 200; message:  Payment | Afrik Appart A Afrik Appart Home Properties Experience Contact Home Properties Experience Contact My account Log out Payment Complete your reservatio
+   reservations 6 -> 7
+   new row: status=pending ref=AFK-MKWRJR-261122
+
+S2/S3 (from first run, 20-min-old feed + host 500): property editor status text for the stale feed, dashboard has no stale-feed warning (False), /admin/logs has no calendar error lines (False). Setting calendar_freshness_minutes = 15 exists in settings; no PHP code under app/, routes/, config/ references 'freshness'. Final result S1: reservation AFK-MKWRJR-261122 created with status pending and the guest was redirected to checkout (token redacted) => booking NOT blocked or flagged when the feed is stale.

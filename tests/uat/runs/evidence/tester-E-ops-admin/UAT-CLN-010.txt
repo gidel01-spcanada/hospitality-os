@@ -1,0 +1,13 @@
+﻿S1 host list => 200; property names in visit rows: Appartement 401,Appartement 402,Appartement 403 ; property select options: 7 days,90 days,Appartement 401,Appartement 402,Appartement 403,Appartement 404 ; contains 'E Prop B': False
+S2 host POST visit for PB(5) => 403
+S3 host GET edit of PB visit #30 => 404
+S4 host generate week of D+63 (departures res20 on PA/E1, res21 on PB/E2) => 302 | Success: No new departures to schedule. | visits created for: 
+S5 host share list entries: 0 ; host-created shares in DB: 0 ; total shares in tenant: 6
+S6 concierge list => 200; sees E Prop B: True; sees Appartement 401: True
+S6 concierge create on PB => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-12-13&status=scheduled
+S6 concierge edit #34 => 302 ; time now 2026-12-13 11:00:00
+S6 concierge share => 302
+S6 concierge delete #34 => 302 ; exists: 0
+S7 customer GET /admin/cleaning => 403
+S4 retry (first attempt: both departures fell on Sunday = last day of the week and were skipped by the CLN-006 last-day defect; check_out moved to Saturday 2027-01-23 via DB) host generate => 302 | Success: 1 visit created from departures. | visits created for reservations: 20 (res20=PA/E1, res21=PB/E2)
+S5 after host creates one share: host list 'Expires' entries: 1 ; host-created shares in DB: 1 ; total tenant shares: 8 ; admin list entries: 8

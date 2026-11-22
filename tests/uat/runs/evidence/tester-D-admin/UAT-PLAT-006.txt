@@ -1,0 +1,6 @@
+﻿step1 tenant B admin /admin -> 200
+step2 suspend -> 302 Loc=http://127.0.0.1:8104/platform/tenants | nts Paramètres du site Journaux Entités Succès : UAT Tenant B a été su | tenant B status: suspended | Activate form for B: True
+step3 B admin reload /admin -> 302 Loc=http://127.0.0.1:8104/login | login page message: resse email Cet espace de travail a été suspendu. Contactez le support pour obtenir de l’aide. Mot d
+step4 B admin logs in again -> 302 Loc=http://127.0.0.1:8104/admin; then /admin -> 302 Loc=http://127.0.0.1:8104/login | resse email Cet espace de travail a été suspendu. Contactez le support pour obtenir de l’aide. Mot d
+step5 anonymous public page of tenant B property -> 200
+step6 default platform admin /admin -> 200; /platform/tenants -> 200

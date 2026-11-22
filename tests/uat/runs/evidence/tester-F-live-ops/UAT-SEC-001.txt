@@ -1,0 +1,5 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.  Full matrix: _headers-matrix.txt
+Headers X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), microphone=(), geolocation=(), X-XSS-Protection 1; mode=block, Strict-Transport-Security max-age=31536000; includeSubDomains present on: / (200), /login (200), /properties (200), /missing-page (404), /api/v1/properties (200 JSON), /health (200 JSON), /sitemap.xml (200 XML), /up (200), /dashboard (302), /admin (302).
+Not present: Content-Security-Policy (observation). Server: nginx/1.31.8 disclosed; no X-Powered-By. Additional response header "host-header" with a base64 value (hosting infrastructure) present.
+GET /robots.txt (static file served by the web server) carries none of the app headers (not in the case URL list).
+Not executed: signed-in /dashboard, admin /admin, POST /logout redirect, iframe test, non-production HSTS absence (covered by local run: GET /health on local dev server has no HSTS).

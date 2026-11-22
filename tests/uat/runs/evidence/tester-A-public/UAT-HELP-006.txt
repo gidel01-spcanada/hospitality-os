@@ -1,0 +1,3 @@
+﻿request 11 => 429 Retry-After=60 X-RateLimit-Limit=10 body={ "message": "Too Many Attempts." }
+status codes in order: 200,200,200,200,200,200,200,200,200,200,429
+after 62 s wait => 200

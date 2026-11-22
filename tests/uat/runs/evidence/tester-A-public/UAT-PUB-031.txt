@@ -1,0 +1,7 @@
+﻿1 booking panel: full_name input present=False; email input present=False; concierge/message form present=True
+forms: <form method="POST" action="http://127.0.0.1:8101/logout"> ; <form method="POST" action="http://127.0.0.1:8101/messages" class="message-form"> ; <form method="POST" action="http://127.0.0.1:8101/properties/uat-apt-a/reserve" class="booking-form" data-availability-url="http://127.0.0.1:8101/properties/uat-apt-a/availability" data-availability-available="These dates are available." data-availability-unavailable="These dates are not available." data-availability-minimum-stay="This property requires a minimum stay of 2 night(s).">
+2 POST reserve => 302 http://127.0.0.1:8101/reservations/18/checkout?token=<token>
+3 checkout 200: Your reservation request has been received. Total 138 000 XOF Continue to pa | Reference AFK-VID9R5-261122 Pending Establishment Afrik Appart Cotonou Property Uat apt a Dates 16/05/2027 → 19/05/2027 Total 138 000 XOF Guest A Customer One Amounts Night(s) x 3 120 000 XOF Service fee (10%) 12 000 XOF VAT (18% incl.) 18 305 XOF City / Local tax 6 000 XOF Pay on arrival Please bring cash in the local currency: the full reservation amount is payable upon your arrival. Confirm this payment method Can
+5 dashboard 200 contains ref AFK-VID9R5-261122 : True
+4 mail log mentions AFK-VID9R5-261122 : False; mail log To customer count: 0
+email_outbox: newest rows status=queued template=reservation_received (latest id 7 corresponds to this run); sending is a separate scheduled command (not run).

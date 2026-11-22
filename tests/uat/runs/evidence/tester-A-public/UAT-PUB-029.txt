@@ -1,0 +1,12 @@
+﻿1 POST reserve logged out with verified customer email =>  HTTP 302 -> http://127.0.0.1:8101/login
+login page 200: message:  ; email prefilled: a.customer.uat2@example.test
+res count for email before login: see DB step
+5 wrong password =>  HTTP 302 -> http://127.0.0.1:8101/login
+5 error text: 
+2 correct login =>  HTTP 302 -> http://127.0.0.1:8101/reservation/resume
+3 resume => 302 http://127.0.0.1:8101/reservations/17/checkout?token=<token>
+checkout 200: Votre demande de réservation a bien été enregistrée. Total 138 000 XOF Continuer vers le paiement Référence AFK-2ZXKAB-261122 En attente Établissement Afrik Appart Cotonou L
+4 resume again => 404
+login page text after redirect:  Connectez-vous A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Bienvenue Connectez-vous Accédez à votre compte Afrik Appart et à votre espace réservé. Adresse email Mot de passe Mot de passe oublié ? Se souvenir de moi Se connecter Pas encore membre ? Créer un compte A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +229 00 00 00 00 Questions fréquentes Légal Politique de confidentialité Conditions générales Politique relative aux cookies © 2026 Afrik Appart. Tous droits réservés. Ce site est propulsé par Sprint Pay Canada. Envoyer un avis à Sprint Pay Canada ! Confirmer cette action Annuler Confirmer 
+wrong password page text:  Connectez-vous A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Bienvenue Connectez-vous Accédez à votre compte Afrik Appart et à votre espace réservé. Adresse email Adresse e-mail ou mot de passe invalide. Mot de passe Mot de passe oublié ? Se souvenir de moi Se connecter Pas encore membre ? Créer un compte A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +229 00 00 00 00 Questions fréquentes Légal Politique de confidentialité Conditions générales Politique relative aux cookies © 2026 Afrik Appart. Tous droits réservés. Ce site est propulsé pa
+views/auth/login.blade.php contains no reference to session('status'); layout app.blade.php has no flash rendering for 'status' either, so the flash auth.existing_account_login set by reserve() never displays.

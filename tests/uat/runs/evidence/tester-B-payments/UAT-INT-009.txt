@@ -1,0 +1,6 @@
+﻿[workaround] status='forged-status' -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}; attempt status: created
+[workaround] status='refunded' -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}; attempt status: created
+[workaround] status='PAID' -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}; attempt status: created
+[workaround] status='' -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}; attempt status: created
+S2 reservation after forged values: {"status":"pending_payment","attempts":[{"id":27,"provider":"fedapay","provider_reference":"fedapay-sandbox-JVUVKRC4P87K","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+[workaround] S3 NO status key -> 200 {"ok":true,"provider":"fedapay","status":"paid"}; {"status":"confirmed","attempts":[{"id":27,"provider":"fedapay","provider_reference":"fedapay-sandbox-JVUVKRC4P87K","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}

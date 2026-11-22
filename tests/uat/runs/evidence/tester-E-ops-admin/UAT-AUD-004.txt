@@ -1,0 +1,24 @@
+﻿S1 /admin/logs => 200; file options (selected *): laravel.log*,error-2026-11-22.log,error-2026-09-24.log,error-2026-09-23.log,error-2026-09-05.log,error-2026-09-04.log ; lines shown: 300 ; showing text: Showing laravel
+S2 ?file=error-2026-09-04.log => 200; selected: error-2026-09-04.log ; lines 153
+S3 ?lines=10 => 200; lines input value=50; lines shown 50
+S3 ?lines=5000 => 200; lines input value=1000; lines shown 1000
+S3 ?lines=abc => 200; lines input value=50; lines shown 50
+S4 ?file=../../.env => 200; selected: laravel.log ; contains APP_KEY/DB_PASSWORD: False ; contains [fonts]: False
+S4 ?file=..%2F..%2F.env => 200; selected: laravel.log ; contains APP_KEY/DB_PASSWORD: False ; contains [fonts]: False
+S4 ?file=/etc/passwd => 200; selected: laravel.log ; contains APP_KEY/DB_PASSWORD: False ; contains [fonts]: False
+S4 ?file=C:\Windows\win.ini => 200; selected: laravel.log ; contains APP_KEY/DB_PASSWORD: False ; contains [fonts]: False
+S4 ?file=nonexistent.log => 200; selected: laravel.log ; contains APP_KEY/DB_PASSWORD: False ; contains [fonts]: False
+S5 non-.log file in storage/logs (.gitignore) listed: False
+S6 empty logs directory: not executed (storage/logs is shared with other testers' instances; emptying it would affect them)
+S7 raw '<script>' inside the log <code> block: False ; escaped '&lt;' entities present: True
+S8 trigger known failure (GET /admin/cleaning/13/edit -> 500 orWhereKey); laravel.log tail now contains 'orWhereKey': False ; last ERROR line time: 
+S9 visible tail (1000 lines): email addresses seen: hello@example.com,d-conc-made@example.test,db92f9aa39f43d1c664c67a8e38ba94d@example.com,d-host-made@example.test,bc62fc0ee931d9a89c14fd603fbaf8ff@example.com,d-today@example.test,e094bdd36f15c65fa815dca2ebca3e2f@example.com,d-infants@example.test ; 'password' word occurrences: 23 ; reset/checkout token-like 64-hex strings: 28 ; Bearer/API key patterns: 0
+   context: 
+    &quot;new&quot;: {
+        &quot;name&quot;: &quot;&lt;b&gt;x&lt;\/b&gt;&quot;,
+        &quot;updated_at&quot;: &quot;2026-11-22 21:43:
+AUD-004 S8 1000-line tail contains 'orWhereKey': False ; ERROR lines in tail: 5
+AUD-004 S9 where 64-hex tokens appear (redacted): p://127.0.0.1:8104/reservations/21/checkout?token=<64hex>&amp;amp;l ## p://127.0.0.1:8104/reservations/22/checkout?token=<64hex>&amp;amp;l ## p://127.0.0.1:8104/reservations/23/checkout?token=<64hex>&amp;amp;l ## p://127.0.0.1:8104/reservations/24/checkout?token=<64hex>&amp;amp;l
+AUD-004 S9 'password' contexts (redacted): Subject: Reset Password Notification ## ou are receiving this email because we received a password reset request for your account. ## Reset Password: http://127.0.0.1:8105/reset-password/<hex> ## This password reset link will expire in 60 minutes.
+AUD-004 S8 (re-check, error channel file error-2026-11-22.log, 1000 lines): contains 'orWhereKey': False; last ERROR entries: 2026-11-22 21:44:32 Class &quot;Barryvdh\DomPDF\Facade\Pdf&quot; not found  ## 2026-11-22 21:44:33 Class &quot;Barryvdh\DomPDF\Facade\Pdf&quot; not found   (laravel.log tail is dominated by other testers' mail-log output, so the 1000-line laravel.log window did not reach it)
+AUD-004 S8 (re-check with visit #20 that has a reservation): edit page => 500 (generic page, contains stack trace: False); error-2026-11-22.log tail now contains 'orWhereKey': True; newest ERROR: 2026-11-22 21:45:36 Call to undefined method Illuminate\Database\Eloquent\Builder::orWhereKey() 

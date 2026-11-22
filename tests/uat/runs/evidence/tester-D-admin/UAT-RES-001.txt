@@ -1,0 +1,11 @@
+﻿setup PA=28 (E1, min stay 2, max 4, 50000)
+step1 admin form fields: _token,full_name,email,phone,country,locale,property_id,check_in,check_out,adults,children,infants,ignore_external_calendar_conflicts,notes,customer_note | property options: 28 | ignore checkbox (admin): True | concierge sees checkbox: False
+step2 submit -> 302 Loc=http://127.0.0.1:8104/admin/reservations/16 | nts Paramètres du site Journaux Entités Succès : Réservation créée. La confirmation client a été ajoutée à la 
+step3 DB: {"id":16,"reservation_ref":"AFK-DCSR6Q-261122","status":"pending","source":"admin","check_in":"2026-12-12T00:00:00.000000Z","check_out":"2026-12-15T00:00:00.000000Z","email":"uat-guest-1@example.test","user_id":1,"guest_id":15,"subtotal":"150000.00","fees":"15000.00","taxes":"7500.00","total_amount":"172500.00","notes":"Late arrival","customer_note":"Baby cot","locale":"fr"} | lines: [{"label":"Nuit(s) x 3","amount":"150000.00"},{"label":"Frais de service (10%)","amount":"15000.00"},{"label":"TVA (18% inclue)","amount":"22881.36"},{"label":"Taxe locale \/ s\u00e9jour","amount":"7500.00"}]
+  detail page shows ref/status/nights:  AFK-DCSR6Q-261122 | Réservation - Afrik Appart Administration Tableau de bord Messages Opérations Gestion des utilisateurs Réservations Planning ménage Rapport
+step4 outbox rows reservation_created 14 -> 15 latest: {"template":"reservation_created","status":"queued","recipient_email":"uat-guest-1@example.test","\"locale\"":"locale"}
+step5 guest record: [{"id":15,"full_name":"UAT Guest One","email":"uat-guest-1@example.test","phone":"+22900000001","country":"Benin"}]
+step6 list first row: Actions UAT PA UAT Guest One 12 déc. 2026 15 déc. 2026 3 172,500.00 XOF En attente UAT Tax Prop Guest Customer 08 oct. 2027 10 oct. 2027 2 112,000.00 XOF Valida
+step7 second reservation same email new name -> 302; guests: [{"id":15,"full_name":"UAT Guest One"}] ; res guest_ids: 15,15
+host creates on PA -> 302 Loc=http://127.0.0.1:8104/admin/reservations/18
+concierge creates on PA -> 302 Loc=http://127.0.0.1:8104/admin/reservations/19

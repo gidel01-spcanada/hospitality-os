@@ -1,0 +1,10 @@
+﻿APP_ENV=local (cannot be changed). S5 guest GET after attempt: simulate button visible: True; unavailable text visible: False
+guest POST complete (local env) -> 302 http://127.0.0.1:8102/reservations/66/checkout?token=<token>
+  flash: 
+admin login -> 302 http://127.0.0.1:8102/admin
+S3 staff checkout GET -> 302; simulate visible: False
+S4 staff POST complete on pay_later attempt -> 419; flash:  ; status: pending_payment
+guest POST complete (APP_ENV=local) -> 302; landing page text has awaiting-verification message: False; flash excerpt: 
+staff (admin) GET checkout without token -> 302 http://127.0.0.1:8102/reservations/access (staff are not owners; token needed)
+S3 staff GET with token -> 200; simulate visible: True
+S4 staff POST complete on pay_later attempt -> 302; flash: ; status: pending_payment

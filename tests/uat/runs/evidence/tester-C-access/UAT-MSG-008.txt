@@ -1,0 +1,5 @@
+admin: GET /messages -> 403; GET /messages/5 -> 403; POST /messages -> 403; /dashboard shows a link to /messages: False; link to /admin/messages: False
+concierge: GET /messages -> 403; GET /messages/5 -> 403; POST /messages -> 403; /dashboard shows a link to /messages: False; link to /admin/messages: False
+host: GET /messages -> 403; GET /messages/5 -> 403; POST /messages -> 403; /dashboard shows a link to /messages: False; link to /admin/messages: False
+4 guest GET /messages -> 302 /login
+   staff intrusion messages stored: {"c":0}

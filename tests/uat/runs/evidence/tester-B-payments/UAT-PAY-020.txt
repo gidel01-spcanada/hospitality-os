@@ -1,0 +1,8 @@
+﻿S1 EUR checkout: PayPal section text present: True; SDK script: True; client-id placeholder 'test' used: True
+S2 create -> 200 {"orderID":"paypal-sandbox-TRSXJRXGVCZD","attempt_id":38,"is_guarantee":false}
+   status after create: pending_payment
+S2 capture -> 200 {"status":"COMPLETED","redirect_url":"http:\/\/127.0.0.1:8102\/reservations\/111\/checkout?token=<token>"}
+S3/4/6 DB: {"status":"confirmed","attempts":[{"id":38,"provider":"paypal","provider_reference":"paypal-sandbox-TRSXJRXGVCZD","status":"paid","amount":"100.00","currency":"EUR"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}; notes: Payment verified via PayPal Smart Buttons.
+S3 checkout after: confirmed label: True; options hidden: True
+S5a XOF, no secondary currency: create -> 200 {"orderID":"paypal-sandbox-WBL3JNEGOZKM","attempt_id":39,"is_guarantee":false}; attempt: [{"currency":"EUR","amount":"100000.00","status":"created"}]
+S5b XOF + secondary EUR rate 0.001524: create -> 200; attempt: [{"currency":"EUR","amount":"152.40","status":"created"}]

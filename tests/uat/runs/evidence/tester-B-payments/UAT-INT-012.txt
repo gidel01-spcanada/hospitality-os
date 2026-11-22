@@ -1,0 +1,2 @@
+﻿[workaround] Part A S1 signed transaction_id -> 200 {"ok":true,"provider":"cinetpay","status":"ignored"}; {"status":"pending_payment","attempts":[{"id":31,"provider":"cinetpay","provider_reference":"cinetpay-sandbox-K8EV7ZRJYJY3","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+as provider (no session/CSRF) -> 419

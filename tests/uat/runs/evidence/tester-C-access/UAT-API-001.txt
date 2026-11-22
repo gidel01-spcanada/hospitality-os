@@ -1,0 +1,8 @@
+1/2 login guest@afrikappart.test -> 201; token length=80; user keys=email,id,locale,name,role; role=customer (expected customer); body has 'password' key: False
+1/2 login concierge@afrikappart.test -> 201; token length=80; user keys=email,id,locale,name,role; role=concierge (expected concierge); body has 'password' key: False
+1/2 login host@afrikappart.test -> 201; token length=80; user keys=email,id,locale,name,role; role=host (expected host); body has 'password' key: False
+1/2 login admin@afrikappart.test -> 201; token length=80; user keys=email,id,locale,name,role; role=admin (expected admin); body has 'password' key: False
+3 no device_name -> 201; token row name: {"name":"mobile-app"}
+4 upper-case email -> 201
+5 two logins: different tokens=True; both work: 200 200
+6 DB token column: length=64 looks like sha256 hex=True equals plain token: False

@@ -1,0 +1,16 @@
+﻿GET /properties/uat-draft => 404 Erreur 404 Page introuvable La page demandée n’existe pas ou a été
+GET /properties/uat-inactive => 404 Erreur 404 Page introuvable La page demandée n’existe pas ou a été
+GET /properties/uat-estab-inactive => 404 Erreur 404 Page introuvable La page demandée n’existe pas ou a été
+GET /properties/no-such-slug => 404 Erreur 404 Page introuvable La page demandée n’existe pas ou a été
+control P-A => 200
+POST uat-draft/availability => 404
+POST uat-draft/reserve => 302
+listing contains hidden slugs: 0
+sitemap hidden slugs: 0 status 200
+verified customer POST uat-inactive/reserve => 302 -> http://127.0.0.1:8101/reservations/12/checkout?token=<token>
+verified customer POST uat-estab-inactive/reserve => 302 -> http://127.0.0.1:8101/reservations/13/checkout?token=<token>
+verified customer POST uat-inactive/reserve => 302 -> http://127.0.0.1:8101/properties/uat-apt-a
+verified customer POST uat-estab-inactive/reserve => 302 -> http://127.0.0.1:8101/properties/uat-apt-a
+verified customer POST uat-draft/reserve => 302 -> http://127.0.0.1:8101/reservations/14/checkout?token=<token>
+
+DB after: reservations created on uat-inactive (AFK-CBKHPV-261122), uat-estab-inactive (AFK-9HZ8SP-261122), uat-draft (AFK-BUEFHU-261122), status pending, user = customer. Anonymous POST to uat-draft/reserve with new emails created 2 unverified customer users (a.nobody1/2@example.test).

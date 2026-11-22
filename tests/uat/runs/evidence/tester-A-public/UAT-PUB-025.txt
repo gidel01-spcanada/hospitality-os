@@ -1,0 +1,4 @@
+﻿1 night => {"available":false,"reason":"minimum_stay","minimum_stay":2}
+2 nights => {"available":true,"estimated_total":92000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 92 000 XOF."}
+UI text attr: data-availability-minimum-stay="Ce logement nécessite un séjour minimum de 2 nuit(s)."
+step3 uat-apt-b with minimum_stay=0 (set via DB), 1 night => {"available":true,"estimated_total":28750,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 28 750 XOF."}

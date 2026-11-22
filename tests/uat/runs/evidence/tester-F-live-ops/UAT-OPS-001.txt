@@ -1,0 +1,5 @@
+﻿LIVE https://afrikappart.com/ (anonymous, read-only) plus LOCAL scratch instance (127.0.0.1:8196, scratch DB under F-scratch)
+LIVE: GET /health => 200 application/json, body keys exactly status, application, environment, php_version, timestamp_utc (values: ok, afrikappart, production, 8.5.13, ISO8601 UTC). No DB/host/path/Laravel version/key.
+LIVE: two calls ~4 s apart (21:31:45 and 21:31:49) => timestamps differ; Accept-Language en and fr => identical JSON.
+LOCAL: POST /health => 405 (text/html). LOCAL with logged-in admin session GET /health => same JSON (environment local).
+Not executed: POST on live (forbidden), stopping the database (step 6; no DB host access).

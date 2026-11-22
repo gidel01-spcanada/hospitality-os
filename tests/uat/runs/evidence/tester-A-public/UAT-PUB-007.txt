@@ -1,0 +1,7 @@
+﻿?sort=price_asc => 200 order: uat-apt-f,uat-apt-g,appartement-401,uat-apt-b,appartement-402,appartement-403,uat-apt-a,appartement-404,uat-apt-e,uat-villa-c
+?sort=price_desc => 200 order: uat-villa-c,appartement-404,uat-apt-e,uat-apt-a,appartement-403,appartement-402,appartement-401,uat-apt-b,uat-apt-g,uat-apt-f
+ => 200 order: uat-apt-f,uat-apt-g,appartement-401,uat-apt-b,appartement-402,appartement-403,uat-apt-a,appartement-404,uat-apt-e,uat-villa-c
+city=Ouidah => 200 uat-apt-b
+destination select selected: <option value="Ouidah" selected>Ouidah
+destination=Nowhere => 200 text: Aucun logement n’est actuellement disponible.
+EN: No properties are currently available.

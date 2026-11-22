@@ -1,0 +1,16 @@
+﻿max sort_order M=70
+create form fields: _token,name_en,name_fr
+step1 create -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8 | nts Paramètres du site Journaux Entités Succès : Catégorie d’équipemen | DB [{"id":8,"name_en":"UAT Wellness","name_fr":"UAT Bien-etre","slug":"uat-wellness","sort_order":80}]
+step2 list: UAT Wellness after Outdoors & Wellness: True
+step2 property editor amenities tab shows category 'UAT Bien-etre' (FR UI): False (category has no amenities yet)
+step3/4 name_en empty -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/create cats 8->8 | obligatoire.
+step3/4 name_fr empty -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/create cats 8->8 | obligatoire.
+step3/4 name_en 101 -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/create cats 8->8 | caractères.
+step4 name_en 100 -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/9 cats 8->9
+step5 duplicate name_en 'UAT Wellness' -> 500 Loc= cats 9->9 |  | rows: [{"id":8,"name_en":"UAT Wellness","name_fr":"UAT Bien-etre","slug":"uat-wellness","sort_order":80}]
+step6 'Spa & Bien-être / ?' -> 302 cats 9->10 | [{"id":10,"name_en":"Spa & Bien-\u00eatre \/ ?","name_fr":"Spa FR","slug":"spa-bien-etre","sort_order":100}]
+(lines below are from an accidental second run of steps 4-6; the 500s come from repeating names that already exist, the same duplicate-slug defect)
+step4 name_en 101 -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/create cats 11->11 | caractères.
+step4 name_en 100 -> 500 Loc= cats 11->11
+step5 duplicate name_en 'UAT Wellness' -> 500 Loc= cats 11->11 |  | rows: []
+step6 'Spa & Bien-être / ?' -> 500 cats 11->11 | [{"id":10,"name_en":"Spa & Bien-\u00eatre \/ ?","name_fr":"Spa FR","slug":"spa-bien-etre","sort_order":100}]

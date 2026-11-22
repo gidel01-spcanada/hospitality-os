@@ -1,0 +1,12 @@
+﻿DB: 26 total; E1=25 E2=1 published=14 E1published=13
+step1 admin /admin/properties -> 200; distinct edit links: 26; newest (UAT d-uat-avail) appears before Appartement 401: True
+step2 ?establishment=1 -> 200; edit links: 25
+step2 ?status=published -> 200; edit links: 14
+step2 ?establishment=1&status=published -> 200; edit links: 13
+step2 ?establishment=2 -> 200; edit links: 1
+step3 ?establishment=999999 -> 302 Loc=http://127.0.0.1:8104/admin/properties?establishment=2 | 
+step3 ?status=live -> 302 Loc=http://127.0.0.1:8104/admin/properties?establishment=2 | 
+step4 establishments page link for E1: True
+step5 host /admin/properties -> 200; edit links: 25; contains UAT PE2 (E2): False
+step5 host ?establishment=2 -> 200 Loc=; edit links: 0; contains UAT PE2: False
+step6 concierge -> 403; customer -> 403

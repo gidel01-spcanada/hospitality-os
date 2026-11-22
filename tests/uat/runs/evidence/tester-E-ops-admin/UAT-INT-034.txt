@@ -1,0 +1,12 @@
+﻿S1 google.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 reviews imported. |  ; rows: UAT Googler One src=google r=5 est=1 tenant=1 at=2026-02-01 00:00:00 active=1 text=[Superb] url=https://example.test/g/1 | UAT Googler Two src=google r=3 est=1 tenant=1 at=2026-02-02 00:00:00 active=1 text=[Average] url= | 
+S2 airbnb.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 1 reviews imported. |  ; rows: UAT Airbnber One src=airbnb r=4 est=1 tenant=1 at=2026-03-01 00:00:00 active=1 text=[Good host] url=https://example.test/a/1 | 
+S2 admin list ?source=airbnb shows it: True label 'Airbnb' present: True; public /reviews shows it: False ; public context: 
+S3 re-upload google.csv: 0 ; Googler One rows: 1
+S4 google-same-name.csv: 0 ; rows: UAT Googler One src=google r=5 est=1 tenant=1 at=2026-02-01 00:00:00 active=1 text=[Superb] url=https://example.test/g/1 | 
+S5 google-bad-header.csv: 0 ; rows: 0
+--- re-run of S2(public check)-S5 (earlier lines invalid: tester-script variable clash broke the admin session)
+S2 admin list ?source=airbnb shows it: True label 'Airbnb' present: True; public /reviews shows it: False ; public context: 
+S3 re-upload google.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 reviews imported. |  ; Googler One rows: 1
+S4 google-same-name.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 reviews imported. |  ; rows: UAT Googler One src=google r=2 est=1 tenant=1 at=2026-02-06 00:00:00 active=1 text=[Second text] url= | 
+S5 google-bad-header.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 0 reviews imported. |  ; rows: 0
+S2 public /reviews is paginated (18 per page, newest first); 'UAT Airbnber One' found on page 2; context:  “Okay” Airbnb ★★★★☆ UAT Airbnber One 01/03/2026 “Good host” 

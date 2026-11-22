@@ -1,0 +1,4 @@
+﻿S1 POST /webhooks/fedapay, correct HMAC, fresh client (no cookies, no X-CSRF-TOKEN, no XSRF-TOKEN), JSON body -> HTTP 419; content-type: text/html; charset=utf-8; body:  Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a 
+S2 419 observed: providers cannot reach the handler. Attempt after S1: {"status":"pending_payment","attempts":[{"id":71,"provider":"fedapay","provider_reference":"fedapay-sandbox-Q3ORJYALEODZ","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+S3 invalid signature, fresh client -> HTTP 419 (CSRF rejects before the signature check)
+Cause check: no CSRF exclusion in bootstrap/app.php, app/Http/Middleware or app/Providers (grep for csrf|Csrf|webhook returned no matches); route declared in routes/web.php web group.

@@ -1,0 +1,4 @@
+﻿4 availability adults 5 => 200 {"available":true,"estimated_total":138000,"currency":"XOF","message":"These dates are available. Estimated total: 138 000 XOF."}
+2 reserve adults 5 (max_guests 4) => 302 http://127.0.0.1:8101/reservations/26/checkout?token=<token>
+3 reserve adults 3 + children 2 => 302 http://127.0.0.1:8101/reservations/27/checkout?token=<token>
+1 HTML: adults input max=<input id="adults" name="adults" type="number" min="1" max="4" step="1" inputmode="numeric" value="1">

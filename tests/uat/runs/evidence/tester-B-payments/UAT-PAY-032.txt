@@ -1,0 +1,13 @@
+﻿S1 no file -> 422 {"message":"Le champ payment proof est obligatoire.","errors":{"payment_proof":["Le champ payment proof est obligatoire."]}} | reservation: pending | files stored: 0
+S2 5000 KB PDF -> 422 {"message":"The payment proof failed to upload.","errors":{"payment_proof":["The payment proof failed to upload."]}} | reservation: pending | files stored: 0
+S3 5121 KB PDF -> 422 {"message":"The payment proof failed to upload.","errors":{"payment_proof":["The payment proof failed to upload."]}} | reservation: pending | files stored: 0
+S4a .exe -> 422 {"message":"Le champ payment proof doit \u00eatre un fichier de type : jpg, jpeg, png, webp, pdf.","errors":{"payment_proof":["Le  | reservation: pending | files stored: 0
+S4b .txt -> 422 {"message":"Le champ payment proof doit \u00eatre un fichier de type : jpg, jpeg, png, webp, pdf.","errors":{"payment_proof":["Le  | reservation: pending | files stored: 0
+S4c .svg -> 422 {"message":"Le champ payment proof doit \u00eatre un fichier de type : jpg, jpeg, png, webp, pdf.","errors":{"payment_proof":["Le  | reservation: pending | files stored: 0
+S5 PNG bytes named .pdf -> 302 <!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta http-equiv="refresh" content="0;url='http://127.0.0.1:8102/reservatio | reservation: pending_validation | files stored: 1
+S6 0-byte pdf -> 422 {"message":"Le champ payment proof doit \u00eatre un fichier de type : jpg, jpeg, png, webp, pdf.","errors":{"payment_proof":["Le  | reservation: pending | files stored: 0
+S7 provider=paypal -> 422 {"message":"La valeur s\u00e9lectionn\u00e9e pour provider est invalide.","errors":{"provider":["La valeur s\u00e9lectionn\u00e9e  | reservation: pending | files stored: 0
+S8 provider=revolut (not enabled) -> 422 { "message": "Impossible d\u2019envoyer une preuve de paiement pour cette r\u00e9servation." } | reservation: pending | files stored: 0
+S9a first valid proof -> 302 <!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta http-equiv="refresh" content="0;url='http://127.0.0.1:8102/reservatio | reservation: pending_validation | files stored: 1
+S9 second proof after first -> 422 { "message": "Impossible d\u2019envoyer une preuve de paiement pour cette r\u00e9servation." }
+server limits: upload_max_filesize=2M post_max_size=8M (instance php.ini; CLI value shown, the php serve process uses the same temp php.ini via PHPRC)

@@ -1,0 +1,3 @@
+﻿step1 before suspension: login -> 201 (token received: True); /me -> 200 tenant_id: ; /staff/reservations -> 200 contains B Guest: False contains default data (d-guest/UAT PA): False
+step2 tenant B suspended
+step3 after suspension: /me -> 403; /staff/reservations -> 403 (contains B Guest: False); fresh /auth/login -> 201 token issued: True

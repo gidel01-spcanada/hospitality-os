@@ -1,0 +1,13 @@
+﻿step1 upload cover-ok.jpg 1MB -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#general; cover_image=uploads/establishments/20261122212635021-nxwddnmxhfcz.jpg; file exists: True; public page references it: True
+step2 cover-big 3.5MB -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | (not found: 3 Mo) | cover now: uploads/establishments/20261122212635021-nxwddnmxhfcz.jpg
+step3 gif -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | 
+step3 pdf -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | 
+step4 choose property picture 97 (E2 property 17) -> 302; cover_image=uploads/properties/d-pe2/20261122212639307-i8i0bcbah0wf.png
+step5 property_image_id=61 (E1 property photo) -> 422 <!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Données invalides | Afrik Appart</title> <l
+step6 external URL -> 302; cover_image=uploads/properties/d-pe2/20261122212639307-i8i0bcbah0wf.png; public page img src present: False
+step7 two more uploads: files in public/uploads/establishments 47 -> 49 (old file kept)
+step2 retry cover-big -> 302 | errors: Chaque photo ne doit pas dépasser 3 Mo.
+step3 gif -> 302 | errors: Le champ photo principale doit être un fichier de type : jpg, jpeg, png, webp.
+step3 pdf -> 302 | errors: Le champ photo principale doit être une image. || Le champ photo principale doit être un fichier de type : jpg, jpeg, png, webp.
+note: property_image_id select has a pre-selected option: False
+step6 external URL with property picture cleared -> 302; cover_image=https://example.test/cover.jpg; public page has src: True

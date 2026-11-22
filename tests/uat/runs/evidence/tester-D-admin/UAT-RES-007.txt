@@ -1,0 +1,7 @@
+﻿step1 detail R3=35: guest True, property True, 'Remarque client' True, Baby cot True, price lines True, notes editor/status form/message link present: True/True/True
+step2 save note -> 302 | nts Paramètres du site Journaux Entités Succès : Notes de ré | DB notes: Key at reception
+step3 empty note -> 302 | DB notes: ''
+step4 5001 chars -> 302 Loc=http://127.0.0.1:8104/admin/reservations/35 | 
+step4 5000 chars -> 302 | stored length: 5000
+step5 customer /dashboard/reservations/35 -> 200; internal note visible: False; customer note visible: False
+step4 recheck: after 5001-char save, DB notes = 'BEFORE'; message: (not found: 5000)

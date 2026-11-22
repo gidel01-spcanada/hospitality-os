@@ -1,0 +1,6 @@
+﻿setup: E1 (id1) working CSV source, E2 (id2) HTTP 500 source, E3 (id3) no source; other establishments: [{"id":4,"name":"E T2 Est","google_reviews_import_url":null}]
+S1 php artisan reviews:sync-google => exit 1 ; output: Afrik Appart Cotonou: 2 review(s) synchronized. / E Establishment Two: Google review source returned HTTP 500 / Processed 1 establishment(s); 1 failure(s).
+S2 --establishment=1 => exit 0 ; output: Afrik Appart Cotonou: 2 review(s) synchronized. / Processed 1 establishment(s); 0 failure(s).
+S3 --establishment=999999 => exit 0 ; output: Processed 0 establishment(s); 0 failure(s).
+S4 E2 fields: E Establishment Two: import_url=http://127.0.0.1:9105/status/500 last_sync_at=null last_error=[Google review source returned HTTP 500]
+S5 schedule:list:  /   0 *   * * *  Closure at: routes\console.php:12 ....... Next Due: dans 57 minutes /   0 *   * * *  App\Jobs\CompletePastReservations ....... Next Due: dans 57 minutes /   * *   * * *  php artisan messages:send-email-notifications --limit=50  Next Due: dans 11 secondes /   0 */6 * * *  Closure at: routes\console.php:29 .......... Next Due: dans 1 heure / 

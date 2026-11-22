@@ -1,0 +1,7 @@
+(A) GET /login -> 200 recaptcha script=False hidden g-recaptcha-response=False
+(A) GET /register -> 200 recaptcha script=False hidden g-recaptcha-response=False
+(A) GET /host/register -> 404 recaptcha script=False hidden g-recaptcha-response=False
+(B) restarted own 8103 server in cloud mode with dummy RECAPTCHA keys (no Google contact: missing token fails before any HTTP call).
+GET /login,/register,/host/register -> 200, recaptcha api script=True, hidden g-recaptcha-response=True
+POST /login (valid seeded guest creds, no token) -> 302 /login, French 'verification' error shown, /dashboard -> 302 (not logged in)
+POST /register and /host/register without token -> 302 back to form with verification error; DB: users like uat-captcha% = 0; tenants = 1

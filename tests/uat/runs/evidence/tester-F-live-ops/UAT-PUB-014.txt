@@ -1,0 +1,5 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /about => 200 (FR) and /about?lang=en => 200 (EN, <html lang=en>, title "About AfrikAppart"). No TODO/lorem/placeholder strings.
+GET /faq: 6 topics (FR/EN): How to book / payment methods / cancel / check-in & check-out / what's included / contact the team - each with an answer.
+GET /contact: mailto:info@afrikappart.com ; tel:+22997719757 (digits and + only); hours "Du lundi au samedi, de 8h a 18h (heure du Benin)".
+EN versions for about/faq/contact/home fetched via ?lang=en: no raw translation keys (regex messages.*/legal.* found none).

@@ -1,0 +1,30 @@
+﻿create form => 200
+S1 add review: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review saved. | 
+S2 public /reviews => 200 shows UAT Reviewer: True, text: True
+S3 edit rating 4 inactive: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review updated. | 
+   DB: {"rating":4,"is_active":0} ; public shows it: False
+S4 reactivate: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review updated. | 
+S4 delete: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review deleted. |  ; DB rows: 0 ; public shows: False
+S5 name empty: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The reviewer name field is required.
+S5 name 256: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The reviewer name may not be greater than 255 characters.
+S5 rating 0: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The rating must be at least 1.
+S5 rating 6: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The rating may not be greater than 5.
+S5 rating 4.5: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The rating must be an integer.
+S5 text 2001: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The review text may not be greater than 2000 characters.
+S5 source yelp: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The selected source is invalid.
+S5 url abc: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The source url format is invalid.
+S5 date abc: 302 -> http://127.0.0.1:8105/admin/establishments/1/reviews/create |  | Error: The reviewed at is not a valid date.
+   rows created by invalid submits: 0
+S5 rating 1: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review saved. | 
+S5 rating 5 + text 2000: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review saved. | 
+S6 omit reviewed_at: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: Review saved. |  ; reviewed_at stored: 2026-11-22 21:49:54 (now UTC 2026-11-22T21:49:55)
+S7 establishment tab with property of E2 (5): 422
+S7 global page property_id=999 (nonexistent) => 302
+S7 global page property of tenant 2 (id    Illuminate\Database\UniqueConstraintViolationException   SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: establishments.tenant_id, establishments.slug (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\db5.sqlite, SQL: insert into "establishments" ("name", "slug", "country_code", "currency", "tenant_id", "is_active", "created_at", "updated_at") values (E T2 Est, e-t2-est, BJ, XOF, 2, 1, 2026-11-22 21:49:57, 2026-11-22 21:49:57))  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838    834Γûò             $exceptionType = $this->isUniqueConstraintError($e)    835Γûò                 ? UniqueConstraintViolationException::class    836Γûò                 : QueryException::class;    837Γûò   Γ₧£ 838Γûò             throw new $exceptionType(    839Γûò                 $this->getNameWithReadWriteType(),    840Γûò                 $query,    841Γûò                 $this->prepareBindings($bindings),    842Γûò                 $e,  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:584      PDOException::("SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: establishments.tenant_id, establishments.slug")  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:584      PDOStatement::execute()) => 302
+S8 global page create => 302 -> http://127.0.0.1:8105/admin/reviews | Success: Review saved. || Review saved.
+S8 global update => 302 | Success: Review updated. || Review updated. ; rating now 3
+S8 global delete => 302 | Success: Review deleted. || Review deleted.
+S9 XSS text on /reviews: raw '<script>alert(1)</script>' present: False ; escaped present: True
+Note/security: host of E1 PUT /admin/establishments/1/reviews/19 (review of E2) => 302; review now: {"reviewer_name":"E2 review EDITED by E1 host","rating":1,"establishment_id":2}
+Note/security: host of E1 DELETE same review => 302; still exists: 0
+S7 (re-run) global page with property of tenant 2 (property 9 est tenant=2) => 422; created: 0

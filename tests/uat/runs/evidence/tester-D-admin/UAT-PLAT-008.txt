@@ -1,0 +1,12 @@
+﻿step1 tenant B admin /admin/establishments -> 200; shows 'Afrik Appart Cotonou': False; shows 'UAT Residence Ouidah': False
+step2 GET /admin/establishments/1/edit -> 200
+step3 default review 1: PUT -> 302; DELETE -> 302; review now: null
+step4 B properties list has 'Appartement 401': False ; reservations list has 'UAT PA': False ; users list has admin@afrikappart.test: False host@: False guest@ (customer, null tenant): True ; reports mention 'UAT PA': False
+  direct URLs from tenant B: /admin/reservations/16 -> 404; /admin/properties/1/edit -> 200; /admin/users/4/edit (default host) -> 200
+  tenant B /admin/amenities -> 200; shows default categories ('Layout & Views'): False
+  tenant B data: establishment 6 (est tenant_id=2), property 33, reservation 233
+step5 default admin: list shows 'Tenant B Lodge': False; /admin/establishments/6/edit -> 200; /admin/reservations/233 -> 404; /admin/properties/33/edit -> 200; reservations list shows 'B Guest': False
+step6 tenant B /admin/audit-logs -> 200; contains default-tenant entries (e.g. 'd-uat-loft' or 'Appartement'): True; /admin/logs -> 200 shows other tenants' log lines (e.g. 'd-guest'): True
+confirm cross-tenant pages for tenant B admin: establishment 1 edit form contains value 'Afrik Appart Cotonou': True; property 1 edit contains 'Appartement 401': True; user 4 edit contains host@afrikappart.test: True
+tenant B admin PUT /admin/properties/1 (default tenant) -> 302 Loc=http://127.0.0.1:8104/admin/properties/1/edit#general; property 1 name now: Appartement 401 (edited by tenant B)
+restored by default admin: Appartement 401 (video_urls cleared to allow save)

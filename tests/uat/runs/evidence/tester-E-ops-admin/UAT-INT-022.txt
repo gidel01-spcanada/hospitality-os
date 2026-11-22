@@ -1,0 +1,10 @@
+﻿hosted int-feed-a.ics replaced by feed-b content; feed 27 before: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+S1 sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+S2 events: uat-a-002@example.test [2026-12-26..2026-12-28] | uat-b-004@example.test [2027-01-11..2027-01-13] |  ; ids/dup check count=2 rows, distinct uid=2
+S3 avail D+20..D+22 = True
+S4 avail D+30..D+32 = True
+S4 avail D+34..D+36 = False
+S5 second sync: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+S5 events: uat-a-002@example.test [2026-12-26..2026-12-28] | uat-b-004@example.test [2027-01-11..2027-01-13] | 
+S6 uat-b-004 now STATUS:CANCELLED: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+S6 events: uat-a-002@example.test [2026-12-26..2026-12-28] | 

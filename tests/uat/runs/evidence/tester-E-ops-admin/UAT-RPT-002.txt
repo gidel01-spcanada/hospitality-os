@@ -1,0 +1,19 @@
+﻿S1 January: GET /admin/reports?date_from=2026-01-01&date_to=2026-01-31 => 200  | period text: Period from 01 Jan 2026 to 31 Jan 2026 · 3
+S2 establishment=1 June: res=3 occN=3 sell=150 blocked=0 occ%=2 arr=2 dep=2 canc=1 canc%=33.3 bookedXOF=100000 bookedEUR=(none) outXOF=30000 collXOF=100000 collEUR=(none) attempts=2 succ%=50 reviews=1 avgRating=4 | property rows: "Appartement 401",=SUM(1+1),"Appartement 402","Appartement 403","Appartement 404"
+S3 establishment=1&property=5: GET /admin/reports?date_from=2028-06-01&date_to=2028-06-30&establishment=1&property=5 => 403 
+S4 property=1: res=2 occN=3 sell=30 blocked=0 occ%=10 arr=2 dep=2 canc=0 canc%=0 bookedXOF=100000 bookedEUR=(none) outXOF=30000 collXOF=100000 collEUR=(none) attempts=2 succ%=50 reviews=1 avgRating=4 | property rows: "Appartement 401"
+S5 date_to before date_from: GET /admin/reports?date_from=2028-06-30&date_to=2028-06-01 => 302 
+S6 exactly 366 days (2027-01-01..2028-01-01): GET /admin/reports?date_from=2027-01-01&date_to=2028-01-01 => 200 
+S6 367 days (2027-01-01..2028-01-02): GET /admin/reports?date_from=2027-01-01&date_to=2028-01-02 => 302 
+S7 date_from=abc: GET /admin/reports?date_from=abc => 302 
+S8 single day 2028-06-05: res=1 occN=1 sell=7 blocked=0 occ%=14.3 arr=1 dep=0 canc=0 canc%=0 bookedXOF=100000 bookedEUR=(none) outXOF=(none) collXOF=(none) collEUR=(none) attempts=0 succ%=0 reviews=0 avgRating=
+S9 establishment=999999: GET /admin/reports?establishment=999999 => 403 
+S10 host establishment=2 => 403 ; message: 
+S11 only date_from=2028-06-01 (date_to defaults to end of current month 2026-11-30 => before from): GET /admin/reports?date_from=2028-06-01 => 200  ; only date_from=2020-01-01: GET /admin/reports?date_from=2020-01-01 => 302 
+--- message re-check
+?date_from=2028-06-30&date_to=2028-06-01 => 302 back to http://127.0.0.1:8105/admin/reports; messages on page: 
+?date_from=2027-01-01&date_to=2028-01-02 => 302 back to http://127.0.0.1:8105/admin/reports; messages on page: 
+?date_from=abc => 302 back to http://127.0.0.1:8105/admin/reports; messages on page: 
+?date_from=2020-01-01 => 302 back to http://127.0.0.1:8105/admin/reports; messages on page: 
+S11 only date_from=2028-06-01 => 200; period text: Period from 01 Jun 2028 to 30 Nov 2026 · -547 day(s) Oper
+S10 host establishment=2 => 403; body text:  Access denied | Afrik Appart A Afrik Appart Error 403 Access denied You do not have permission to access this page. Back to home 

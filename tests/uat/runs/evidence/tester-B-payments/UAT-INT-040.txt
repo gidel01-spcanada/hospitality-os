@@ -1,0 +1,12 @@
+﻿S1 guest uploads proof.png (wise) -> 302; {"status":"pending_validation","attempts":[{"id":70,"provider":"wise","provider_reference":"wise-7gue0tslnfo1","status":"awaiting_validation","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued"]}
+S2 notes.txt after proof exists -> 422 (reservation already pending_validation; txt rejection shown in PAY-032)
+S4 staff proof download -> 200
+S5 other customer -> 403
+S6 guest with token -> 200
+S8 staff confirm without proof -> 302 http://127.0.0.1:8102/admin/reservations/173; status: pending_validation
+S7 staff confirm with proof -> 302 http://127.0.0.1:8102/admin/reservations/173
+S7 DB: {"status":"confirmed","attempts":[{"id":70,"provider":"wise","provider_reference":"WISE-UAT-1","status":"paid","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["payment_proof_submitted\/admin@afrikappart.test\/queued","payment_proof_submitted\/concierge@afrikappart.test\/queued","payment_proof_submitted\/host@afrikappart.test\/queued","receipt_issued\/b-cust1@example.test\/queued","reservation_status_updated\/b-cust1@example.test\/queued"]}
+   second confirm -> 302; receipts: 1
+S9 proof URL of reservation 173's attempt under another reservation id -> 404
+S3 interac not enabled -> 422 (PAY-032 S8 same rule).
+direct URL to stored proof reachable anonymously (see PAY-031): yes, 200.

@@ -1,0 +1,5 @@
+1 correct checkout_return -> 302 http://127.0.0.1:8103/reservations/2/checkout?token=<token> ; no flash text on landing page
+2 external host evil.example.test -> 302 http://127.0.0.1:8103/login ; no flash text on landing page
+3 same host, wrong token -> 302 http://127.0.0.1:8103/login ; no flash text on landing page
+4 same host, other path (/dashboard) -> 302 http://127.0.0.1:8103/login ; no flash text on landing page
+Re-check of step 1 landing text: checkout page shows 'Votre e-mail est confirmé et votre mot de passe a été mis à jour.' (FR of checkout.password_setup_complete); form carries hidden checkout_return.

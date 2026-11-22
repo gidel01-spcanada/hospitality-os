@@ -1,0 +1,39 @@
+/dashboard | guest=302 /login | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/account | guest=302 /login | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/account/preferences | guest=302 /login | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/account/security | guest=302 /login | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/messages | guest=302 /login | customer=200 | concierge=403 | host=403 | tenantadmin=403 | platformadmin=403
+/admin | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/reservations | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/reservations/create | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/bookings | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/messages | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/cleaning | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/cleaning/create | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/cleaning/generate | guest=302 /login | customer=403 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/reports | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/reports/export.csv | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/profile | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/preferences | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/establishments | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/establishments/create | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/properties | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/properties/create | guest=302 /login | customer=403 | concierge=403 | host=200 | tenantadmin=200 | platformadmin=200
+/admin/users | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/users/create | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/settings | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/amenities | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/reviews | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/audit-logs | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/admin/logs | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=200 | platformadmin=200
+/platform/tenants | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=403 | platformadmin=200
+/platform/tenants/create | guest=302 /login | customer=403 | concierge=403 | host=403 | tenantadmin=403 | platformadmin=404
+/reservation/resume | guest=302 /login | customer=404 | concierge=404 | host=404 | tenantadmin=404 | platformadmin=404
+/login | guest=200 | customer=302 /dashboard | concierge=302 /dashboard | host=302 /dashboard | tenantadmin=302 /dashboard | platformadmin=302 /dashboard
+/register | guest=200 | customer=302 /dashboard | concierge=302 /dashboard | host=302 /dashboard | tenantadmin=302 /dashboard | platformadmin=302 /dashboard
+/forgot-password | guest=200 | customer=302 /dashboard | concierge=302 /dashboard | host=302 /dashboard | tenantadmin=302 /dashboard | platformadmin=302 /dashboard
+/ | guest=200 | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/properties | guest=200 | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/about | guest=200 | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/faq | guest=200 | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200
+/contact | guest=200 | customer=200 | concierge=200 | host=200 | tenantadmin=200 | platformadmin=200

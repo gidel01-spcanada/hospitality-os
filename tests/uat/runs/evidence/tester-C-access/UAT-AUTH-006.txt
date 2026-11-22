@@ -1,0 +1,5 @@
+1 empty email: 302 http://127.0.0.1:8103/login [Le champ adresse email est obligatoire.]
+2 bad format: 302 [Le champ adresse email doit être une adresse email valide.]
+3 empty pw: 302 [Le champ mot de passe est obligatoire.]
+4 spaces around valid email + right pw: 302 http://127.0.0.1:8103/dashboard ; dashboard=200
+5 10000-char pw: 302 [Adresse e-mail ou mot de passe invalide.]

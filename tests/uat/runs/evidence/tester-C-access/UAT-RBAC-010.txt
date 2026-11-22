@@ -1,0 +1,10 @@
+setup: 18 customers uat-bulk-01..18 + 1 host uat-bulk-host inserted in local DB; total users: {"c":42}
+1 /admin/users: rows=15 pagination link page=2: True
+2 search=uat-bulk: rows=15; non-bulk emails present: 
+   page2 link keeps query: href="http://127.0.0.1:8103/admin/users?search=uat-bulk&amp;page=2"
+3 role=host: rows=9 emails: uat-bulk-host@example.test,uat-extrahost@example.test,tenant-admin-uat@example.test,uat-host@example.test,uat-admin2@example.test,uat-concierge@example.test,concierge@afrikappart.test,host@afrikappart.test,admin@afrikappart.test
+4 search=zzzz-none: rows=9 emails: uat-bulk-host@example.test,uat-extrahost@example.test,tenant-admin-uat@example.test,uat-host@example.test,uat-admin2@example.test,uat-concierge@example.test,concierge@afrikappart.test,host@afrikappart.test,admin@afrikappart.test
+5 search='%' -> 200 rows=15
+5 search='_' -> 200 rows=15
+6 search=uat-bulk&role=host: rows=9 emails: uat-bulk-host@example.test,uat-extrahost@example.test,tenant-admin-uat@example.test,uat-host@example.test,uat-admin2@example.test,uat-concierge@example.test,concierge@afrikappart.test,host@afrikappart.test,admin@afrikappart.test
+6b search=zzzz-none&role=customer: rows=9 emails: uat-bulk-host@example.test,uat-extrahost@example.test,tenant-admin-uat@example.test,uat-host@example.test,uat-admin2@example.test,uat-concierge@example.test

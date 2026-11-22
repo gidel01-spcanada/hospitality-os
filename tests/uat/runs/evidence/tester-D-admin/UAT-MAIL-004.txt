@@ -1,0 +1,5 @@
+﻿step1 payment link mail: Subject: Payment link for reservation AFK-GK52FJ-261122 | heading 'Complete your payment': True | amounts '100 000': True | total: PA is ready for payment. Payment method Total Nuit | checkout link with lang: http://127.0.0.1:8104/reservations/61/checkout?token=<token>&lang=en | register link with email: True
+step2 open checkout link logged out -> 200
+step3 receipt mail: Subject: Votre =?utf-8?Q?re=C3=A7u?= pour la =?utf-8?Q?r=C3=A9servation? AFK-WOFHIB-261122 | To: To: d-e2res@example.test | amount line: 254 XOF Taxe locale / séjour: 2 000 XOF Montant payé : 112 0(not found: Amount paid) | receipt link: http://127.0.0.1:8104/reservations/34/receipt?lang=fr
+step4 receipt link logged out -> 302 Loc=http://127.0.0.1:8104/login; as owner guest@ -> 403 (PDF generation fails: dompdf missing in vendor)
+step5 EUR reservation 62 DB: {"currency":"EUR","subtotal":"199.50","fees":"19.95","taxes":"9.98","total_amount":"229.43"} | mail amounts: ready for payment. Payment method Total Nuit(s) x 2 200 EUR Frais de service (10%) 20 EUR TVA (18% inclue) 30 EUR Taxe locale / séjour 10 EUR Amount due: 229 EU

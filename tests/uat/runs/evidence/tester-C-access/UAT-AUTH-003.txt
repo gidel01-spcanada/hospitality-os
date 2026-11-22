@@ -1,0 +1,4 @@
+POST /register crafted extra fields -> 302 http://127.0.0.1:8103/dashboard
+GET /admin -> 403 Access denied | Afrik Appart A Afrik Appart Error 403 Access denied You do not have permission to access this page. Back
+GET /platform/tenants -> 403 Access denied | Afrik Appart A Afrik Appart Error 403 Access denied You do not have permission to access this page. Back
+DB: {"role":"customer","is_admin":0,"is_platform_admin":0,"tenant_id":null,"is_active":1}

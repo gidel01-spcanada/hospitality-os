@@ -1,0 +1,12 @@
+﻿on_premise: /platform/tenants -> 200; GET /platform/tenants/create -> 404; POST -> 404 (see PLAT-004)
+--- cloud mode. step1 list -> 200: Établissements Propriétés Équipe Action Default default &middot; Actif 5 32 11 Suspendre UAT Tenant B uat-tenant-b &middot; contact-b@example.test Actif 1 1 2 Suspendre ! Confirmer cette action Annule
+step3 create -> 302 Loc=http://127.0.0.1:8104/platform/tenants | nts Paramètres du site Journaux Entités Succès : UAT Tenant Alpha a ét | tenants: [{"id":1,"name":"Default","slug":"default","status":"active"},{"id":2,"name":"UAT Tenant B","slug":"uat-tenant-b","status":"active"},{"id":3,"name":"UAT Tenant Alpha","slug":"uat-tenant-alpha","status":"active"}] | admin: {"role":"admin","tenant_id":3,"email_verified_at":"2026-11-22T22:36:53.000000Z"} | reset mail logged: 1
+step4 dup slug -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 3->3
+step4 dup admin email -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 3->3
+step4 slug bad slug! -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 3->3
+step4 empty name -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 3->3
+step5 slug blank -> 302; slug: uat-tenant-gamma
+step6 suspend -> 302 | nts Paramètres du site Journaux Entités Succès : UAT Tenant  | status suspended
+step7 (password set directly for test login (invitation flow covered in PLAT-009)) login while suspended -> http://127.0.0.1:8104/admin; /admin -> 302 Loc=http://127.0.0.1:8104/login (blocked by ResolveTenant)
+step6 activate -> 302 | nts Paramètres du site Journaux Entités Succès : UAT Tenant  | status active
+step8 tenant admin (not platform) GET /platform/tenants -> 403

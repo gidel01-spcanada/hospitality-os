@@ -1,0 +1,6 @@
+1 toggle P1 -> 200 {"property_id":1,"favorited":true}
+   web dashboard lists P1 under favorites: True
+2 toggle again -> 200 {"property_id":1,"favorited":false}
+3 unknown id: 404
+4 draft property (id 3): 200 {"property_id":3,"favorited":true} (web toggle returns 404)
+5 staff token: 403

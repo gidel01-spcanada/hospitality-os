@@ -1,0 +1,9 @@
+1 dashboard Receipt link for res 7: True
+1 owner GET /reservations/7/receipt -> 500; content-type: Content-Type: text/html; charset=utf-8; content-disposition: ; bytes=911; starts with: <!DOC; receipt number in DB: {"receipt_number":"RC-20261122-6YVF8PTV"}
+2 owner, reservation without receipt (5) -> 404
+3 other customer -> 403
+4 guest -> 302 /login
+5 staff same tenant (admin) -> 500
+   concierge same tenant -> 500
+   staff of another tenant: needs cloud-mode second tenant (see cloud phase)
+cause (storage/logs/laravel.log): Class Barryvdh\DomPDF\Facade\Pdf not found at ReceiptController.php:64; composer.json requires barryvdh/laravel-dompdf ^3.1 but vendor/barryvdh is absent in this checkout (environment, not application logic).

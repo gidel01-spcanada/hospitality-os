@@ -1,0 +1,7 @@
+﻿step1 R5=38 cancelled -> 302; status_updated rows: 0
+step2 availability T+170..T+173: disponible
+step3 create R6 same dates -> 302 Loc=http://127.0.0.1:8104/admin/reservations/39
+step4 reopen R5 to confirmed -> 302 http://127.0.0.1:8104/admin/reservations/38; DB R5=confirmed R6=pending
+step5 availability: non disponible; list search shows both: 38 / 39
+  overlapping active pairs on PA now: 1
+step6 admin export.ics -> 200; VEVENT count: 5; contains DTSTART for T+170: True

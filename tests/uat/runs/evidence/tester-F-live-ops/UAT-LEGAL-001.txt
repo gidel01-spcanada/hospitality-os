@@ -1,0 +1,6 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /privacy => 200; FR title "Politique de confidentialite"; EN (?lang=en) title "Privacy policy".
+6 <article> blocks FR and EN: collecte, finalites, conservation, partage et securite, securite des traitements, droits. 13 list items in both languages. No lorem/placeholder.
+Article 6 text: rights exercised via the contact page or by e-mail. GET /contact => 200.
+Footer on every fetched public page contains /privacy, /terms, /cookies links.
+Not verified: 390 px rendering (viewport meta is present).

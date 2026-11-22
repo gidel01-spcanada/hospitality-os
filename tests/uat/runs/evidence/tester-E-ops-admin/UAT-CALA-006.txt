@@ -1,0 +1,13 @@
+﻿Feeds now: [{"id":9,"property_id":1,"name":"UAT Airbnb","url":"http:\/\/127.0.0.1:9105\/feed-a.ics","is_enabled":1,"status":"fresh","last_sync_error":null,"last_successful_sync_at":"2026-11-22 20:44:37","last_sync_at":"2026-11-22 20:44:37"},{"id":21,"property_id":5,"name":"PB feed","url":"http:\/\/127.0.0.1:9105\/g.ics","is_enabled":0,"status":"stale","last_sync_error":null,"last_successful_sync_at":null,"last_sync_at":null}] [{"feed_id":9,"uid":"uat-event-1","summary":"Reserved","start_date":"2027-01-01 00:00:00","end_date":"2027-01-04 00:00:00"}]
+S1 public availability T+41..T+43 (2027-01-02..2027-01-04): available=False
+S2 public reserve T+41..T+43 => 302 -> http://127.0.0.1:8105/properties/appartement-401; errors: Ces dates ne sont pas disponibles.; reservations before=0 after=0
+S3 admin create T+41..T+43 => 302 -> http://127.0.0.1:8105/admin/reservations/create; errors: Error: The property is not available for these dates. | The property is not available for these dates.; reservations now=0
+S4 public availability T+43..T+45: available=True
+S4 admin create T+43..T+45 => 302 -> http://127.0.0.1:8105/admin/reservations/1; reservations now=1
+S5 disable feed 9 => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+S5 public availability T+41..T+43 with feed disabled: available=True
+S6 re-enable feed 9 => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+S6 after re-enable: available=False
+S7 feed 9 marked stale/last_successful_sync 45 min ago; public availability on free dates T+10..T+12: available=True; blocked dates still blocked T+41..T+43: available=False
+S6 delete feed 9 => 302 flash: Success: Calendar feed removed. || Calendar feed removed.
+S6 after delete: feeds=0 events=0 ; public availability T+41..T+43: available=True

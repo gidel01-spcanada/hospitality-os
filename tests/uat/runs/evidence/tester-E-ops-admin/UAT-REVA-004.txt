@@ -1,0 +1,11 @@
+﻿S1 upload booking-reviews.csv (format booking): 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 3 skipped. | 
+S2 rows: UAT Guest A src=booking r=5 est=1 tenant=1 at=2026-02-10 00:00:00 active=1 text=[Great\n\nClean flat\n\nNote: Noisy street] url= | UAT Guest B src=booking r=4 est=1 tenant=1 at=2026-02-11 00:00:00 active=1 text=[Fine\n\nGood location] url= | 
+S3 re-import: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 3 skipped. |  ; UAT Guest A rows: 2
+S4 Guest A score 5.0: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 3 skipped. |  ; UAT Guest A src=booking r=5 est=1 tenant=1 at=2026-02-10 00:00:00 active=1 text=[Great\n\nClean flat\n\nNote: Noisy street] url= | UAT Guest A src=booking r=5 est=1 tenant=1 at=2026-02-10 00:00:00 active=1 text=[Great\n\nClean flat\n\nNote: Noisy street] url= | UAT Guest A src=booking r=3 est=1 tenant=1 at=2026-02-10 00:00:00 active=1 text=[Great\n\nClean flat\n\nNote: Noisy street] url= | 
+S5 paste CSV in textarea: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 3 skipped. | 
+S6 neither file nor text: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | Select a file or paste the CSV content to import.
+S7 .pdf: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file must be a file of type: csv, txt.
+S7 csv over 5 MB (5300 KB): 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file failed to upload.
+S7 .xlsx: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file must be a file of type: csv, txt.
+S8 format trustpilot: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The selected format is invalid.
+S9 unparsable date row: 500

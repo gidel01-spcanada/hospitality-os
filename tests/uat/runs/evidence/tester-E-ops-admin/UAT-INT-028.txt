@@ -1,0 +1,12 @@
+﻿INT-028 anonymous: GET /admin/properties/1/calendar => 302 -> http://127.0.0.1:8105/login | GET /admin/properties/1/calendar/export.ics => 302 -> http://127.0.0.1:8105/login
+INT-028 customer GET export: GET /admin/properties/1/calendar/export.ics => 403
+INT-028 customer POST /admin/properties/1/calendar/feeds/23/sync => 403
+INT-028 customer last_sync_at unchanged: True
+INT-028 concierge: GET /admin/properties/1/calendar/feeds/create => 403
+INT-028 concierge POST /admin/properties/1/calendar/feeds => 403
+INT-028 host-of-E2 on P (property 1): GET /admin/properties/1/calendar => 403 ; GET /admin/properties/1/calendar/export.ics => 403
+INT-028 host-of-E2 POST /admin/properties/1/calendar/feeds/23/sync => 403 ; POST /admin/properties/1/calendar/feeds/23 => 403
+INT-028 feed 23 still present, last_sync_at unchanged: 1 2026-11-22 20:56:02  (before: 2026-11-22 20:56:02)
+INT-028 host-of-E2 sanity on own property 5: GET /admin/properties/5/calendar => 200
+INT-028 admin POST sync feed of other property via /properties/1/.../feeds/21/sync => POST /admin/properties/1/calendar/feeds/21/sync => 404
+INT-028 tenant-2 admin: GET /admin/properties/1/calendar => 200 ; GET /admin/properties/1/calendar/export.ics => 200

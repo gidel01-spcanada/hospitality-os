@@ -1,0 +1,6 @@
+﻿S1 confirm dialog markup present: True
+pre: listed(free)? False
+S3 POST cancel -> 302
+  flash: Votre réservation a été annulée. ; options hidden: True
+S4/5 DB: {"status":"cancelled","attempts":[],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/b-guest1@example.test\/queued"]}; dates listed after cancel: True
+S6 re-POST cancel -> 422

@@ -1,0 +1,13 @@
+﻿detail uat-apt-a: 3 img tags; missing alt: 0; empty alt: 0
+  img: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-28-min-55-s-card.webp" alt="Uat apt a, appartement en location courte durée à Cotonou - photo 1" cla
+  img: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-28-min-55-s-card.webp" alt="Uat apt a, appartement en location courte durée à Cotonou - photo 1" cla
+  img: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-28-min-55-s-card.webp" alt="Uat apt a, appartement en location courte durée à Cotonou - photo 2" cla
+thumb buttons: aria-label="Voir la photo 1", aria-label="Voir la photo 2"
+prev/next: aria-label="Photo précédente", aria-label="Photo suivante"
+iframe: <iframe class="location-map" title="Localisation" src="https://www.google.com/maps?q=6.3703000,2.3912000&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+maps link: <a class="inline-link" href="https://maps.google.com/?q=6.3703,2.3912" target="_blank" rel="noopener noreferrer">
+/ : img=3 missing alt=0 empty alt=0; sample: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-28-min-55-s-card.webp" alt="Uat apt f, appartement en locati
+/properties : img=10 missing alt=0 empty alt=0; sample: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-28-min-55-s-card.webp" alt="Uat apt f, appartement en locati
+/establishments/afrik-appart-cotonou : img=9 missing alt=0 empty alt=0; sample: <img src="http://127.0.0.1:8101/uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-22-min-26-s-card.webp" alt="Appartement 401" class="property
+5 property without photos (uat-noimg, synthetic) detail => 200; img tags: 1; srcs: src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&amp;fit=crop&amp;w=1200&amp;q=80"
+5 listing card for uat-noimg: img tags=1; src=src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&amp;fit=crop&amp;w=1200&amp;q=80" ; placeholder markup: 

@@ -1,0 +1,32 @@
+setup (DB, local throwaway): establishment E2 id=2 created in tenant 1; property id=4 (appartement-404) moved to E2; E1 keeps properties 1-3
+setup: reservation on E2 property -> 302
+setup: GET /messages 200; form fields: viewport,description,robots,_token,establishment_id,body
+   reservations: {"id":1,"property_id":1,"establishment_id":1} {"id":3,"property_id":2,"establishment_id":1} {"id":2,"property_id":3,"establishment_id":1}
+   threads: {"id":1,"customer_id":17,"establishment_id":1} {"id":2,"customer_id":17,"establishment_id":2}; reservations: {"id":1,"establishment_id":1} {"id":3,"establishment_id":1} {"id":2,"establishment_id":1} {"id":4,"establishment_id":2}
+1 /admin/establishments: lists E1 (True) lists E2 (False)
+1 /admin/properties: Appartement 401=True 402=True 403=True 404(E2)=False
+2 /admin/reservations: links to reservation ids: 
+2 /admin/messages: links to threads: admin/messages/1
+3 GET /admin/properties/4/edit (E2) -> 403
+   control: GET /admin/properties/1/edit (E1) -> 200
+4 GET /admin/reservations/4 (E2) -> 403
+   GET /admin/reservations/4/edit -> 403
+   control GET /admin/reservations/1 (E1) -> 200
+5 GET /admin/messages/2 (E2) -> 403
+   POST reply to E2 thread -> 403
+   messages in E2 thread: {"c":1}
+   control GET /admin/messages/3 1 (E1) -> 0
+6 GET E2 hosts/create -> 403
+   GET E1 hosts/create -> 200
+   POST E2 hosts store -> 403
+7 property selector on create form lists E2 option: False
+7 POST /admin/properties establishment_id=2 -> 302
+8 /admin/users -> 403; /admin/settings -> 403
+2 (corrected) /admin/reservations rows: Appartement 402, Appartement 403, Appartement 401 -> E2 property Appartement 404 absent: True
+5 control E1 thread 1 -> 200
+7 (valid payload) POST /admin/properties establishment_id=2 -> 403; properties with slug uat-forbidden: {"c":0}
+   control own E1 create -> 302 /admin/properties/5/edit
+   create-form establishment selector lists E2: False
+6 host adds another host on E1 -> 302 /admin/establishments/1/edit#hosts; created user id=24 role={"role":"host"}
+6 host removes that host from E1 -> 302; remaining assignment rows for it: {"c":0}
+6 host removes host on E2 -> 403

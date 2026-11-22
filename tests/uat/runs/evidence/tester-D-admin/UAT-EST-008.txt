@@ -1,0 +1,17 @@
+﻿setup: seeded EUR->CAD rate in cache to avoid external call
+step1 enable fedapay/paypal/pay_later/interac -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#payments
+step2 DB payment_methods: {"pay_later":{"enabled":true,"mode":"manual","instr":"Merci de pr\u00e9voir des esp\u00e8ces (cash) en m"},"fedapay":{"enabled":true,"mode":"sandbox","instr":"Use mobile money"},"paypal":{"enabled":true,"mode":"sandbox","instr":""},"cinetpay":{"enabled":false,"mode":"sandbox","instr":""},"mpesa":{"enabled":false,"mode":"sandbox","instr":""},"interac":{"enabled":true,"mode":"sandbox","instr":""},"wise":{"enabled":false,"mode":"sandbox","instr":""},"revolut":{"enabled":false,"mode":"sandbox","instr":""}}
+  checkout reservation 15 for guest@afrikappart.test on E2
+step3 guest GET checkout -> 200 Loc=; offered providers: fedapay,pay_later,interac
+step4 disable paypal -> 302; offered: fedapay,pay_later,interac
+step5 disable all -> 302; offered: ''; DB enabled flags: {"pay_later":false,"fedapay":false,"paypal":false,"cinetpay":false,"mpesa":false,"interac":false,"wise":false,"revolut":false}; page text near 'paiement': (not found: Aucun)
+step6 instructions 501 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | Moyens de paiement Paiement sur place Instructions FedaPay Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier . || Instructions PayPal Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier .
+step6 instructions 500 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#payments
+step7 method email bad -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | email doit être une adresse email valide. || Moyens de paiement Paiement sur place Instructions FedaPay Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier . || Instructions PayPal Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier .
+step8 mode staging -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit | mode est invalide. || Moyens de paiement Paiement sur place Instructions FedaPay Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier . || Instructions PayPal Mode Test (sandbox) Production — Configurez les identifiants de production dans le fichier .
+step9 general-tab save keeps wise config: {"enabled":true,"mode":"sandbox","instructions":"Wise transfer","email":"wise@example.test","security_question":"","security_answer":""}
+step3/4 recheck (PayPal renders as a JS SDK button, not a provider radio): with paypal+pay_later+wise enabled -> paypal-button-container present: True
+  after disabling paypal -> paypal-button-container present: False
+step5 all disabled: page text sample: (not found: Choisissez) || (not found: disponible)
+restored pay_later + wise enabled on E2: {"pay_later":true,"fedapay":false,"paypal":false,"cinetpay":false,"mpesa":false,"interac":false,"wise":true,"revolut":false}
+step5 all disabled: checkout text after Total: Total 112 000 XOF Continuer vers le paiement Référence AFK-DIITYM-261122 En attente Établissement UAT Residence Ouidah Logement UAT Tax Prop Dates 08/10/2027 → 10/10/2027 Total 112 000 XOF ≈ 73 467 184,00 EUR Client Guest Customer Montants Nuit(s) x 2 100 000 XOF Frais de service (10%) 10 000 XOF TVA (18% inclue) 15 254 XOF Taxe locale / séjour 2 000 XOF Annuler A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +229 00 

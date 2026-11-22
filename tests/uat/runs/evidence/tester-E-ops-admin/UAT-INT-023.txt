@@ -1,0 +1,13 @@
+﻿restore original; sync: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed. | status=fresh en=1 last_success=2026-11-22 21:03:11 err=[] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+outage HTTP 500 : sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+   row: status=stale en=1 last_success=2026-11-22 21:03:11 err=[Calendar feed request failed with status 500] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+   avail D+20..D+22 = False (event D+20..D+23 should still block)
+outage HTTP 404 : sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+   row: status=stale en=1 last_success=2026-11-22 21:03:11 err=[Calendar feed request failed with status 404] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+   avail D+20..D+22 = False (event D+20..D+23 should still block)
+outage slow (18 s): sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed. elapsed=15s
+   row: status=stale en=1 last_success=2026-11-22 21:03:11 err=[cURL error 28: Operation timed out after 15003 milliseconds with 0 bytes received (see https://curl.se/libcurl/c/libcurl-errors.html) for ht] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+S4 new feed to non-existent host: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Error: Calendar feed saved, but the initial sync failed. Retry with the Sync button.
+   row: status=stale err=[cURL error 6: Could not resolve host: no-such-host.invalid (see https://curl.se/libcurl/c/libcurl-errors.html) for https://no-such-host.invalid/cal.ics]
+S5 restore + sync: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+   row: status=fresh en=1 last_success=2026-11-22 21:03:35 err=[] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 

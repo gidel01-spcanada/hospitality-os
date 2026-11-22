@@ -1,0 +1,16 @@
+﻿step1 confirmed + note -> 302 http://127.0.0.1:8104/admin/reservations/37 | nts Paramètres du site Journaux Entités Succès : Statut de l | DB: {"status":"confirmed","notes":"Initial note\r\nGuest called"}
+step2 outbox: []
+step3 same status again -> 302; status_updated rows: 0
+step4 checked_in -> rows 0; completed -> rows 0; completed payload (signature redacted): 
+step5 -> pending : 302 DB status=pending
+step5 -> pending_payment : 302 DB status=pending_payment
+step5 -> pending_validation : 302 DB status=pending_validation
+step5 -> cancelled : 302 DB status=cancelled
+step6 status=payment_failed -> 302 Loc=http://127.0.0.1:8104/admin/reservations/37 |  | DB status=cancelled
+step6 status=foo -> 302 Loc=http://127.0.0.1:8104/admin/reservations/37 |  | DB status=cancelled
+step7 note 501 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/37 |  | DB status=cancelled
+step8 host on E2 reservation 34 -> 403; other tenant: not run
+step9 customer view of R3 after confirm shows 'Confirm': True
+step2/4 corrected outbox check (email_outbox has no reservation_id column): rows for d-r4@example.test: reservation_created 1, reservation_status_updated 7 (confirmed, checked_in, completed, pending, pending_payment, pending_validation, cancelled); the repeated 'confirmed' added none.
+completed payload (signature redacted): {"locale":"en","reservation_ref":"AFK-LYQEEJ-261122","property_name":"UAT PA","subject":"Reservation status update","checkout_url":"http:\/\/127.0.0.1:8104\/reservations\/37\/checkout?token=<token>&lang=en","check_in":"2027-05-01","check_out":"2027-05-03","total_amount":"115000.00","currency":"XOF","status":"completed","price_lines":[{"label":"Nuit(s) x 2","amount":"100000.00","currency":"XOF"},{"label":"Frais de service (10%)","amount":"10000.00","currency":"XOF"},{"label":"TVA (18% inclue)","amount":"15254.24","currency":"XOF"},{"label":"Taxe locale \/ s\u00e9jour","amount":"5000.00","currency":"XOF"}],"review_url":"http:\/\/127.0.0.1:8104\/review\/37?expires=<ts>&signature=<sig>","google_
+confirmed payload locale: "locale":"en"

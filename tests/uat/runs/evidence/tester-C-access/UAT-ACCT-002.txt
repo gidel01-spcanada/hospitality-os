@@ -1,0 +1,14 @@
+1 status=all -> 200: 11,8,9,6,7,5
+2 status=pending -> 200: 11,5
+2 status=pending_payment -> 200: 6
+2 status=pending_validation -> 200: 
+2 status=payment_failed -> 200: 
+2 status=confirmed -> 200: 7
+2 status=checked_in -> 200: 
+2 status=completed -> 200: 8
+2 status=cancelled -> 200: 9
+3 status=bogus -> 200: 11,6,7,5 (same as default: 200: 11,6,7,5)
+4 status[]=x -> 500
+5 cancelled: Pay/Cancel buttons present in list: False
+   filter option labels: active=Active reservations; all=All reservations; pending=Pending; pending_payment=Pending payment; pending_validation=Pending payment validation; payment_failed=Payment failed; confirmed=Confirmed; checked_in=Checked in; completed=Completed; cancelled=Cancelled
+   select has auto-submit: True

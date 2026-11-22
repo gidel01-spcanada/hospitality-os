@@ -1,0 +1,21 @@
+﻿S1 anonymous GET S1 (Awa share) => 200; contains Awa: True; contains Fatou: False; property names: Appartement 401,Appartement 402,E Prop B ; instructions shown ('Awa private-check'): True
+S2 page source contains 'private-guest@example.test': False
+S2 page source contains 'CLEAN-PRIVATE-GUEST': False
+S2 page source contains '22911112222': False
+S2 page source contains 'export-guest': False
+S3 PDF => 500; CT=text/html; charset=utf-8; Content-Disposition: ; starts %PDF: <!DO ; size=957
+S3 PDF MediaBox (landscape A4 = 841.89 x 595.28): 
+S4 S2 (all assignees, 30-day) => 200; Awa: True; Fatou: True
+S5 expired share (expires_at set 1 min in past via DB) page => 404; pdf => 404
+S6 /cleaning-schedule/deadbeef => 404
+S7 reload S1: new in-period visit shown: True; out-of-period visit shown: False
+S7 property-2-only share: shows property-2 visit NEW-IN-PERIOD: False; shows property-1 visit 'Awa private-check': False
+S8 html lang fr: <html lang="fr" title: <title>Page introuvable | Afrik Appart | en: <html lang="fr" title: <title>Page introuvable | Afrik Appart
+--- re-run of S3/S5/S7/S8 (earlier lines for these were invalid: tester-script variable clash broke the admin session)
+S3 PDF: GET /cleaning-schedule/<token>/pdf => 500; laravel.log: 'Class "Barryvdh\DomPDF\Facade\Pdf" not found' at CleaningScheduleController.php:234. composer.json/lock require barryvdh/laravel-dompdf but vendor/barryvdh is missing in this checkout => environment gap, PDF not verifiable here.
+S5 new share before expiry => 200
+S5 same share after expires_at set 1 min in the past (DB edit) page => 404; pdf => 404
+S7 property-2-only share => 200: shows property-2 visit NEW-IN-PERIOD: True; shows property-1 visit 'Awa private-check': False
+S8 ?lang=fr => 200 <html lang="fr" <title>Planning des visites de ménage | h1: Planning des visites de ménage
+S8 ?lang=en => 200 <html lang="fr" <title>Planning des visites de ménage | h1: Planning des visites de ménage
+S8: public cleaning routes have no 'locale' middleware in routes/web.php, so ?lang=en has no effect; page always French (default locale).

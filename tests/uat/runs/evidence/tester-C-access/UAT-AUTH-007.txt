@@ -1,0 +1,24 @@
+admin login -> 302 http://127.0.0.1:8103/admin
+GET edit -> 200
+   <input type="hidden" name="_token" value="<token>" autocomplete="off">                    <button type="submit" class="btn btn-ghost" aria-label="Déconnexion" title="Déconnexion">
+   <input type="hidden" name="_token" value="<token>" autocomplete="off">  <input type="hidden" name="_method" value="PUT">                 <div class="form-grid">
+   <div><label for="name">Nom</label><input id="name" name="name" value="Inactive UAT" required></div>
+   <div><label for="email">Email</label><input id="email" type="email" name="email" value="uat-inactive@example.test" required></div>
+   <div><label for="role">Rôle</label><select id="role" name="role"><option value="customer" selected>Client</option><option value="concierge" >Concierge</option><option value="host" >Hôte</option><option value="admin" >Administrateur</option></select></div>
+   <div><label for="locale">Langue</label><select id="locale" name="locale"><option value="fr" >Français</option><option value="en" selected>English</option></select></div>
+   <select id="establishments" name="establishments[]" multiple size="5">
+   <label class="checkbox-field"><input type="checkbox" name="email_verified" value="1" ><span>Email vérifié</span></label>
+   <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" checked><span>Compte actif</span></label>
+   <label class="checkbox-field"><input type="checkbox" name="email_booking_updates" value="1" checked><span>Mises à jour de réservation</span></label>
+   <label class="checkbox-field"><input type="checkbox" name="email_message_updates" value="1" checked><span>Notifications de nouveaux messages</span></label>
+   <label class="checkbox-field"><input type="checkbox" name="email_marketing" value="1" ><span>Offres marketing</span></label>
+   <label class="checkbox-field"><input type="checkbox" name="email_newsletter" value="1" ><span>Newsletter</span></label>
+customer session before: /dashboard -> 200
+step1 browser-faithful PUT (is_active key omitted as unchecked checkbox) -> 302 http://127.0.0.1:8103/admin/users
+DB is_active after: {"is_active":1}
+customer reload /dashboard -> 200 
+explicit is_active=0 PUT -> 302 http://127.0.0.1:8103/admin/users; DB: {"is_active":0}
+customer reload /dashboard -> 302 http://127.0.0.1:8103/login
+  login page err=[Ce compte est inactif.]
+step3 login again -> 302 http://127.0.0.1:8103/login err=[Adresse e-mail ou mot de passe invalide.]
+step4 reactivated login -> 302 http://127.0.0.1:8103/dashboard

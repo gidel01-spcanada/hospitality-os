@@ -1,0 +1,4 @@
+﻿S1 XOF checkout: mpesa offered: False
+S2 KES checkout: mpesa offered: True; label: M-Pesa (KES); inputs shown for mpesa: _token,provider
+S3 start mpesa -> 302; {"status":"pending_payment","attempts":[{"id":46,"provider":"mpesa","provider_reference":"mpesa-sandbox-ZPH6C2VIADFY","status":"created","amount":"10000.00","currency":"KES"}],"lines":[],"receipts":0,"outbox":[]}
+[workaround] S4 (sandbox) signed paid -> 200 {"ok":true,"provider":"mpesa","status":"ignored"}; pending_payment

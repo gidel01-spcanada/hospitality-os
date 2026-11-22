@@ -1,0 +1,13 @@
+﻿step1 all empty -> 422 (0s) {"message":"Saisissez au moins un r\u00e9sum\u00e9 ou une description \u00e0 am\u00e9liorer.","errors":{"copy":["Saisissez au moins un r\u00e9sum\u00e9 ou une description \u00e0 am\u00e9liorer."]}}
+step2 summary_fr 2001 -> 422 (0s) {"message":"Le champ summary fr ne peut pas d\u00e9passer 2000 caract\u00e8res.","errors":{"summary_fr":["Le champ summary fr ne peut pas d\u00e9passer 2000 caract\u00e8res."]}}
+step2 description_fr 10001 -> 422 (0s) {"message":"Le champ description fr ne peut pas d\u00e9passer 10000 caract\u00e8res.","errors":{"description_fr":["Le champ description fr ne peut pas d\u00e9passer 10000 caract\u00e8res."]}}
+step2 summary_fr 2000 + description_fr 10000 (pass validation, reach provider step) -> 503 (0s) {"message":"L\u2019assistant de r\u00e9daction n\u2019est pas encore configur\u00e9."}
+step6 host on unassigned E2 property 17 -> 403 (0s) {
+    "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis."
+}
+step6b host on own E1 property 5 -> 503 (0s) {"message":"L\u2019assistant de r\u00e9daction n\u2019est pas encore configur\u00e9."}
+--- with stub provider and PROPERTY_COPY_DAILY_LIMIT=2 (admin already used 1 success in PROP-016; cached repeat also counts as a hit)
+step3 request A -> 429 (0s) {"message":"Votre limite quotidienne d\u2019am\u00e9liorations a \u00e9t\u00e9 atteinte. R\u00e9essayez demain."}
+step3 request B (over limit) -> 429 (0s) {"message":"Votre limite quotidienne d\u2019am\u00e9liorations a \u00e9t\u00e9 atteinte. R\u00e9essayez demain."}
+step4 other admin dadmin-1 same day -> 200 (0s) {"suggestion":{"summary_fr":"Appartement lumineux.","description_fr":"Appartement lumineux pres du centre, 2 chambres.","summary_en":"Bright apartment.","description_en":"Bright apartment near the centre, 2 bedrooms."}}
+step5 next day: not run (would need clock change or cache reset).

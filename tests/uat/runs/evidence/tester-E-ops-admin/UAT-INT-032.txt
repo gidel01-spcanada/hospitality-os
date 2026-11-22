@@ -1,0 +1,6 @@
+﻿S1 blank textarea => 302; error shown: False ; rows created: 0
+S2 import generic.csv: 302 -> http://127.0.0.1:8105/admin/reviews | Success: 3 reviews imported. || 3 reviews imported. | 
+S3 rows: UAT Reviewer One src=google r=5 est=null tenant=1 at=2026-11-22 21:53:16 active=1 text=[Great stay] url=https://example.test/r/1 | UAT Reviewer Two src=booking r=5 est=null tenant=1 at=2026-11-22 21:53:16 active=1 text=[Rating above range] url= | UAT Reviewer Three src=google r=1 est=null tenant=1 at=2026-11-22 21:53:16 active=1 text=[Zero rating] url= | 
+S4 re-import: 302 -> http://127.0.0.1:8105/admin/reviews | Success: 3 reviews imported. || 3 reviews imported. |  ; 'UAT Reviewer One' rows now: 2
+S5 host GET /admin/reviews => 403; concierge => 403
+Note: public /reviews shows 'UAT Reviewer One': True

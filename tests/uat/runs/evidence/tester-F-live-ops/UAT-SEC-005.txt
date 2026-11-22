@@ -1,0 +1,4 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /health => 200 application/json: {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"2026-11-22T21:24:53+00:00"}
+GET /up => 200 text/html.
+Disclosure recorded: environment name "production" and exact PHP version 8.5.13 are public.

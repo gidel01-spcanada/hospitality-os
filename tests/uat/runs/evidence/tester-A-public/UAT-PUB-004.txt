@@ -1,0 +1,12 @@
+﻿1 none /properties => 200 fixtures: [uat-apt-f,uat-apt-g,uat-apt-b,uat-apt-a,uat-apt-e,uat-villa-c] total=10
+2 E2 /properties?establishment=2 => 200 fixtures: [uat-villa-c] total=1
+3 guests5 /properties?guests=5 => 200 fixtures: [uat-villa-c] total=2
+4 br2 /properties?bedrooms=2 => 200 fixtures: [uat-apt-a,uat-villa-c] total=5
+5 studio /properties?property_type=studio => 200 fixtures: [uat-apt-b] total=1
+6 price /properties?min_price=30000&max_price=50000 => 200 fixtures: [uat-apt-a,uat-apt-e] total=5
+7 wifi /properties?amenities[]=70 => 200 fixtures: [uat-apt-a] total=1
+8 flex /properties?flexible_cancellation=1 => 200 fixtures: [uat-apt-f,uat-apt-g,uat-apt-b,uat-apt-a,uat-apt-e] total=9
+combo /properties?guests=5&bedrooms=2&property_type=villa&flexible_cancellation=0 => 200 fixtures: [uat-villa-c] total=1
+combo2 /properties?establishment=2&guests=5&bedrooms=2 => 200 fixtures: [uat-villa-c] total=1
+amen combo /properties?amenities[]=70&amenities[]=71&guests=3 => 200 fixtures: [uat-apt-a] total=1
+Filter counter FR (bedrooms=2): '1 filtre actif'; EN: '1 active filter'; EN 2 filters: '2 active filters'; Reset link href /properties (observed).

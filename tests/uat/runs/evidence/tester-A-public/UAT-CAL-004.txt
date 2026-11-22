@@ -1,0 +1,20 @@
+﻿stub ICS served at http://127.0.0.1:9101/cal.ics with events stub-ev1 D+60..D+63 and stub-cancelled D+70..D+73 (STATUS:CANCELLED); feed 'A stub feed' on uat-apt-f
+1 sync (CalendarFeedSyncService, same service the admin sync uses) => sync ok=true
+feed enabled=true status=fresh error=null events=stub-ev1
+2/3 D+60..63 enabled feed => available=False; in listing=False
+2b D+70..73 (cancelled event not stored) => available=True; in listing=True
+4 disable => feed enabled=false status=fresh error=null events=stub-ev1
+4 D+60..63 after disable => available=True; in listing=True
+4b re-enable => feed enabled=true status=fresh error=null events=stub-ev1
+5 stub emptied; before sync => available=False; in listing=False
+5 sync => sync ok=true; feed enabled=true status=fresh events=(none)
+5 after sync => available=True; in listing=True
+6 prep: event restored in stub and synced (events=stub-ev1); then stub ICS removed (HTTP 503)
+6 sync => sync ok=false; status=stale; last_sync_error='Calendar feed request failed with status 503'; events kept=stub-ev1
+6 guest view with stale imported events => available=False; in listing=False
+Note: CalendarFeedSyncService::sync sets is_enabled=true on every successful sync, so syncing a disabled feed re-enables it (code read, app/Services/CalendarFeedSyncService.php ~line 40).
+5 sync => 
+5 after sync => available=False; in listing=False
+6 prep: restore event and sync => 
+6 stub returns 503, sync => 
+6 guest view with stale events => available=False; in listing=False

@@ -1,0 +1,4 @@
+﻿setup customer flags: {"email_booking_updates":false,"email_message_updates":false,"email_marketing":false,"email_newsletter":false}
+  /account/preferences -> 200; booking-updates wording: Experience Contact My account Log out Reservations Messages Profile Preferences Security Customer account Preferences Manage your identity, language, and commun
+step1 outbox rows created despite opt-out: [{"t":"staff_account_invitation","s":"queued","err":""},{"t":"reservation_created","s":"queued","err":""},{"t":"reservation_status_updated","s":"queued","err":""}]
+step2 send -> Sent reservation_created notification to d-optout@example.test. | Sent reservation_status_updated notification to d-optout@example.test. | Processed 2 email notification(s). ; mails in log for d-optout: 3

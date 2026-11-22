@@ -1,0 +1,15 @@
+1 customer [POST /admin/users] -> 403 
+2a concierge [POST /admin/properties] -> 403 
+2b concierge [POST /admin/establishments] -> 403 
+3 concierge [DELETE /admin/reservations/2] -> 403 
+4a host [DELETE /admin/reservations/2] -> 403 
+4b host [POST /admin/settings] -> 403 
+4c host [PUT /admin/users/2] -> 403 
+5 customer [PATCH /admin/reservations/1/status] -> 403 
+6 tenant admin (non-platform) [POST /platform/tenants/1/suspend] -> 403 
+7 guest [POST /admin/users] -> 302 /login
+7 guest [POST /admin/properties] -> 302 /login
+7 guest [DELETE /admin/reservations/2] -> 302 /login
+7 guest [PATCH /admin/reservations/1/status] -> 302 /login
+7 guest [POST /platform/tenants/1/suspend] -> 302 /login
+DB after: reservations={"id":1,"status":"pending"} {"id":2,"status":"pending"} ; users uat-rbac exists={"c":0} ; tenants={"id":1,"status":"active"}

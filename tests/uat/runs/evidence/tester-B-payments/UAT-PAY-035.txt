@@ -1,0 +1,1 @@
+﻿Not executed end-to-end: GET /reservations/{id}/receipt returns HTTP 500 for the owner because class Barryvdh\DomPDF\Facade\Pdf is not found (vendor/barryvdh missing though composer.json requires barryvdh/laravel-dompdf ^3.1). See UAT-PAY-036 and UAT-INT-039 evidence.

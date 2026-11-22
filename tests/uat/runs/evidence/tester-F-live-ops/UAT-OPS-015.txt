@@ -1,0 +1,5 @@
+﻿Static inspection of .github (no GitHub access).
+ci.yml: on push to main/master and pull_request; PHP 8.3, Node 20, sqlite :memory:, QUEUE_CONNECTION=sync; steps composer install, npm ci, npm run build, tests.
+deploy.yml: trigger workflow_dispatch only (input environment), job build-release with environment: production, runs scripts/build-release.sh, appleboy/scp-action with secrets SFTP_HOST, SFTP_USERNAME, SFTP_PRIVATE_KEY, SFTP_PORT, APP_REMOTE_PATH, PUBLIC_REMOTE_PATH. No post-deploy validation or migration step.
+dependabot.yml: composer (weekly) and npm (weekly).
+Not executed: PR/CI runs, branch protection, environment reviewers, secrets list, staging dispatch, log masking (need GitHub access).

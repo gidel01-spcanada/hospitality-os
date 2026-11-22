@@ -1,0 +1,5 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+Step1: GET /this-page-does-not-exist => 404 FR page with "Page introuvable".
+Step2: GET /missing-page-for-locale-test?lang=en => 404, <html lang="en">, "Error 404", "Page not found".
+Step7: no stack trace, file path, SQL or env values in the 404 bodies fetched.
+Steps 3 (customer 403), 4 (419), 5 (429), 6 (422), 8 (500): not executed (need login or POST on live, forbidden).

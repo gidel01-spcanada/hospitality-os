@@ -1,0 +1,7 @@
+﻿cfg 1: {"vat_percent":"18.00","vat_included":true,"city_tax_type":"percent","city_tax_amount":"5.00","service_fee_percent":"10.00"}
+cfg 1 estimate=138000; checkout lines: Amounts Night(s) x 3 120 000 XOF Service fee (10%) 12 000 XOF VAT (18% incl.) 18 305 XOF City / Local tax 6 000 XOF Pay on arrival
+cfg 2: {"vat_percent":"18.00","vat_included":false,"city_tax_type":"per_night","city_tax_amount":"1000.00","service_fee_percent":"10.00"}
+cfg 2 estimate=158760; checkout lines: Amounts Night(s) x 3 120 000 XOF Service fee (10%) 12 000 XOF VAT (18%) 23 760 XOF City / Local tax 3 000 XOF Pay on arrival
+cfg 3: {"vat_percent":"18.00","vat_included":true,"city_tax_type":"per_guest_night","city_tax_amount":"500.00","service_fee_percent":"10.00"}
+cfg 3 estimate=136500; checkout lines: Amounts Night(s) x 3 120 000 XOF Service fee (10%) 12 000 XOF VAT (18% incl.) 18 305 XOF City / Local tax 4 500 XOF Pay on arrival
+DB totals: res 22=138000 (taxes 6000), res 23=158760 (taxes 26760 = VAT 23760 + 3000), res 24=136500 (taxes 4500). E1 pricing settings restored to the original (VAT 18 included, city tax percent 5).

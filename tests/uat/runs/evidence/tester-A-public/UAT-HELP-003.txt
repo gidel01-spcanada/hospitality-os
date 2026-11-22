@@ -1,0 +1,5 @@
+﻿fr POST /help/chat 'Hello' => 503 {"message":"Le chat d\u2019aide est temporairement indisponible."}
+fr widget data-error-message: 
+en POST /help/chat 'Hello' => 503 {"message":"Help chat is temporarily unavailable."}
+en widget data-error-message: 
+Widget absent when key missing: layouts/app.blade.php:150 @if(filled(config('services.help_chat.api_key'))).

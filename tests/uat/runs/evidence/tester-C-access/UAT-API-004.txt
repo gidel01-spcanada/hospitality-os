@@ -1,0 +1,19 @@
+1 GET /me: 200 {"data":{"id":48,"name":"Pref UAT","email":"uat-pref@example.test","role":"customer","locale":"en"}}
+2 PUT name/locale: 0  ; DB: {"name":"Pref UAT","locale":"en"}
+   web /account shows the name: False
+3 locale de: 422 {"message":"La valeur s\u00e9lectionn\u00e9e pour langue est invalide.","errors":{"locale":["La valeur s\u00e9lectionn\u00e9e pour langue est invalide."]}}
+4 name empty: 422 {"message":"Le champ nom doit \u00eatre une cha\u00eene de caract\u00e8res.","errors":{"name":["Le champ nom doit \u00eatre une cha\u00eene de caract\u00e8res."]}}
+5a name 256: 422 {"message":"Le champ nom ne peut pas d\u00e9passer 255 caract\u00e
+5b name 255: 200 {"da
+6 role/email/is_admin tamper: ; DB: {"email":"uat-pref@example.test","role":"customer","is_admin":0}
+7 PUT {}: 200 {"da
+2 (rerun) name via API shows on web /account: False; DB: {"name":"UAT API Renamed","locale":"en"}
+6 (rerun) tamper -> 200; response: {"data":{"id":48,"name":"UAT API Renamed","email":"uat-pref@example.test","role":"customer","locale":"en"}}; DB: {"email":"uat-pref@example.test","role":"customer","is_admin":0}
+2 PUT name/locale: 0  ; web name in DB: 
+   web /account shows the name: False
+3 locale de: 422 {"message":"La valeur s\u00e9lectionn\u00e9e pour langue est invalide.","errors":{"locale":["La valeur s\u00e9lectionn\u00e9e pour langue est invalide."]}})
+4 name empty: 422 {"message":"Le champ nom doit \u00eatre une cha\u00eene de caract\u00e8res.","errors":{"name":["Le champ nom doit \u00eatre une cha\u00eene de caract\u00e8res."]}}
+5a name 256: 422 {"message":"Le champ nom ne peut pas d\u00e9passer 255 c
+5b name 255: 200 {"da
+6 role/email/is_admin tamper:  ; DB: 
+7 PUT {}: 200 {"da

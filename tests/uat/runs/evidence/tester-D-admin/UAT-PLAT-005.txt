@@ -1,0 +1,7 @@
+﻿step1 anonymous -> 302 Loc=http://127.0.0.1:8104/login
+step2-4 customer GET /platform/tenants -> 403; /create -> 403
+step2-4 concierge GET /platform/tenants -> 403; /create -> 403
+step2-4 host GET /platform/tenants -> 403; /create -> 403
+step2-4 tenant-b-admin GET /platform/tenants -> 403; /create -> 403
+step5 tenant B admin POST suspend default -> 403; default status: active
+step6 deactivated user (is_active=0 crafted) GET /platform/tenants -> 302 Loc=http://127.0.0.1:8104/login

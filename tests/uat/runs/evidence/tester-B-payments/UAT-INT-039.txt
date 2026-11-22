@@ -1,0 +1,10 @@
+﻿S7 staff receipt URL for confirmed R2 without receipt -> 404
+S8 staff Generate receipt -> 422 
+S8 DB: {"status":"confirmed","attempts":[],"lines":[],"receipts":0,"outbox":[]}
+S8 second Generate -> 422; receipts now: 0
+S8 receipt URL now -> 404 (500 = PDF library missing)
+S1-S3,S4-S6 access control: see UAT-PAY-036 (anonymous 302 login, other customer 403, token ignored 302; owner/staff reach the PDF step which returns 500)
+S8 (redo, confirmed R2 with a paid attempt, no receipt) Generate receipt -> 302 http://127.0.0.1:8102/admin/reservations/172
+S8 DB: {"status":"confirmed","attempts":[{"id":69,"provider":"fedapay","provider_reference":"fedapay-uat-fixture-172","status":"paid","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["receipt_issued\/b-cust1@example.test\/queued"]}
+S8 second Generate -> 302; receipts: 1
+S8 receipt URL -> 500 (500 = PDF library missing)

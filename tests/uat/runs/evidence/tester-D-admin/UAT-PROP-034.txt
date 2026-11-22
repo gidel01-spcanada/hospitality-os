@@ -1,0 +1,6 @@
+﻿edit form -> 200 fields: _token,_method,name_en,name_fr,category_id
+step1 change FR name + category -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/11 | nts Paramètres du site Journaux Entités Succès : Équipement  | DB [{"id":73,"\"amenity_category_id\"":"amenity_category_id","name_en":"Sauna","name_fr":"Sauna finlandais","slug":"sauna","sort_order":40}]
+step2 property 5 still has it: 1; public shows 'Sauna finlandais': True
+step3 category 999999 -> 302 Loc=http://127.0.0.1:8104/admin/amenities/73/edit | invalide. | DB [{"id":73,"\"amenity_category_id\"":"amenity_category_id","name_en":"Sauna","name_fr":"Sauna finlandais","slug":"sauna","sort_order":40}]
+step4 empty name_en -> 302 Loc=http://127.0.0.1:8104/admin/amenities/73/edit | obligatoire.
+Note: the amenity edited/moved here is the seeded 'Sauna' (id 73, slug sauna) because the lookup by slug 'sauna' found it; it was moved to category 11 'UAT Outdoor'. Column is category_id (the JSON key label above is a query artefact).

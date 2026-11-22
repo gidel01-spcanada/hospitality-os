@@ -1,0 +1,6 @@
+﻿S1 R1 XOF offered: fedapay,pay_later,paypal(buttons)
+S2 R2 EUR offered: pay_later,paypal(buttons)
+S3 R1 provider=mpesa -> 422
+S4 provider=stripe -> 422
+S5 R3 (50h old) page expired banner: True; POST fedapay -> 410
+S6 R4 confirmed POST -> 422

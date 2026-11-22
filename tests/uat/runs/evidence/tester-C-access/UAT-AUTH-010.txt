@@ -1,0 +1,10 @@
+1 guest submits reserve with existing customer email -> 302 http://127.0.0.1:8103/login
+  login page status msg: [] email prefilled=True
+2 login -> 302 http://127.0.0.1:8103/reservation/resume
+  GET resume -> 302 http://127.0.0.1:8103/reservations/1/checkout?token=<token>
+reservations before=0 after=1
+3 GET /reservation/resume again -> 404
+after reload count=1
+
+status msg on /login: value="guest@afrikappart.test"
+login page: flash status NOT rendered (resources/views/auth/login.blade.php has no session('status') output); checked rendered /login text: no 'Un compte existe deja' message

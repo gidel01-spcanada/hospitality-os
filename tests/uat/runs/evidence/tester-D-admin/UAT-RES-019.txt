@@ -1,0 +1,9 @@
+﻿step1 admin -> 200 Content-Disposition: (via Req) n/a, bytes 657
+step1 concierge -> 200; host@ (E1, reservation on E2) -> 200
+step2 owner guest@ -> 200
+step3 other customer -> 403
+step4 anonymous with checkout token -> 200
+step5 anonymous wrong token -> 403; missing token -> 403 Loc=
+step6 anonymous with token on receipt -> 302 Loc=http://127.0.0.1:8104/login
+step7 file deleted from disk (uploads/reservations/15/20261122214800968-m3tqajp92yvt.png) -> 404
+  file restored afterwards

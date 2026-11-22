@@ -1,0 +1,4 @@
+remember='1' -> 302; Set-Cookie names: XSRF-TOKEN, afrik-appart-session, remember_web_<hash>
+   after deleting only the session cookie: /dashboard -> 200 
+remember='' -> 302; Set-Cookie names: XSRF-TOKEN, afrik-appart-session
+   after deleting only the session cookie: /dashboard -> 302 http://127.0.0.1:8103/login

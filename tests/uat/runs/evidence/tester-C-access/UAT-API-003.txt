@@ -1,0 +1,15 @@
+1 no Authorization: 401 {"message":"Unauthenticated."}
+2a empty Bearer: 401 {"message":"Unauthenticated."}
+2b Token abc: 401 {"message":"Unauthenticated."}
+3 Bearer not-a-token: 401 {"message":"Unauthenticated."}
+4 valid token: 200 keys=data,id,name,email,role,locale
+5 token with expires_at in the past: 401 {"message":"Unauthenticated."}
+6 user deactivated: 401 {"message":"Unauthenticated."}
+7a ?token= : 401 {"message":"Unauthenticated."}
+7b X-API-Key: 401 {"message":"Unauthenticated."}
+8 POST /api/v1/auth/logout no token -> 401
+8 GET /api/v1/me no token -> 401
+8 PUT /api/v1/me no token -> 401
+8 GET /api/v1/customer/reservations no token -> 401
+8 GET /api/v1/staff/reservations no token -> 401
+8 GET /api/v1/admin/properties no token -> 401

@@ -1,0 +1,5 @@
+﻿S1 upload booking.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 2 skipped. | 
+S2 rows: UAT Booker One src=booking r=5 est=1 tenant=1 at=2026-01-10 00:00:00 active=1 text=[Lovely\n\nClean and quiet\n\nNote: Noisy street] url= | UAT Booker Two src=booking r=4 est=1 tenant=1 at=2026-01-12 00:00:00 active=1 text=[OK\n\nFine] url= | 
+S3 re-upload: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit#reviews | Success: 2 added, 0 updated, 2 skipped. |  ; UAT Booker One rows: 2
+S4 CLI --dry-run => exit 0 ; Dry run complete. Inserted: 2; updated: 0; skipped: 0. ; rows saved: 0
+S4 CLI missing path => exit 1 ; CSV file not found: C:\Users\gfoumbi\Downloads\Afrik Appart\repository\C:\Users\gfoumbi\AppData\Local\Temp\uat-run\fixtures-E\missing.csv

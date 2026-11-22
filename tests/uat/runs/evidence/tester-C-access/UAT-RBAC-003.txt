@@ -1,0 +1,23 @@
+GET /admin/users/create -> 200
+1 create customer uat-customer@example.test -> 302 http://127.0.0.1:8103/admin/users; flash=[Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée.] listed=True
+1 create concierge uat-concierge@example.test -> 302 http://127.0.0.1:8103/admin/users; flash=[Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée.] listed=True
+1 create host uat-host@example.test -> 302 http://127.0.0.1:8103/admin/users; flash=[Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée.] listed=True
+1 create admin uat-admin2@example.test -> 302 http://127.0.0.1:8103/admin/users; flash=[Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée.] listed=True
+1 create admin tenant-admin-uat@example.test -> 302 http://127.0.0.1:8103/admin/users; flash=[Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée.] listed=True
+2 outbox staff_account_invitation rows: 0 -> {"c":5}
+   outbox recipients: {"recipient_email":"uat-customer@example.test","status":"queued"} {"recipient_email":"uat-concierge@example.test","status":"queued"} {"recipient_email":"uat-host@example.test","status":"queued"} {"recipient_email":"uat-admin2@example.test","status":"queued"} {"recipient_email":"tenant-admin-uat@example.test","status":"queued"}
+3 DB: {"email":"uat-customer@example.test","role":"customer","is_admin":0,"is_platform_admin":0,"tenant_id":null,"verified":1,"is_active":1}
+{"email":"uat-concierge@example.test","role":"concierge","is_admin":0,"is_platform_admin":0,"tenant_id":1,"verified":1,"is_active":1}
+{"email":"uat-host@example.test","role":"host","is_admin":0,"is_platform_admin":0,"tenant_id":1,"verified":1,"is_active":1}
+{"email":"uat-admin2@example.test","role":"admin","is_admin":1,"is_platform_admin":0,"tenant_id":1,"verified":1,"is_active":1}
+{"email":"tenant-admin-uat@example.test","role":"admin","is_admin":1,"is_platform_admin":0,"tenant_id":1,"verified":1,"is_active":1}
+   host establishments: {"user_id":4,"establishment_id":1} {"user_id":19,"establishment_id":1}
+4 login new host -> 302 http://127.0.0.1:8103/admin; /admin 200; establishments page lists 'Cotonou': True
+5 role=superuser -> 302 http://127.0.0.1:8103/admin/users/create errs=[La valeur sélectionnée pour role est invalide.]
+6a duplicate email -> 302 http://127.0.0.1:8103/admin/users/create errs=[Le champ adresse email est déjà utilisé.]
+6b 7-char pw -> 302 http://127.0.0.1:8103/admin/users/create errs=[Le champ mot de passe doit contenir au moins 8 caractères.]
+6c mismatch -> 302 http://127.0.0.1:8103/admin/users/create errs=[La confirmation de mot de passe ne correspond pas.]
+6d empty name -> 302 http://127.0.0.1:8103/admin/users/create errs=[Le champ nom est obligatoire.]
+7 establishments=999999 -> 302 http://127.0.0.1:8103/admin/users/create errs=[La valeur sélectionnée pour establishments.0 est invalide.]
+   users count 21 -> 21 after rejected submissions
+8 extra is_platform_admin=1 -> 302; DB: {"is_platform_admin":0,"role":"customer","is_admin":0}

@@ -1,0 +1,6 @@
+﻿valid => 200; ci=2026-12-02 co=2026-12-05 adults=<input id="adults" name="adults" type="number" min="1" max="4" step="1" inputmode="numeric" value="3">
+?check_in=2026-11-20 => 302 http://127.0.0.1:8101/properties co= ci= adults=
+?guests=0 => 302 http://127.0.0.1:8101/properties co= ci= adults=
+?guests=101 => 302 http://127.0.0.1:8101/properties co= ci= adults=
+?guests=6 => 200  co= ci= adults=<input id="adults" name="adults" type="number" min="1" max="4" step="1" inputmode="numeric" value="6">
+?check_out=2026-11-27 => 200  co=2026-11-27 ci= adults=<input id="adults" name="adults" type="number" min="1" max="4" step="1" inputmode="numeric" value="1">

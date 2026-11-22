@@ -1,0 +1,12 @@
+﻿S1 /reviews -> 200; shows One: True, Two: True, inactive Three: False; average text: 
+S1 home shows One: False; stats:  (expected avg of active = 4.0, count 2)
+S2 admin PUT (is_active omitted = deactivate) -> 302; active now: 1
+S2 /reviews after deactivate shows Two: True
+S3 admin DELETE One -> 302; exists: 0
+S4 zero active reviews: /reviews shows reviewers: True; home shows 'UAT Rev': False
+S1 home: reviewers shown: False; stats-ish text: pulsé par Sprint Pay Canada. Envoyer un avis à Sprint Pay Canada ! Confirmer cette a
+S1 /reviews: text near count:  Tous les avis voyageurs A Afrik Appart Accueil Propriétés Expér
+S2 admin PUT is_active=0 -> 302; active now: [0]
+S2 /reviews shows Two after deactivation: False; shows One: True
+S3 delete One -> 302; /reviews shows any UAT Rev (should be none, Three inactive): False
+S4 zero active reviews: home shows reviewers: False; numeric rating text on /reviews:  importés depuis nos sources vérifiées. Aucun avis n’est encore disponible. A Afrik Appart

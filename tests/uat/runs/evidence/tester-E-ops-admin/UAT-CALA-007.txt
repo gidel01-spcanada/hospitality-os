@@ -1,0 +1,20 @@
+﻿add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Success: Calendar feed saved and synced. || Calendar feed saved and synced.
+created feed id 22 : feed 22 name=UAT Feed1 url=http://127.0.0.1:9105/feed-a.ics en=1 status=fresh err= | events: uat-event-1
+S1 edit name only => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+feed 22 name=UAT Updated feed url=http://127.0.0.1:9105/feed-a.ics en=1 status=fresh err= | events: uat-event-1
+S2 edit URL -> feed-b.ics => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+feed 22 name=UAT Updated feed url=http://127.0.0.1:9105/feed-b.ics en=1 status=stale err= | events: uat-event-1
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+S3 feed 22 name=UAT Updated feed url=http://127.0.0.1:9105/feed-b.ics en=1 status=fresh err= | events: uat-b-event-9
+S4 untick enabled => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+feed 22 name=UAT Updated feed url=http://127.0.0.1:9105/feed-b.ics en=0 status=fresh err= | events: uat-b-event-9
+S4 public availability T+70..T+72 with feed disabled: available=True
+S7 invalid URL on edit => 302 -> http://127.0.0.1:8105/admin/properties/1/calendar/feeds/22/edit | flash:  | errors: Error: The url format is invalid.
+feed 22 name=UAT Updated feed url=http://127.0.0.1:9105/feed-b.ics en=0 status=fresh err= | events: uat-b-event-9
+S6 GET edit of PB feed 21 via /properties/1 => 404
+S6 PUT => 404
+S6 DELETE => 404; PB feed still exists: 1
+S5 delete => 302 flash: Success: Calendar feed removed. || Calendar feed removed.
+   ParseError   syntax error, unexpected token "{"  at C:\Users\gfoumbi\AppData\Local\Temp\uat-run\E-t.php:2      1Γûò ∩╗┐<?php  Γ₧£   2Γûò foreach(DB::table('external_calendar_feeds')->where('id',@{Status=200; Location=; Body=<!DOCTYPE html>      3Γûò <html lang="en"  data-theme="light-admin" >      4Γûò <head>      5Γûò     <meta charset="UTF-8" />      6Γûò     <meta name="viewport" content="width=device-width, initial-scale=1.0" />      7Γûò     <meta name="description" content="Afrik Appart Admin Dashboard" />      8Γûò     <meta name="csrf-token" content="pLlz9fUXZDusXSsE7X5rdQ8zW735sUJaiY1mCtKt" />      9Γûò     <link rel="icon" href="http://127.0.0.1:8105/favicon.ico">
+Post-delete check (the last line above was a script bug: variable clash in tester script, not an app error): feed22 exists=0 events of feed22=0
+Post-delete check (the last error line above came from a variable clash in the tester script, not the app): feed22 exists=0 events of feed22=0

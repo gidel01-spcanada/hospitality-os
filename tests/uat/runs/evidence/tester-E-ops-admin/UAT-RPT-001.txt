@@ -1,0 +1,8 @@
+﻿Dataset (June 2028, synthetic DB inserts): R1 PA confirmed 06-05..08 100000 XOF (receipt 06-06, fedapay paid); R2 PB completed 06-10..12 50000 XOF (paypal failed); R3 PA pending 06-15..17 30000 XOF (interac created); R4 P402 cancelled 06-20..23 60000; R5 PC confirmed 06-03..05 200 EUR (paypal verified; receipt issued 2028-07-02); reviews E1 rating 4, E2 rating 2. 7 properties x 30 days.
+S1 default /admin/reports => 200; period text: Period from 01 Nov 2026 to 30 Nov 2026 · 30 day(s) O ; date inputs: 2026-11-01 / 2026-11-30 ; sections present: Operations=True Finance=True Providers=True PropertyPerf=True Quality=True Upcoming14=True
+S1 upcoming list entries (max 12): 9
+S2-S5 June CSV summary: res=5 occN=7 sell=210 blocked=0 occ%=3.3 arr=4 dep=4 canc=1 canc%=20 bookedXOF=150000 bookedEUR=200 outXOF=30000 collXOF=100000 collEUR=(none) attempts=4 succ%=50 reviews=2 avgRating=3
+Expected: res=5 occN=7 sell=210 blocked=0 occ%=3.3 arr=4 dep=4 canc=1 canc%=20 bookedXOF=150000 bookedEUR=200 outXOF=30000 collXOF=100000 collEUR=(none in June) attempts=4 succ%=50 reviews=2 avg=3
+HTML June: occupancy 'Occupancy rate 3,3%', 'Collected revenue 100 000,00 XOF', 'Success rate: 50,0%'
+S6 disclaimer present: True
+S7 FR: html lang=fr; sample labels: Taux d’occupation 3,3% | t paiements Revenus encaissés 100 000,00 XOF

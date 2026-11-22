@@ -1,0 +1,11 @@
+﻿setup: customer d-guest-msg created threads T1=9 (E1) -> 302, T2=10 (E2) -> 302
+step1 admin inbox thread ids (order): 10,9,5,8,7,6,3,4,2,1 ; contains T1 and T2: True / True
+step2 open T1 -> 200; shows message: True; linked reservation: (not found: AFK-)
+step3 empty reply -> 302 Loc=http://127.0.0.1:8104/admin/messages/9 |  | msgs in T1: 1
+step4 valid reply -> 302 Loc=http://127.0.0.1:8104/admin/messages | nts Paramètres du site Journaux Entités Succès : M | visible to customer: True
+step5 5000 chars -> 302 Loc=http://127.0.0.1:8104/admin/messages (msgs 3); 5001 -> 302 Loc=http://127.0.0.1:8104/admin/messages/9 (msgs 3)
+step6 host inbox ids: 9,5,8,3,4,1 ; contains T2 (E2): False ; GET T2 -> 403
+step7 concierge inbox -> 200; reply to T2 -> 302 Loc=http://127.0.0.1:8104/admin/messages | Opérations Réservations Planning ménage 
+step8 customer /admin/messages -> 403
+step9 other tenant: run in cloud mode (PLAT-008).
+step9 (cloud, tenant B admin) GET /admin/messages/1 (default tenant thread) -> 403

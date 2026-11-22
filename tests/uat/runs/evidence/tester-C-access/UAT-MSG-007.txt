@@ -1,0 +1,5 @@
+1 pref ON: rows to customer 1 -> 2
+   customer turned OFF via preferences page: DB email_message_updates={"m":0}
+2 pref OFF: rows 2 -> 2
+3 staff opt-out (admin@ has message updates off): admin@ rows 0 -> 0; host@ (on) 14 -> 15; uat-admin2 (on) 14 -> 15
+4 customer's own message: rows to uat-cust@ unchanged: 2

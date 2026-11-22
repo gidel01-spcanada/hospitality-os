@@ -1,0 +1,7 @@
+﻿Note: the case asks for storage/app/uat-booking.csv inside the project; to avoid writing in the repo the fixture was kept at %TEMP%\uat-run\fixtures-E\uat-booking.csv and passed by absolute path (covers S4) and by a relative path from the repo root (..\..\..\..\AppData\... not used).
+S1 --dry-run (absolute path) => exit 0 ; Dry run complete. Inserted: 2; updated: 0; skipped: 3. ; rows saved: 0
+S2/S4 import => exit 0 ; Import complete. Inserted: 2; updated: 0; skipped: 3. ; rows saved: 2
+S3 run again => exit 0 ; Import complete. Inserted: 0; updated: 2; skipped: 3. ; rows: 2
+S5 missing file => exit 1 ; CSV file not found: C:\Users\gfoumbi\Downloads\Afrik Appart\repository\C:\Users\gfoumbi\AppData\Local\Temp\uat-run\fixtures-E\does-not-exist.csv
+S6 saved rows: UAT CLI Guest A src=booking r=5 tenant=1 est=null active=1 | UAT CLI Guest B src=booking r=4 tenant=1 est=null active=1 |  ; first establishment tenant: 1
+S7 visible on public /reviews: page 3 ; Reports E1 2026-02-10..11 review count line: Quality;"Review count";;;9; (E1-linked reviews in that window from UI import: 9)

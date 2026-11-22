@@ -1,0 +1,7 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /sitemap.xml => 200 Content-Type: application/xml (1000 bytes), well-formed urlset.
+<loc> entries: /, /establishments, /properties, /about, /contact, /reviews, /faq, /privacy, /terms, /cookies, /properties/appartement-401..404, /establishments/afrikappart-cotonou
+No lastmod/hreflang (informational per case).
+P-D/E2/E3 fixtures do not exist on live; cannot check absence of unpublished items (only 4 properties + 1 establishment listed).
+GET /properties/appartement-401 (HTML): <link rel=canonical href=https://afrikappart.com/properties/appartement-401>, og:title, og:description, og:image, og:locale=fr_FR, twitter:card/title/description/image present.
+Observations: property page emits two sets of og:/twitter: tags (generic block with a stock Unsplash og:image, then property block with property image); generic og:image URL contains double-encoded "&amp;amp;".

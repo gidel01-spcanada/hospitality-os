@@ -1,0 +1,24 @@
+s1 empty -> 302 loc=http://127.0.0.1:8103/register err=[]
+s1 follow-up GET /register: 200 errors in page: Le champ nom est obligatoire. | Le champ adresse email est obligatoire. | Le champ mot de passe est obligatoire.
+s2 bad email -> 302 loc=http://127.0.0.1:8103/register err=[]
+s2 page: Le champ adresse email doit être une adresse email valide.
+s3 taken -> 302 loc=http://127.0.0.1:8103/register err=[]
+s3 page: Le champ adresse email est déjà utilisé.
+s4 7char -> 302 loc=http://127.0.0.1:8103/register err=[]
+s4 page: Le champ mot de passe doit contenir au moins 8 caractères.
+s5 8char -> 302 loc=http://127.0.0.1:8103/dashboard err=[]
+s6 mismatch -> 302 loc=http://127.0.0.1:8103/register err=[]
+s6 page: La confirmation de mot de passe ne correspond pas.
+s7a name256 -> 302 loc=http://127.0.0.1:8103/register err=[]
+s7a page: Le champ nom ne peut pas dépasser 255 caractères.
+s7b name255 -> 302 loc=http://127.0.0.1:8103/dashboard err=[]
+s8 locale es -> 302 loc=http://127.0.0.1:8103/register err=[]
+s8 page: La valeur sélectionnée pour langue est invalide. | Français
+s9 case-variant -> 302 loc=http://127.0.0.1:8103/dashboard err=[]
+s9 page: 
+s9 DB users like guest: {"id":8,"email":"GUEST@afrikappart.test"} {"id":2,"email":"guest@afrikappart.test"}
+s9b spaces/case -> 302 loc=http://127.0.0.1:8103/dashboard err=[]
+s9b DB: {"email":"Uat-Reg-002f@Example.test"}
+s10 FR: 302 page lang=fr err=Le champ adresse email est déjà utilisé.
+users count before: {"c":5} ; after: {"c":9}
+new users: {"email":"uat-reg-001@example.test","n":9} {"email":"uat-reg-002@example.test","n":7} {"email":"uat-reg-002d@example.test","n":255} {"email":"GUEST@afrikappart.test","n":7} {"email":"Uat-Reg-002f@Example.test","n":7}

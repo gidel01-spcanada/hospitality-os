@@ -1,0 +1,10 @@
+﻿1 past check_in /properties?check_in=2026-11-21&check_out=2026-11-24 =>  HTTP 302 -> http://127.0.0.1:8101/
+2 equal /properties?check_in=2026-11-27&check_out=2026-11-27 =>  HTTP 302 -> http://127.0.0.1:8101/properties?check_in=2026-11-21&check_out=2026-11-24
+3 inverted /properties?check_in=2026-11-27&check_out=2026-11-25 =>  HTTP 302 -> http://127.0.0.1:8101/properties?check_in=2026-11-27&check_out=2026-11-27
+4 today boundary /properties?check_in=2026-11-22&check_out=2026-11-23 =>  HTTP 200
+5 checkout only /properties?check_out=2026-11-26 =>  HTTP 200
+6 home bad date /?check_in=not-a-date =>  HTTP 302 -> http://127.0.0.1:8101/properties?check_out=2026-11-26
+with Referer / =>  HTTP 302 -> http://127.0.0.1:8101/
+followed to http://127.0.0.1:8101/properties: 200; error text present: False
+Past check_in with prior page /properties in session: 302 -> http://127.0.0.1:8101/properties; followed page 200; error markup: 
+grep: no \/@error usage in resources/views/properties/index.blade.php or home.blade.php; redirected page shows no message.

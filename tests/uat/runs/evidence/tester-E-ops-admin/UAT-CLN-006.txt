@@ -1,0 +1,22 @@
+﻿Departures W1 (2026-11-23 Mon..2026-11-29 Sun) and W2 (2026-11-30 Mon..2026-12-06 Sun): res9 p1 out=2026-11-27 confirmed | res10 p5 out=2026-11-27 confirmed | res11 p2 out=2026-11-28 confirmed | res12 p3 out=2026-11-28 checked_in | res13 p6 out=2026-11-28 completed | res14 p4 out=2026-11-28 cancelled | res15 p4 out=2026-11-28 pending | res16 p2 out=2026-11-30 confirmed | res18 p1 out=2026-12-03 pending | res19 p5 out=2026-12-03 confirmed | res17 p3 out=2026-12-06 confirmed | 
+pre-linked res9 to a manual Fatou visit; visits now: 3
+S1 W1 submit: 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27 | Success: 4 visits created from departures. | 
+S2 W1 generated: 
+S3 W1 excluded check: res14 (cancelled) / res15 (pending) / res9 (already linked) have generated visit? 0
+S4 W1 submit again: 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27 | Success: No new departures to schedule. |  ; W1 generated count now: 4
+S5 W2 property=PA(1) only: 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-12-02&property=1 | Success: No new departures to schedule. | 
+   W2 generated: 
+S8 W2 no filter: 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-12-02 | Success: 2 visits created from departures. | 
+   W2 generated: 
+   note: generated visits are placed on the departure date (check_out); W2 departures on Mon 2026-11-30 and Sun 2026-12-06 included if listed above
+--- validation and host scope (from earlier run):
+S6 time 25:00: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The scheduled time field must match the format H:i.
+S6 time 9:5: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The scheduled time field must match the format H:i.
+S6 time empty: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The scheduled time field is required.
+S6 duration 14: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The duration minutes must be at least 15.
+S6 duration 1441: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The duration minutes may not be greater than 1440.
+S6 assignee empty: 302 -> http://127.0.0.1:8105/admin/cleaning/generate?date=2026-11-27&mode=week |  | Error: The assignee name field is required.
+   visit count unchanged after invalid submits: True
+S7 host (E1) generate with property=5 (E2) => 403
+Generated visits (all weeks): res10 p5 2026-11-27 13:00:00 60m Awa Menage | res11 p2 2026-11-28 11:00:00 60m Awa Menage | res12 p3 2026-11-28 12:00:00 60m Awa Menage | res13 p6 2026-11-28 13:00:00 60m Awa Menage | res16 p2 2026-11-30 11:00:00 60m Awa Menage | res19 p5 2026-12-03 11:00:00 60m Awa Menage |   [W1 eligible departures: res10 (11-27), res11/res12/res13 (11-28); res9 pre-linked, res14 cancelled, res15 pending excluded. W2: PA filter -> res18 is pending so none; no filter -> res16 Mon 11-30 (first day) and res17 Sun 12-06 (last day); res19 p5 12-03 already had a visit from an earlier partial run]
+CORRECTION + finding: the W2 no-filter run created 2 visits = res16 (Mon 11-30, first day) and res19 (12-03). res17 (confirmed, check_out Sun 2026-12-06 = LAST day of the week period) got NO visit: [{"id":17,"property_id":3,"status":"confirmed","check_out":"2026-12-06 00:00:00"}] visits for res17: 0 | column type check_out: date. Migration: 2026_08_22_000003_create_booking_and_finance_tables.php: $table->date('check_out'); ; 2026_08_22_000003_create_booking_and_finance_tables.php: $table->index(['property_id', 'check_in', 'check_out']);. Cause: whereBetween('check_out',[from,to]) compares '2026-12-06 00:00:00' with '2026-12-06' as strings on SQLite, excluding the last day. Step 8 (last day inclusive) fails on this SQLite instance; may not reproduce on MySQL date columns.

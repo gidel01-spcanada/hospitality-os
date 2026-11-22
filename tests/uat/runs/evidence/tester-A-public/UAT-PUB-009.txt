@@ -1,0 +1,9 @@
+﻿step 1 /properties/compare =>  HTTP 302 -> http://127.0.0.1:8101/properties | 
+step 2 /properties/compare?properties[]=5 =>  HTTP 302 -> http://127.0.0.1:8101/properties | 
+step 3 /properties/compare?properties[]=5&properties[]=6&properties[]=7&properties[]=1 =>  HTTP 302 -> http://127.0.0.1:8101/properties | 
+step 4 /properties/compare?properties[]=5&properties[]=5 =>  HTTP 302 -> http://127.0.0.1:8101/properties | 
+step 5 /properties/compare?properties[]=5&properties[]=999999 =>  HTTP 302 -> http://127.0.0.1:8101/properties | 
+step 6 /properties/compare?properties[]=5&properties[]=8 =>  HTTP 404 | 
+step 7 /properties/compare?properties[]=5&properties[]=11 =>  HTTP 422 | 
+step 7 body excerpt:  Données invalides | Afrik Appart A Afrik Appart Erreur 422 Données invalides Le formulaire contient des informations incorrectes ou incomplètes. Retour à l’accueil ; abort message shown: False
+step 7 422 page body shows generic FR text 'Données invalides / Le formulaire contient des informations incorrectes ou incomplètes.'; the abort message (properties.compare_same_currency) is NOT displayed.

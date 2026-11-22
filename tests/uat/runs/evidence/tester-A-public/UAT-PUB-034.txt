@@ -1,0 +1,1 @@
+﻿Not executed: config/services.php recaptcha.enabled requires RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY; not set on instance 1; verification would contact Google (not permitted).

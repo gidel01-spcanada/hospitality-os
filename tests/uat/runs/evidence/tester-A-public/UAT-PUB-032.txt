@@ -1,0 +1,41 @@
+﻿1 empty name+email => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+2a email not-an-email => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+2b email a@b => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+2c email 256 chars => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+3 name 121 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+4a phone 41 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+4b country 81 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+5a adults 0 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+5b adults 9 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+5c children 9 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+5d infants 5 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+6 note 2001 => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+7 past check_in => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+8 inverted => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+9 feature not of P-A => 302 http://127.0.0.1:8101/properties/uat-apt-a errors: 
+10 no CSRF => 419  Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a expiré. Merci de rafraîchir la
+1 empty name+email => 302; error markup in booking form: <div class="form-error-box">
+                                    
+7 past check_in => 302; error markup in booking form: <div class="form-error-box">
+                                    
+7 EN past check_in => 302; error markup in booking form: <div class="form-error-box">
+                                    
+8 EN inverted => 302; error markup in booking form: <div class="form-error-box">
+                                    
+2 EN invalid email => 302; error markup in booking form: <div class="form-error-box">
+                                    
+1 empty name+email (FR) => 302; errors:  Le champ full name est obligatoire. Le champ adresse email est obligatoire. ; old full_name preserved: ''
+2a invalid email (EN) => 302; errors:  The email address must be a valid email address. ; old full_name preserved: 'A Valid'
+2b a@b (EN) => 302; errors:  The email address must be a valid email address. ; old full_name preserved: 'A Valid'
+2c 256-char email (EN) => 302; errors:  The email address must be a valid email address. The email address may not be greater than 255 characters. ; old full_name preserved: 'A Valid'
+3 name 121 (EN) => 302; errors:  The full name may not be greater than 120 characters. ; old full_name preserved: 'nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
+4 phone 41 and country 81 (EN) => 302; errors:  The phone may not be greater than 40 characters. The country may not be greater than 80 characters. ; old full_name preserved: 'A Valid'
+5 adults 0 (EN) => 302; errors:  The adults must be at least 1. ; old full_name preserved: 'A Valid'
+5 adults 9, children 9, infants 5 (EN) => 302; errors:  The adults may not be greater than 8. The children may not be greater than 8. The infants may not be greater than 4. ; old full_name preserved: 'A Valid'
+6 note 2001 (EN) => 302; errors:  The customer note may not be greater than 2000 characters. ; old full_name preserved: 'A Valid'
+7 past check_in (EN) => 302; errors:  La date d’arrivée doit être aujourd’hui ou plus tard. ; old full_name preserved: 'A Valid'
+7 past check_in (FR) => 302; errors:  La date d’arrivée doit être aujourd’hui ou plus tard. ; old full_name preserved: 'A Valid'
+8 inverted (EN) => 302; errors:  La date de départ doit être après la date d’arrivée. ; old full_name preserved: 'A Valid'
+9 feature of other property (EN) => 302; errors:  The selected selected_features.0 is invalid. ; old full_name preserved: 'A Valid'
+11 HTML name => 302; re-rendered value (escaped in attribute): &lt;b&gt;x&lt;/b&gt; ; raw <b>x</b> present in HTML: False
+email greeting (text part): Bonjour, <b>x</b> ! ; html part: <h1 style="box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; position: relative; color: #18181b; font-size: 18px; font-weight: bold; margin-top: 0; text-align: start;">Bonjour, &lt;b&gt;x&lt;/b&gt; !

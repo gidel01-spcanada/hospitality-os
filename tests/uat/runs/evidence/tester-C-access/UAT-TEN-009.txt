@@ -1,0 +1,1 @@
+﻿Platform list shows per tenant Etablissements/Proprietes/Equipe: Default 2/5/10, UAT Stays Beta 1/1/(2 then 3 after adding staff B2) matching DB counts (users with tenant_id; customers excluded). Suspend buttons shown for active tenants (all 7 active); activate button shown after suspension (used in TEN-005).

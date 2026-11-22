@@ -1,0 +1,20 @@
+﻿S1 loopback http://127.0.0.1:9105/probe.ics enabled: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Success: Calendar feed saved and synced. || Calendar feed saved and synced.
+   listener log: 2026-11-22T21:05:34+00:00 probe GuzzleHttp/7 | id=31 url=http://127.0.0.1:9105/probe.ics status=fresh err=[]
+S2 internal host name http://localhost:9105/probe.ics: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Error: Calendar feed saved, but the initial sync failed. Retry with the Sync button.
+   listener log: 2026-11-22T21:05:36+00:00 probe GuzzleHttp/7 | id=32 url=http://localhost:9105/probe.ics status=stale err=[SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: external_calendar_events.uid (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\db5.sqlite, SQL: i]
+S3 ftp://: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Error: Calendar feed saved, but the initial sync failed. Retry with the Sync button.
+   id=33 url=ftp://ical.example.test/a.ics status=stale err=[The scheme 'ftp' is not supported.]
+S3 file:///C:/Windows/win.ini => 302 -> http://127.0.0.1:8105/admin/properties/1/calendar/feeds/create; errors: Error: The url format is invalid.; row: 
+S4 embedded credentials: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Error: Calendar feed saved, but the initial sync failed. Retry with the Sync button.
+   listener log: 2026-11-22T21:05:40+00:00 probe GuzzleHttp/7
+   row (url column): id=34 url=http://fixtureuser:fixturepass@127.0.0.1:9105/probe.ics status=stale err=[SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: external_calendar_events.uid (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\db5.sqlite, SQL: i]
+   credentials 'fixturepass' visible in property editor HTML: False ; in feed edit form HTML: True; in error text shown: False
+S5 redirect http://127.0.0.1:9105/redir (302 -> http://127.0.0.1:9105/probe.ics): add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Error: Calendar feed saved, but the initial sync failed. Retry with the Sync button.
+   listener log (redirect target requested?): 2026-11-22T21:05:44+00:00 probe GuzzleHttp/7 | id=35 url=http://127.0.0.1:9105/redir status=stale err=[SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: external_calendar_events.uid (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\db5.sqlite, SQL: i]
+huge.ics size MB: 49.6
+S6 huge body: add => 500 errors: A
+   elapsed 0.9 s; id=36 url=http://127.0.0.1:9105/huge.ics status=syncing err=[]
+   app still responsive afterwards: 200
+S7 stored url column: plaintext (see rows above: url= shows full value). Model cast check: False  (True would mean an encrypted cast exists)
+S6 follow-up: POST create feed with ~50 MB body returned HTTP 500 after 0.9 s; storage/logs/laravel.log 2026-11-22 21:05:47 shows 'Allowed memory size of 134217728 bytes exhausted (tried to allocate 2097152 bytes)' (FatalError). Feed row was left with status=syncing (never reset). Test feeds 'SSRF *' deleted afterwards.
+S5: redirect 302 to loopback was followed (probe listener received the second request). S4: credentials in URL are stored in plaintext and displayed in the feed edit form HTML; not shown in the property editor list or in the error text. Sync errors for duplicate UID expose full SQL text including the SQLite database file path to the admin (info disclosure, caused by the global-unique uid defect).

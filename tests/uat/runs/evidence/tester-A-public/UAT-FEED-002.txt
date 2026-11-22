@@ -1,0 +1,8 @@
+﻿1 anonymous issue => 302 http://127.0.0.1:8101/feedback; flash: Votre retour a été envoyé à Sprint Pay Canada.
+4 customer suggestion => 302 http://127.0.0.1:8101/feedback; flash: Your feedback was sent to Sprint Pay Canada.
+5 other => 302 http://127.0.0.1:8101/feedback; flash: Votre retour a été envoyé à Sprint Pay Canada.
+6 script+accents => 302 http://127.0.0.1:8101/feedback; flash: Votre retour a été envoyé à Sprint Pay Canada.
+7 5000 chars => 302 http://127.0.0.1:8101/feedback; flash: Votre retour a été envoyé à Sprint Pay Canada.
+mail log: To feedback.uat@example.test count (tail): 5
+script text in mail (excerpt): p> <p><strong>Category:</strong> other</p> <p>&lt;script&gt;alert(1)&lt;/script&gt; accents Ã©Ã Ã§</p> [2026-11-22 21:17:00] local.DEBUG: 
+DB platform_feedback: id1 user=null issue; id2 user=5 (customer) suggestion; id3 other; id4 script text stored raw; id5 5000-char message. Accent test inconclusive: the PowerShell test script sent accented characters in a non-UTF-8-decoded form, so the stored accents were garbled by the tester script, not shown to be an app defect.

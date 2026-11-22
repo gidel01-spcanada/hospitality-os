@@ -1,0 +1,5 @@
+﻿step1 save translations -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#translations; DB: [{"locale":"en","name":"English Residence","features":["Pool","Gym","Parking"]},{"locale":"fr","name":"Residence francaise","features":[]}]
+step2 /properties EN filter shows 'English Residence': True; FR shows 'Residence francaise': True
+step3 EN establishment page features Pool/Gym/Parking: False/False/False
+step4 cleared EN name/description/features -> 302; DB en: [{"name":"English Residence","features":["Pool","Gym","Parking"]}]
+step5 features 'Wi-Fi,, ,Pool' -> DB fr features: ["Wi-Fi","Pool"] (the main non-translated 'features' field is not in the edit form)

@@ -1,0 +1,3 @@
+﻿status=confirmed : cancel button/form present=False; POST cancel -> 422 ({ "message": "Cette r\u00e9servation ne peut plus \u00eatre annul\u00e9e." })
+status=pending_validation : cancel button/form present=False; POST cancel -> 422 ({ "message": "Cette r\u00e9servation ne peut plus \u00eatre annul\u00e9e." })
+status=cancelled : cancel button/form present=False; POST cancel -> 422 ({ "message": "Cette r\u00e9servation ne peut plus \u00eatre annul\u00e9e." })

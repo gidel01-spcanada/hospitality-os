@@ -1,0 +1,5 @@
+﻿/ (Accept-Language en-US, no cookies) => 200 html lang=fr; nav sample: ; raw keys: 
+/properties (Accept-Language en-US, no cookies) => 200 html lang=fr; nav sample: ; raw keys: 
+/properties/uat-apt-a (Accept-Language en-US, no cookies) => 200 html lang=fr; nav sample: ; raw keys: 
+/faq (Accept-Language en-US, no cookies) => 200 html lang=fr; nav sample: ; raw keys: 
+/privacy (Accept-Language en-US, no cookies) => 200 html lang=fr; nav sample: ; raw keys: 

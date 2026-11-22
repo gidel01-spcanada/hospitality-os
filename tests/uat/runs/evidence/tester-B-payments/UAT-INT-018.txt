@@ -1,0 +1,2 @@
+﻿[workaround] S1 body with PAY-LATER ref sent to /webhooks/fedapay -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S2 pay_later reservation after: {"status":"confirmed","attempts":[{"id":35,"provider":"pay_later","provider_reference":"pay-later-JKGSMQHJSVW1","status":"paid","amount":"5000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/b-guest1@example.test\/queued","receipt_issued\/b-guest1@example.test\/queued"]}

@@ -1,0 +1,3 @@
+﻿Run 1 (clean window): 6 valid POST /feedback within a minute => status codes 302,302,302,302,302,429. 6th: HTTP 429, Retry-After=58, FR page 'Trop de demandes ... Vous avez envoyé trop de requêtes. Merci de patienter avant de réessayer.' with 'Retour à l'accueil'.
+After waiting 62 s a valid submit returned 302 (accepted).
+(The script was accidentally launched twice concurrently; the overlapping second run only produced additional 429s inside the same window and is omitted.) Mail count to feedback address not re-counted for this case.

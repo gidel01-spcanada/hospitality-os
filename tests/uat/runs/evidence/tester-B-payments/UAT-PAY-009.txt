@@ -1,0 +1,5 @@
+﻿status=confirmed : GET 200 options(provider input)=False cancel_form=False simulate_text=False proof_notice=False ; POST start -> 422
+status=cancelled : GET 200 options(provider input)=False cancel_form=False simulate_text=False proof_notice=False ; POST start -> 422
+status=completed : GET 200 options(provider input)=False cancel_form=False simulate_text=False proof_notice=False ; POST start -> 422
+status=pending_validation : GET 200 options(provider input)=False cancel_form=False simulate_text=False proof_notice=False ; POST start -> 422
+status=payment_failed : GET 200 options(provider input)=True cancel_form=True simulate_text=False proof_notice=False ; POST start -> 302

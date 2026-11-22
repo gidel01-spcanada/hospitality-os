@@ -1,0 +1,7 @@
+﻿S1 June all establishments: booked value lines XOF=150000 EUR=200 (separate, not summed)
+S2 average booking XOF=75000 (=(100000+50000)/2) EUR=200
+S3 providers: Finance;"Payment performance";paypal;EUR;200;"1 successful out of 2 attempt(s)" || Finance;"Payment performance";fedapay;XOF;100000;"1 successful out of 1 attempt(s)" || Finance;"Payment performance";interac;;0;"1 attempt(s)"
+S4 R5 (EUR, arrives June, receipt issued 2028-07-02): June booked EUR=200 collected EUR June=(none); July collected EUR=200 booked EUR July=(none)
+S5 subtotal+fees+taxes XOF: 120000 + 15000 + 15000 = 150000 vs booked 150000; EUR: 160+20+20 vs 200
+S6 cancel paid R1: booked XOF 150000 -> 50000; collected XOF 100000 -> 100000
+(R1 restored to confirmed afterwards)

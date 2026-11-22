@@ -1,0 +1,4 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.
+Local SQLite scratch copy with data (reservations=1, users=4): migrate:status -> migrate => "Nothing to migrate." Counts identical before/after. Then migrate:rollback --step=3 and migrate again re-applied 3 migrations (batch [2] in status), counts after: reservations=1, users=4, properties=4; second migrate => "Nothing to migrate."
+Step5 post-deploy-validate.sh: message exists at scripts/post-deploy-validate.sh:77-78 ("Database has existing tables but no Laravel migrations table." / "Do not run php artisan migrate yet") - not run (script runs config:cache/route:cache and uses the shared repo .env).
+Not executed: staging database, steps 5 and 6.

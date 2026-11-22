@@ -1,0 +1,1 @@
+﻿Exported ICS: evidence/tester-A-public/UAT-CAL-001-feed.ics. Static findings: DTSTAMP absent in every VEVENT; date values written as DTSTART:yyyymmdd without VALUE=DATE. Validator/client imports not run.

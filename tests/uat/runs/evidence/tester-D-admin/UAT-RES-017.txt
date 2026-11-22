@@ -1,0 +1,10 @@
+﻿setup R15=47 with proof (disk: 20261122215303985-ze1mb7mv167w.jpg), R16=48 and R16b=49 share guest d-r16
+step1 concierge DELETE -> 403
+step1 host DELETE -> 403
+step1 customer DELETE -> 403
+step2 admin delete R15 -> 302 Loc=http://127.0.0.1:8104/admin/reservations | vation et données de paiement associées supprimées. Réservations Consultez les r | reservation exists: 0 | proof files left: 0 | guest d-r15 rows: 0 | attempts left: 0
+step3 delete R16 -> 302; guest d-r16 kept: 1
+step4 availability T+230..T+232: disponible
+step5 log line: [2026-11-22 21:53:09] local.NOTICE: Reservation deleted by administrator {"reservation_id":48,"reservation_ref":"AFK-6T9PL1-261122","deleted_by":1} 
+  /admin/logs (laravel.log) contains it: True
+step6 delete R13 (1 receipt) -> 302; receipts for it 1 -> 0 (cascade)

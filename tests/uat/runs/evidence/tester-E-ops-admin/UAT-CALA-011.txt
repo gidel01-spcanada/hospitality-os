@@ -1,0 +1,45 @@
+﻿schedule:list output:
+
+  0 *   * * *  Closure at: routes\console.php:12 ........ Next Due: dans 2 minutes
+  0 *   * * *  App\Jobs\CompletePastReservations ........ Next Due: dans 2 minutes
+  * *   * * *  php artisan messages:send-email-notifications --limit=50  Next Due: dans 56 secondes
+  0 */6 * * *  Closure at: routes\console.php:29 ......... Next Due: dans 3 heures
+
+BEFORE (2026-11-22T15:57:03 local; UTC 2026-11-22T20:57:03): SCH F1: en=1 status=fresh last_sync_at=2026-11-22 20:51:05 | SCH F3: en=1 status=fresh last_sync_at=2026-11-22 17:56:05 | SCH F4: en=0 status=stale last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-old
+schedule:run #1 at 2026-11-22T16:00:02 local:
+
+  2026-11-22 21:00:03 Running [Callback] ........................... 141.89ms DONE
+  2026-11-22 21:00:03 Running [App\Jobs\CompletePastReservations] ... 26.44ms DONE
+  2026-11-22 21:00:03 Running ["artisan" messages:send-email-notifications --limit=50]  1 s DONE
+  Γçé "C:\Users\gfoumbi\scoop\apps\php\current\php.exe" "artisan" messages:send-email-notifications --limit=50 > "NUL" 2>&1  
+
+AFTER #1: SCH F1: en=1 status=fresh last_sync_at=2026-11-22 20:51:05 | SCH F3: en=1 status=fresh last_sync_at=2026-11-22 21:00:03 | SCH F4: en=0 status=stale last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+schedule:run #2 (same hour) at 2026-11-22T16:00:05 local:
+
+  2026-11-22 21:00:06 Running [Callback] ............................ 14.22ms DONE
+  2026-11-22 21:00:06 Running [App\Jobs\CompletePastReservations] ... 25.29ms DONE
+  2026-11-22 21:00:07 Running ["artisan" messages:send-email-notifications --limit=50]  1 s DONE
+  Γçé "C:\Users\gfoumbi\scoop\apps\php\current\php.exe" "artisan" messages:send-email-notifications --limit=50 > "NUL" 2>&1  
+
+AFTER #2: SCH F1: en=1 status=fresh last_sync_at=2026-11-22 20:51:05 | SCH F3: en=1 status=fresh last_sync_at=2026-11-22 21:00:03 | SCH F4: en=0 status=stale last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+--- step 5 follow-up (failing feed first in loop)
+BEFORE: SCH F1: en=1 status=fresh err= last_sync_at=2026-11-22 19:00:33 | SCH F3: en=1 status=fresh err= last_sync_at=2026-11-22 19:00:33 | SCH F4: en=0 status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+schedule:test> 
+schedule:test>    INFO  No matching scheduled command found.  
+schedule:test> 
+AFTER: SCH F1: en=1 status=fresh err= last_sync_at=2026-11-22 19:00:33 | SCH F3: en=1 status=fresh err= last_sync_at=2026-11-22 19:00:33 | SCH F4: en=0 status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+--- step 5 (failing feed in the loop) via php artisan schedule:test --name for the hourly calendar closure
+BEFORE (F1 now points to HTTP 500 and is first in loop by id; F3 due with changed content): 24 SCH F1: en=1 url=http://127.0.0.1:9105/status/500 status=fresh err= last_sync_at=2026-11-22 20:06:10 | 25 SCH F3: en=1 url=http://127.0.0.1:9105/s3.ics status=fresh err= last_sync_at=2026-11-22 20:06:10 | 26 SCH F4: en=0 url=http://127.0.0.1:9105/s4.ics status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+schedule:test> 
+schedule:test>    INFO  No matching scheduled command found.  
+schedule:test> 
+AFTER: 24 SCH F1: en=1 url=http://127.0.0.1:9105/status/500 status=fresh err= last_sync_at=2026-11-22 20:06:10 | 25 SCH F3: en=1 url=http://127.0.0.1:9105/s3.ics status=fresh err= last_sync_at=2026-11-22 20:06:10 | 26 SCH F4: en=0 url=http://127.0.0.1:9105/s4.ics status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+--- step 5 at the next hour boundary: SCH F1 points to HTTP 500 (first in loop), SCH F3 due with changed fixture
+BEFORE (2026-11-22T17:06:59 local): 24 SCH F1: en=1 status=fresh err= last_sync_at=2026-11-22 20:06:10 | 25 SCH F3: en=1 status=fresh err= last_sync_at=2026-11-22 20:06:10 | 26 SCH F4: en=0 status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-new
+schedule:run> 
+schedule:run>   2026-11-22 23:00:04 Running [Callback] ........................... 170.18ms DONE
+schedule:run>   2026-11-22 23:00:04 Running [App\Jobs\CompletePastReservations] ... 28.86ms DONE
+schedule:run>   2026-11-22 23:00:04 Running ["artisan" messages:send-email-notifications --limit=50]  1 s DONE
+schedule:run>   Γçé "C:\Users\gfoumbi\scoop\apps\php\current\php.exe" "artisan" messages:send-email-notifications --limit=50 > "NUL" 2>&1  
+schedule:run> 
+AFTER (2026-11-22T18:00:06 local): 24 SCH F1: en=1 status=stale err=Calendar feed request failed with status 500 last_sync_at=2026-11-22 23:00:04 | 25 SCH F3: en=1 status=fresh err= last_sync_at=2026-11-22 23:00:04 | 26 SCH F4: en=0 status=stale err= last_sync_at=2026-11-22 17:56:05 | events: s1-ev-old,s3-ev-newest

@@ -1,0 +1,6 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /no/such/page => 404 (909 bytes). FR: <html lang=fr>, title "Page introuvable | AfrikAppart", "Erreur 404", "Page introuvable", button to https://afrikappart.com.
+GET /no/such/page?lang=en => 404, <html lang="en">, "Page not found | AfrikAppart", "Error 404", "The requested page does not exist or has been moved.", "Back to home".
+GET /properties/unknown-slug, /establishments/unknown, /reservations/999999/checkout, /this-page-does-not-exist => 404 each (909 bytes, same page).
+No stack trace/paths in body. Stylesheet https://afrikappart.com/build/assets/app-*.css => 200 text/css (layout not visually verified).
+Back-to-home link href = https://afrikappart.com (not clicked; static check).

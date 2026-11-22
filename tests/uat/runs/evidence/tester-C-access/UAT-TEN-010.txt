@@ -1,0 +1,1 @@
+﻿Guest /properties lists Appartement 401 (tenant 1) and UAT Beta Property (tenant 6). PB page 200, title brand 'Hospitality OS', no 'UAT Stays Beta' company text. /sitemap.xml has both slugs (PB visible only after caching? yes listed). Admin B set property status draft through form -> catalog no longer lists PB, direct URL 404, sitemap no PB; restored to published.

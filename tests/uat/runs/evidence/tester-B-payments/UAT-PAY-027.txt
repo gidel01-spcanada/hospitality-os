@@ -1,0 +1,8 @@
+﻿S1 POST /webhooks/unknown (as provider) -> 419; with CSRF workaround -> 404  Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P
+S2 no signature (as provider) -> 419; workaround -> 403
+S3 wrong signature (as provider) -> 419; workaround -> 403
+S4 valid HMAC (as provider) -> 419; attempt: created
+S4 valid HMAC with CSRF workaround -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S6 valid HMAC, unknown reference (workaround) -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}
+S7 valid HMAC from a client without session cookie or CSRF token -> HTTP 419 (see S4). Matches the case's P0 defect condition.
+S5 (empty PAYMENT_WEBHOOK_SECRET) and S8 (PayPal production verification) not executed: need server env/config changes and PayPal sandbox.

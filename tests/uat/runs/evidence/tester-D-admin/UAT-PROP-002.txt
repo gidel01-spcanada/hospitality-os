@@ -1,0 +1,35 @@
+﻿step1 empty form -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 7->7 | obligatoire. || obligatoire. || obligatoire. || obligatoire. || obligatoire.
+  errors: Le champ nom est obligatoire. | Le champ slug est obligatoire. | Le champ nightly rate xof est obligatoire. | Le champ minimum stay est obligatoire. | Le champ max guests est obligatoire. | Le champ bedrooms est obligatoire. | Le champ bathrooms est obligatoire. | Le champ beds est obligatoire.
+step2 dup slug d-uat-loft-01 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 7->7 | 
+step3 rate -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 7->7 | doit être au moins égal à 0.
+step3 rate abc -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 7->7 | doit être un nombre.
+step3 rate 0 -> 302 Loc=http://127.0.0.1:8104/admin/properties/8/edit props 7->8 | 
+step3 rate 0.5 -> 302 Loc=http://127.0.0.1:8104/admin/properties/9/edit props 8->9 | 
+step3 rate 99999999999 -> 302 Loc=http://127.0.0.1:8104/admin/properties/10/edit props 9->10 | 
+  stored huge rate: 99999999999.00
+step4 minimum_stay 0 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 10->10 | doit être au moins égal à 1.
+step4 max_guests 0 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 10->10 | doit être au moins égal à 1.
+step4 min_stay 1 max_guests 1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/11/edit props 10->11 | 
+step5 bedrooms -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 11->11 | doit être au moins égal à 0.
+step5 bathrooms -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 11->11 | doit être au moins égal à 0.
+step5 beds -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 11->11 | doit être au moins égal à 0.
+step5 zeros -> 302 Loc=http://127.0.0.1:8104/admin/properties/12/edit props 11->12 | 
+step6 area -5 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 12->12 | doit être au moins égal à 0.
+step6 area_unit km2 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 12->12 | 
+step6 area_unit ft2 -> 302 Loc=http://127.0.0.1:8104/admin/properties/13/edit props 12->13 | 
+step7 floor 201 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 13->13 | 
+step7 floor -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 13->13 | doit être au moins égal à 0.
+step7 floor 200 -> 302 Loc=http://127.0.0.1:8104/admin/properties/14/edit props 13->14 | 
+step8 type castle -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 14->14 | 
+step8 status live -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 14->14 | 
+step9 name 256 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 14->14 | caractères.
+step9 name 255 -> 302 Loc=http://127.0.0.1:8104/admin/properties/15/edit props 14->15 | 
+step10 amenity 999999 -> 302 Loc=http://127.0.0.1:8104/admin/properties/create props 15->15 | 
+step11 name script -> 302 Loc=http://127.0.0.1:8104/admin/properties/16/edit props 15->16 | 
+  edit page raw <script>alert(1): False escaped: True; public 200 raw: True escaped: True
+step11 public GET /properties/d-val-26 -> 200. JSON-LD block excerpt:
+>
+    <script type="application/ld+json">
+        {"<?php $__contextArgs = [];\nif (context()->has($__contextArgs[0])) :\nif (isset($value)) { $__contextPrevious[] = $value; }\n$value = context()->get($__contextArgs[0]); ?>":"https://schema.org","@type":"LodgingBusiness","name":"<script>alert(1)</script>","description":"Découvrez <script>alert(1)</script> à , un logement pouvant accueillir jusqu’à 4 voyageur(s), avec
+FINDING: property name is emitted unescaped inside <script type=application/ld+json> ('</script>' not escaped), so the HTML parser closes the JSON-LD block and the later '<script>alert(1)</script>' in description runs as markup (stored XSS on public page). FINDING 2: the '@context' key in resources/views/properties/show.blade.php:25 is compiled by Blade as the @context directive, leaking compiled PHP text into the JSON-LD key.
+step1 note: errors displayed for name, slug, nightly_rate_xof, minimum_stay, max_guests, bedrooms, bathrooms, beds; no visible message for establishment_id, property_type, status, but no property created.

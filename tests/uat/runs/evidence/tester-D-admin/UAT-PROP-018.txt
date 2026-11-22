@@ -1,0 +1,15 @@
+﻿step1 (GROQ_API_KEY not set on this instance) POST /admin/properties/5/improve-copy -> 503 (0s) {"message":"L\u2019assistant de r\u00e9daction n\u2019est pas encore configur\u00e9."}
+step2 stub HTTP 500 (dadmin-1) -> 503 (0s) {"message":"The writing service is temporarily unavailable. Try again later."}
+step3 stub JSON missing keys -> 503 (0s) {"message":"The writing service returned an incomplete suggestion. Try again."}
+step4 stub sleeps 25s (timeout 20s, retry 2) -> 500 (40s) {
+    "message": "Server Error"
+}
+step7-of-017 check: after 3 failures dadmin-1 still allowed? -> 200 (10s) {"suggestion":{"summary_fr":"Appartement lumineux.","description_fr":"Appartement lumineux pres du centre, 2 chambres.","summary_en":"Bright apartment.","description_en":"Bright apartment near the centre, 2 bedrooms."}}
+step5 laravel.log warning lines (last 4):
+[2026-11-22 21:12:48] local.WARNING: Property copy improvement failed. {"property_id":5,"user_id":4,"exception":"RuntimeException","reason":"Lâ€™assistant de rÃ©daction nâ€™est pas encore configurÃ©."} 
+[2026-11-22 21:13:41] local.WARNING: Property copy improvement failed. {"property_id":26,"user_id":8,"exception":"RuntimeException","reason":"The writing service is temporarily unavailable. Try again later."} 
+[2026-11-22 21:13:41] local.WARNING: Property copy improvement failed. {"property_id":26,"user_id":8,"exception":"RuntimeException","reason":"The writing service returned an incomplete suggestion. Try again."} 
+[2026-11-22 21:14:18] local.WARNING: Property copy improvement failed. {"property_id":1,"user_id":1,"exception":"RuntimeException","reason":"Lâ€™assistant de rÃ©daction nâ€™est pas encore configurÃ©."} 
+  /admin/logs -> 200; contains 'Property copy improvement failed': False; contains 'dummy': False
+step5 /admin/logs?file=laravel.log&lines=1000 -> 200; 'Property copy improvement failed' occurrences in last 1000 lines: 12; dummy key visible: False (default view shows the newest file, error-2026-11-22.log, which only holds errors)
+step4 root cause: laravel.log has 'Maximum execution time of 30 seconds exceeded' at 21:14:21 (userId 8): Http timeout(20s) x retry(2) exceeds PHP max_execution_time=30, so the catch block never runs and the user gets HTTP 500 instead of 503.

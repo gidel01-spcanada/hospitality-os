@@ -1,0 +1,21 @@
+﻿data: visits in week 2026-11-23..2026-11-29 across properties 1,2,3,5,6 and assignees Awa/Fatou; next-week visit #29; boundary visits #30 at 2026-11-25 23:30 and #31 at 2026-11-26 00:30 (app timezone UTC)
+S1 default: GET /admin/cleaning => 200 | count text: No cleaning visits during this period. | times:  | period text: Week Month Reference date Property All properties Appartement 40
+S1 week of D+5: GET /admin/cleaning?mode=week&date=2026-11-27 => 200 | count text: 11 visits | times: 2026-11-24T09:00:00+00:00,2026-11-24T09:00:00+00:00,2026-11-25T23:30:00+00:00,2026-11-26T00:30:00+00:00,2026-11-27T11:30:00+00:00,2026-11-27T12:30:00+00:00,2026-11-27T13:00:00+00:00,2026-11-27T15:00:00+00:00,2026-11-28T11:00:00+00:00,2026-11-28T12:00:00+00:00,2026-11-28T13:00:00+00:00
+S2 month: GET /admin/cleaning?mode=month&date=2026-11-15 => 200 | count text: 12 visits | times: 2026-11-24T09:00:00+00:00,2026-11-24T09:00:00+00:00,2026-11-25T23:30:00+00:00,2026-11-26T00:30:00+00:00,2026-11-27T11:30:00+00:00,2026-11-27T12:30:00+00:00,2026-11-27T13:00:00+00:00,2026-11-27T15:00:00+00:00,2026-11-28T11:00:00+00:00,2026-11-28T12:00:00+00:00,2026-11-28T13:00:00+00:00,2026-11-30T11:00:00+00:00
+S2 prev/next links: href="http://127.0.0.1:8105/admin/cleaning?mode=month&date=2026-10-31" ; href="http://127.0.0.1:8105/admin/cleaning?mode=month&date=2026-11-22" ; href="http://127.0.0.1:8105/admin/cleaning?mode=month&date=2026-12-01"
+S3 property=1: GET /admin/cleaning?mode=week&date=2026-11-27&property=1 => 200 | count text: 4 visits | times: 2026-11-24T09:00:00+00:00,2026-11-27T11:30:00+00:00,2026-11-27T12:30:00+00:00,2026-11-27T15:00:00+00:00
+S3 assignee=Fatou Menage: GET /admin/cleaning?mode=week&date=2026-11-27&assignee=Fatou%20Menage => 200 | count text: 3 visits | times: 2026-11-24T09:00:00+00:00,2026-11-25T23:30:00+00:00,2026-11-27T15:00:00+00:00
+S3 status=completed: GET /admin/cleaning?mode=week&date=2026-11-27&status=completed => 200 | count text: 1 visit | times: 2026-11-24T09:00:00+00:00
+S3 property=5&assignee=Fatou Menage&status=in_progress: GET /admin/cleaning?mode=week&date=2026-11-27&property=5&assignee=Fatou%20Menage&status=in_progress => 200 | count text: 1 visit | times: 2026-11-25T23:30:00+00:00
+S4 assignee=Nobody => 302 -> http://127.0.0.1:8105/admin/cleaning?assignee=Fatou Menage&date=2026-11-27&mode=week&property=5&status=in_progress | 
+S5 status=done => 422
+S6 ?mode=year => 302 -> http://127.0.0.1:8105/admin/cleaning?status=done | A
+S6 ?date=abc => 302 -> http://127.0.0.1:8105/admin/cleaning?status=done | A
+S7 host property=5 (not accessible) => 403 ; admin property=999999 => 403
+S8 empty period: GET /admin/cleaning?mode=week&date=2027-06-15 => 200 | count text: No cleaning visits during this period. | times: 
+Boundary check: #30 shown with datetime  ; #31 with 
+--- S4/S6 re-check (redirect back to the previous page, message read from that page):
+?assignee=Nobody => 302 -> back to previous page (http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week); error text on page: 
+?mode=year => 302 -> back to previous page (http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week); error text on page: 
+?date=abc => 302 -> back to previous page (http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week); error text on page: 
+S4/S6 finding: the request is redirected back (302) to the previous schedule URL and no error text is rendered: resources/views/admin/cleaning/index.blade.php has no \ output (create/edit/generate views do). Messages 'This assignee is not part of the accessible schedule.' and mode/date errors are never shown to the user. No 500 occurred.

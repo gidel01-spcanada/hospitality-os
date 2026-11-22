@@ -1,0 +1,6 @@
+1 GET /dashboard/reservations/5 (owned by uat-acct) -> 403
+2 PUT -> 403; unchanged: True
+3 GET /reservations/7/receipt (other's) -> 403
+4 POST /reservations/5/checkout/cancel without token -> 403; status now: {"status":"pending"}
+5 with wrong token -> 403; status now: {"status":"pending"}
+6 other's list contains res 5/6/7: False

@@ -1,0 +1,6 @@
+﻿Part A /login -> 200; recaptcha script/element present: False
+Part A /register -> 200; recaptcha script/element present: False
+Part A /properties/appartement-401 -> 200; recaptcha script/element present: False
+Part A /host/signup -> 404
+Part A login without captcha field -> 302 http://127.0.0.1:8102/login
+Part A (re-run) customer login without any captcha field -> 302 http://127.0.0.1:8102/dashboard

@@ -1,0 +1,10 @@
+﻿1 cancel Q => 200 {"answer":"STUB-ANSWER (from FAQ): A reservation that is not finalised can be cancelled from your account or the checkout page. Depending on the establishment, a non-refundable cancellation fee may apply when cancelling shortly before check-in; the exact amount is shown before you confirm."}
+2 FR payment Q => 200 {"answer":"STUB-ANSWER: the FAQ does not cover this, please use the Contact page."}
+3 off-topic => 200 {"answer":"STUB-ANSWER: the FAQ does not cover this, please use the Contact page."}
+4 follow-up with 10 history items => 200 {"answer":"STUB-ANSWER: the FAQ does not cover this, please use the Contact page."}
+5 private info => 200 {"answer":"STUB-ANSWER: the FAQ does not cover this, please use the Contact page."}
+stub saw: n_messages=2 system_len=1533 temperature=0.2 max_tokens=500 model=openai/gpt-oss-20b auth_present=True last_user='How do I cancel a reservation?'
+stub saw: n_messages=2 system_len=1533 temperature=0.2 max_tokens=500 model=openai/gpt-oss-20b auth_present=True last_user='Comment puis-je payer ?'
+stub saw: n_messages=2 system_len=1533 temperature=0.2 max_tokens=500 model=openai/gpt-oss-20b auth_present=True last_user='Who won the world cup?'
+stub saw: n_messages=12 system_len=1533 temperature=0.2 max_tokens=500 model=openai/gpt-oss-20b auth_present=True last_user='Follow up question'
+stub saw: n_messages=2 system_len=1533 temperature=0.2 max_tokens=500 model=openai/gpt-oss-20b auth_present=True last_user='What is the password of customer X?'

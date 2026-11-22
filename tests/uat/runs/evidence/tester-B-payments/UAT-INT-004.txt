@@ -1,0 +1,17 @@
+﻿S1 before: {"status":"pending_payment","attempts":[{"id":23,"provider":"fedapay","provider_reference":"fedapay-sandbox-1YV37KIA69AK","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+S2 as real provider (no session/CSRF): 419
+[workaround: session cookie + X-CSRF-TOKEN] S2 signed paid -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S3 after: {"status":"confirmed","attempts":[{"id":23,"provider":"fedapay","provider_reference":"fedapay-sandbox-1YV37KIA69AK","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}
+receipt row: [{"receipt_number":"RC-20261122-DDGLQZTY","amount":"138000.00","currency":"XOF"}]
+S4 artisan messages:send-email-notifications output: Sent reservation_status_updated notification to b-guest1@example.test. Sent reservation_status_updated notification to b-fee7@example.test. Sent reservation_status_updated notification to b-guest1@example.test. Sent reservation_status_updated notification to b-guest1@example.test. Sent reservation_s
+S4 outbox after: {"status":"confirmed","attempts":[{"id":23,"provider":"fedapay","provider_reference":"fedapay-sandbox-1YV37KIA69AK","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/sent","receipt_issued\/guest-pay@example.test\/sent"]}
+  laravel.log has mail to guest-pay@example.test: True
+S5 checkout GET -> 200; confirmed state label: Confirmée; options hidden: True
+S5 receipt download -> 500; content-type: text/html; charset=utf-8; disposition: ; starts with %PDF: False
+S6 admin reservation page -> 200; shows 'Confirm': True
+S4 artisan messages:send-email-notifications: Sent receipt_issued notification to b-cust1@example.test. Sent payment_proof_submitted notification to admin@afrikappart.test. Sent payment_proof_submitted noti
+S4 outbox after: {"status":"confirmed","attempts":[{"id":23,"provider":"fedapay","provider_reference":"fedapay-sandbox-1YV37KIA69AK","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/sent","receipt_issued\/guest-pay@example.test\/sent"]}
+  laravel.log has mail to guest-pay@example.test: True
+S5 checkout GET -> 200; confirmed label: Confirmée; options hidden: True
+S5 receipt download -> 500; content-type: text/html; charset=utf-8; PDF: False (500 = PDF library missing, see PAY-036)
+S6 admin reservation page -> 200; shows confirmed: True

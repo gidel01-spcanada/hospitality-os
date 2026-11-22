@@ -1,0 +1,8 @@
+1 free range (401, +400..+403): 200 {"available":true}
+2 overlapping res 7 area? res 11 on 401 at +260..+263 (res 11 confirmed->completed): 200 {"available":false} ; res 12/10 other props. Overlap with res 1 (guest@) on 401 at +? {"check_in":"2027-01-01 00:00:00","check_out":"2027-01-04 00:00:00","status":"completed"}
+3a check_out = check_in: 422 {"message":"Le champ check out doit \u00eatre une date post\u00e9rieure \u00e0 check in.","errors":{"check_out":["Le champ check out doit \u00eatre un; check_out before: 422 {"message":"Le champ check out doit \u00eatre une date post\u00e9rieure \u00e0 check in.","errors":{"check_out":["Le champ check out doit \u00eatre un
+4 past dates (2020-01-01..2020-01-03): 200 {"available":true}
+5a invalid date: 422 {"message":"Le champ check in n\u2019est pas une date valide. (and 2 more errors)","errors":{"check_in":["Le champ check in n\u2019est pas une date va; 5b missing fields: 422
+6 draft: 404 {
+    "message": ""
+}

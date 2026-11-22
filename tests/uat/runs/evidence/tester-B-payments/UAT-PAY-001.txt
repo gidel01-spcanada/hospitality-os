@@ -1,0 +1,2 @@
+﻿PRICE LINES: Nuits 2 x 45000 90 000 XOF Menage 10 000 XOF Paiement sur pl
+badge 'Paiement' present: True  status label 'En attente': True

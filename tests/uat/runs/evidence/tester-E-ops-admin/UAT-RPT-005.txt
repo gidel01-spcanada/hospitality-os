@@ -1,0 +1,11 @@
+﻿S1 Export link on page: http://127.0.0.1:8105/admin/reports/export.csv?date_from=2028-06-01&date_to=2028-06-30
+S1 GET => 200; Content-Type: text/csv; charset=UTF-8; Content-Disposition: attachment; filename=reports-2028-06-01-2028-06-30.csv
+S2 BOM: EF BB BF; header row: Section;Metric;"Establishment / property / source";Currency;Value;Notes; delimiter ';'
+S3 Excel: not available on this machine (not verified)
+S4 CSV values equal HTML report (occupancy 3,3% / 3.3; collected 100 000,00 XOF / 100000; success 50,0% / 50) - see RPT-001 evidence
+S5 establishment=2 CSV: res=1 occN=2 sell=30 blocked=0 occ%=6.7 arr=1 dep=1 canc=0 canc%=0 bookedXOF=50000 bookedEUR=(none) outXOF=(none) collXOF=(none) collEUR=(none) attempts=1 succ%=0 reviews=1 avgRating=2; property rows: "E Prop B"
+S6 367-day export => 302 -> http://127.0.0.1:8105/admin/reports/export.csv?date_from=2027-01-01&date_to=2028-01-02
+S7 formula property row: Performance;"Performance by property";=SUM(1+1);;0;"0 occupied night(s), 0 cancellation(s)"  (cell begins with '=' unescaped => CSV/formula injection risk)
+S8 empty period export => 200; lines: 26; first 3: Section;Metric;"Establishment / property / source";Currency;Value;Notes / Operations;Reservations;;;0; / Operations;"Occupied nights";;;0;
+S9 EN header: Section;Metric;"Establishment / property / source";Currency;Value;Notes | FR header: Section;Indicateur;"Établissement / logement / source";Devise;Valeur;Notes
+S10 concierge => 403; customer => 403

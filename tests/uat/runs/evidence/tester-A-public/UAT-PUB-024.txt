@@ -1,0 +1,9 @@
+﻿step 1 confirmed res D+40..D+43 => 200 available=False expect=False match=True body={"available":false,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+step 2 inside D+41..D+42 => 200 available=False expect=False match=True body={"available":false,"reason":"minimum_stay","minimum_stay":2}
+step 3 admin block D+50..D+53 => 200 available=False expect=False match=True body={"available":false,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+step 4 enabled feed D+60..D+63 => 200 available=False expect=False match=True body={"available":false,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+step 5 disabled feed D+70..D+73 => 200 available=True expect=True match=True body={"available":true,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+step 6 cancelled D+80..D+83 => 200 available=True expect=True match=True body={"available":true,"estimated_total":138000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 138 000 XOF."}
+step 7 turnover D+43..D+45 => 200 available=True expect=True match=True body={"available":true,"estimated_total":92000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 92 000 XOF."}
+step 2b D+41..D+43 (2 nights inside booked range) => {"available":false,"estimated_total":92000,"currency":"XOF","message":"Ces dates sont disponibles. Montant estim\u00e9 : 92 000 XOF."}
+calendar element: <div id="property-availability-calendar" class="property-availability-content" data-availability-content hidden>

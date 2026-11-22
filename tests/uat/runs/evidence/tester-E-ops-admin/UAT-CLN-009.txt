@@ -1,0 +1,21 @@
+﻿public page has start/complete forms: 8 forms
+S1 start VA #27 => 302 -> http://127.0.0.1:8105/cleaning-schedule/<token> | msg:  | status=in_progress started=2026-11-22 21:27:46 completed=
+   admin list shows 'In progress' label: False
+S2 complete VA => 302 | msg:  | status=completed started=2026-11-22 21:27:46 completed=2026-11-22 21:27:47
+S3 crafted status=cancelled => 302 -> http://127.0.0.1:8105/cleaning-schedule/<token> | status=completed started=2026-11-22 21:27:46 completed=2026-11-22 21:27:47
+S3 crafted status=scheduled => 302 -> http://127.0.0.1:8105/cleaning-schedule/<token> | status=completed started=2026-11-22 21:27:46 completed=2026-11-22 21:27:47
+S4 VF (Fatou) via Awa share => 404 | status=completed started= completed=
+S5 VO (Awa, outside period) => 404 | status=scheduled started= completed=
+S6 expired token => 405
+S7 32 rapid POSTs: status codes = 404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,404,429,429,429,429,429,429,429,429
+S8 audit rows for VA: updated user=null | updated user=null | 
+--- re-run of S1 message, admin list, S6 (expired/revoked token)
+S1 start visit #32 via S1 => 302; success message on page: False ; DB: in_progress started=2026-11-22 21:29:45
+   admin list row for #32 shows In progress: True
+S6 POST with expired token => 404
+S6 POST with revoked token => 405 ; visit status still: in_progress
+share created for revoke test: 302, token found: True
+S2 complete via this share before revoke => 302; FR success message 'Le statut de la visite a Ã©tÃ© mis Ã  jour.' shown: True
+revoke => 302
+S6 POST with revoked token => 404 ; visit status: completed
+S8 note: public routes /cleaning-schedule/* are registered without the 'locale' middleware (routes/web.php); ?lang=en still renders French (html lang=fr).

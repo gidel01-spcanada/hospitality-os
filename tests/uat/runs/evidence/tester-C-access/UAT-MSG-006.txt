@@ -1,0 +1,8 @@
+setup: customer reservation id=12 ref=AFK-C8DDID-261122 on E1 (property 402)
+1 /admin/messages: thread 5 link=True customer name=True start-conversation panel=False
+2 thread 5: link to /admin/reservations/12 : True ; ref shown=True
+3 reply -> 302 /admin/messages; flash=[Message envoy]; sender stored: {"email":"admin@afrikappart.test"}
+4 outbox after reply: {"id":108,"template":"message_received","recipient_email":"uat-cust@example.test","payload":"{\"subject\":\"New message received\",\"locale\":\"en\",\"sender_name\":\"Afrik Appart Admin\",\"establishment_name\":\"Afrik Appart Cotonou\",\"message\":\"Hello, early check-in is possible (UAT)\",\"thread_url\":\"http:\\\/\\\/127.0.0.
+5 customer sees staff reply: True
+6 empty -> 302, 5001 -> 302; messages +0
+7 host (E1) list: thread 5 (E1)=True thread 6 (E2)=False

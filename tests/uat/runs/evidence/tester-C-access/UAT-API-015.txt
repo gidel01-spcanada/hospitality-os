@@ -1,0 +1,7 @@
+1 invalid login no Accept -> 302 http://127.0.0.1:8103 ctype: Content-Type: text/html; charset=utf-8; body start: <!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta http-equiv="refresh
+2 404 without Accept -> 404 ctype: Content-Type: text/html; charset=utf-8; body start: <!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <meta nam
+3 404 with Accept -> 404 { "message": "No query results for model [App\\Models\\Reservation] 999999999" }
+4 malformed JSON -> 422 stack trace: False
+5 >1MB body PUT /me -> 422 body: {"message":"Le champ nom ne peut pas d\u00e9passer 255 caract\u00e8res.","errors":{"name":["Le champ
+6a unknown with Accept -> 404 { "message": "" }
+6b unknown without Accept -> 404 ctype: Content-Type: text/html; charset=utf-8; html 404 page: True

@@ -1,0 +1,8 @@
+﻿step1 all empty -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | obligatoire. || obligatoire. || obligatoire. || obligatoire. || obligatoire.
+step2 slug uat-tenant-b -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | 
+step3 duplicate admin email -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | 
+step4 slug bad slug! -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | must only contain letters, numbers, dashes, and underscores. || must only contain letters, numbers, dashes, and underscores.
+step5 contact not-an-email -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | doit être une adresse email valide. || doit être une adresse email valide.
+step6 name 300 chars -> 302 Loc=http://127.0.0.1:8104/platform/tenants/create tenants 2->2 | caractères. || caractères.
+step7 same name UAT Tenant B, slug blank, new admin email -> 500 Loc= tenants 2->2 | 
+  step7 page:  Une erreur s’est produite | Hospitality OS A Hospitality OS Erreur 500 Une erreur s’est produite Le service est temporairement indisponible. Merci de réessayer dans quelques instants. Retour à l’accu | user created anyway: 0 | last error log: [2026-11-22 22:32:14] local.ERROR: SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: tenants.slug (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run

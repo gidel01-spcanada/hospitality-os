@@ -1,0 +1,8 @@
+1 wrong current: 302 /account/security err=[] flash=[] hasErrWord=False
+2 7-char new: 302 /account/security err=[] flash=[] hasErrWord=False
+3 mismatch: 302 /account/security err=[] flash=[] hasErrWord=False
+6 all empty: 302 /account/security err=[] flash=[] hasErrWord=False
+4 8-char valid: 302 /account/security err=[] flash=[Your password has been updated.] hasErrWord=False ; still signed in: 200
+5 old pw login -> 302 http://127.0.0.1:8103/login
+   new pw login -> 302 http://127.0.0.1:8103/dashboard
+7 other session (ps2, logged in before change) still valid: 200

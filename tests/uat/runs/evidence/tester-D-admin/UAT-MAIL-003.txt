@@ -1,0 +1,19 @@
+﻿setup review channels: [{"id":1,"review_channel":"internal","google_review_url":null},{"id":2,"review_channel":"google","google_review_url":"https:\/\/g.page\/r\/uat-d-review"},{"id":5,"review_channel":"both","google_review_url":"https:\/\/g.page\/r\/uat-d-both"}]
+step1 M1 confirmed mail: Subject: Reservation status update | status line:  d-m1@example.test Subject: Reservation status update MIME-V | 'View my reservation': True | review link: False
+step2 M1 completed mail has review link: True (http://127.0.0.1:8104/review/58?expires=<ts>&signature=<sig>) | google link: False
+step3 open review link anonymously -> 200
+  tampered signature -> 403
+  expiry after 30 days: not run (needs clock change); expires param present: True
+step4 M2 (google) completed: internal /review/ link: False | google /review/{id}/google or g.page link: True
+step5 M3 (both) completed: internal link: True | google link: True
+step6 M1 cancelled mail: status line  d-m1@example.test Subject: Reservation status upd | review link: False
+step7 same status -> outbox rows for M1 4 -> 4
+note: pending_validation mail status line:  d-m1@example.test Subject: Reservation status update MIME-V
+recheck M1 mail #-1: KZX-261122 for UAT PA has been updated. New status
+recheck M1 mail #-2: KZX-261122 for UAT PA has been updated. New status
+recheck M1 mail #-3: KZX-261122 for UAT PA has been updated. New status
+recheck M1 mail #-4: KZX-261122 for UAT PA has been updated. New status
+M1 mail #-1 status text: New status: pending_validation View my reservation 
+M1 mail #-2 status text: New status: cancelled View my reservation 
+M1 mail #-3 status text: New status: completed View my reservation Share your experie
+M1 mail #-4 status text: New status: confirmed View my reservation 

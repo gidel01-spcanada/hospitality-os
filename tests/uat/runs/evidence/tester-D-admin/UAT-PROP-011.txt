@@ -1,0 +1,9 @@
+﻿amenities tab checkbox count: 69
+step1 tick 10,20,40 (10=Appartement priv├⌐ dans un immeuble|20=Machine ├á caf├⌐|40=iPad / Ordinateur|) -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#amenities | ite Journaux Entités Succès : Propriété  | DB [10,20,40]
+step2 public page shows: Appartement priv├⌐ dans un immeuble=False, Machine ├á caf├⌐=False, iPad / Ordinateur=True
+step3 untick all (no amenity_ids sent) -> 302 | DB []
+step4 general save without amenity_ids -> 302 | DB [10,20]
+step5 general save with amenity_ids[]=1 -> 302 | DB [1] | amenities_synced audit rows 17->18
+step6 nonexistent amenity 999999 -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit | invalide. | DB [1]
+note: amenities_synced rows after a tab save attempt: 18
+step2 retry (ASCII needles): 'Appartement priv' True, 'Machine ' True, 'iPad / Ordinateur' True

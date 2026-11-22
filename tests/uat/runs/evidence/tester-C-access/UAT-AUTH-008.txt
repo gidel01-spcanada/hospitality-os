@@ -1,0 +1,6 @@
+3 GET /logout (logged in) -> 404 ; still logged in: 200
+1 POST /logout -> 302 http://127.0.0.1:8103
+  home shows login link: True ; logout control: False
+2 GET /dashboard after logout -> 302 http://127.0.0.1:8103/login
+3b GET /logout as guest -> 404 
+4 second session after first logout -> /dashboard 200

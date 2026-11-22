@@ -1,0 +1,6 @@
+﻿step1 create form -> 200; fields: _token,name,slug,contact_email,admin_name,admin_email
+step2 submit (slug blank) -> 302 Loc=http://127.0.0.1:8104/platform/tenants | nts Paramètres du site Journaux Entités Succès : UAT Tenant B a été créée. Un em
+step3 tenants: [{"id":1,"name":"Default","slug":"default","status":"active"},{"id":2,"name":"UAT Tenant B","slug":"uat-tenant-b","status":"active"}] ; list row: ètres du site Journaux Entités Succès : UAT Tenant B a été créée. Un email d’invitation a été envoyé à l’administrateur.
+step4 reset/invitation mail logged: True Subject: Reset Password Notification
+step5 outbox: [{"template":"staff_account_invitation","status":"queued"}]
+step6 user: {"role":"admin","is_admin":true,"tenant_id":2,"locale":"fr","is_active":true,"email_verified_at":"2026-11-22T22:31:56.000000Z","is_platform_admin":false}

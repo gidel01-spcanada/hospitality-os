@@ -1,0 +1,15 @@
+﻿1 invalid token /calendar/uat-apt-a/invalid-token.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+2 token of other property /calendar/uat-apt-a/<TB>.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+3a empty token /calendar/uat-apt-a/.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+3b token as query /calendar/uat-apt-a/.ics?token=<TOKEN-UPPER> => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+4 property without token (NULL) /calendar/uat-apt-g/anything.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+4b NULL token property, empty /calendar/uat-apt-g/.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+5 unknown slug /calendar/no-such-slug/<TOKEN-UPPER>.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+6 uppercase token /calendar/uat-apt-a/<TOKEN-UPPER>.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+6b truncated token /calendar/uat-apt-a/ac746fdd3d.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+6c longer token /calendar/uat-apt-a/<TOKEN-UPPER>00.ics => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+7a valid token + query /calendar/uat-apt-a/<TOKEN-UPPER>.ics?x=1 => 200 [ICS body]
+7b valid token trailing slash /calendar/uat-apt-a/<TOKEN-UPPER>.ics/ => 200 [ICS body]
+7c valid token without .ics /calendar/uat-apt-a/<TOKEN-UPPER> => 404 [ Page introuvable | Afrik Appart A Afrik Appart Erreur 404 P]
+8 30 invalid requests => statuses: 404 x30
+

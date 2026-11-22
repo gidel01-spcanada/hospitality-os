@@ -1,0 +1,7 @@
+﻿add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Success: Calendar feed saved. || Calendar feed saved.
+S1 state: feed 23 en=0 status=stale last_success= | events: 
+S1 public availability T+120..T+122 (feed disabled): available=True
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+S3 state after manual Sync: feed 23 en=1 status=fresh last_success=2026-11-22 20:56:02 | events: s8-ev
+S3 edit form re-opened => 200; is_enabled checkbox checked: True
+S3 public availability T+120..T+122 after manual sync: available=False

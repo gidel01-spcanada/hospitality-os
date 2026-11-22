@@ -1,0 +1,7 @@
+﻿POST /webhooks/unknown-provider signed: as provider -> 419; [workaround: session cookie + X-CSRF-TOKEN] -> 404
+POST /webhooks/stripe signed: as provider -> 419; [workaround: session cookie + X-CSRF-TOKEN] -> 404
+POST /webhooks/FEDAPAY signed: as provider -> 419; [workaround: session cookie + X-CSRF-TOKEN] -> 404
+S3 GET /webhooks/fedapay -> 404
+S4 POST /webhooks/interac signed with known fedapay ref: as provider -> 419; [workaround: session cookie + X-CSRF-TOKEN] -> 200 {"ok":true,"provider":"interac","status":"ignored"}
+S4 POST /webhooks/wise signed with known fedapay ref: as provider -> 419; [workaround: session cookie + X-CSRF-TOKEN] -> 200 {"ok":true,"provider":"wise","status":"ignored"}
+DB after: {"status":"pending_payment","attempts":[{"id":22,"provider":"fedapay","provider_reference":"fedapay-sandbox-NJCEOXEDDDPW","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}

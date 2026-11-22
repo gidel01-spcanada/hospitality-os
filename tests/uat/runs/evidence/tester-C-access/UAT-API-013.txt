@@ -1,0 +1,10 @@
+payment_attempts columns: id:1 reservation_id:1 provider:1 provider_reference:0 currency:1 amount:1 status:1 idempotency_key:0 payload:0 created_at:0 updated_at:0
+1 customer on Rp(5) -> 403 {"message":"Forbidden."}
+2 concierge on Rp -> 202 {"message":"Payment link queued.","checkout_url":"http:\/\/127.0.0.1:8103\/reservations\/5\/checkout?token=<token>"}; outbox: {"template":"payment_link","recipient_email":"uat-acct@example.test"}
+5 open checkout_url -> 200 (checkout page for reservation 5: False)
+3 concierge on Rc(6 confirmed) -> 403 body=[{
+    "message": ""
+}]
+4 concierge on Rv(8, verified attempt) -> 403 body=[{
+    "message": ""
+}]

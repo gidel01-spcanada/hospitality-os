@@ -1,0 +1,7 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+robots meta: / , /properties , /properties/appartement-401 , /about /faq /contact /privacy /terms /cookies => index,follow. canonical equals page URL without query. og:* and twitter:* present.
+/login => robots index,follow (recorded; not in private list).
+Step 2 checkout/dashboard noindex: NOT observed. GET /dashboard => 302 Location https://afrikappart.com/login ; GET /admin => 302 -> /login. Checkout needs a reservation token (POST booking) => not executed.
+GET /health => 200 {"status":"ok","application":"afrikappart","environment":"production","php_version":"8.5.13","timestamp_utc":"..."} (public; discloses env and PHP version).
+GET /up => 200 text/html (1832 bytes, title AfrikAppart).
+Headers (on /): X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Strict-Transport-Security max-age=31536000; includeSubDomains, X-Content-Type-Options nosniff.

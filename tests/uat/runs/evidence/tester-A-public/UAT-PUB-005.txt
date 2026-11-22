@@ -1,0 +1,5 @@
+﻿/properties?check_in=2026-12-02&check_out=2026-12-05 =>  HTTP 200 [uat-apt-f,uat-apt-g]
+/properties?check_in=2026-12-05&check_out=2026-12-07 =>  HTTP 200 [uat-apt-f,uat-apt-g,uat-apt-b,uat-apt-a,uat-villa-c]
+/properties?check_in=2026-12-03&check_out=2026-12-04 =>  HTTP 200 [uat-apt-f,uat-apt-g]
+/?check_in=2026-12-02&check_out=2026-12-05 =>  HTTP 302 -> http://127.0.0.1:8101/properties?check_in=2026-12-02&check_out=2026-12-05 []
+card links: http://127.0.0.1:8101/properties/uat-apt-f?check_in=2026-12-02&amp;check_out=2026-12-05&amp;guests=2 ; http://127.0.0.1:8101/properties/uat-apt-f?check_in=2026-12-02&amp;check_out=2026-12-05&amp;guests=2

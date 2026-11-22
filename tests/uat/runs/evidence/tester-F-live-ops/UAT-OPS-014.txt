@@ -1,0 +1,2 @@
+﻿Static inspection of scripts/post-deploy-validate.sh only; not run (it runs config:cache/route:cache/migrate on the app root).
+Messages present: :25 ".env file is missing", :30 "Vite manifest is missing", :77-78 migrations table guidance, :145 "Primary health checks failed", :160 "Production page is still referencing Vite dev-server assets.", :176 "Mobile API check failed", :184 "Post-deploy validation completed successfully."

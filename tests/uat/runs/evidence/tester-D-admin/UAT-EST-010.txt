@@ -1,0 +1,8 @@
+﻿step1 save interac -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#payments; DB interac: {"enabled":true,"mode":"sandbox","instructions":"Send transfer then upload proof","email":"pay@example.test","security_question":"Colour?","security_answer":"uat-blue"}
+step2 checkout (guest@) shows instructions: True; recipient pay@example.test: True; question 'Colour?': True; answer 'uat-blue': True
+  offline-proof form fields: _token,provider
+step3 guest submits interac proof -> 302 Loc=http://127.0.0.1:8104/reservations/15/checkout?token=<token> | OF Taxe locale / séjour 2 000 XOF Votre preuve de paiement a été reçue. Le paiement est en cours de 
+  reservation status pending -> pending_validation; attempt: [{"id":1,"provider":"interac","status":"awaiting_validation","amount":"112000.00","currency":"XOF"}]
+  payment_proof_submitted outbox rows 0 -> 6
+  admin detail shows proof link: True
+step4 audit_logs rows whose details contain the security answer 'uat-blue': 1 ; /admin/audit-logs page contains 'uat-blue': True

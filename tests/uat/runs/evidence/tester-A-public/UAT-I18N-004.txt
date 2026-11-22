@@ -1,0 +1,5 @@
+﻿1 /reservations/access?lang=en (fresh) => lang=en
+2 then / without lang => lang=en
+3 /faq?lang=fr => lang=fr
+3b then / => lang=fr
+4 customer2 (profile fr) /?lang=en => lang=fr

@@ -1,0 +1,18 @@
+﻿setup: R1=156 attempt A1=62 (has proof, owner cust1); R2=157 attempt A2= (no proof)
+S1 valid token -> 200 attachment; filename=p.pdf
+S2 anonymous no token -> 403
+S3 wrong token -> 403
+S4 owner logged in, no token -> 403 
+S5 other customer -> 403
+S6 A2 (other reservation) under R1 with R1 token -> 404
+S7 attempt of R1 without stored proof -> 404
+setup: R1=158 attempt A1=64 (has proof, owner cust1); R2=160 attempt A2= (no proof)
+S1 valid token -> 200 attachment; filename=p.pdf
+S2 anonymous no token -> 403
+S3 wrong token -> 403
+S4 owner logged in, no token -> 200 attachment; filename=p.pdf
+S5 other customer -> 403
+S6 A2 (other reservation) under R1 with R1 token -> 404
+S7 attempt of R1 without stored proof -> 404
+S6 (redo with real attempt A2=66 of reservation 164, no proof) under R1=158 with R1 token -> 404
+S6b A1 (R1's proof) under R2 with R2 token -> 404

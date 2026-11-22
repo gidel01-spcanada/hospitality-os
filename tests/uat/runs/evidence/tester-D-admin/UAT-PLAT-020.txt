@@ -1,0 +1,10 @@
+﻿step1 seeded admin dashboard 200, Tenants menu: True
+step2 tenants list: [{"name":"Default","slug":"default","status":"active"}] ; add button: False
+step4 concierge menu Tenants link: False; /platform/tenants -> 403
+--- back in on_premise mode; step3 on throwaway DB (instance 4 only)
+step3 suspend Default -> 302 Loc=http://127.0.0.1:8104/platform/tenants | status: suspended
+  admin next request /admin -> 302 Loc=http://127.0.0.1:8104/login | (not found: suspendu)
+  admin re-login -> http://127.0.0.1:8104/admin; /platform/tenants -> 302 Loc=http://127.0.0.1:8104/login
+  concierge (default tenant) /admin -> 302 Loc=http://127.0.0.1:8104/login
+recovered via DB: UPDATE tenants SET status=active WHERE slug=default -> active
+  after recovery admin /admin -> 200

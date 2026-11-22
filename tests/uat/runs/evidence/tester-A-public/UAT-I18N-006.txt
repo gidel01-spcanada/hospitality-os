@@ -1,0 +1,14 @@
+﻿E1 secondary currency set (DB): {"secondary_currency":"EUR","secondary_currency_rate":"0.001525"}
+1 listing FR price samples: 22 000 XOF / nuit ; 23 000 XOF / nuit ; 25 000 XOF / nuit ; 32 000 XOF / nuit ; 39 000 XOF / nuit ; 40 000 XOF / nuit ; approx shown: 
+1 detail P-A: 40 000 XOF / nuit Demander une réservation Partage ; 40 000 XOF / nuit ≈ 61,00 EUR Nom complet Email Ar ; approx: 
+1 listing EN price samples: 22 000 XOF / night ; 23 000 XOF / night ; 25 000 XOF / night ; 32 000 XOF / night
+2 EUR property detail price:  45 000 EUR / night ;  45 000 EUR / night
+2 price filter labels (no establishment): <label for="min_price">Minimum price (XOF) ; <label for="max_price">Maximum price (XOF)
+2 labels with establishment=2: <label for="min_price">Minimum price (XOF) ; <label for="max_price">Maximum price (XOF)
+3 see PUB-004 step 6: min 30000/max 50000 included EUR property uat-apt-e (70 EUR/night) because its nightly_rate_xof is 45000 (filter uses nightly_rate_xof)
+4 currency switch control in layout: False
+5 checkout XOF reservation of E1 (secondary EUR): 
+restored: {"secondary_currency":null,"secondary_currency_rate":null}
+5 (re-run with ASCII regex) checkout XOF reservation 18 of E1 with secondary EUR: Total 138 000 XOF Continue to payment Reference ; Total 138 000 XOF ≈ 210,45 EUR Guest A Customer
+1 (re-run) listing card P-A: 40 000 XOF / nuit ≈ 61,00 EUR Comparer &#8
+Note: the earlier 'approx shown' fields were empty because of a non-ASCII regex encoding issue in my script; re-run lines above show the ≈ values. nightly_rate_eur is not used by any view/controller; nightly_rate_xof holds the amount in the property currency (my EUR fixture with 45000 therefore displays 45 000 EUR).

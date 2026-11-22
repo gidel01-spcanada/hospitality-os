@@ -1,0 +1,10 @@
+1 GET /properties -> 200; count=4; slugs=appartement-401,appartement-402,appartement-403,appartement-404; rates ascending: 25000.00,32000.00,39000.00,45000.00; keys=bathrooms,bedrooms,beds,city,cover_image,currency,establishment,id,max_guests,minimum_stay,name,nightly_rate_xof,slug
+   establishment keys: city,id,name
+6 web /properties slugs: appartement-404,appartement-401,appartement-402,appartement-403
+2a city=Cotonou: 4 ; city=zzz: 0
+2b guests=2: 4; guests=4: 3
+2c establishment_id=1: 3; =2: 1
+3 guests=0: 422; guests=abc: 422; city 121: 422
+4 detail -> 200; extra keys present: images=True description=True amenities=True
+5 draft slug (appartement-403 set to draft): 404; does-not-exist: 404
+note: published but is_active=0 (402): in list=False; detail -> 200

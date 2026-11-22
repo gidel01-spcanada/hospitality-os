@@ -1,0 +1,13 @@
+﻿setup R1=25 confirmed T+10..T+13, RC=26 cancelled T+30..T+33
+step1 T+11..T+14 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces dates. Dét
+step2 T+8..T+11 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces dates. Dét
+step3 T+10..T+13 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces dates. Dét
+step4 T+10..T+12 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces dates. Dét
+step5 back-to-back before T+8..T+10 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/27 | (not found: disponible pour)
+step6 back-to-back after T+13..T+15 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/28 | (not found: disponible pour)
+step7 over cancelled T+30..T+33 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/29 | (not found: disponible pour)
+step8 over pending B6 (T+13..T+15) T+14..T+16 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces dates. Dét
+step9 concurrency: not run (single HTTP client, no coordinated parallel sessions)
+step10 edit R1 to T+11..T+13 (own dates) -> 302 Loc=http://127.0.0.1:8104/admin/reservations/25 | {"id":25,"reservation_ref":"AFK-2SIPQZ-261122","status":"confirmed","source":"admin","check_in":"2026-12-03T00:00:00.000000Z","check_out":"2026-12-05T00:00:00.000000Z","email":"d-r1@example.test","user_id":1,"guest_id":23,"subtotal":"100000.00","fees":"10000.00","taxes":"5000.00","total_amount":"115000.00","notes":"Late arrival","customer_note":"Baby cot","locale":"fr"}
+step11 edit B5 to overlap R1 -> 422 Loc= |  Données invalides | Afrik Appart A Afrik Appart Erreur 422 Données invalides Le formulaire contient des informations incorrectes ou incomplètes. Reto
+overlap query (non-cancelled overlapping pairs on PA): 0

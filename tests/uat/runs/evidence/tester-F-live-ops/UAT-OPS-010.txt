@@ -1,0 +1,4 @@
+﻿Repository inspection only.
+docs/runbook.md: not found. docs/bluehost-deployment.md: not found. docs/ contains: architecture.md, COMPONENT-LIBRARY.md, content-todo.md, data-model.mmd, database.md, input-inventory.md, M01-audit-proposal.md, M02-COMPLETION-SUMMARY.md, mobile-api.md, requirements-baseline.md, adr/0001-laravel-bluehost.md, adr/0002-hospitality-os-multi-tenant-architecture.md.
+README mentions no backup/restore/mysqldump procedure (README:27 only restores the seed export).
+Per the case precondition (no documented procedure) => Blocked. Steps 2-4 not executed (staging/hosting access).

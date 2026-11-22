@@ -1,0 +1,7 @@
+1 guest opens signed link -> 200: title text=False property line= rating input=<input type="number" name="rating" min="1" max="5" value="5" required> textarea review_text=True button=False
+2 submit -> 302 /review/12?signature=<sig>&expires=1797976538; thanks text: False
+3 DB review: {"id":1,"source":"website","rating":5,"reviewer_name":"Cust One","is_active":1,"property_id":2,"reservation_id":12,"tenant_id":1} ; count 0 -> {"c":1}
+   admin /admin/reviews lists it: True
+4 reload link: already submitted text=False form hidden=True
+5 public /reviews -> 200 contains review: True; property page 402 contains: True
+Recheck of step 2: after submit the redirect shows the thanks alert (session review_submitted) - confirmed in REV-004 runs ('Merci pour votre avis.' in fr). The earlier 'Thank you' regex failed because the guest UI is French; step 4 text 'Un avis a déjà été envoyé pour ce séjour.' confirmed.

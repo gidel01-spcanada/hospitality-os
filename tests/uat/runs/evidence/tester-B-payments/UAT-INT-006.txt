@@ -1,0 +1,5 @@
+﻿[workaround] late 'failed' webhook -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+[workaround] late 'cancelled' webhook -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+[workaround] late 'pending' webhook -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S2-S4 after: {"status":"confirmed","attempts":[{"id":24,"provider":"fedapay","provider_reference":"fedapay-sandbox-G21RLFGMM3RJ","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued"]}
+outbox rows total before/after: 21 / 24

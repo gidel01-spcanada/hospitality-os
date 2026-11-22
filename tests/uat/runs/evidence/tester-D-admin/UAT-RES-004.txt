@@ -1,0 +1,10 @@
+﻿setup: feed 2 with events T+40..43, T+60..63, T+70..73 (DB insert, no ICS source offline); admin block T+50..T+53 -> 302
+step1 admin T+40..T+42 no override -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces 
+step2 with override -> 302 Loc=http://127.0.0.1:8104/admin/reservations/30 | notes: [D├⌐rogation calendrier externe] Conflit ignor├⌐ par Afrik Appart Admin le 2026-11-22 21:38:27.
+step3 outbox before send: [{"id":49,"template":"reservation_created","status":"queued"}] ; send command: Sent reservation_created notification to d-arch@example.test. | Sent reservation_created notification to d-rule1@example.test. | Sent reservation_created notification to d-rule2@example.test. | Sent reservation_created notification to d-rule3@example.test. | Sent reservation_created notification to  ; after: [{"template":"reservation_created","status":"sent"}]
+step4 admin block T+50..T+52 with override -> 302 Loc=http://127.0.0.1:8104/admin/reservations/create | n client Erreur : Le logement n’est pas disponible pour ces 
+step5 host form has checkbox: True; host override T+60..T+62 -> 302 Loc=http://127.0.0.1:8104/admin/reservations/31 | notes: [D├⌐rogation calendrier externe] Conflit ignor├⌐ par Afrik Appart Host le 2026-11-22 21:38:33.
+step6 concierge form has checkbox: False
+step7 concierge crafted override -> 403 { "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis." }
+step8 override without conflict -> 302 | notes: Plain
+step9 edit into feed conflict T+70..T+72 with override -> 302 Loc=http://127.0.0.1:8104/admin/reservations/32 | {"check_in":"2027-01-31T00:00:00.000000Z","check_out":"2027-02-02T00:00:00.000000Z","notes":"Plain\r\n[D\u00e9rogation calendrier externe] Conflit ignor\u00e9 par Afrik Appart Admin le 2026-11-22 21:38:36."}

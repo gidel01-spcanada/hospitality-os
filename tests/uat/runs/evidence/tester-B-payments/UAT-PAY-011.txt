@@ -1,0 +1,8 @@
+﻿S1 property page -> 200; fee note: Adultes Pays Enfants Bébés Remarque pour la réservation Des frais d’annulation non remboursables de 20 % du montant du séjour s’appliquent en cas d’annulation à moins de 7 jours de l’arrivée.
+S2 R7 (in 3 days) warning: ntion : annuler maintenant entraîne des frais non remboursables de 20 000 XOF.
+S3 cancel R7 -> 302; flash: Votre réservation a été annulée. Des frais d’annulation non remboursables de 20 000 XOF s’appliquent.
+  DB R7: {"status":"cancelled","attempts":[],"lines":[{"label":"Frais d\u2019annulation (non remboursables)","amount":"20000.00"}],"receipts":0,"outbox":["reservation_status_updated\/b-fee7@example.test\/queued"]} total_amount=100000.00
+S4 R8 (in 10 days) fee warning present: False
+  cancel R8 flash: Votre réservation a été annulée. Référen lines: {"status":"cancelled","attempts":[],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/b-guest1@example.test\/queued"]}
+S5 R9 (exactly +7d) fee warning present: False
+  cancel R9 -> 302; lines: {"status":"cancelled","attempts":[],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/b-guest1@example.test\/queued"]}

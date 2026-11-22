@@ -1,0 +1,15 @@
+﻿setup property 24 (min stay 1, no reservations)
+GET availability-blocks/create -> 200 fields: _token,start_date,end_date,reason
+step1 block A T+10..T+13 -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/edit#availability | ètres du site Journaux Entités Succès : Blocage de disponibi 26-12-02 00:00:00 → 2026-12-05 00:00:00 
+step2 check T+10..T+12 -> 200 'non disponible'
+step3 check T+13..T+15 -> 200 'disponible'
+step4 check T+9..T+10 -> 200 'disponible'
+step5 block B start=end T+20 -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/edit#availability
+step6 check T+19..T+21 -> 200 'non disponible'; T+20..T+21 -> 200 'disponible'
+step7 end before start -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/availability-blocks/create blocks 2->2 | doit être une date postérieure ou égale à date de début.
+step7 reason empty -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/availability-blocks/create blocks 2->2 | obligatoire.
+step7 reason 256 -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/availability-blocks/create blocks 2->2 | caractères.
+step7 dates empty -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/availability-blocks/create blocks 2->2 | obligatoire. || obligatoire.
+step8 delete block A -> 302 http://127.0.0.1:8104/admin/properties/24/edit#availability | tités Succès : Blocage de disponibilité supprimé.  | check T+10..T+12 -> 200 'disponible'
+step9 delete other property's block 3 via this URL -> 404; still exists: 1 / other=1
+step10 block over existing reservation T+50..T+52 -> 302 Loc=http://127.0.0.1:8104/admin/properties/24/edit#availability (blocks=2) | 

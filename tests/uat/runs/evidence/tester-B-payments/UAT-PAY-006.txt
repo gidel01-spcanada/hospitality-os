@@ -1,0 +1,6 @@
+﻿login cust1 -> 302 http://127.0.0.1:8102/dashboard
+S1 GET checkout no token -> 200; payment options: True; back-to-account link: True
+S2 POST pay_later no token -> 302 Location has stored token: True
+S3 user_id removed + reservation email upper-cased -> GET 200 (200 means case-insensitive email match)
+S4 logged out -> 302 http://127.0.0.1:8102/reservations/access
+S4b after logout (session) -> 302 http://127.0.0.1:8102/reservations/access

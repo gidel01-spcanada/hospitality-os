@@ -1,0 +1,5 @@
+1 GET /host/register -> 404; custom 404 page: Page introuvable | Afrik Appart A Afrik Appart Erreur 404 Page introuvable La page demandée n’existe pas ou a été déplac
+2 POST /host/register -> 404; tenants 1->{"c":1}; users 16->{"c":16}
+3 home has 'Start hosting'/host/register link: False
+4 admin GET /platform/tenants/create -> 404
+   admin GET /platform/tenants -> 200

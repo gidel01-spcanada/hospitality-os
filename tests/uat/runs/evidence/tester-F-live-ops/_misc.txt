@@ -1,0 +1,6 @@
+GET /feedback => Content-Type: text/html; charset=utf-8 ; STATUS=200 ct=text/html; charset=utf-8 size=14704
+GET /establishments => Content-Type: text/html; charset=utf-8 ; STATUS=200 ct=text/html; charset=utf-8 size=14388
+GET /?establishment=1 => Content-Type: text/html; charset=utf-8 ; Location: https://afrikappart.com/properties?establishment=1 ; STATUS=302 ct=text/html; charset=utf-8 size=446
+GET /?sort=price => Content-Type: text/html; charset=utf-8 ; Location: https://afrikappart.com ; STATUS=302 ct=text/html; charset=utf-8 size=338
+GET /uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-22-min-26-s-card.webp => Content-Type: image/webp ; STATUS=200 ct=image/webp size=70080
+GET /login with tampered session+XSRF cookies => HTTP/1.1 200 OK ; STATUS=200

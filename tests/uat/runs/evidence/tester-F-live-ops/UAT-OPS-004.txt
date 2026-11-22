@@ -1,0 +1,7 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.
+Before re-seed: tenants=1, users=4, establishments=1, properties=4, amenities=69, amenity_categories=7, settings=13, property_images=58, reservations=0.
+Step1 (synthetic, via SQL on scratch DB instead of Admin UI): inserted reservation F-OPS04-001, set settings.site_name='Test Site', changed admin name to 'Changed Admin' and replaced password hash.
+Step2: php artisan db:seed => exit 0.
+Step3: after: same counts, reservations=1 (no duplicates).
+Step4: reservation F-OPS04-001 untouched (confirmed, 64000). site_name reset to 'Afrik Appart' (overwritten).
+Step5: admin name reset to 'Afrik Appart Admin' and password hash rewritten (bcrypt hash) => AuthSeeder resets seeded accounts on re-seed.

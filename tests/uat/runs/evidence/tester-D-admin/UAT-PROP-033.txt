@@ -1,0 +1,11 @@
+﻿create form -> 200 fields: _token,name_en,name_fr
+step1 Sauna -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8 | nts Paramètres du site Journaux Entités Succès : Équipement 
+step2 second Sauna -> 302
+step3 Heated pool -> 302
+DB: []
+step4 missing name_fr -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8/amenities/create amenities 74->74 | obligatoire.
+step4 missing name_en -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8/amenities/create amenities 74->74 | obligatoire.
+step4 name 101 -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8/amenities/create amenities 74->74 | caractères.
+step5 editor has checkbox for Sauna id 73: True
+  assigned; public page shows 'Sauna': True
+DB (corrected query on category_id): Sauna -> slug sauna-2 sort 10 (a seeded amenity already uses slug 'sauna', id 73), second Sauna -> sauna-3 sort 20, Heated pool -> heated-pool sort 30; an accidental rerun added sauna-4 (50) and heated-pool-2 (60). Step 5 used the seeded 'Sauna' (id 73) for assignment.

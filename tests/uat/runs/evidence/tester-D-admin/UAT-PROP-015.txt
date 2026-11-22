@@ -1,0 +1,14 @@
+﻿setup property 26 (min stay 2): reservation 8 confirmed T+5..T+8; block T+20..T+22; external feed event T+12..T+14 inserted directly in DB (no ICS source available offline): FAILED first attempt (NOT NULL feed_id), see setup fix below
+  cancelled reservation 9 T+30..T+33
+step1 T+1..T+3 -> 200 'Succès :'
+step2 T+6..T+9 -> 200 'non disponible'
+step3 T+8..T+10 -> 200 'disponible'
+step4 T+12..T+13 -> 200 'non disponible'; extra T+12..T+15 (feed only, min stay ok) -> 200 'disponible'
+step5 T+21..T+23 -> 200 'non disponible'
+step6 T+1..T+2 (1 night) -> 200 'non disponible'
+step7 check_out=check_in -> 302 Loc=http://127.0.0.1:8104/admin/properties/26/availability?check_in=2026-11-23&check_out=2026-11-24; before -> 302 Loc=http://127.0.0.1:8104/admin/properties/26/availability?check_in=2026-11-25&check_out=2026-11-25; missing params -> 302 Loc=http://127.0.0.1:8104/admin/properties/26/availability
+step8 cancelled T+30..T+33 -> 200 'disponible'
+roles: host(E1) -> 200 'disponible'; concierge -> 403 Loc=; customer -> 403 Loc=; host on E2 property 17 -> 403 Loc=
+--- setup fix: external event T+12..T+14 inserted with feed_id: feed 1 enabled=1 events=1
+step1 T+1..T+3 -> 200 'disponible'
+step4 T+12..T+13 -> 200 'non disponible'; T+12..T+14 (2 nights, feed conflict only) -> 200 'non disponible'; T+14..T+16 (after feed) -> 200 'disponible'

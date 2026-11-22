@@ -1,0 +1,10 @@
+1 GET /dashboard -> 200 
+1 GET /account -> 200 
+1 GET /messages -> 200 
+2 dashboard pending/verified labels: pending=False verified=True
+   /account labels: pending=True verified=True
+   admin user list: pending=False verified=True
+3 admin sets email_verified -> 302; DB verified_at: {"email_verified_at":"2026-11-22 21:01:42"}
+   after: dashboard pending=False verified=True; account pending=False verified=True
+4 reset sets verified: AUTH-018 user uat-brute registered unverified; DB email_verified_at after reset = {"email_verified_at":"2026-11-22 20:58:26"} ; uat-reset: {"email_verified_at":"2026-11-22 20:57:58"}
+Corrected label check: /account 'Status' shows 'Pending verification' for new user (uat-unverified2) and 'Verified' after admin sets email_verified for uat-unverified; /dashboard and admin users list do not show the status (earlier 'verified=True' flags were loose text matches).

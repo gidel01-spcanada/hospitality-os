@@ -1,0 +1,17 @@
+﻿S1 GET create => 200; fields: assignee_name,duration_minutes,instructions,property_id,reservation_id,scheduled_at,status
+S2 create V1 (RA res 9, Awa Menage, 2026-11-27 11:00, 90, scheduled, 'Change linen'): 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. | 
+S3 list shows Awa Menage: True; instructions: False; status Scheduled: True; count text: 1 visit
+S4 empty submit => 302 errors: The assignee name field is required. | The duration minutes field is required. | The property id field is required. | The scheduled at field is required. | The status field is required.
+S5 duration 14 => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The duration minutes must be at least 15. ; created: False
+S5 duration 15 => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S5 duration 1440 => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S5 duration 1441 => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The duration minutes may not be greater than 1440. ; created: False
+S6 assignee 121 chars => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The assignee name may not be greater than 120 characters. ; created: False
+S6 assignee 120 chars => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S6 instructions 2001 chars => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The instructions may not be greater than 2000 characters. ; created: False
+S6 instructions 2000 chars => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S7 status done => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The selected status is invalid. ; created: False
+S7 scheduled_at 'not a date' => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: The scheduled at is not a valid date. ; created: False
+S8 no reservation (Dur15 earlier had none) accepted: see S5; explicit: 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S9 past visit => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+DB rows: #1 p1 r9 Awa Menage 2026-11-27 11:00:00 90m scheduled | #2 p6 r Dur15 2026-12-12 06:00:00 15m scheduled | #3 p6 r Dur1440 2026-12-12 01:00:00 1440m scheduled | #4 p6 r NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN 2026-12-13 10:00:00 30m scheduled | #5 p6 r Ins2000 2026-12-14 10:00:00 30m scheduled | #6 p6 r NoRes 2026-12-16 10:00:00 30m scheduled | #7 p6 r PastPerson 2026-11-19 10:00:00 30m scheduled | 

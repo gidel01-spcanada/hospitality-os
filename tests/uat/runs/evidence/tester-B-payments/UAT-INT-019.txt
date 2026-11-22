@@ -1,0 +1,5 @@
+﻿S1 guest1 cancel -> 302; cancelled
+S2 guest2 overlapping reservation 105 confirmed (same property/dates)
+[workaround] S3 signed paid for guest1's attempt -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S4 guest1 now: confirmed; guest2: confirmed; same property/dates: yes
+S5 alerts / manual_review status: {"manual_review_rows":0,"audit_logs_last":["created","created"]}

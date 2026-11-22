@@ -1,0 +1,14 @@
+﻿RE2=34 on E2 (host@ manages E1 only); before: status=pending attempts=0
+step1 host GET show -> 403
+step1 host GET edit -> 403
+step1 host PUT update -> 403
+step1 host PATCH status -> 403
+step1 host PATCH notes -> 403
+step1 host POST payment-link -> 403
+step1 host POST receipt -> 403
+step1 host POST payment-proof -> 403
+step2 host list contains E2 'UAT Tax Prop': False
+step3 host property options: 26, includes E2 property 27: False; POST property_id=27 -> 403
+step4/6 other tenant: not run in on_premise mode (see PLAT-008 run in cloud mode)
+step5 host POST confirm-offline-payment on RE2 -> 302 Loc=http://127.0.0.1:8104/admin/reservations; after: status=confirmed attempts=[{"provider":"offline","status":"paid","provider_reference":"HOST-HACK"}] receipts=[{"receipt_number":"RC-20261122-JAJPWXFX","amount":"112000.00","payment_attempt_id":8}]
+step7 concierge GET RE2 -> 200

@@ -1,0 +1,7 @@
+﻿--- PLATFORM_MODE=on_premise (instance 4)
+step1/4 /platform/tenants -> 200; row text: ements Propriétés Équipe Action Default default &middot; Actif 5 32 10 Suspendre ! Confirmer cette action Annuler Confirmer  ; Add tenant button/link: False
+  DB: [{"id":1,"name":"Default","slug":"default","status":"active"}] ; tenant 1 properties via establishments: 32
+step5 EN labels sample: ements Propriétés Équipe Action Default default &middot; Actif 5 32 10 Suspendre ! Confirmer cette action Annuler Confir
+--- PLATFORM_MODE=cloud (own instance restarted): /platform/tenants -> 200; Add tenant link: True
+step5 after setting admin locale en:  Establishments Properties Staff Action Default default &middot; Active 5 32 11 Suspend UAT Signup Co uat-signup-co &mid
+  cloud list rows: Établissements Propriétés Équipe Action Default default &middot; Actif 5 32 11 Suspendre UAT Signup Co uat-signup-co &middot; contact-signup@example.test Actif 0 0 1 Suspendre UAT Signup Co uat-signup-co-2 &middot; contact-signup@example.test Actif 0 0 1 Suspendre UAT Tenant Alpha uat-tenant-alpha &middot; contact-alpha@example.test Actif 0 0 1 Suspendre UAT Tenant B uat-tenant-b &middot; contact-

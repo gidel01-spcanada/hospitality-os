@@ -1,0 +1,4 @@
+﻿step1 /platform/tenants -> 200; Add tenant link: False
+step2 GET /platform/tenants/create -> 404
+step3 POST /platform/tenants -> 404; tenants 1 -> 1; user created: 0
+step4 anonymous GET /host/register -> 404

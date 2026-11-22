@@ -1,0 +1,11 @@
+﻿setup: guest@ locale en, email_message_updates=1 ; thread 5 (guest@ <-> E1)
+step1 staff reply -> 302 Loc=http://127.0.0.1:8104/admin/messages | new outbox rows: [{"template":"message_received","recipient_email":"guest@afrikappart.test"}]
+step2 mail: Subject: Your reservation confirmation: AFK-I9ISIH-261122 | raw <b>today</b>: False escaped: False | line break kept (<br>): False | link:  | establishment name: False
+  dcustomer-1 email_message_updates=0
+step4 customer dcustomer-1 starts thread 8 -> 302; staff rows queued: ["admin@afrikappart.test","concierge@afrikappart.test","host@afrikappart.test","dhost-2@example.test","dhost-6@example.test"]
+  staff flags: [{"email":"admin@afrikappart.test","email_message_updates":true},{"email":"dadmin-1@example.test","email_message_updates":false},{"email":"concierge@afrikappart.test","email_message_updates":true},{"email":"dconcierge-1@example.test","email_message_updates":false},{"email":"host@afrikappart.test","email_message_updates":true},{"email":"dhost-1@example.test","email_message_updates":false},{"email":"dcustomer-2@example.test","email_message_updates":false},{"email":"dhost-2@example.test","email_message_updates":true},{"email":"dhost-6@example.test","email_message_updates":true}]
+step3 staff reply in thread of customer with email_message_updates=0 -> 302; new rows: []
+step4/5 guest@ replies (concierge opted out) -> 302; rows: ["admin@afrikappart.test","host@afrikappart.test","dhost-2@example.test","dhost-6@example.test"]
+  admin mail link: 
+restored concierge flag and admin locale fr
+step2 corrected: the message_received rows were not delivered: outbox row 146 (guest@) and staff rows 147-155 have status=failed with payload.error 'htmlspecialchars(): Argument #1 ($string) must be of type string, Illuminate\Mail\Message given (View: resources/views/emails/message-received.blade.php)'. The earlier 'Subject' captured was the previous reservation mail.

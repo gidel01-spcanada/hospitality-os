@@ -1,0 +1,9 @@
+﻿2 empty message => 422 {"message":"Le champ message est obligatoire.","errors":{"message":["Le champ message est obligatoire."]}}
+3a 1200 chars => 200 {"answer":"STUB-ANSWER: the FAQ does not cover this, please use the Contact page."}
+3b 1201 chars => 422 {"message":"Le champ message ne peut pas d\u00e9passer 1200 caract\u00e8res.","errors":{"message":["Le champ message ne peut pas d\u00e9passer 1200 caract\u00e8res."]}}
+4 history 11 => 422 {"message":"Le champ history ne peut pas contenir plus de 10 \u00e9l\u00e9ments.","errors":{"history":["Le champ history ne peut pas contenir plus de 10 \u00e9l\u00e9ments."]}}
+5 role system => 422 {"message":"La valeur s\u00e9lectionn\u00e9e pour history.0.role est invalide.","errors":{"history.0.role":["La valeur s\u00e9lectionn\u00e9e pour history.0.role est invalide."]}}
+6 history content 1201 => 422 {"message":"Le champ history.0.content ne peut pas d\u00e9passer 1200 caract\u00e8res.","errors":{"history.0.content":["Le champ history.0.content ne peut pas d\u00e9passer 1200 caract\u00e8res."]}}
+7 script text => 200 {"answer":"STUB-ANSWER (from FAQ): Une r\u00e9servation non finalis\u00e9e peut \u00eatre annul\u00e9e depuis votre espace client ou la page de paiement. Selon l\u2019\u00e9tablissement, des frais d\u
+8 no CSRF => 419 { "message": "CSRF token mismatch." }
+7b app.js help chat rendering uses: 137: message.textContent = content; | 152: status.textContent = ''; | 171: status.textContent = error.message || form.dataset.errorMessage;

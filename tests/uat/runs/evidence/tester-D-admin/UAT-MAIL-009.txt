@@ -1,0 +1,7 @@
+﻿step1 right after creation: reset mail in log: True | Subject: Reset Password Notification | link: http://127.0.0.1:8104/reset-password/<token>?email=d-invite%40example.test
+step2 open reset link -> 200
+  POST /reset-password -> 302 Loc=http://127.0.0.1:8104/login | (not found: mot de passe)
+  login with new password -> 302 Loc=http://127.0.0.1:8104/dashboard
+step3 reuse link -> 302 Loc=http://127.0.0.1:8104/reset-password/<token>?email=d-invite@example.test | (not found: invalide) | old new-password still works: http://127.0.0.1:8104/dashboard
+step4 transport-failure for invitation: not run (would need a failing broker transport during an admin web request on the shared server process).
+step5 outbox: [{"t":"staff_account_invitation","s":"queued","err":""}] ; config auth.passwords.users.expire=60 min

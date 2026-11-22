@@ -1,0 +1,13 @@
+﻿ANALYTICS_ENABLED=true GA4_MEASUREMENT_ID=G-UAT0000000 (instance restarted): / => 200; banner element: <div class="analytics-consent" data-analytics-consent hidden role="dialog" aria-live="polite" aria-label="Mesure d’audience">
+banner text:  Mesure d’audience Nous utilisons des outils de mesure pour améliorer le parcours public. Aucun suivi n’est activé sans votre accord. Accepter Refuser 
+public config: window.__ANALYTICS_CONFIG__ = {"ga4MeasurementId":"G-UAT0000000","gtmContainerId":null};; analytics hosts in HTML: 
+EN banner text:  Analytics We use measurement tools to improve the public journey. Tracking is disabled until you consent. Accept Decline 
+logged-in /reservations/14/checkout => 200 config: window.__ANALYTICS_CONFIG__ = null; banner=False
+logged-in /dashboard => 200 config: window.__ANALYTICS_CONFIG__ = null; banner=False
+logged-in /messages => 200 config: window.__ANALYTICS_CONFIG__ = null; banner=False
+logged-in /properties => 200 config: window.__ANALYTICS_CONFIG__ = {"ga4MeasurementId":"G-UAT0000000","gtmContainerId":null}; banner=True
+logged-in /account/preferences => 200 config: window.__ANALYTICS_CONFIG__ = null; banner=False
+/reservations/access => config: window.__ANALYTICS_CONFIG__ = {"ga4MeasurementId":"G-UAT0000000","gtmContainerId":null};
+admin login via env password => 302 config: 
+built bundle contains consent key: app-QmQ9EbTq.js
+See evidence above; steps needing browser: 1 (network), 2-5, 7, 8.

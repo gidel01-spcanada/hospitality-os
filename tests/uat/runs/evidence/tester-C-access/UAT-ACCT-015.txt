@@ -1,0 +1,5 @@
+1 / lang=en; language switch link present: False
+2 /language/fr -> 302 /; then lang=en
+3 /dashboard?lang=fr lang=en
+4 locale=fr cookie added manually: lang=en
+5 saved language changed to fr: / lang=fr; /dashboard lang=fr

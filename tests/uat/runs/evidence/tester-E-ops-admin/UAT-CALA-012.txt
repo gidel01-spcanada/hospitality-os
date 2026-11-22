@@ -1,0 +1,24 @@
+﻿Setup: property 1 (PA, establishment 1), property 5 (PB, establishment 2); feed 23 on PA, feed 21 on PB. host@ assigned to E1 only; e-host-other assigned to E2 only.
+== CALA-012 step 1: host (E1) on PA
+GET /admin/properties/1/calendar => 200
+GET /admin/properties/1/calendar/feeds/create => 200
+GET /admin/properties/1/calendar/feeds/23/edit => 200
+GET /admin/properties/1/calendar/export.ics => 200
+== step 2: host (E1) on PB (E2)
+GET /admin/properties/5/calendar => 403
+GET /admin/properties/5/calendar/feeds/create => 403
+GET /admin/properties/5/calendar/export.ics => 403
+POST /admin/properties/5/calendar/feeds => 403
+POST /admin/properties/5/calendar/feeds/21/sync => 403
+== step 3: host on PA URL with PB's feed id
+GET /admin/properties/1/calendar/feeds/21/edit => 404
+== step 4: concierge / customer on PA
+concierge: GET /admin/properties/1/calendar => 403
+customer: GET /admin/properties/1/calendar => 403
+== step 5: anonymous
+GET /admin/properties/1/calendar => 302 -> http://127.0.0.1:8105/login
+== step 6: admin of other tenant (tenant_id=2) on PA (tenant 1)
+GET /admin/properties/1/calendar => 200
+GET /admin/properties/1/calendar/feeds/create => 200
+GET /admin/properties/1/calendar/export.ics => 200
+GET /admin/properties/1/edit => 200

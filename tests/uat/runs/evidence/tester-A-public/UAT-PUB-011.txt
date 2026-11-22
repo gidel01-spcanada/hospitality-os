@@ -1,0 +1,14 @@
+﻿E1 => 200
+slugs: appartement-401,appartement-402,appartement-403,appartement-404,uat-apt-a,uat-apt-b,uat-apt-e,uat-apt-f,uat-apt-g
+maps link: <a class="btn btn-ghost" href="https://maps.google.com/?q=6.3703,2.3912" target="_blank" rel="noopener noreferrer">
+iframe: 
+copy msg:  | 
+reviews text: 6 occurrences; viewall: 
+a-estab-3-inactive => 404  Page introuvable | Afrik Appart A Afrik Appart Erreur 404 Page introuvable La page demandée n’existe pas ou a été dépla
+does-not-exist => 404  Page introuvable | Afrik Appart A Afrik Appart Erreur 404 Page introuvable La page demandée n’existe pas ou a été dépla
+a-estab-2 => 200  A Estab Two | Afrik Appart A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact E
+slugs: uat-villa-c
+E4 (only draft property) => 200:  A Estab Four Empty | Afrik Appart A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte ← Propriétés Cotonou, BJ A Estab Four Empty Partager cette propriété Copier le lien Propriétés Logements premium 0 Aucun logement n’est actuellement disponible. Localisation Cotonou, BJ A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +229 00 00 00 00 Questions fréqu
+E1 reviews header: 4.1 / 5 · Basé sur; view-all link: 
+E2 (coordinates, no maps url) iframe title=Localisation present; E1 (maps url + coords) has Open-in-Maps link with target=_blank rel='noopener noreferrer' and NO iframe (view uses @if maps_url @elseif coordinates).
+No link to /reviews exists on the establishment page (views/establishments/show.blade.php reviews section ends after the review-grid, no anchor).

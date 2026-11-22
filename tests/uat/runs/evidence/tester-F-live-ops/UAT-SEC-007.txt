@@ -1,0 +1,9 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.  Status only, bodies discarded (-o NUL). Full list: _sensitive-paths-status.txt
+/.env 406 ; /public/.env 406 ; /.git/config 404 ; /.git/HEAD 404
+/storage/logs/laravel.log 404 ; /storage/logs/errors.log 404 ; /storage/logs/error.log 404 ; /storage/framework/sessions/ 301 -> /storage/framework/sessions => 404
+/composer.json 404 ; /composer.lock 404 ; /artisan 404 ; /vendor/autoload.php 404 ; /phpunit.xml 404
+/afrikappart_db.txt 404 ; /afrik-appart-mysql-seed-export.sql 406 ; /.bluehost-credentials.template.json 404
+/uploads/reservations/1/ 301 -> /uploads/reservations/1 => 404 (no listing)
+/index.php/../.env (--path-as-is) 406 ; //.env 406
+No path returned 200 or any file content. 406 (not 403/404) on .env / .sql / schema.sql looks like a hosting WAF rule; no content exposed.
+Not tested: direct URL of a known payment-proof file (file name unknown).

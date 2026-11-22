@@ -1,0 +1,9 @@
+1 channel internal, no URL: form=True google block=False
+2a both + URL, before review: form=True google block shown=False
+2b after submit: google block link=True target/rel: <a class="btn btn-ghost" href="http://127.0.0.1:8103/review/11/google?signature=<sig>&amp;expires=1797976669" target="_blank" rel="noopener noreferrer">
+3 click Google link -> 
+4 channel google, review exists (res 11): form=False google block=True
+4b channel google, first-time visitor (res 2, no review): status 200 form=False google block=False visible text after title: Votre séjour à Appartement 403 ? A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +229 00 00 00 00 Questions fréquent
+5 google link for establishment without URL (channel both, URL null): signed google url unsigned test -> 403 (403 unsigned); with a valid signature: needs signed google URL
+3 signed /review/11/google (URL configured) -> 302 https://g.page/r/example/review
+5 signed /review/11/google, establishment without URL -> 404

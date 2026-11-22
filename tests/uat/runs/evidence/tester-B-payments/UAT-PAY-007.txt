@@ -1,0 +1,10 @@
+﻿(a only pay_later (XOF)): offered=[pay_later] accordion_details=0
+(b fedapay enabled, XOF): offered=[fedapay,pay_later] accordion_details=2
+(c fedapay enabled, EUR): offered=[pay_later] accordion_details=0
+(d mpesa enabled, XOF): offered=[pay_later] accordion_details=0
+(e mpesa enabled, KES): offered=[mpesa,pay_later] accordion_details=2
+(f interac/wise/revolut enabled, no secondary currency): offered=[pay_later] accordion_details=0
+(g same with secondary EUR + rate): offered=[pay_later,wise,revolut] accordion_details=3
+(h paypal+fedapay+pay_later (XOF, no secondary)): offered=[fedapay,pay_later] accordion_details=3
+S6 POST provider=fedapay while disabled -> 422; body:  Données invalides | Afrik Appart A Afrik Appart Erreur 422 Données invalides Le formulaire contient des informations incorrectes ou incomplètes. Retour à l’accueil 
+default pay_later instruction text present: True

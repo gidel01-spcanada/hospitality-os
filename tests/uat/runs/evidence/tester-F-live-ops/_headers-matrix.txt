@@ -1,0 +1,132 @@
+GET /
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:35 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:35 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /login
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:36 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:36 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /properties
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:38 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:38 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /missing-page
+  STATUS=404
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:39 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:39 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /api/v1/properties
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: application/json
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+GET /health
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: application/json
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:42 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:42 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /sitemap.xml
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: application/xml
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:43 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:43 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /up
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+GET /dashboard
+  STATUS=302
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Location: https://afrikappart.com/login
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:46 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:46 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /admin
+  STATUS=302
+  Server: nginx/1.31.8
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, private
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Location: https://afrikappart.com/login
+  Set-Cookie: XSRF-TOKEN=<redacted>; expires=Sun, 22 Nov 2026 23:29:47 GMT; Max-Age=7200; path=/; secure; samesite=lax
+  Set-Cookie: afrikappart-session=<redacted>; expires=Sun, 22 Nov 2026 23:29:47 GMT; Max-Age=7200; path=/; secure; httponly; samesite=lax
+GET /robots.txt
+  STATUS=200
+  Server: nginx/1.31.8
+  Content-Type: text/plain

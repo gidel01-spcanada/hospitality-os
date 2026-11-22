@@ -1,0 +1,2 @@
+﻿S2 GET /reservations/<id>/checkout/cancel?provider=fedapay&token=<token> -> 404:  Page introuvable | Afrik Appart A Afrik Appart Erreur 404 Page introuvable La page demandée n’existe pas ou a été déplacée. Retour à l’accueil 
+S3 reservation after GET: pending_payment; checkout reachable: 200

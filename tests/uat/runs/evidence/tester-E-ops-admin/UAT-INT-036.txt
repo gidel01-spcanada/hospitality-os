@@ -1,0 +1,4 @@
+﻿UI steps 1-5 executed under UAT-REVA-006 on the same instance (see that evidence): CSV sync count + last-sync stored; re-sync no duplicates; JSON imported; 404 / empty JSON / HTML page; URL missing message.
+S6 reviews:sync-google --establishment=1 => exit 0 ; Afrik Appart Cotonou: 2 review(s) synchronized. / Processed 1 establishment(s); 0 failure(s).
+S6 reviews:sync-google --establishment=2 (failing source) => exit 1 ; E Establishment Two: Google review source returned HTTP 500 / Processed 0 establishment(s); 1 failure(s).
+S7 schedule:list six-hour entry present: True

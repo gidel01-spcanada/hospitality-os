@@ -1,0 +1,19 @@
+﻿setup feed: add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: Success: Calendar feed saved and synced. || Calendar feed saved and synced.
+setup: reservations A confirmed D+300..303, B pending D+310..313, C cancelled D+320..323, D completed D+330..333 (guest export-guest@example.test, phone, notes); block D+340..D+342 reason 'Maintenance private' => block POST 302
+DB statuses: 1:pending, 3:confirmed, 4:pending, 5:cancelled, 6:completed
+S1 GET export => 200; Content-Type: text/calendar; charset=UTF-8; Content-Disposition: attachment; filename="appartement-401-calendar.ics"
+S2 first lines: BEGIN:VCALENDAR / VERSION:2.0 / PRODID:-//Afrik Appart//Calendar//EN / CALSCALE:GREGORIAN / BEGIN:VEVENT / UID:reservation-3 ... last: END:VCALENDAR
+S2 PRODID line: PRODID:-//Afrik Appart//Calendar//EN ; DTSTAMP present: False
+S3 VEVENT count = 3 (expected 3: confirmed, completed, block)
+S3 events: ; UID:reservation-3 ; DTSTART:20270918 ; DTEND:20270921 ; SUMMARY:Unavailable ; || ; UID:reservation-6 ; DTSTART:20271018 ; DTEND:20271021 ; SUMMARY:Unavailable ; || ; UID:block-1 ; DTSTART:20271028 ; DTEND:20271030 ; SUMMARY:Unavailable ;
+S4 contains 'export-guest': False
+S4 contains '22900000000': False
+S4 contains 'private note': False
+S4 contains 'guest private': False
+S4 contains 'Maintenance': False
+S4 contains 'AFK-': False
+S4 contains 'price': False
+S4 contains 'Export Guest': False
+S4 contains 'uat-a-001': False
+S4 contains 'Reserved': False
+S6 UIDs run1: UID:reservation-3,UID:reservation-6,UID:block-1 ; run2 identical: True

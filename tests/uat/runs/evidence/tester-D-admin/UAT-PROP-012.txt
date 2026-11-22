@@ -1,0 +1,12 @@
+﻿GET price-rules/create -> 200; fields: _token,effective_from,effective_to,nightly_rate_xof,minimum_stay,rule_type
+step1 save rule T+30..T+36 45000 -> 302 Loc=http://127.0.0.1:8104/admin/properties/21/edit#rules | (not found: gle tarifaire)
+  DB rate_rules: [{"effective_from":"2026-12-22 00:00:00","effective_to":"2026-12-28 00:00:00","nightly_rate_xof":45000,"minimum_stay":2,"rule_type":"seasonal"},{"effective_from":"2026-12-22 00:00:00","effective_to":"2026-12-28 00:00:00","nightly_rate_xof":60000,"minimum_stay":1,"rule_type":"seasonal"},{"effective_from":"2027-01-01 00:00:00","effective_to":"2027-01-01 00:00:00","nightly_rate_xof":40000,"minimum_stay":1,"rule_type":"seasonal"}]
+  flash after save: (not found: Succ)
+step2 reservation T+31..T+34 (3 nights inside rule 45000) -> res 2 sub=90000.00 (=3 x 30000 base) fees=9000 taxes=4500 total=103500; lines: Nuit(s) x 3=90000, Frais de service (10%)=9000, TVA (18% inclue)=13728.81, Taxe locale=4500. Expected subtotal 135000.
+step3 reservation T+37..T+39 (outside) -> res 3 sub=60000 (base 30000 x2) total=69000.
+step4 effective_to before effective_from -> rejected 'doit être une date postérieure ou égale à effective from.'; same date accepted (redirect #rules).
+step5 rate -1 (min 0), minimum_stay 0 (min 1), empty rule_type (obligatoire), rule_type 51 chars (caractères) -> each rejected, redirect back to create form.
+  rule count now: 3 ; rules: [{"effective_from":"2026-12-22 00:00:00","effective_to":"2026-12-28 00:00:00","nightly_rate_xof":45000,"minimum_stay":2,"rule_type":"seasonal"},{"effective_from":"2026-12-22 00:00:00","effective_to":"2026-12-28 00:00:00","nightly_rate_xof":60000,"minimum_stay":1,"rule_type":"seasonal"},{"effective_from":"2027-01-01 00:00:00","effective_to":"2027-01-01 00:00:00","nightly_rate_xof":40000,"minimum_stay":1,"rule_type":"seasonal"}]
+step6 straddle T+34..T+37 (2 nights in rule, 1 outside) -> 302 | res 4 sub=90000.00 fees=9000.00 taxes=4500.00 total=103500.00 lines=["Nuit(s) x 3=90000.00","Frais de service (10%)=9000.00","TVA (18% inclue)=13728.81","Taxe locale \/ s\u00e9jour=4500.00"]
+step7 overlapping 2nd rule 60000 added (rules=4); reservation T+30..T+31 -> 302 | res 5 sub=30000.00 fees=3000.00 taxes=1500.00 total=34500.00 lines=["Nuit(s) x 1=30000.00","Frais de service (10%)=3000.00","TVA (18% inclue)=4576.27","Taxe locale \/ s\u00e9jour=1500.00"]
+Code check: app/Services/PricingCalculator.php::calculate uses only properties.nightly_rate_xof; rate_rules are never read.

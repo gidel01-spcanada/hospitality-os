@@ -1,0 +1,7 @@
+﻿Cloud-mode fixture on 8103: tenant A = Default (admin@afrikappart.test, est 1, props 1-5); tenant B = 'UAT Stays Beta' (tenant 6, owner-b@example.test, EB=3, PB=6 published, RB=13 confirmed + 14 completed, concierge uat-conc-b, thread TB=11); TA=10; customer uat-tcust@example.test has reservations 15 (PA) and 16 (PB) and threads at both. B rows were cloned via SQL from tenant A rows (establishment/property/reservations) on the throwaway DB.
+Actor tenant admin owner-alpha (tenant 2) and admin@ (default). RB=13, PB=6, EB=3, UB=B concierge.
+GET /admin/reservations/13, /edit, /admin/bookings/13 -> 404; PATCH status -> 404; POST payment-link -> 404; POST confirm-offline-payment -> 302 (redirect to an establishment edit page, no status change seen).
+GET /admin/properties/6/edit -> 200 (shows 'UAT Beta Property'); /calendar -> 200; /availability -> 302 to /admin/establishments/3/edit; PUT /admin/properties/6 (name only) -> 302 (name unchanged; payload incomplete).
+GET /admin/establishments/3/edit -> 200 showing B establishment name and email; PUT (full form) -> 302 back to edit, name unchanged (result not conclusive).
+GET /admin/users/<UB>/edit -> 200 shows B user; PUT name=TAMPERED -> 302 and DB name TAMPERED tenant_id 6; DELETE -> 302 and user removed (id re-created afterwards).
+GET /reservations/13/receipt -> 404. GET /admin/messages/11 -> 403; POST reply -> 403 (mc unchanged).

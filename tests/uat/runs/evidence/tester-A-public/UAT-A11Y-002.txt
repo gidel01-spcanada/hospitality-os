@@ -1,0 +1,8 @@
+﻿/ : duplicate ids:  ; form controls without label-for or aria-label:  ; img without alt: 0
+/properties : duplicate ids:  ; form controls without label-for or aria-label:  ; img without alt: 0
+/properties/uat-apt-a : duplicate ids:  ; form controls without label-for or aria-label: phone ; img without alt: 0
+/feedback : duplicate ids:  ; form controls without label-for or aria-label:  ; img without alt: 0
+booking form labels for: full_name,email,adults,country,children,infants,customer_note
+availability result: <p class="form-help" data-availability-result role="status" aria-live="polite">
+server error box (from PUB-032): <div class="form-error-box"> without role=alert or aria-describedby link to fields: <div class="form-error-box">
+phone input markup: <input id="phone" name="phone" type="tel" value="" placeholder="Téléphone (optionnel)"> with no <label for=phone> and no aria-label (FR and EN). Also infants input has max="2" while the server accepts up to 4.

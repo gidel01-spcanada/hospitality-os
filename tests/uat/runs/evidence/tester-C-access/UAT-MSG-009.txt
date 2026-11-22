@@ -1,0 +1,6 @@
+form on page: textarea id reservation-message-body=True hidden establishment_id=name="establishment_id" value="1" action to /messages=True
+1 send -> 302 /messages; in E1 thread: {"t":5}; flash shown on /messages: False
+2 staff thread shows message + reservation link: True / True
+3 tampered establishment_id=2 -> 302; stored in thread: {"t":6} (E2 thread id 6 for this customer: {"id":6})
+4 staff reservation page shows customer message form (id reservation-message-body): False; staff on /dashboard/reservations/12 -> 403
+   (staff opening the customer detail page: message form present: False)

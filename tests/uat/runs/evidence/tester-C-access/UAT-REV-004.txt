@@ -1,0 +1,11 @@
+1 rating='0' on res 10: 302 -> landing 200 errs=[] thanks=False ; reviews stored: 0
+1 rating='6' on res 10: 302 -> landing 200 errs=[] thanks=False ; reviews stored: 0
+1 rating='abc' on res 10: 302 -> landing 200 errs=[] thanks=False ; reviews stored: 0
+1 rating='4.5' on res 10: 302 -> landing 200 errs=[] thanks=False ; reviews stored: 0
+1 rating='' on res 10: 302 -> landing 200 errs=[] thanks=False ; reviews stored: 0
+2 rating 1, empty text (res 2): 302 -> landing 200 errs=[] thanks=True ; stored: 1
+3 rating 5, 2000 chars (res 3): 302 -> landing 200 errs=[] thanks=True ; stored: 1
+4 2001 chars (res 4): 302 -> landing 200 errs=[] thanks=False ; stored: 0
+5 script text (res 4): 302 -> landing 200 errs=[] thanks=True ; stored: 1
+   public /reviews raw script=False escaped=True
+   admin /admin/reviews raw script=False escaped=True

@@ -1,0 +1,15 @@
+start #9: status=scheduled at=2026-11-27 09:30:00 started= completed= assignee=Awa Menage
+S1 change time to 08:00 + assignee 'Awa Menage': 302 | Success: Cleaning visit updated. | 
+   status=scheduled at=2026-11-27 08:00:00 started= completed= assignee=Awa Menage
+S2 in_progress: 302 | Success: Cleaning visit updated. | 
+   status=in_progress at=2026-11-27 08:00:00 started=2026-11-22 21:15:12 completed= assignee=Awa Menage
+S3 completed: 302 | Success: Cleaning visit updated. | 
+   status=completed at=2026-11-27 08:00:00 started=2026-11-22 21:15:12 completed=2026-11-22 21:15:14 assignee=Awa Menage
+S4 scheduled: 302 | Success: Cleaning visit updated. | 
+   status=scheduled at=2026-11-27 08:00:00 started= completed= assignee=Awa Menage
+   (back to in_progress) status=in_progress at=2026-11-27 08:00:00 started=2026-11-22 21:15:16 completed= assignee=Awa Menage
+S5 cancelled from in_progress: 302 | Success: Cleaning visit updated. | 
+   status=cancelled at=2026-11-27 08:00:00 started=2026-11-22 21:15:16 completed= assignee=Awa Menage
+S6 delete form carries data-confirm-message:  ; list-page form: data-confirm-message="Permanently delete this cleaning visit?"
+S7 host (E1) on PB visit #10: GET edit => 404; PUT => 404; DELETE => 404; visit #10 still exists: 1
+S6/S8 DELETE (plain POST, no JS confirm) => 302 | Success: Cleaning visit deleted. ; exists after: 0

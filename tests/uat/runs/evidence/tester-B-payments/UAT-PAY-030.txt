@@ -1,0 +1,14 @@
+﻿NOTE: external CAD rate API unreachable here (toCad returned null); the cache key exchange-rate:EUR:CAD was seeded with 1.5 in this instance cache (simulation, not a real rate).
+S1 interac: Montant de la réservation : 152,40 EUR |  | email/question/answer present: True/True/True | instructions: True
+S2 data-copy values: 228.60 CAD ; pay.uat@example.test ; Blue ; 152.40 EUR ; wise.uat@example.test ; rev.uat@example.test
+S3 wise/revolut: Montant à envoyer : 152,40 EUR | wise email: True | revolut email: True
+S4 expected EUR amount 100000*0.001524 = 152.40; page shows '152,40': True
+S6 file inputs: <input id="payment_proof_interac" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm"> || <input id="payment_proof_wise" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm"> || <input id="payment_proof_revolut" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm">
+   'Envoyer' proof buttons: Envoyer la preuve
+NOTE: external CAD rate API unreachable here (toCad returned null); the cache key exchange-rate:EUR:CAD was seeded with 1.5 in this instance cache (simulation, not a real rate).
+S1 interac: Montant de la réservation : 152,40 EUR |  | email/question/answer present: True/True/True | instructions: True
+S2 data-copy values: 228.60 CAD ; pay.uat@example.test ; Blue ; 152.40 EUR ; wise.uat@example.test ; rev.uat@example.test
+S3 wise/revolut: Montant à envoyer : 152,40 EUR | wise email: True | revolut email: True
+S4 expected EUR amount 100000*0.001524 = 152.40; page shows '152,40': True
+S6 file inputs: <input id="payment_proof_interac" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm"> || <input id="payment_proof_wise" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm"> || <input id="payment_proof_revolut" type="file" name="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf" required class="block w-full text-sm">
+   'Envoyer' proof buttons: Envoyer la preuve

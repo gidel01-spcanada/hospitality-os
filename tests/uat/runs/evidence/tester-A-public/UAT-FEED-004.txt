@@ -1,0 +1,4 @@
+﻿a) POST /feedback with delivery unset => 302 http://127.0.0.1:8101/feedback
+a) page after:  Sprint Pay Canada Avis sur la plateforme L’envoi des retours n’est pas encore configuré. 
+b) SMTP unreachable (MAIL_MAILER=smtp host 127.0.0.1 port 1): POST /feedback => 500 ; body:  Une erreur s’est produite | Afrik Appart A Afrik Appart Erreur 500 Une erreur s’est produite Le service est temporairement indisponible. Merci de réessayer dans quelques instants. Retour à l’accueil 
+DB after: platform_feedback has 1 row for a.smtp@example.test (saved before mail failure); 0 rows for the unconfigured-delivery submit (a).

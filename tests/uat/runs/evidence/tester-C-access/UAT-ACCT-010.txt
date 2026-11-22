@@ -1,0 +1,4 @@
+res 11 (confirmed): cancel button shown=False; POST -> 422 Error 422 Invalid data The form contains incorrect or incomplete information. Back to home; status after={"status":"confirmed"}; price lines 4 -> {"c":4}
+res 8 (completed): cancel button shown=False; POST -> 422 Error 422 Invalid data The form contains incorrect or incomplete information. Back to home; status after={"status":"completed"}; price lines 4 -> {"c":4}
+res 9 (cancelled): cancel button shown=False; POST -> 422 Error 422 Invalid data The form contains incorrect or incomplete information. Back to home; status after={"status":"cancelled"}; price lines 4 -> {"c":4}
+3 double submit: res 5 already cancelled by ACCT-009; second cancel replay covered by res 9 (already cancelled) above

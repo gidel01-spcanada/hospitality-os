@@ -1,0 +1,19 @@
+﻿status 200
+title: <title>Uat apt a - Appartement 2 chambre(s) à Cotonou | Afrik Appart
+meta desc: <meta name="description" content="UAT description">
+canonical: <link rel="canonical" href="http://127.0.0.1:8101/properties/uat-apt-a">
+og: <meta property="og:type" <meta property="og:site_name" <meta property="og:locale" <meta property="og:title" <meta property="og:description" <meta property="og:image" <meta property="og:url" <meta property="og:type" <meta property="og:title" <meta property="og:description" <meta property="og:image" <meta property="og:url"
+twitter: <meta name="twitter:card" <meta name="twitter:title" <meta name="twitter:description" <meta name="twitter:image" <meta name="twitter:card" <meta name="twitter:title" <meta name="twitter:description" <meta name="twitter:image"
+reviews stats: 4.1 / 5 ★★★★★ Avis vérifiés par nos voyageurs Basé sur 8 avis ajout ; cards: 0
+reviews link: href="http://127.0.0.1:8101/reviews?property=uat-apt-a"
+inputs: _token,full_name,email,check_in,check_out,adults,country,children,infants,phone,customer_note,selected_features[],create_account
+country default: name="country" type="text" value="Bénin"
+buttons: <button type="button" class="gallery-thumb" data-gallery-thumb="1" aria-label="Voir la photo 2">
+                                 | <button type="button" class="date-range-trigger" data-date-range-trigger aria-expanded="false">
+                                     | <button type="button" class="btn btn-ghost btn-full" data-check-availability>Vérifier la disponibilité | <button type="submit" class="btn btn-primary btn-full">Demander une réservation | <button type="button" class="btn btn-ghost btn-small" data-toggle-availability data-show-label="Voir les disponibilités" data-hide-label="Masquer les disponibilités" aria-expanded="false" aria-controls="property-availability-calendar">Voir les disponibilités | <button type="button" class="btn btn-ghost btn-small" data-toggle-content data-show-label="Afficher les avis (8)" data-hide-label="Masquer les avis" aria-expanded="false" aria-controls="property-reviews-content">Afficher les avis (8) | <button type="button" class="btn btn-ghost" data-confirm-dialog-cancel>Annuler | <button type="button" class="btn btn-danger" data-confirm-dialog-accept>Confirmer
+prev/next: aria-label="Photo précédente",aria-label="Photo suivante"
+share: wa.me/?text=Uat+apt+a%20http%3A%2F%2F127.0.0. ; facebook.com/sharer/sharer.php?u=http%3A%2F%2F127.0.0.1%3A8 ; twitter.com/intent/tweet?text=Uat+apt+a&url=http%3A%2F%2F1
+iframe: <iframe class="location-map" title="Localisation" src="https://www.google.com/maps?q=6.3703000,2.3912000&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+raw keys: 
+concierge form present: False
+review texts rendered=6; linkedin=True instagram=True tiktok=True

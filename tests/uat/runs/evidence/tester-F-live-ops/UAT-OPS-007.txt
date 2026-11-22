@@ -1,0 +1,6 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.
+Step2: git check-ignore => .gitignore:26 /afrik-appart-mysql-seed-export.sql and :25 /afrik-appart-mysql-export.sql are ignored; git ls-files lists none of them.
+Step4: DB_CONNECTION=sqlite in process env, powershell scripts\import-mysql-seed.ps1 => "MySQL import requires DB_CONNECTION=mysql; current connection is 'sqlite'." (script stops before migrate).
+Step8: -InputPath nofile.sql => "MySQL seed export not found at nofile.sql".
+Step9 (static read): MYSQL_PWD is set inside try and restored in finally.
+Not executed: steps 1, 3, 5-7 (need MySQL 8, mysql client not on PATH). Export script not run (would use the developer .env/db).

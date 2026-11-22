@@ -1,0 +1,13 @@
+﻿admin GET /admin/establishments -> 200; lists Cotonou: True; lists Ouidah: True; links: admin/properties?establishment=1,admin/properties?establishment=2
+order by name: Cotonou@393 before Ouidah@445
+host GET /admin/establishments -> 200; Cotonou: True; Ouidah: False
+host GET /admin/establishments/2/edit -> 403 {
+    "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis."
+}
+host PUT /admin/establishments/2 -> 403
+host GET create -> 403 {
+    "message": "Un acc\u00e8s administrateur est requis."
+}
+host POST /admin/establishments -> 403
+concierge GET /admin/establishments -> 403; customer -> 403
+E2 name after host PUT: UAT Residence Ouidah

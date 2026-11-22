@@ -1,0 +1,6 @@
+﻿As provider (no session/CSRF): wrong-key signature -> 419
+[workaround: session cookie + X-CSRF-TOKEN] S1 wrong key -> 403
+[workaround: session cookie + X-CSRF-TOKEN] S2 signature of body A, body changed to failed -> 403
+[workaround: session cookie + X-CSRF-TOKEN] S2b trailing space added -> 403
+[workaround: session cookie + X-CSRF-TOKEN] S3 correct signature, upper-case hex -> 403
+S4 DB: {"status":"pending_payment","attempts":[{"id":22,"provider":"fedapay","provider_reference":"fedapay-sandbox-NJCEOXEDDDPW","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}

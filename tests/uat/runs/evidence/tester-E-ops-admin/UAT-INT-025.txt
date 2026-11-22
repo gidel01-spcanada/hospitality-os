@@ -1,0 +1,13 @@
+﻿start: status=fresh en=1 last_success=2026-11-22 21:03:48 err=[] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] |  | avail D+20..D+22 = False
+S1 disable: PUT url=http://127.0.0.1:9105/int-feed-a.ics => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: Error: cURL error 6: Could not resolve host: no-such-host.invalid (see https://curl.se/libcurl/c/libcurl-errors.html) for https://no-such-host.invalid/cal.ics
+   status=fresh en=0 last_success=2026-11-22 21:03:48 err=[] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] |  | avail D+20..D+22 = True
+S2 re-enable: PUT url=http://127.0.0.1:9105/int-feed-a.ics => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: Error: cURL error 6: Could not resolve host: no-such-host.invalid (see https://curl.se/libcurl/c/libcurl-errors.html) for https://no-such-host.invalid/cal.ics
+   status=fresh en=1 last_success=2026-11-22 21:03:48 err=[] | avail D+20..D+22 = False
+S3 change URL: PUT url=http://127.0.0.1:9105/int-feed-b.ics => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: Error: cURL error 6: Could not resolve host: no-such-host.invalid (see https://curl.se/libcurl/c/libcurl-errors.html) for https://no-such-host.invalid/cal.ics
+   status=stale en=1 last_success=2026-11-22 21:03:48 err=[] | events: uat-a-001@example.test [2026-12-12..2026-12-15] | uat-a-002@example.test [2026-12-22..2026-12-24] | 
+S5 validation: empty name => 302 -> http://127.0.0.1:8105/admin/properties/1/calendar/feeds/27/edit | flash:  | errors: Error: The name field is required.
+S5 validation: url not a url => 302 -> http://127.0.0.1:8105/admin/properties/1/calendar/feeds/27/edit | flash:  | errors: Error: The url format is invalid.
+S5 validation: provider abc => 302 -> http://127.0.0.1:8105/admin/properties/1/calendar/feeds/27/edit | flash:  | errors: Error: The selected provider is invalid.
+   unchanged: status=stale en=1 last_success=2026-11-22 21:03:48 err=[]
+S6 feed disabled, Sync now: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed. | status=fresh en=1 last_success=2026-11-22 21:03:56 err=[]
+S4 delete => 302 flash: Success: Calendar feed removed. || Calendar feed removed. | feed rows: 0 events=0 | avail D+20..D+22 = True

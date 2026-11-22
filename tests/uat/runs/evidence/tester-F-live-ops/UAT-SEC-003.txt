@@ -1,0 +1,7 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+Set-Cookie flags observed on GET /login (values redacted):
+  XSRF-TOKEN=<redacted>; Max-Age=7200; path=/; secure; samesite=lax            (no HttpOnly)
+  afrikappart-session=<redacted>; Max-Age=7200; path=/; secure; httponly; samesite=lax
+Secure flag IS set on production (answers the open question for the live host).
+Step 6 (tampered cookie): GET /login with Cookie: afrikappart-session=tampered123; XSRF-TOKEN=bad => 200 (no 500).
+Steps 4, 5 (session regeneration on login, replay after logout) and DevTools document.cookie check: not executed (login forbidden on live; no browser).

@@ -1,0 +1,17 @@
+﻿POST /admin/users role=customer -> 302 Loc=http://127.0.0.1:8104/admin/users
+POST /admin/users role=host -> 302 Loc=http://127.0.0.1:8104/admin/users
+POST /admin/users role=concierge -> 302 Loc=http://127.0.0.1:8104/admin/users
+POST /admin/users role=admin -> 302 Loc=http://127.0.0.1:8104/admin/users
+flash on list: 
+dcustomer-1@example.test role=customer is_admin=0 tenant= active=1 verified=yes locale=en
+dhost-1@example.test role=host is_admin=0 tenant=1 active=1 verified=yes locale=en
+dconcierge-1@example.test role=concierge is_admin=0 tenant=1 active=1 verified=yes locale=en
+dadmin-1@example.test role=admin is_admin=1 tenant=1 active=1 verified=yes locale=en
+establishment_host: [{"id":1,"establishment_id":1,"user_id":4,"created_at":"2026-11-22 20:32:07","updated_at":"2026-11-22 20:32:07"},{"id":2,"establishment_id":1,"user_id":6,"created_at":"2026-11-22 20:39:48","updated_at":"2026-11-22 20:39:48"}]
+outbox: [{"template":"staff_account_invitation","status":"queued"},{"template":"staff_account_invitation","status":"queued"},{"template":"staff_account_invitation","status":"queued"},{"template":"staff_account_invitation","status":"queued"}]
+log mentions: 1
+login new customer -> 302 Loc=http://127.0.0.1:8104/dashboard
+host establishments -> 200
+concierge /admin -> 200 /admin/users -> 403
+new admin /admin/users -> 200; /platform/tenants -> 403
+flash after create: Propriétés Établissements Administration Équipements Paramètres du site Journaux Entités Succès : Utilisateur créé. Une invitation sécurisée pour définir son mot de passe a été envoyée. Gestion des utilisateurs Gérez les accès, la langue et les préférences de communication des utilisateurs. Ajouter 

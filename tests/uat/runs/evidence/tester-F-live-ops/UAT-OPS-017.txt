@@ -1,0 +1,6 @@
+﻿LIVE https://afrikappart.com/ (anonymous, read-only). Status only; see _sensitive-paths-status.txt
+Step1: /.env 406, /.env.example 404, /.git/config 404, /composer.json 404, /composer.lock 404, /artisan 404, /phpunit.xml 404, /package.json 404.
+Step2: /storage/logs/laravel.log 404, /storage/logs/error.log 404, /storage/framework/ 301 -> 404, /bootstrap/cache/config.php 404, /vendor/autoload.php 404, /database/schema.sql 406, /tests/ 301 -> /tests 404.
+Step3: /uploads/ 403, /uploads/properties/ 403, /build/ 403 (no directory listing).
+Step4: GET /uploads/properties/appartement-401/chatgpt-image-24-juill-2026-14-h-22-min-26-s-card.webp => 200 image/webp (70080 bytes).
+Step5 (payment proof URL): not tested; file names unknown and cannot be listed. Step6 (upload test.php/.png with PHP): needs upload (forbidden). Step7 (web root listing): needs hosting access.

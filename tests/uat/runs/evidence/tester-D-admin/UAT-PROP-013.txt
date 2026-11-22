@@ -1,0 +1,22 @@
+﻿setup: P=22, P2=23
+GET features/create -> 200 fields: _token,active_tab,name,description,cost_xof,is_active
+step1 save -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/edit#features | ètres du site Journaux Entités Succès : Fonctionnalité enreg
+step2 public page shows 'Private chef': True; selectable input selected_features[] value=1: True
+  public reserve form fields: _token,full_name,email,check_in,check_out,adults,country,children,infants,phone,customer_note,create_account
+  public reserve with add-on -> 302 Loc=http://127.0.0.1:8104/properties/d-uat-feat | existe déjà avec cet email mais n’a jamais été confirmé.
+  reservation  price lines: []
+step3 edit cost 20000, active unticked -> 302 http://127.0.0.1:8104/admin/properties/22/edit#features; DB: {"cost_xof":"20000.00","is_active":false}; public shows: False
+step4 name empty -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/features/create features 1->1 | obligatoire.
+step4 name 256 -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/features/create features 1->1 | caractères.
+step4 description 1001 -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/features/create features 1->1 | caractères.
+step4 cost -1 -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/features/create features 1->1 | doit être au moins égal à 0.
+step4 cost abc -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/features/create features 1->1 | doit être un nombre.
+step4 cost 0 -> 302 Loc=http://127.0.0.1:8104/admin/properties/22/edit#features features 1->2 | 
+step5 PUT feature 3 (of P2) via P URL -> 404
+step5 DELETE feature 3 via P URL -> 404; F2 still: {"name":"Other feature","cost_xof":"5.00"}
+step6 DELETE feature -> 302 http://127.0.0.1:8104/admin/properties/22/edit#features | ournaux Entités Succès : Fonctionnalité supprimée. UAT d-uat; reservation  lines after: []
+--- step2/6 retry as logged-in verified customer guest@ (anonymous booking requires email confirmation of a new account: 'Un compte existe déjà ... jamais été confirmé')
+  add-on 'Airport pickup' (id 4) shown with selected_features checkbox: True
+  POST /properties/d-uat-feat/reserve (selected_features[]=4) -> 302 Loc=http://127.0.0.1:8104/reservations/6/checkout?token=<token> | 
+  reservation 6 lines: [{"label":"Nuit(s) x 2","amount":"60000.00"},{"label":"Option: Airport pickup","amount":"15000.00"},{"label":"Frais de service (10%)","amount":"7500.00"},{"label":"TVA (18% inclue)","amount":"11440.68"},{"label":"Taxe locale \/ s\u00e9jour","amount":"3750.00"}] total=86250.00
+  after deleting feature 4 -> 302; reservation 6 lines: [{"label":"Nuit(s) x 2","amount":"60000.00"},{"label":"Option: Airport pickup","amount":"15000.00"},{"label":"Frais de service (10%)","amount":"7500.00"},{"label":"TVA (18% inclue)","amount":"11440.68"},{"label":"Taxe locale \/ s\u00e9jour","amount":"3750.00"}]

@@ -1,0 +1,6 @@
+A session: /admin -> 200
+1 B: role->customer: 302 /admin/users
+2 A: /admin -> 403
+3 A: /dashboard -> 200
+4 B: role->host with E1: 302 /admin/users
+   A: /admin/properties -> 200 (no re-login)

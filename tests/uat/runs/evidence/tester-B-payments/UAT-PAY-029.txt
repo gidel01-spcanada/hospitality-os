@@ -1,0 +1,5 @@
+﻿S1 payment_failed reservation: options visible: True
+S2 choose pay_later -> 302; {"status":"pending_payment","attempts":[{"id":50,"provider":"fedapay","provider_reference":"fedapay-sandbox-TTJ2ZU4VRPVN","status":"failed","amount":"138000.00","currency":"XOF"},{"id":51,"provider":"pay_later","provider_reference":"pay-later-7VRFDALQHS2X","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued"]}
+S3 attempts list shows both: fedapay at 746, pay_later at 199 (fedapay listed before pay_later: False)
+S4 expiry after 48h: same guard as PAY-008 (observed there); not repeated.
+S3 attempts section: Tentatives FedaPay failed fedapay-sandbox-6GH7N23JW32K Paiement sur place created pay-later-6LP7E6JP2AEG Simuler le paiement vérifié Annuler A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Oues

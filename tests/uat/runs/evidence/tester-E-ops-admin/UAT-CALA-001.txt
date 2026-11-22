@@ -1,0 +1,12 @@
+﻿Instance 5, role admin (EN locale set on test users). Property PA = id 1 appartement-401. Fixture feed-a.ics served by local php -S on 127.0.0.1:9105 (events uat-event-1 T+40..T+43; uat-cancelled T+50..T+52 STATUS:CANCELLED). T = 2026-11-22.
+GET /admin/properties/1/edit => 200; add-feed link present: True; data-copy-text (public export URL) present: True
+GET create feed form => 200; fields: name, provider, url, is_enabled (+description)
+POST create (airbnb, enabled, http://127.0.0.1:9105/feed-a.ics) => add => 302 http://127.0.0.1:8105/admin/properties/1/edit#calendars flash: 
+[{"id":9,"property_id":1,"name":"UAT Airbnb","url":"http:\/\/127.0.0.1:9105\/feed-a.ics","is_enabled":1,"status":"fresh","last_sync_error":null,"last_successful_sync_at":"2026-11-22 20:42:40","last_sync_at":"2026-11-22 20:42:40"}]
+[{"feed_id":9,"uid":"uat-event-1","summary":"Reserved","start_date":"2027-01-01 00:00:00","end_date":"2027-01-04 00:00:00"}]
+Editor availability calendar attribute: data-external="[[&quot;2027-01-01&quot;,&quot;2027-01-04&quot;]]"  (T+40=2027-01-01; end exclusive => T+40..T+42 blocked). Calendar widget rendered by JS; not visually observed.
+public availability T+41..T+43 => available=False
+public availability T+43..T+45 => available=True
+public availability T+50..T+52 => available=True
+Flash capture: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+Manual Sync flash: sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.

@@ -1,0 +1,13 @@
+before: {"status":"pending_payment","check_in":"2027-07-01 00:00:00","check_out":"2027-07-05 00:00:00","adults":2,"children":0,"infants":0,"total_amount":115000}
+1 check_in=yesterday: 302 err=[ check_in field value now=2026-11-21]
+3 check_out=check_in: 302 err=[ check_in field value now=2027-07-01]
+4a adults=0: 302 err=[ check_in field value now=2027-07-01]
+4b adults=9: 302 err=[ check_in field value now=2027-07-01]
+5a children=-1: 302 err=[ check_in field value now=2027-07-01]
+5b children=9: 302 err=[ check_in field value now=2027-07-01]
+5c infants=5: 302 err=[ check_in field value now=2027-07-01]
+6 adults=abc: 302 err=[ check_in field value now=2027-07-01]
+7a feature of other property (id 3): 302 err=[ check_in field value now=2027-07-01]
+7b inactive feature (id 2): 302 err=[ check_in field value now=2027-07-01]
+8 empty dates: 302 err=[ check_in field value now=]
+   state unchanged after rejections: True

@@ -1,0 +1,2 @@
+﻿reviews page1 cards=18, page2 cards=2, inactive present=False; property back: 200; unknown: 200
+zero active reviews => 200 cards=0

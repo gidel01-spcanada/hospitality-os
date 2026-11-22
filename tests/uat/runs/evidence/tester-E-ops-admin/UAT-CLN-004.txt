@@ -1,0 +1,8 @@
+﻿S1 PA linked to RB (res 10 on PB) => 422 ; created: False
+S2 PA linked to RA (res 9) => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S3 edit Link2 change property to PB keeping RA => 419; visit property now: 1
+S4 non-existent reservation id => 302 errors: Error: The selected reservation id is invalid. ; created: False
+S5 reservation select options (week of D+5): 9=Appartement 401 - 27/11/2026 (AFK-APN5RS-261122) ; 10=E Prop B - 27/11/2026 (AFK-TNTT0B-261122) ; 12=Appartement 403 - 28/11/2026 (AFK-ESSQXS-261122) ; 13=E Prop C EUR - 28/11/2026 (AFK-YGYZBC-261122) ; 11=Appartement 402 - 28/11/2026 (AFK-L6VBTW-261122)
+   eligible reservation ids (confirmed/checked_in/completed) in DB: 12,13,6,9,10,11,3,7 ; pending/cancelled ids 14 (cancelled),15 (pending) should be absent
+--- follow-up (edit page 500 workaround; GET /admin/cleaning/<visit linked to a reservation>/edit => 500)
+CLN-004 S3 PUT Link2 (#13) property -> PB (5) keeping RA (res 9 on PA) => 422 ; property now: 1

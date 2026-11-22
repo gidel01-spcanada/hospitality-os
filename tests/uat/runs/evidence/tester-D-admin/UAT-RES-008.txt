@@ -1,0 +1,6 @@
+﻿step1 users with d-walkin@example.test before viewing: 0 ; reservation 36 user_id=1 (creating admin)
+step2 open detail -> 200
+step3 users after: 0; reservation user_id=1; threads for establishment 1: [{"id":1,"customer_id":1},{"id":5,"customer_id":2},{"id":4,"customer_id":3},{"id":3,"customer_id":4}]
+step4 message-customer link -> /admin/messages/1 -> 200; thread customer: admin@afrikappart.test
+  same check on reservation 16 (uat-guest-1@example.test): user rows for that email: 0 user_id=1
+step5 public registration with the same email: not run (customer registration belongs to access cases; would also create an account).

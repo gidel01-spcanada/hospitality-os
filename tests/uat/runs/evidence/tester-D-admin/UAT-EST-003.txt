@@ -1,0 +1,28 @@
+﻿step1 empty name/slug/country/currency -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | obligatoire. || obligatoire. || obligatoire. || obligatoire.
+  field errors text: Le champ nom est obligatoire. || Le champ slug est obligatoire. || Le champ country code est obligatoire. || Le champ currency est obligatoire.
+step2 duplicate slug uat-residence-ouidah -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | 
+step3 country BEN -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | validation.
+step3 country B -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | validation.
+step3 currency XO -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | validation.
+step3 currency XOFF -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | validation.
+step4 secondary=currency -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be different.
+step5 rate 0 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be greater than 0.
+step5 rate -1 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be greater than 0.
+step6 lat 91 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be between -90 and 90.
+step6 lat -91 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be between -90 and 90.
+step6 lng 181 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | must be between -180 and 180.
+step7 email bad -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | doit être une adresse email valide.
+step7 google_maps_url not-url -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | invalide.
+step7 google_review_url x -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | invalide.
+step8 review_channel facebook -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | invalide.
+step9 cancel% 101 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | 
+step9 cancel days 366 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | 
+step9 vat 100.01 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | 
+step9 service -1 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | doit être au moins égal à 0.
+step9 city_tax_type daily -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | invalide.
+step10 electricity note 1001 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | caractères.
+step10 instructions 501 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create estCount=2 | caractères.
+step5/6/9 boundary valid: rate 0.0001 lat 90 lng -180 cancel 100/365 vat 100 service 100 -> 302 Loc=http://127.0.0.1:8104/admin/establishments estCount=3 | 
+step11 public page -> 200; raw <b>x</b> present: False; escaped &lt;b&gt;x present: True
+note: currency ABC (3 letters) accepted? -> 302 Loc=http://127.0.0.1:8104/admin/establishments estCount=4 | 
+step2 update keeping own slug -> 302 Loc=http://127.0.0.1:8104/admin/establishments/3/edit#general | 

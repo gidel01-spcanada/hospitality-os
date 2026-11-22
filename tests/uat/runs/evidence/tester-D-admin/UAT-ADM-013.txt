@@ -1,0 +1,7 @@
+﻿step1 /admin/bookings -> 200; same ids as /admin/reservations: True (230,216,217,218,219,220,221,222,223,224,225,226,227,228,229)
+step2 /admin/bookings/33 -> 200; /edit -> 200; edit form action: action="http://127.0.0.1:8104/admin/reservations/33"
+step3 save from bookings edit -> 302 Loc=http://127.0.0.1:8104/admin/reservations/33
+step4 PATCH /admin/bookings/33/status -> 405; DELETE /admin/bookings/33 -> 405; reservation still exists: 1
+  links to /admin/bookings in reservations UI: '/admin/bookings,/admin/bookings?view=list,/admin/bookings?view=calendar&amp;month=2026-11,/admin/bookings/create,/admin/bookings/230,/admin/bookings/230/edit,/admin/bookings/216,/admin/bookings/216/edit,/admin/bookings/217,/admin/bookings/217/edit,/admin/bookings/218,/admin/bookings/218/edit,/admin/bookings/219,/admin/bookings/219/edit,/admin/bookings/220,/admin/bookings/220/edit,/admin/bookings/221,/admin/bookings/221/edit,/admin/bookings/222,/admin/bookings/222/edit,/admin/bookings/223,/admin/bookings/223/edit,/admin/bookings/224,/admin/bookings/224/edit,/admin/bookings/225,/admin/bookings/225/edit,/admin/bookings/226,/admin/bookings/226/edit,/admin/bookings/227,/admin/bookings/227/edit,/admin/bookings/228,/admin/bookings/228/edit,/admin/bookings/229,/admin/bookings/229/edit'
+  host /admin/bookings -> 200
+  concierge /admin/bookings -> 200

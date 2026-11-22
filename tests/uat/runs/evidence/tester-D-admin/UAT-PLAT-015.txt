@@ -1,0 +1,9 @@
+﻿step1 on_premise / : title Appartements en location courte durée à Cotonou | UAT Brand ; header/footer contain 'UAT Brand': 9 ; host/register link: False
+step4 seeded platform admin menu has /platform/tenants link: True
+  link highlighted on /platform/tenants (active class near link): <a href="http://127.0.0.1:8104/platform/tenants" class="admin-nav-link is-active">
+  non-platform tenant admin dadmin-1 menu has Tenants link: False
+step2 cloud / : title Appartements en location courte durée à Cotonou | Hospitality OS ; 'Hospitality OS' count: 9 ; 'UAT Brand' count: 0 ; /host/register link: True
+step3 cloud: tenant admin (no platform flag) menu has Tenants link: False ; step4 seeded platform admin: True
+step5 'php artisan config:cache' NOT run against the shared bootstrap/cache (it would freeze config for every instance using this checkout); cached-config behaviour not verified.
+step5 with config cached to an instance-private file (APP_CONFIG_CACHE, not the shared bootstrap/cache) and server restarted on it: title Appartements en location courte durée à Cotonou | Hospitality OS ; 'Hospitality OS' count: 9 ; blank/null brand: False
+step5 with config cached to an instance-private file (APP_CONFIG_CACHE outside the repo, shared bootstrap/cache untouched) and own server restarted on it: title 'Appartements en location courte durée à Cotonou | Hospitality OS' ; 'Hospitality OS' count: 9 ; contains '| null' or empty brand: False

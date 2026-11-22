@@ -1,0 +1,21 @@
+﻿V1: #1 p1 r9 Awa Menage 2026-11-27 11:00:00 90m scheduled | 
+S1 Awa 12:00 60m => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False
+S2 '  awa menage ' 11:30 => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False
+S3 Awa 12:30 30m => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S4 Awa 09:30 90m (ends 11:00) => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S5 Awa 10:00 120m spans V1 => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False
+S6 Fatou 11:00 on PB (prop 5) => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S8 edit V1 (#1) instructions only => 419 A
+S9 edit another visit (#9, Awa 09:30) to 11:15 (overlaps V1) => 302 -> http://127.0.0.1:8105/admin/cleaning/9/edit |  | Error: This person already has a visit scheduled during that time.
+S10 same person/time on other establishment property (Awa 11:00 on PB prop 5) => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False
+S11 24h boundary: Boundary visit D+10 08:00 for 1440m; candidate D+11 07:59 30m => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False (expected conflict)
+S11 candidate D+11 08:00 30m (starts when it ends) => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+S7 set V1 cancelled => 419 A
+S7 create overlapping Awa 11:30 60m after V1 cancelled => 302 -> http://127.0.0.1:8105/admin/cleaning/create |  | Error: This person already has a visit scheduled during that time. ; created: False
+DB rows: #1 p1 r9 Awa Menage 2026-11-27 11:00:00 90m scheduled | #8 p1 r Awa Menage 2026-11-27 12:30:00 30m scheduled | #9 p1 r Awa Menage 2026-11-27 09:30:00 90m scheduled | #10 p5 r10 Fatou Menage 2026-11-27 11:00:00 60m scheduled | #11 p6 r Boundary 2026-12-02 08:00:00 1440m scheduled | #12 p6 r Boundary 2026-12-03 08:00:00 30m scheduled | 
+--- follow-up (edit page 500 workaround)
+(GET /admin/cleaning/1/edit => 500: 'Call to undefined method Eloquent\Builder::orWhereKey()' in laravel.log; PUT below sent with CSRF token taken from /admin/cleaning list page instead)
+CLN-003 S8 PUT V1 (#1) instructions only => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit updated. |   instructions now: Change linen + towels
+CLN-003 S7 PUT V1 status cancelled => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=cancelled | Success: Cleaning visit updated. | 
+CLN-003 S7 create overlapping Awa 11:30 60m after V1 cancelled => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27&status=scheduled | Success: Cleaning visit scheduled. |  ; created: True
+DB rows: #1 p1 r9 Awa Menage 2026-11-27 11:00:00 90m cancelled | #8 p1 r Awa Menage 2026-11-27 12:30:00 30m scheduled | #9 p1 r Awa Menage 2026-11-27 09:30:00 90m scheduled | #10 p5 r10 Fatou Menage 2026-11-27 11:00:00 60m scheduled | #11 p6 r Boundary 2026-12-02 08:00:00 1440m scheduled | #12 p6 r Boundary 2026-12-03 08:00:00 30m scheduled | #13 p1 r9 Link2 2026-12-18 10:00:00 30m scheduled | #14 p1 r Awa Menage 2026-11-27 11:30:00 60m scheduled | 

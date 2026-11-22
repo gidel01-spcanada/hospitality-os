@@ -1,0 +1,7 @@
+1 new customer /dashboard -> 200; title=True greeting=True acct label=True filter=True empty history=True favorites empty=True Discover->/properties: True
+2 uat-acct default list: reservation links: 11,6,7,5 (expected newest first among active: pending/pending_payment/confirmed = 7,6,5 ; completed 8 and cancelled 9 hidden)
+   details link href format: href="http://127.0.0.1:8103/dashboard/reservations/11"
+3 status=all links: 11,8,9,6,7,5
+   completed links: 8
+   other customer's reservation (10) leaked in lists: False
+   row text sample: Appartement 401 Pending Dates 09/08/2027 ? 12/08/2027 Guests 1 adult(s), 0 child(ren), 0 infant(s) Total 86 250 XOF Details Pay Cancel AFK-YVY81W-261122 Appartement 401 Pendin

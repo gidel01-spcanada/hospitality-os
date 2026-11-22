@@ -1,0 +1,49 @@
+﻿Section;Metric;"Establishment / property / source";Currency;Value;Notes
+Operations;Reservations;;;5;
+Operations;"Occupied nights";;;7;
+Operations;"Sellable nights";;;210;
+Operations;"Blocked nights";;;0;
+Operations;"Occupancy rate (%)";;;3.3;
+Operations;"Average stay (nights)";;;2.3;
+Operations;Guests;;;8;
+Operations;Arrivals;;;4;
+Operations;Departures;;;4;
+Operations;Cancellations;;;1;
+Operations;"Cancellation rate (%)";;;20;
+Operations;"Status breakdown";Confirmed;;2;
+Operations;"Status breakdown";Pending;;1;
+Operations;"Status breakdown";Cancelled;;1;
+Operations;"Status breakdown";Completed;;1;
+Operations;"Booking sources";website;;4;
+Operations;"Guest origins";BJ;;2;
+Operations;"Guest origins";FR;;2;
+Finance;"Collected revenue";;XOF;100000;
+Finance;"Booked value";;XOF;150000;
+Finance;"Booked value";;EUR;200;
+Finance;"Outstanding amount";;XOF;30000;
+Finance;Subtotal;;XOF;120000;
+Finance;Subtotal;;EUR;160;
+Finance;"Service fees";;XOF;15000;
+Finance;"Service fees";;EUR;20;
+Finance;Taxes;;XOF;15000;
+Finance;Taxes;;EUR;20;
+Finance;"Average booking value";;XOF;75000;
+Finance;"Average booking value";;EUR;200;
+Finance;"Receipts issued";;;1;
+Finance;"Payment attempts";;;4;
+Finance;"Successful payments";;;2;
+Finance;"Success rate (%)";;;50;
+Finance;"Payment performance";paypal;EUR;200;"1 successful out of 2 attempt(s)"
+Finance;"Payment performance";fedapay;XOF;100000;"1 successful out of 1 attempt(s)"
+Finance;"Payment performance";interac;;0;"1 attempt(s)"
+Performance;"Booked value";"Appartement 401";XOF;100000;"3 occupied night(s), 0 cancellation(s)"
+Performance;"Booked value";"E Prop B";XOF;50000;"2 occupied night(s), 0 cancellation(s)"
+Performance;"Booked value";"E Prop C EUR";EUR;200;"2 occupied night(s), 0 cancellation(s)"
+Performance;"Performance by property";=SUM(1+1);;0;"0 occupied night(s), 0 cancellation(s)"
+Performance;"Performance by property";"Appartement 402";;1;"0 occupied night(s), 1 cancellation(s)"
+Performance;"Performance by property";"Appartement 403";;0;"0 occupied night(s), 0 cancellation(s)"
+Performance;"Performance by property";"Appartement 404";;0;"0 occupied night(s), 0 cancellation(s)"
+Quality;"Average rating";;;3;
+Quality;"Review count";;;2;
+Quality;"Reviews imported during the period";google;;1;
+Quality;"Reviews imported during the period";booking;;1;

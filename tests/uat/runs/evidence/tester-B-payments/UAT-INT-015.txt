@@ -1,0 +1,2 @@
+﻿[workaround] S1 paid with amount=1 currency=EUR (stored 138000 XOF) -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S2 DB: {"status":"confirmed","attempts":[{"id":33,"provider":"fedapay","provider_reference":"fedapay-sandbox-98UW4JV4Z9WW","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}; receipt: [{"amount":"138000.00","currency":"XOF"}]

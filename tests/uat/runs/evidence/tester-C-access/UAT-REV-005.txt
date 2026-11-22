@@ -1,0 +1,11 @@
+valid link control: GET -> 200
+1 no query: 403
+2 altered signature: 403
+3 changed id in path (11->10): 403
+4 expires changed later: 403
+5 expired link: not run (would need a signed URL with past expiry; app key not used by tester; no system date shift)
+6 POST unsigned -> 403; reviews for res 11: {"c":0}
+7 GET /review/11/google unsigned -> 403
+6b POST bad signature -> 403
+5 expired link (signed with a past expiry, expires = now - 1 day, via a PHP bootstrap of the local app): GET -> 403
+5 expired link (signed with a past expiry using the local app via a PHP bootstrap script; expires=now-1 day): GET -> 200

@@ -1,0 +1,10 @@
+﻿setup: copied repo photo/ to a temp source; --target and --manifest point to temp dirs (repo files untouched). DB images for the 4 slugs before: 58
+step1 missing source -> exit 1: Source photo directory not found: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\fixtures-D\media\nope
+step2 one image removed from 'appartement 402' -> exit 1: Folder appartement 402 expected 12 images but found 11.
+step3 --dry-run -> exit 0: Processed 4 properties into C:\Users\gfoumbi\AppData\Local\Temp\uat-run\fixtures-D\media\target. | files written to target: 464 | manifest exists: False | DB images: 58
+step4 full run -> exit 0: Processed 4 properties into C:\Users\gfoumbi\AppData\Local\Temp\uat-run\fixtures-D\media\target. | DB images: 58 | variant counts: card.jpg=58,card.webp=58,full.jpg=58,full.webp=58,large.jpg=58,large.webp=58,thumb.jpg=58,thumb.webp=58 | manifest exists: True | covers: 4
+step5 rerun -> exit 0; DB images: 58 (no duplicates if 58)
+step6 corrupt image -> exit 1:  |    RuntimeException  |  |   Unable to read image: <tmp>\src\appartement 401\ChatGPT Image 24 juill. 2026, 14 h 22 min 26 s.png |  |   at app\Console\Commands\SyncPropertyMedia.php:168 |     16
+step7 DB file_path sample:  (points at public uploads/properties/<slug>/; files of this run were written to the temp target, so public rendering of these rows was not re-verified)
+after the failed step-6 run: appartement-401=0 cover=set min_id=; appartement-402=12 cover=set min_id=242; appartement-403=19 cover=set min_id=254; appartement-404=13 cover=set min_id=273; 
+cleanup: restored the corrupt source file and reran -> appartement-401 images: 14

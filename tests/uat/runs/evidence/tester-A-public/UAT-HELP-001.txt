@@ -1,0 +1,15 @@
+﻿close glyph codepoints: 215
+FR widget text:  Besoin d’aide ? Aide Afrik Appart × Les questions sont traitées par un service d’IA. N’incluez pas de données de réservation ou de paiement. Comment puis-je vous aider ? Votre question Envoyer 
+launcher: <summary class="help-chat-launcher">Besoin d’aide ? ; close aria: data-help-chat-close aria-label="Fermer le chat d’aide"; status role: <p data-help-chat-status role="status" aria-live="polite">
+/properties/uat-apt-a => 200 widget=True
+/faq => 200 widget=True
+/privacy => 200 widget=True
+/feedback => 200 widget=True
+/contact => 200 widget=True
+/properties => 200 widget=True
+/login => 200 widget=True
+/reservations/access => 200 widget=True
+/establishments/afrik-appart-cotonou => 200 widget=True
+checkout (owner) => 200 widget=True
+dashboard widget=True
+EN widget text:  Ask for help Afrik Appart help × Questions are processed by an AI service. Do not include booking or payment details. What can I help you with? Your question Send 

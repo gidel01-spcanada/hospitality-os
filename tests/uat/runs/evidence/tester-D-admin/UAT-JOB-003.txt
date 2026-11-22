@@ -1,0 +1,3 @@
+﻿step1 platform:mode -> exit 0: Current mode: on_premise | Usage: php artisan platform:mode on_premise|cloud
+step5 platform:mode wrong -> exit 1: Invalid mode 'wrong'. Use 'on_premise' or 'cloud'. ; .env hash unchanged: True
+steps 2,4,6,7 not run: the command rewrites the project .env, which testers must not modify (brief).

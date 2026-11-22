@@ -1,0 +1,8 @@
+﻿LIVE https://afrikappart.com/ (anonymous, read-only)
+Step2: curl -I http://afrikappart.com/ (no -L) => HTTP/1.1 200 OK (no redirect to HTTPS observed at app/host level).
+Step3: https://afrikappart.com/ headers: X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Strict-Transport-Security max-age=31536000; includeSubDomains, Permissions-Policy present, X-XSS-Protection present, Content-Security-Policy ABSENT.
+Step5: 404 pages custom FR/EN, no stack trace/framework version/path. 403 page not reachable anonymously (/admin => 302 /login).
+Step8: robots.txt => "User-agent: *", "Disallow:" (empty), "Sitemap: https://afrikappart.com/sitemap.xml". sitemap.xml domain https://afrikappart.com (matches live domain); it is generated with Content-Type application/xml.
+Step9: noindex on admin/account/checkout/dashboard not observable anonymously.
+Not executed: steps 1 (staging .env), 4 (post-login cookies; flags seen on anonymous cookies: see SEC-003), 6 (force 500), 7 (419/429).
+Cookies set on anonymous GETs have secure flag.

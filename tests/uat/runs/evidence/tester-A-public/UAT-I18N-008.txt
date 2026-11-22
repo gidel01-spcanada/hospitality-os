@@ -1,0 +1,7 @@
+﻿customer2 (profile fr) owner checkout reservation 17 => 200 lang=fr
+setup: POST start provider=pay_later => 302; flash: 
+1 GET checkout/pay_later/return (attempt still 'created') => 302; English flash present: False ; excerpt: 
+2 anonymous FR POST checkout wrong token => 403; page: Erreur 403 Accès refusé Vous n’avez pas les permissions nécessaires pour accéder à cette page. Retour à l’accueil ; abort text 'Checkout access denied.' shown: False
+3 POST provider=paypal (disabled) => 422; page: Erreur 422 Données invalides Le formulaire contient des informations incorrectes ou incomplètes. Retour à l’accueil ; English abort text visible: False
+raw translation keys visible on checkout: 
+Follow-up: return redirect 302 -> /reservations/17/checkout?token=<token>; the checkout page shows no flash at all. resources/views/checkout/show.blade.php only renders session('status') (line 16); there is no rendering of session('error') in the checkout view or layout, so 'Payment is awaiting confirmation.' is never displayed.

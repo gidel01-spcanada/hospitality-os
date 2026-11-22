@@ -1,0 +1,12 @@
+﻿1 empty => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: Le champ nom est obligatoire. | 
+            
+2 invalid email => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: Le champ adresse email doit être une adresse email valide. | 
+            
+3 category bug => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: La valeur sélectionnée pour category est invalide. | 
+            
+4 name 256 + message 5001 => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: Le champ nom ne peut pas dépasser 255 caractères. | 
+            
+5 whitespace message => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: Le champ message est obligatoire. | 
+            
+7 EN invalid email => 302 http://127.0.0.1:8101/feedback; alert:  ; inline: The email address must be a valid email address. | 
+            

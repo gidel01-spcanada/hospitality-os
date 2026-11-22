@@ -1,0 +1,7 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /terms => 200, 10 articles in FR and EN (Champ d'application ... Droit applicable).
+Art. 3 text lists: paiement sur place, FedaPay, PayPal, CinetPay, M-Pesa (Interac/Wise/Revolut absent from the text; checkout comparison not possible anonymously on live).
+Art. 2: "ferme et definitive des reception de la confirmation transmise par e-mail ou des la validation du paiement requis".
+Art. 5: cancellation of an unfinalised booking from the customer area; non-refundable fee "a moins de X jours de l'arrivee" (literal placeholder "X jours" visible on live page).
+Step 5: GET /properties/appartement-401 contains one checkbox (name=create_account, checked); no terms-acceptance checkbox.
+Not verified: behavior of checkout/PAY-010/011 and pending->confirmed flow (needs booking POST).

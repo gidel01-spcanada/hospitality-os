@@ -1,0 +1,18 @@
+﻿PUT feed 19 => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: h-ev-1 [2027-01-01..2027-01-03] H one | 
+S1: event1 removed, event2 (T+60..T+61) added
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: h-ev-2 [2027-01-21..2027-01-22] H two | 
+T+60 = 2027-01-21
+S2: summary changed
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: h-ev-2 [2027-01-21..2027-01-22] H two CHANGED | 
+S3: no VEVENT
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: 
+S4: event 2 cancelled
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: 
+S5: sync PB feed 20 via property 1 URL => 404
+S6: unassigned host (e-host-other) POST sync on property 1 feed 19 => 403

@@ -1,0 +1,9 @@
+﻿S1 guarantee notice present: True; select guarantee_provider present: False ; text: e la politique d’annulation (20 %), une garantie de 20 000 XOF est mise en réserve par carte/mobile money.
+  select options: 
+S2 POST pay_later+guarantee fedapay -> 302; flash: Réservation enregistrée.
+  DB: {"status":"pending_payment","attempts":[{"id":4,"provider":"fedapay","provider_reference":"fedapay-sandbox-TJKM2TZJLVJM","status":"authorized","amount":"20000.00","currency":"XOF"},{"id":5,"provider":"pay_later","provider_reference":"pay-later-M0SPL1CDHWFF","status":"created","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+  pay_later payload: {"provider":"pay_later","mode":"manual","reservation_ref":"AFK-BD282C90A","hold_minutes":20,"guarantee_provider":"fedapay","guarantee_amount":20000,"guarantee_attempt_id":4,"guarantee_status":"authorized"}
+S4 guarantee_provider=cinetpay (disabled) -> 422; attempts: 0
+S5 fee 20% but pay_later only -> 302; {"status":"pending_payment","attempts":[{"id":6,"provider":"pay_later","provider_reference":"pay-later-MLSZRRLUIEV2","status":"created","amount":"100000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+S3 (live provider redirect): not executable, no provider sandbox. N/A.
+S1 (re-check, 2 online methods paypal+fedapay): select name=guarantee_provider present with options fedapay,paypal.

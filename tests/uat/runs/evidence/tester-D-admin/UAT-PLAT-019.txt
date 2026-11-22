@@ -1,0 +1,7 @@
+﻿step1 admin menu mentions feedback: False ; /platform/tenants page mentions feedback: False
+step2 /platform/feedback -> 404; /admin/feedback -> 404
+step3 DB rows: []
+step4 audit rows for PlatformFeedback: []
+--- with SPRINTPAY_FEEDBACK_EMAIL=feedback-inbox@example.test on this instance: step3 rows: [{"id":1,"category":"suggestion","email":"feedback-tester@example.test","message":"UAT D feedback suggestion"},{"id":2,"category":"issue","email":"feedback-tester@example.test","message":"UAT D feedback issue"},{"id":3,"category":"other","email":"feedback-tester@example.test","message":"UAT D feedback other"}]
+step4 audit rows for PlatformFeedback: 3 ; latest details: {"old":[],"new":{"name":"Feedback Tester","email":"feedback-tester@example.test","category":"other","message":"UAT D feedback other","user_id":null,"updated_at":"2026-11-22 22:37:29","created_at":"2026-11-22 22:37:29","id":3},"url":"http:\/\/127.0.0.
+  /admin/audit-logs page shows feedback message text: True

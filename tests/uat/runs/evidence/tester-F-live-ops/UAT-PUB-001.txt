@@ -1,0 +1,10 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET / => 200 text/html; charset=utf-8 (44801 chars). <html lang="fr"> (default). title: Appartements en location courte duree a Cotonou | AfrikAppart
+Featured property cards (unique links): appartement-402, appartement-403, appartement-404 => 3 cards (limit of 3 respected); 4 published properties exist (sitemap lists 401-404).
+Prices: "32 000 XOF / nuit", "32 000 XOF / nuit", "35 000 XOF / nuit" (separator is U+0020 space). EN: "32,000 XOF / night" (comma separator).
+Step 4: no select name="establishment" on live home (view only renders the home map block when exactly 1 establishment; live has 1). Direct URL check:
+  GET /?establishment=1 => 302 Location: https://afrikappart.com/properties?establishment=1
+  GET /?sort=price     => 302 Location: https://afrikappart.com
+Step 5: link https://afrikappart.com/reviews?from=home present.
+Step 6 footer links: /faq /about /privacy /terms /cookies /feedback (+ /properties /contact) => GET status 200 each (faq 200, about 200, privacy 200, terms 200, cookies 200, feedback 200).
+Not verified: visual layout, console log, 390px screenshot (no browser).

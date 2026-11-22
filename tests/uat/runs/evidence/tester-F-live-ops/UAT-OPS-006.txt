@@ -1,0 +1,9 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.  Source: repo photo/ (14/12/19/13 files, 309 MB), target and manifest redirected to F-scratch (media-target, media-manifest.json) so public/uploads and seed-assets were not touched by this command. DB: ops6.sqlite (copy, property_images cleared first).
+Step1 --dry-run: "Processed 4 properties into <target>" exit 0 after 57 s. AFTER the dry run: property_images rows=58 (before 0), files in target=464, manifest not written. => dry-run DOES write images and DB rows (only the manifest write is skipped; SyncPropertyMedia.php line 155).
+Step2 real run (63 s) exit 0: manifest written, 464 files (232 .webp + 232 .jpg), 4 covers.
+Step3 counts: appartement-401=14, 402=12, 403=19, 404=13, total 58.
+Step4 rerun: total still 58, files still 464.
+Step5 source without folders: "Missing expected source folder: <path>\appartement 401", exit 1.
+Step6 folder with 1 file: "Folder appartement 401 expected 14 images but found 1." exit 1.
+Step8: 58 generated full.jpg checked: 0 contain GPS EXIF; webp card has no EXIF chunk. (Source files are not JPEG so source GPS not applicable.)
+Step7 gallery on a property page: not executed (no browser).

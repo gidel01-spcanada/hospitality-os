@@ -1,0 +1,12 @@
+﻿1 logged in (profile en) / => lang=en; header language switch present=False
+2 /language/fr => 302 -> http://127.0.0.1:8101/faq; /faq lang=en
+3 /account/preferences => 200; form fields: _token,locale,email_booking_updates,email_message_updates,email_marketing,email_newsletter
+3 POST locale=fr => 302 -> http://127.0.0.1:8101/dashboard; page lang=fr; flash: 
+3b / now lang=fr
+5 POST locale=de => 302; error shown: 
+restore locale=en => 302
+4 after logout => 302; / lang=fr; switch present=True
+3 detail: dashboard after save, main text start:  Compte client Bonjour, A Customer One. Gérez vos réservations, vos préférences et votre historique de séjour. Réservations Statut Réservations en cours Toutes les réservations En attente Paiement en attente Validation du paiement en attente Échec du
+5 detail: locale=de => 302 -> http://127.0.0.1:8101/account/preferences; error markup: <form class="help-chat-form" data-help-chat-form data-error-message="Je ne peux pas répondre pour le moment. Réessayez ou utilisez la page Contact." action="http://127.0.0.1:8101/help/chat" method="POST">
+            
+Code: AuthController@updatePreferences redirects to route('dashboard') with('status', messages.profile.saved); the dashboard view does not render session('status') (only account/preferences.blade.php:16 does), so no success message is shown. Invalid locale=de redirects back to /account/preferences; that view has no \ output, so no error message is displayed (validation itself works: no redirect to dashboard). Customer locale restored to en at the end.

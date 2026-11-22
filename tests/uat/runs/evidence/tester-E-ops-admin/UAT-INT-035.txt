@@ -1,0 +1,11 @@
+﻿S1 no file no text: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | Select a file or paste the CSV content to import.
+S2 PDF: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file must be a file of type: csv, txt.
+S3 6 MB file: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file failed to upload.
+S4 binary evil.csv: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file must be a file of type: csv, txt.
+S4b empty file: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The import file must be a file of type: csv, txt.
+S5 host of E2 imports into E1 => 403
+S6 concierge => 403
+S6 customer => 403
+S6 anonymous => 302 -> http://127.0.0.1:8105/login
+S7 format=pdf: 302 -> http://127.0.0.1:8105/admin/establishments/1/edit |  | The selected format is invalid.
+rows created during INT-035: 0

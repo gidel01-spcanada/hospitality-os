@@ -1,0 +1,17 @@
+1 /login submit with session cookie deleted (valid creds of own test user) -> 419; body: Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a expiré. Merci de rafraîchir la page et de réessayer. Retour à l’accueil; trace=False
+4 POST /login without _token -> 419; body: Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a expiré. Merci de rafraîchir la page et de réessayer. Retour à l’accueil
+   security form action: <form method="POST" action="http://127.0.0.1:8103/account/security">
+2 password change with session cookie deleted -> 419  body: Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a expiré. Mer
+   original password still valid: login -> 302 http://127.0.0.1:8103/dashboard
+   new password login -> 302 http://127.0.0.1:8103/login
+3 idle expiry beyond SESSION_LIFETIME: not run (would need waiting/config change)
+1 login form submit with cookies deleted -> 302 http://127.0.0.1:8103/login body: Redirecting to http://127.0.0.1:8103/login Redirecting to http://127.0.0.1:8103/login .
+1 login submit with session cookie deleted -> 0 body: 
+4 POST /login without _token -> 200 body: Mot de passe oublié A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Compte Mot
+   stack trace markers in body: False
+4 POST /login without _token -> 0 body: ; stacktrace markers: False
+   bogus _token -> 200
+   security forms: 
+2 password change without session cookie -> 0 
+   old password still valid: login -> 302 http://127.0.0.1:8103/dashboard
+3 idle-expiry: not run (SESSION_LIFETIME wait); cookie-less /dashboard -> 302 http://127.0.0.1:8103/login

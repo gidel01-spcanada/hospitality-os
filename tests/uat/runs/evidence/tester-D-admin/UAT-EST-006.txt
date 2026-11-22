@@ -1,0 +1,6 @@
+﻿step1 ?q=6.3703,2.3912 -> 302; {"latitude":"6.3703000","longitude":"2.3912000"}
+step2 @lat,lng form -> 302; {"latitude":"6.3703000","longitude":"2.3912000"}
+step3 no coords -> 302 Loc=http://127.0.0.1:8104/admin/establishments/5/edit#general; {"latitude":null,"longitude":null,"google_maps_url":"https:\/\/maps.example.test\/place\/x"}
+step4 out of range -> 302; {"latitude":null,"longitude":null}
+step5 manual lat 1.5 + URL -> 302; {"latitude":"1.5000000","longitude":"2.3912000"}
+public page -> 200; map/coords present: True

@@ -1,0 +1,6 @@
+﻿S1 reservation/checkout reachable: start=302
+[workaround CSRF] S2 signed paid -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S3 send command with unreachable SMTP (process env override, local only): exit=0 Could not send reservation_status_updated notification to outage-guest@example.test: Connection could not be established with host "127.0.0.1:1": stream_socket_client(): Unable to connect to 12
+S3 state: {"status":"confirmed","attempts":[{"id":68,"provider":"fedapay","provider_reference":"fedapay-sandbox-E33O5C7XHT0I","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/outage-guest@example.test\/failed","receipt_issued\/outage-guest@example.test\/failed"]}
+S4 checkout page -> 200, confirmed: True
+S4 receipt PDF download: not verifiable (PDF library missing, see PAY-036). S5 synchronous mail paths under outage: not testable, running server uses the log mail driver.

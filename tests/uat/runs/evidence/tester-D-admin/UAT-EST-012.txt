@@ -1,0 +1,22 @@
+﻿hosts/create -> 200 fields: _token,mode,existing_user_id,name,email,password,password_confirmation
+step1 create host -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#hosts | nts Paramètres du site Journaux Entités Succès : Hôte ajouté et assigné à l’étab | user: {"role":"host","tenant_id":1,"is_admin":false,"is_active":true,"email_verified_at":"2026-11-22T21:32:41.000000Z"} | pivot E2: [13] | reset mail in log: 1
+step2 assign existing customer 9 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create; user: {"role":"customer","tenant_id":null,"is_admin":false,"is_active":true} pivot: [13]
+step3/4 dup email -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | existant Sélectionner un utilisateur Afrik Appart Host — host@afrikappart. || Valid — dval8@example. | pivot count 3 -> 3
+step3/4 pw mismatch -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | confirmation de mot de passe ne correspond pas. || existant Sélectionner un utilisateur Afrik Appart Host — host@afrikappart. || Valid — dval8@example. | pivot count 3 -> 3
+step3/4 pw 7 chars -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | doit contenir au moins 8 caractères. || existant Sélectionner un utilisateur Afrik Appart Host — host@afrikappart. || Valid — dval8@example. | pivot count 3 -> 3
+step3/4 missing name -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | required when mode is create. || existant Sélectionner un utilisateur Afrik Appart Host — host@afrikappart. || Valid — dval8@example. | pivot count 3 -> 3
+step3/4 existing w/o id -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | existing user id field is required when mode is existing. || doit être une chaîne de caractères. || doit être une adresse email valide. || doit être une chaîne de caractères. || doit contenir au moins 8 caractères. | pivot count 3 -> 3
+step5 not run here: no other-tenant user exists in on_premise mode.
+step6 remove host 13 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#hosts | nts Paramètres du site Journaux Entités Succès : Hôte retiré de l’établissement. | pivot E2: [] role now: host
+step7 remove user 4 (host of E1, not of E2) via E2 -> 404
+step8 host@ (E1) mode existing -> 302 <!DOCTYPE html> <html> <head> <meta charset="UTF-8" /> <meta http-equiv="refresh" content="0;url='http://127.0.0.1:8104/
+  host@ (E1) mode create on own establishment -> 302 Loc=http://127.0.0.1:8104/admin/establishments/1/edit#hosts
+step9 audit rows: [{"action":"host_assigned","details":"{\"host_id\":13,\"mode\":\"create\",\"url\":\"http:\\\/\\\/127.0.0.1:8104\\\/admin\\\/establishments\\\/2\\\/hosts\",\"ip\":\"127.0.0.1\",\"user_agent\":null}"},{"action":"host_removed","details":"{\"host_id\":13,\"url\":\"http:\\\/\\\/127.0.0.1:8104\\\/admin\\\/establishments\\\/2\\\/hosts\\\/13\",\"ip\":\"127.0.0.1\",\"user_agent\":null}"},{"action":"host_assigned","details":"{\"host_id\":14,\"mode\":\"create\",\"url\":\"http:\\\/\\\/127.0.0.1:8104\\\/admin\\\/establishments\\\/1\\\/hosts\",\"ip\":\"127.0.0.1\",\"user_agent\":null}"}]
+--- redo of existing-mode steps emulating app.js (create inputs are disabled, so not submitted, when mode=existing)
+  existing_user_id options include customer 9: True; option count: 11
+step2 assign existing customer 9 -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/edit#hosts | nts Paramètres du site Journaux Entités Succès : Hôte ajouté | user: {"role":"host","tenant_id":1,"is_admin":false,"is_active":true} pivot E2: [9]
+step4 existing without id -> 302 Loc=http://127.0.0.1:8104/admin/establishments/2/hosts/create | existing user id field is required when mode is existing. || existant Sélectionner un utilisateur Afrik Appart Host — host@afrikappart. || Valid — dval8@example.
+step8 host@ mode existing (E1) -> 403 Loc= <!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Accès ref
+  host@ create form shows 'existing' mode option: False
+  host@ crafted POST mode=existing (Accept JSON) -> 403 { "message": "Un acc\u00e8s administrateur est requis." }
+step9 audit rows now: ["host_assigned","host_removed","host_assigned","host_assigned"]

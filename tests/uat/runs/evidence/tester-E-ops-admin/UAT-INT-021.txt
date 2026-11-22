@@ -1,0 +1,10 @@
+﻿public availability S1 D+20..D+22 (2026-12-12..2026-12-14): available=False
+public availability S2 D+19..D+21 (2026-12-11..2026-12-13): available=False
+public availability S3 D+23..D+25 (2026-12-15..2026-12-17): available=True
+public availability S4 D+18..D+20 (2026-12-10..2026-12-12): available=True
+public availability S5 D+22..D+24 (2026-12-14..2026-12-16): available=False
+S5 crafted POST reserve S1 => 302 -> http://127.0.0.1:8105/properties/appartement-401; message: Ces dates ne sont pas disponibles.; reservations before=1 after=1
+S6 admin create S1 without override => 302 -> http://127.0.0.1:8105/admin/reservations/create; errors: Error: The property is not available for these dates. | The property is not available for these dates.; reservations=1
+S6 admin create S1 WITH override checkbox => 302 -> http://127.0.0.1:8105/admin/reservations/2; reservations=2
+S6 override note stored: ref=AFK-QISD6Z-261122 status=pending notes=[External calendar override] Conflict ignored by Afrik Appart Admin on 2026-11-22 21:02:09.
+(cleanup: override test reservation deleted from throwaway DB)

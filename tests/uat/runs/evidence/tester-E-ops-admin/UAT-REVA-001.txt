@@ -1,0 +1,13 @@
+﻿seeded 8 'E Filter n' reviews (booking/google/airbnb/website, ratings 1-5, 2025-12-31..2026-03-03, properties 1 and 2) + 1 tenant-2 review; tenant-1 reviews total: 10
+S1 /admin/reviews => 200; order of E Filter rows: E Filter 7,E Filter 4,E Filter 3,E Filter 2,E Filter 6,E Filter 1,E Filter 0,E Filter 5 ; property/establishment names shown: True / True ; tenant-2 review visible: False
+S2/S3 ?source=google => 200: E Filter 4,E Filter 6,E Filter 1
+S2/S3 ?rating=5 => 200: E Filter 7,E Filter 4,E Filter 0
+S2/S3 ?property=2 => 200: E Filter 3,E Filter 2,E Filter 6,E Filter 5
+S2/S3 ?source=google&rating=5 => 200: E Filter 4
+S2/S3 ?source=website => 200: E Filter 3
+S2/S3 ?date_from=2026-01-01&date_to=2026-01-31 => 200: E Filter 2,E Filter 6,E Filter 1,E Filter 0
+S4/S5 ?date_from=2026-02-01&date_to=2026-01-01 => 302 -> http://127.0.0.1:8105/admin/reviews ; error text: 
+S4/S5 ?rating=6 => 302 -> http://127.0.0.1:8105/admin/reviews ; error text: 
+S4/S5 ?source=yelp => 302 -> http://127.0.0.1:8105/admin/reviews ; error text: 
+S4/S5 ?property=999999 => 302 -> http://127.0.0.1:8105/admin/reviews ; error text: 
+S6 host => 403; concierge => 403

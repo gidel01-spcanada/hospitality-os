@@ -1,0 +1,4 @@
+1 GET /messages/5 (other's) -> 403
+2 POST reply on thread 5 -> 403; messages 13 -> {"c":13}
+3 GET /messages/999999999 -> 404
+4 own list thread links:  (none expected; thread 5/6 not listed: True)

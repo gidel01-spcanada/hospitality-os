@@ -1,0 +1,12 @@
+1 /admin -> 200; sidebar/page links: /admin/bookings /account /admin/messages /admin/cleaning
+2 link to /admin/users present: False
+2 link to /admin/properties present: False
+2 link to /admin/settings present: False
+3 GET /admin/properties -> 403
+3 GET /admin/users -> 403
+4 /admin/reservations -> 200; delete control (method DELETE/destroy) present: True
+4 /admin/reservations/1 -> 200; delete control present: False
+5 /account -> 200
+   links on /admin page that do not return 200 for concierge: none
+host: /admin links: /admin/bookings /account /admin/messages /admin/cleaning /admin/reports /admin/properties /admin/establishments ; non-200: none; users/settings links shown: False
+step 4 recheck: concierge /admin/reservations has 0 DELETE controls (earlier True was the customer name 'Delete UAT'); admin has 4.

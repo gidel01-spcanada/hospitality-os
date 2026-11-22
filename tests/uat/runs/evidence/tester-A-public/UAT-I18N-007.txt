@@ -1,0 +1,1 @@
+﻿Evidence shared with UAT-PUB-032 (same requests): EN past check_in => 'La date d'arrivée doit être aujourd'hui ou plus tard.'; EN inverted => 'La date de départ doit être après la date d'arrivée.'; EN invalid email => 'The email address must be a valid email address.'; FR past check_in => same French sentence, accents intact. See UAT-PUB-032.txt.

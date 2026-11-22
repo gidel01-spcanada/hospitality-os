@@ -1,0 +1,5 @@
+Run (clean) of UAT-AUTH-017 on local N=3:
+1 POST /forgot-password uat-reset@example.test -> flash "We have emailed your password reset link." ; email_outbox password_reset_requested rows 3->4
+2 immediate resubmit -> error "Please wait before retrying." ; rows 4->4
+3 after ~70 s -> flash "We have emailed your password reset link." ; rows 4->5
+(Other lines removed: earlier overlapping runs of the same script polluted the 60 s window.)

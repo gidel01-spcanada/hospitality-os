@@ -1,0 +1,16 @@
+﻿anon /feedback => 200; title: <title>Avis sur la plateforme
+badge/heading text: Sprint Pay Canada Avis sur la plateforme L’envoi des retours n’est pas encore configuré. A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l’Ouest. À propos Contact support@afrikappart.example +
+form inputs: 
+labels: 
+options: 
+help text: 
+submit button: 
+--- delivery configured (instance restarted with SPRINTPAY_FEEDBACK_EMAIL=feedback.uat@example.test) ---
+anon /feedback => 200; form present=True
+inputs: <input type="hidden" name="_token" value="<redacted>" autocomplete="off"> <input id="feedback-name" name="name" value="" required maxlength="255"> <input id="feedback-email" name="email" type="email" value="" required maxlength="255"> <select id="feedback-category" name="category" required> <textarea id="feedback-message" name="message" rows="6" maxlength="5000" required>
+labels: <label for="feedback-name">Nom complet <label for="feedback-email">Adresse email <label for="feedback-category">Type de retour <label for="feedback-message">Votre retour
+options: <option value="suggestion" >Suggestion <option value="issue" >Problème <option value="other" >Autre
+button: <button type="submit" class="btn btn-primary">Envoyer; help text: 
+footer link: <a class="footer-feedback-link" href="http://127.0.0.1:8101/feedback">Envoyer un avis à Sprint Pay Canada
+customer prefill: name=A Customer One email=a.customer.uat1@example.test
+

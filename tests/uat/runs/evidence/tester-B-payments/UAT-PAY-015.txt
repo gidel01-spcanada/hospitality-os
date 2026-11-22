@@ -1,0 +1,7 @@
+﻿S1 no provider -> 422: {"message":"Le champ provider est obligatoire.","errors":{"provider":["Le champ provider est obligatoire."]}}
+S2 provider=stripe -> 422: {"message":"La valeur s\u00e9lectionn\u00e9e pour provider est invalide.","errors":{"provider":["La valeur s\u00e9lectionn\u00e9e pour provider est in
+S3 provider=paypal (disabled) -> 422: 
+S4 provider=interac (no secondary currency) -> 422: 
+S5 pay_later + guarantee_provider=wise -> 422: {"message":"La valeur s\u00e9lectionn\u00e9e pour guarantee provider est invalide.","errors":{"guarantee_provider":["La valeur s\u00e9lectionn\u00e9e 
+attempts after S1-S5: 0; status pending
+S6 double pay_later submit: 302/302; attempts: 2 idempotency keys: ["AFK-B664BBF3B-pay_later","AFK-B664BBF3B-pay_later"]

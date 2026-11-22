@@ -1,0 +1,6 @@
+﻿S1 R5 (49h) GET -> 200; banner: True; payment options hidden: True; cancel form hidden: True
+S2 POST start pay_later R5 -> 410; msg: False
+S3 POST offline-proof R5 -> 410
+S3 POST paypal/create R5 -> 410
+S4 R6 (47h) GET -> 200; options visible: True; expired banner: False
+S5 R5 status after expiry: {"status":"pending","attempts":[],"lines":[],"receipts":0,"outbox":[]}; R5 dates still listed on /properties search (free)? False

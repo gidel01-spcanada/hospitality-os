@@ -1,0 +1,14 @@
+﻿setup: PE2 id=17 in establishment 2 (host not assigned)
+step1 host create form establishment options: 1:Afrik Appart Cotonou
+step2 host POST establishment_id=2 -> 403 ; props 17->17 ; body: ès refusé | Afrik Appart A Afrik Appart Erreur 403 Accès refusé Vous n’avez pas les permissions nécessaires pour accéder
+step3 host GET /admin/properties/17/edit -> 403 { "message": "Un acc\u00e8s administrateur ou h\u00f4te est requis." }
+step4 host PUT /admin/properties/17 -> 403
+step4 host PUT .../amenities -> 403
+step4 host POST .../images -> 403
+step4 host POST .../improve-copy -> 403
+step5 host /admin/properties -> 200; shows d-pe2/UAT PE2: False; shows Appartement 401: True
+PE2 after host attempts:     Illuminate\Database\QueryException     SQLSTATE[HY000]: General error: 1 no such table: amenity_property (Connection: sqlite, Database: C:\Users\gfoumbi\AppData\Local\Temp\uat-run\db4.sqlite, SQL: select count(*) as aggregate from "amenity_property" where "property_id" = 17)    at vendor\laravel\framework\src\Illuminate\Database\Connection.php:838     834Γûò             $exceptionType = $this->isUniqueConstraintError($e)     835Γûò                 ? UniqueConstraintViolationException::class     836Γûò                 : QueryException::class;     837Γûò    Γ₧£ 838Γûò             throw new $exceptionType(     839Γûò                 $this->getNameWithReadWriteType(),     840Γûò                 $query,     841Γûò                 $this->prepareBindings($bindings),     842Γûò                 $e,    1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:420       PDOException::("SQLSTATE[HY000]: General error: 1 no such table: amenity_property")    2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:420       PDO::prepare() 
+step6 Blocked: no second tenant establishment exists in on_premise mode (tested later in cloud mode if possible)
+step7 host PUT own property 5 with establishment_id=2 -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#general; DB establishment_id now: 2
+  host GET /admin/properties/5/edit afterwards -> 403
+  restored by admin, establishment_id: 1

@@ -1,0 +1,4 @@
+1 replay POST on reviewed reservation 12 -> 409; body: An Error Occurred: Conflict ? " /> Oops! An Error Occurred The server returned a "409 Conflict". Something is broken. Pl; reviews 1 -> {"c":1}
+2 two tabs on res 1: A -> 302; B -> 409; reviews for res 1: {"c":1}
+3 resubmit (back button) -> 409; reviews for res 1: {"c":1}
+   thanks text after A (fr 'Merci pour votre avis.'): False

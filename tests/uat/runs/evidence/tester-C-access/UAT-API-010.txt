@@ -1,0 +1,15 @@
+GET /api/v1/me | anonymous=401 | customer=200 | concierge=200 | host=200 | admin=200
+PUT /api/v1/me | anonymous=401 | customer=200 | concierge=200 | host=200 | admin=200
+GET /api/v1/customer/reservations | anonymous=401 | customer=200 | concierge=403 {"message":"Forbidden."} | host=403 {"message":"Forbidden."} | admin=403 {"message":"Forbidden."}
+GET /api/v1/customer/reservations/1 | anonymous=401 | customer=200 | concierge=403 {"message":"Forbidden."} | host=403 {"message":"Forbidden."} | admin=403 {"message":"Forbidden."}
+POST /api/v1/customer/properties/1/favorite | anonymous=401 | customer=200 | concierge=403 {"message":"Forbidden."} | host=403 {"message":"Forbidden."} | admin=403 {"message":"Forbidden."}
+GET /api/v1/staff/reservations | anonymous=401 | customer=403 {"message":"Forbidden."} | concierge=200 | host=200 | admin=200
+GET /api/v1/staff/reservations/2 | anonymous=401 | customer=403 {"message":"Forbidden."} | concierge=200 | host=200 | admin=200
+PATCH /api/v1/staff/reservations/2/status | anonymous=401 | customer=403 {"message":"Forbidden."} | concierge=200 | host=200 | admin=200
+POST /api/v1/staff/reservations/2/payment-link | anonymous=401 | customer=403 {"message":"Forbidden."} | concierge=202 | host=202 | admin=202
+GET /api/v1/admin/properties | anonymous=401 | customer=403 {"message":"Forbidden."} | concierge=403 {"message":"Forbidden."} | host=403 {"message":"Forbidden."} | admin=200
+GET /api/v1/properties | anonymous=200 | customer=200 | concierge=200 | host=200 | admin=200
+GET /api/v1/properties/appartement-401 | anonymous=200 | customer=200 | concierge=200 | host=200 | admin=200
+POST /api/v1/properties/appartement-401/availability | anonymous=200 | customer=200 | concierge=200 | host=200 | admin=200
+POST /api/v1/auth/login | anonymous=422 | customer=422 | concierge=422 | host=422 | admin=422
+logout (all roles are 204 expected; host token): 204

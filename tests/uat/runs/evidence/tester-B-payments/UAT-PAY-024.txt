@@ -1,0 +1,8 @@
+﻿S1 return while created -> 302; message 'awaiting confirmation' visible to guest: False; status: pending_payment
+S2 as provider -> 419
+[workaround] S2 failed webhook -> 200 {"ok":true,"provider":"fedapay","status":"failed"}; {"status":"payment_failed","attempts":[{"id":44,"provider":"fedapay","provider_reference":"fedapay-sandbox-4KROYJOBR6SV","status":"failed","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued"]}
+S3 reload: label payment failed: False; options visible: True; attempts list shows failed: True
+S4 retry fedapay -> 302; {"status":"pending_payment","attempts":[{"id":44,"provider":"fedapay","provider_reference":"fedapay-sandbox-4KROYJOBR6SV","status":"failed","amount":"138000.00","currency":"XOF"},{"id":45,"provider":"fedapay","provider_reference":"fedapay-sandbox-AOK88VVYHNCA","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued"]}
+S5 return wrong token -> 403
+S6 return for provider without attempts (paypal) -> 404
+S3 label check: Référence AFK-BC9CA993E Échec du paiement Établissement Afri

@@ -1,0 +1,5 @@
+﻿Environment: LIVE https://afrikappart.com/ (anonymous, read-only GET only). Date 2026-11-22 ~21:24-21:35 UTC. Set-Cookie values redacted.
+GET /cookies => 200; 4 articles FR and EN (what is a cookie, essential cookies, no ad tracking, managing settings).
+Cookies set on a plain anonymous GET (values redacted): XSRF-TOKEN (Max-Age=7200, path=/, secure, samesite=lax, NOT httponly) and afrikappart-session (Max-Age=7200, secure, httponly, samesite=lax). No 'locale' cookie on plain GETs.
+Third-party hosts referenced in HTML source: home: www.google.com (maps iframe https://www.google.com/maps?q=...&output=embed), facebook.com, tiktok.com (links); property page: www.google.com (script or iframe; recaptcha/gtag string match = true), twitter.com, linkedin.com, wa.me (share links); og:image uses images.unsplash.com.
+Inline HTML has no localStorage/sessionStorage use (external JS not inspected). Runtime network requests, DevTools cookie list and localStorage were NOT observed (no browser).

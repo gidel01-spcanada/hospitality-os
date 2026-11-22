@@ -1,0 +1,9 @@
+﻿S1 GET checkout?token=abc -> 302 Location=http://127.0.0.1:8102/reservations/access
+GET /reservations/access -> 200; text: lien n’est plus valide A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Accès à votre rés
+  buttons login/register links: href="http://127.0.0.1:8102/login" href="http://127.0.0.1:8102/register" href="http://127.0.0.1:8102/login" href="http://127.0.0.1:8102/register"
+S2 no token -> 302 http://127.0.0.1:8102/reservations/access
+S3 unknown id -> 404
+login cust2 -> 302 http://127.0.0.1:8102/dashboard
+S4 cust2 on R2 no token -> 302 http://127.0.0.1:8102/reservations/access
+S6 cust2 + R1 valid token -> 200 (identity page: True; payment page: False)
+S5 /login -> 200

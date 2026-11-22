@@ -1,0 +1,3 @@
+﻿LIVE https://afrikappart.com/ (anonymous, read-only)
+GET /up => 200 text/html, 1832 bytes, title AfrikAppart, all security headers present.
+Steps 2 (php artisan down) and 3 (remove APP_KEY on a test copy): not executed on live. A local attempt to start a throwaway server with an empty APP_KEY env var still returned 200 for /up, /health, / (the empty value did not take effect), so step 3 was not demonstrated.

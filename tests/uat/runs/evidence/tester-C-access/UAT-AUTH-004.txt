@@ -1,0 +1,8 @@
+login guest@afrikappart.test -> 302 http://127.0.0.1:8103/dashboard; GET /dashboard -> 200; staffPanel=False adminLink=False
+   home header has /admin link: False
+login concierge@afrikappart.test -> 302 http://127.0.0.1:8103/admin; GET /dashboard -> 200; staffPanel=False adminLink=True
+   home header has /admin link: True
+login host@afrikappart.test -> 302 http://127.0.0.1:8103/admin; GET /dashboard -> 200; staffPanel=False adminLink=True
+   home header has /admin link: True
+login admin@afrikappart.test -> 302 http://127.0.0.1:8103/admin; GET /dashboard -> 200; staffPanel=False adminLink=True
+   home header has /admin link: True

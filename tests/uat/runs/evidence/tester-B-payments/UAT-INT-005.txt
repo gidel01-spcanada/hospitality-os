@@ -1,0 +1,10 @@
+﻿[workaround] first paid -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+after first: {"status":"confirmed","attempts":[{"id":24,"provider":"fedapay","provider_reference":"fedapay-sandbox-G21RLFGMM3RJ","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}
+[workaround] S1 replay 1 -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+[workaround] S1 replay 2 -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+[workaround] S1 replay 3 -> 200 {"ok":true,"provider":"fedapay","status":"paid"}
+S2-S5 after 3 replays: {"status":"confirmed","attempts":[{"id":24,"provider":"fedapay","provider_reference":"fedapay-sandbox-G21RLFGMM3RJ","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued"]}
+reservations count for this guest email/dates: 1; attempts for reservation: 1
+[workaround] S6 two concurrent replays -> 200, 200
+S6 after: {"status":"confirmed","attempts":[{"id":24,"provider":"fedapay","provider_reference":"fedapay-sandbox-G21RLFGMM3RJ","status":"paid","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued","reservation_status_updated\/guest-pay@example.test\/queued"]}
+receipts unique index on payment_attempt_id? ["primary:unique","receipts_receipt_number_unique:unique"]

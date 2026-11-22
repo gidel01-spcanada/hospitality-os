@@ -1,0 +1,14 @@
+﻿S1 FR booking -> 302 http://127.0.0.1:8102/properties/appartement-401?lang=fr  Redirecting to http://127.0.0.1:8102/properties/appartement-401?lang=fr Redirecting to http://127.0.0.1:8102/properties/appartement-401?lang=fr . 
+S1 EN booking -> 302 http://127.0.0.1:8102/properties/appartement-401?lang=en
+S2 outbox rows: []
+S1/2 queued rows: ["reservation_created\/mail-guest-en@example.test\/queued","reservation_created\/mail-guest@example.test\/queued","reservation_received\/mail-guest@example.test\/queued"]
+(note: rows queued through ReservationEmailService::queueForReservation on fixtures; the public booking path was not used because it needs the account-confirmation branch of PublicPropertyController::reserve)
+S3 limit=1: exit=0 Sent reservation_created notification to mail-guest@example.test. Processed 1 email notification(s). 
+   statuses: ["reservation_created\/mail-guest@example.test\/sent","reservation_created\/mail-guest-en@example.test\/queued","reservation_received\/mail-guest@example.test\/queued"]
+S4 no limit: exit=0 Sent reservation_created notification to mail-guest-en@example.test. Sent reservation_received notification to mail-guest@example.test. Processed 2 email notification(s). 
+S5 mail-guest@example.test subject: Subject: Confirmation de votre demande de =?utf-8?Q?r=C3=A9servation? AFK-BA3373365 | checkout link lang param: True | html lang: fr
+S5 mail-guest-en@example.test subject: Subject: Your reservation confirmation: AFK-BECF4F877 | checkout link lang param: True | html lang: en
+S6 broken transport (process env override MAIL_MAILER=smtp -> 127.0.0.1:1, local only): exit=0 Could not send reservation_created notification to mail-fail@example.test: Connection could not be established with host "127.0.0.1:1": stream_socket_client(): Unable to connect to 127.0.0.1:1 (No connection could be made because the target machine actively refused it) Could not send reservation_status_updated n
+   rows: ["reservation_status_updated\/mail-guest@example.test\/failed\/error=Connection could not be established with host \"127.0.0.1:1\":","reservation_created\/mail-fail@example.test\/failed\/error=Connection could not be established with host \"127.0.0.1:1\":"]
+S7 transport restored, rerun: exit=0 Processed 0 email notification(s). ; failed rows stay failed: 2
+S8 staff_account_invitation row: queued ; output: exit=0 Processed 0 email notification(s). 

@@ -1,0 +1,9 @@
+﻿form -> 200 fields: _token,company_name,contact_email,name,email,locale,password,password_confirmation
+step1 signup -> 302 Loc=http://127.0.0.1:8104/admin | Équipements Paramètres du site Journaux Succès : Votre espace est prêt. Ajoutez  | 
+step2 tenants: [{"id":1,"name":"Default","slug":"default","status":"active"},{"id":2,"name":"UAT Tenant B","slug":"uat-tenant-b","status":"active"},{"id":3,"name":"UAT Tenant Alpha","slug":"uat-tenant-alpha","status":"active"},{"id":4,"name":"UAT Tenant Gamma","slug":"uat-tenant-gamma","status":"active"},{"id":5,"name":"UAT Signup Co","slug":"uat-signup-co","status":"active"}] ; platform list row: efault &middot; Actif 5 32 11 Suspendre UAT Signup Co uat-signup-co &middot; con
+step3 same company, other email -> 302; slugs: ["uat-signup-co","uat-signup-co-2"]
+step4 existing email -> 302 Loc=http://127.0.0.1:8104/host/register tenants 6->6 | 
+step5 mismatch -> 302 tenants 6->6 | confirmation de mot de passe ne correspond pas. || confirmation de mot de passe ne correspond pas.
+step5 7-char password -> 302 tenants 6->6 | doit contenir au moins 8 caractères. || doit contenir au moins 8 caractères.
+step6 reCAPTCHA enabled run: not run (RECAPTCHA_ENABLED=false on this instance; no test keys).
+step7 signup admin: role/verified: {"role":"admin","tenant_id":5,"email_verified_at":null} ; settings site_name: 'UAT Signup Co' ; amenity catalog categories present: True count rows: 7

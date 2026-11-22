@@ -1,0 +1,9 @@
+﻿setup R9=15 status=pending_validation attempts=[{"id":1,"provider":"interac","status":"awaiting_validation","amount":"112000.00","ref":"interac-ioe2algxcpo8","proof":"proof.jpg","confirmed_by":null,"confirmed_at":null}]
+step6 confirm without file -> 302 Loc=http://127.0.0.1:8104/admin/reservations/15 |  | status=pending_validation
+step1 confirm with ref INT-UAT-0001 + proof -> 302 Loc=http://127.0.0.1:8104/admin/reservations/15 | ètres du site Journaux Entités Succès : Paiement confirmé et reçu ajouté à la fi
+step2 attempts: [{"id":1,"provider":"interac","status":"paid","amount":"112000.00","ref":"INT-UAT-0001","proof":"proof.jpg","confirmed_by":1,"confirmed_at":"set"}]
+step3 reservation: status=confirmed notes tail: ment proof for interac.Offline payment confirmed by admin.
+step4 receipts: [{"receipt_number":"RC-20261122-HLJGOVOG","amount":"112000.00","payment_attempt_id":1}] ; detail has receipt link: True
+step5 outbox receipt_issued 1 -> 2; reservation_status_updated 3 -> 4
+step7 second confirmation -> 302 | attempts [{"id":1,"provider":"interac","status":"paid","amount":"112000.00","ref":"INT-UAT-0002","proof":"proof.png","confirmed_by":1,"confirmed_at":"set"}] | receipts [{"receipt_number":"RC-20261122-HLJGOVOG","amount":"112000.00","payment_attempt_id":1}] | receipt_issued rows 2 status_updated rows 5
+step8 customer download receipt -> 500; starts with %PDF: False; contains receipt number: False

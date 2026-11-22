@@ -1,0 +1,14 @@
+﻿PUT feed 19 -> p5.ics => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: p5-1 [2027-01-31..2027-02-02] S1 plain dates | p5-11 [2027-03-02..2028-03-01] S11 365 days | p5-12 [2027-03-12..2027-03-12] S12 zero length dtend=dtstart | p5-2 [2027-02-05..2027-02-06] S2 utc datetimes | p5-3 [2027-02-10..2027-02-11] S3 tzid | p5-4 [2027-02-15..2027-02-15] S4 no dtend | p5-7-folded [2027-02-20..2027-02-22] S7 folded sum+ continued | p5-8 [2027-02-25..2027-02-26] Owner, stay<NL>notes | 
+dates: T+70=2027-01-31 T+75=2027-02-05 T+80=2027-02-10 T+85=2027-02-15 T+90=2027-02-20 T+95=2027-02-25 T+100=2027-03-02 T+465=2028-03-01 T+110=2027-03-12
+avail S4 no-dtend (T+85..T+87) = True  [event T+85..T+85]
+avail S12 dtend=dtstart (T+109..T+111) = False
+avail S11 365d (T+200..T+202) = False; (T+464..T+466) = False
+PUT feed 19 -> p5lf.ics (LF endings) => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+events f19: p5-1 [2027-01-31..2027-02-02] S1 plain dates | p5-11 [2027-03-02..2028-03-01] S11 365 days | p5-12 [2027-03-12..2027-03-12] S12 zero length dtend=dtstart | p5-2 [2027-02-05..2027-02-06] S2 utc datetimes | p5-3 [2027-02-10..2027-02-11] S3 tzid | p5-4 [2027-02-15..2027-02-15] S4 no dtend | p5-7-folded [2027-02-20..2027-02-22] S7 folded sum+ continued | p5-8 [2027-02-25..2027-02-26] Owner, stay<NL>notes | 
+PUT feed 19 -> big.ics (500 events) => 302 -> http://127.0.0.1:8105/admin/properties/1/edit#calendars | flash: Success: Calendar feed updated. || Calendar feed updated. | errors: 
+sync => 302 flash: Success: Calendar feed sync completed. || Calendar feed sync completed.
+500-event sync elapsed s: 11.1
+event count f19: 500

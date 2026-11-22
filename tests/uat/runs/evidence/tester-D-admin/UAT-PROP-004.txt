@@ -1,0 +1,10 @@
+﻿step1 PUT general -> 302 Loc=http://127.0.0.1:8104/admin/properties/6/edit#general | flash: (not found: Property updated)
+step2 reload values: property_type=villa; nightly_rate_xof=27000.00; minimum_stay=3; bedrooms=2; bathrooms=1; beds=3; translations[fr][name]=Loft francais; translations[fr][summary]=Resume francais; translations[fr][description]=Description francaise; translations[en][name]=English loft; translations[en][summary]=English summary
+step3 EN /properties: 'English loft' True, 'English summary' True, 'Loft francais' False
+step3 FR /properties: 'Loft francais' True, 'English loft' False
+step4 cleared EN translation fields -> 302; DB en translation: [{"locale":"en","name":"English loft","summary":"English summary"},{"locale":"fr","name":"Loft francais","summary":"Resume francais"}]
+step5 slug=appartement-401 (existing) -> 302 Loc=http://127.0.0.1:8104/admin/properties/6/edit | 
+step5 own slug kept -> 302 Loc=http://127.0.0.1:8104/admin/properties/6/edit#general
+step6 empty slug -> 302 Loc=http://127.0.0.1:8104/admin/properties/6/edit | obligatoire.
+step7 slug changed to d-uat-loft-02b -> 302; old /properties/d-uat-loft-02 -> 404 Loc=; new -> 200
+step8 unassigned host PUT /admin/properties/17 -> 403

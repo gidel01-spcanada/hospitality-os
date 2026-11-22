@@ -1,0 +1,10 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.
+Step2: php artisan migrate --force on empty scratch DB => 51 migration files, migrate:status shows 51 Ran, 0 Pending.
+Step3: db:seed with SEED_ADMIN_PASSWORD/SEED_GUEST_PASSWORD unset => ReferenceDataSeeder DONE, SamplePropertySeeder DONE (64 s), AuthSeeder fails: "RuntimeException: SEED_ADMIN_PASSWORD and SEED_GUEST_PASSWORD must be configured before running the auth seeder." (db:seed --class=AuthSeeder shows same message). After failure: users=0, tenants=1, properties=4, settings=13, amenities=69, property_images=58 (reference data and sample properties were already seeded).
+Step4: db:seed with both set => success (exit 0).
+Step5: users = admin@afrikappart.test (admin,is_admin=1,is_platform_admin=1), guest@ (customer), concierge@ (concierge), host@ (host) => FOUR users (case text expects three).
+Step6: GET / => 200, GET /properties => 200 listing appartement-401..404 (FR).
+Step7: login as admin (POST /login with CSRF token) lands on "Tableau de bord - Afrik Appart" (200).
+Step8: GET /health => 200 ok.
+Side effect observed: SamplePropertySeeder calls property:sync-media with default paths, so db:seed rewrote tracked file seed-assets/properties/manifest.json (generated_at, source_directory) and regenerated files under public/uploads/properties (git status shows 1 tracked jpg modified).
+Not executed: step 1 (composer install / npm install / npm run build), step 9 (MySQL).

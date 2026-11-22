@@ -1,0 +1,5 @@
+﻿Environment: LOCAL scratch SQLite under %TEMP%\uat-run\F-scratch (own DB, own server 127.0.0.1:8196 stopped afterwards). PHP 8.5.12. 2026-11-22.  (static comparison, no MySQL available)
+schema.sql defines 19 tables; migrations on SQLite produce 41 tables. Tables only in migrations (22): amenity_categories, cache, cache_locks, establishment_host, establishment_translations, failed_jobs, job_batches, jobs, message_threads, messages, migrations, mobile_access_tokens, password_reset_tokens, platform_feedback, property_favorites, property_features, property_translations, receipts, sessions, site_reviews, tenants, users. Tables only in schema.sql: none.
+bluehost-import.sql defines 31 tables: a third variant (adds cache, cache_locks, establishment_translations, failed_jobs, job_batches, jobs, password_reset_tokens, property_features, property_translations, sessions, site_reviews, users vs schema.sql).
+README names the seed export import and migrations; schema.sql is named only in docs/database.md line 41; bluehost-import.sql not mentioned in README.
+Not executed: steps 1, 2 (MySQL), 4 (column diff), 5 (SQL imports).

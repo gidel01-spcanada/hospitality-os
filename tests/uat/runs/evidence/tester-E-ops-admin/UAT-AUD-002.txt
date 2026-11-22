@@ -1,0 +1,16 @@
+﻿S1 /admin/audit-logs => 200; total rows in DB 1693; table rows on page 1: 50; pager link page=2 present: True; heading: Journal des modifications; first timestamps: 
+S2 ?event=updated => 200; rows 50; action words on page: 
+S2 ?event=hacked => 302 -> http://127.0.0.1:8105/admin/audit-logs
+S3 type select options: App\Models\AdminAvailabilityBlock,App\Models\Amenity,App\Models\AmenityCategory,App\Models\CleaningScheduleShare,App\Models\CleaningVisit,App\Models\EmailOutbox,App\Models\Establishment,App\Models\ExternalCalendarEvent,App\Models\ExternalCalendarFeed,App\Models\MessageThread,App\Models\Property,App\Models\PropertyImage,App\Models\Reservation,App\Models\ReservationGuest,App\Models\User
+S3 ?type=App\Models\CleaningVisit => 200; rows 43 (DB count 43)
+S4 date_from=date_to=2026-11-22 => 200; rows on page 50 (DB rows today 1693)
+S4 future day => rows 1
+S4 date_to before date_from => 302 -> http://127.0.0.1:8105/admin/audit-logs
+S5 combined filters event=updated&type=Reservation => rows 1 (DB 1); page-2 link: 
+S5 event=updated&type=User: rows 50 (DB 116) page-2 link preserves filters: http://127.0.0.1:8105/admin/audit-logs?event=updated&type=App%5CModels%5CUser&page=2
+S6 custom actions in DB: amenities_synced ; visible on unfiltered type=Property page: amenities_synced=True
+S7 user #10 deleted (DB); audit page => 200 (no error)
+Note: property renamed '<b>x</b>': raw '<b>x</b>' in audit HTML: False; escaped form present: False
+AUD-002 first row (text):  2026-11-22 21:45:07 Afrik Appart Admin admin@afrikappart.test Updated User #1 Voir les données { &quot;old&quot;: { &quot;updated_at&quot;: &quot;2026-11-22 21:43:37&quot;, &quot;last_login_at&quot;: &quot;2026-11-22 21:43:37&quot; }, &quot;new&quot;: { &quot;updated_at&quot;: &quot;2026-11-22 21:4
+AUD-002 S2 ?event=updated second-column values on page: Administrateur=1,Afrik Appart Admin=22,Guest Customer=4,Afrik Appart Concierge=7,Afrik Appart Host=8,Système=7,e-host-other@example.test=1,e-admin-t2@example.test=1
+AUD-002 note: property 8 name in DB now: <b>x</b> ; audit page contains 'b&gt;': True ; contains '\u003Cb': False ; raw '<b>x</b>': False

@@ -1,0 +1,11 @@
+﻿initial: lang=fr switch=
+1 GET /language/en (Referer property) => 302 -> http://127.0.0.1:8101/properties/uat-apt-a; Set-Cookie names: locale,XSRF-TOKEN; locale cookie value length=260 (plain 'en'? False) expires=2027-11-22
+1 after switch: lang=en switch=
+2 /faq lang=en
+2 /privacy lang=en
+2 /reservations/access lang=en
+3 new client with only the locale cookie => lang=en
+4 locale cookie removed, session kept => lang=en
+4b no cookies => lang=fr
+7 /language/en without Referer => 302 -> http://127.0.0.1:8101/
+6 switch control markup:  ; inside mobile nav: False

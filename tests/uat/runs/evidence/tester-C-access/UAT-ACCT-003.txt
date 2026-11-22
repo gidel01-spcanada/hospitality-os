@@ -1,0 +1,5 @@
+1 R-EMAIL (res 11, email UAT-Acct@Example.test, user_id null) listed for uat-acct: True
+2 detail res 11 as uat-acct -> 200
+3 detail res 11 as uat-other -> 403 
+   uat-other list contains 11: False
+4 API list uat-acct -> 200; ids: 8,1,9,6,7,5; contains 11: False

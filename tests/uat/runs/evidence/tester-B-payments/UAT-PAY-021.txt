@@ -1,0 +1,5 @@
+﻿S2 capture with unknown orderID UAT-NOT-CAPTURED, no PayPal attempt, PayPal sandbox-mode gateway -> 200 {"status":"COMPLETED","redirect_url":"http:\/\/127.0.0.1:8102\/reservations\/114\/checkout?token=<token>"}
+S2 DB: {"status":"confirmed","attempts":[{"id":41,"provider":"paypal","provider_reference":"paypal-sandbox-WIVHMIXGKE18","status":"paid","amount":"100.00","currency":"EUR"}],"lines":[],"receipts":1,"outbox":["reservation_status_updated\/guest-pay@example.test\/queued","receipt_issued\/guest-pay@example.test\/queued"]}
+S3 PayPal on cancelled reservation -> 422 { "message": "Le statut de cette r\u00e9servation a chang\u00e9. Ce lien de paiement n\u2019est plus valide." }
+S4 PayPal disabled -> 422 { "message": "PayPal is not available for this establishment." }
+S4 capture with PayPal disabled -> 422 { "message": "PayPal is not available for this establishment." }

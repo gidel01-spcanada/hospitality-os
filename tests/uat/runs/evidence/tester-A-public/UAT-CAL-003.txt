@@ -1,0 +1,12 @@
+﻿search 'AFK-UATCAL' in feed: found=False
+search 'AFK-UATA' in feed: found=False
+search 'Cal Guest' in feed: found=False
+search 'Maintenance' in feed: found=False
+search 'example.test' in feed: found=False
+search '+2290' in feed: found=False
+search 'Airbnb' in feed: found=False
+search 'a.customer' in feed: found=False
+search 'Unavailable' in feed: found=True
+UIDs: UID:reservation-1, UID:reservation-3, UID:reservation-9, UID:reservation-10, UID:block-2, UID:block-3
+event count: 6
+Feed searched for: AFK-UATCAL, AFK-UATA, Cal Guest, Maintenance, example.test, +2290, Airbnb, a.customer -> none found; 'Unavailable' found. Reservation statuses on P-A (DB): 1 confirmed, 3 confirmed, 4 cancelled, 5 pending, 6 pending_payment, 7 pending_validation, 8 payment_failed, 9 checked_in, 10 completed, 11 no_show, others pending. Feed UIDs: reservation-1, reservation-3, reservation-9, reservation-10, block-2, block-3.

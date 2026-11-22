@@ -1,0 +1,5 @@
+﻿S1 (APP_ENV=local) guest POST complete with token -> 302; status after: pending_payment (cannot test 403 case, env is local)
+S2 return before webhook -> 302 http://127.0.0.1:8102/reservations/106/checkout?token=<token>; status: pending_payment
+S3 anonymous no token: checkout GET -> 302 http://127.0.0.1:8102/reservations/access; return GET -> 403; complete POST -> 403
+S4 other customer wrong token: checkout -> 302 http://127.0.0.1:8102/reservations/access; return -> 403
+S5 staff POST complete on sandbox fedapay attempt (created) -> 302; status after: pending_payment; attempt: pending

@@ -1,0 +1,6 @@
+﻿setup R10=42 (E2, wise enabled): customer wise proof -> 302; status=pending_validation attempts=[{"id":4,"provider":"wise","status":"awaiting_validation","amount":"112000.00","ref":"wise-gczexizvwcsr","proof":"proof.jpg","confirmed_by":null,"confirmed_at":null}]
+step1 controls on detail: ,/notes,/status,/payment-link,/confirm-offline-payment,/receipt ; 'reject'/'rejeter' text: False
+step2 pending_payment + note -> 302 status=pending_payment status_updated rows 5 -> 6; attempts [{"id":4,"provider":"wise","status":"awaiting_validation","amount":"112000.00","ref":"wise-gczexizvwcsr","proof":"proof.jpg","confirmed_by":null,"confirmed_at":null}]; proof file kept: 1 file(s)
+step3 customer checkout -> 200; offline-proof form present: True; status text: le paiement Référence AFK-ZCT2WE-261122 Paiement en attente Établissement UAT Re
+  customer resubmits proof -> 302 status=pending_validation attempts=[{"id":4,"provider":"wise","status":"awaiting_validation","amount":"112000.00","ref":"wise-gczexizvwcsr","proof":"proof.png","confirmed_by":null,"confirmed_at":null}]
+step4 cancelled -> status=cancelled; availability: disponible

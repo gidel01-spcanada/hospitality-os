@@ -1,0 +1,9 @@
+﻿token length property 1: 48, hex-only: True; tokens differ between 401 and 402: True
+editor shows full public URL: True
+S1 anonymous U1 => 200; CT=text/calendar; charset=UTF-8; identical to admin export body: True; Cache-Control: no-cache, private
+S2 tampered last char => 404
+S3 slug 401 with token of 402 => 404; slug 402 with its own token => 200
+S2b uppercase token => 404
+S4 no .ics suffix => 404; no token segment => 404 ; 404
+S5 after adding confirmed reservation D+350..353 and block D+360..361: VEVENT count=5 (was 3); contains DTSTART:20271107: True; PII/reason present: False
+S6 subscription by real calendar client: not executable here (no client); only HTTP fetch verified

@@ -1,0 +1,16 @@
+﻿create form defaults: country_code=BJ currency=XOF
+currency option XOF present: True
+currency option NGN present: True
+currency option EUR present: True
+currency option USD present: True
+currency option GBP present: True
+currency option CAD present: True
+country_code is select: True
+POST /admin/establishments (slug blank) -> 302 Loc=http://127.0.0.1:8104/admin/establishments/create | (not found: succÃ¨s) | errors: obligatoire.
+POST /admin/establishments (slug uat-residence-ouidah) -> 302 Loc=http://127.0.0.1:8104/admin/establishments | (not found: SuccÃ¨s)
+{"id":1,"tenant_id":1,"name":"Afrik Appart Cotonou","slug":"afrik-appart-cotonou","currency":"XOF","secondary_currency":null,"secondary_currency_rate":null,"features":null,"is_active":true,"vat_percent":"18.00","vat_included":true,"city_tax_type":"percent","city_tax_amount":"5.00","service_fee_percent":"10.00","cancellation_fee_percent":"0.00","cancellation_fee_days":0,"latitude":null,"longitude":null}
+{"id":2,"tenant_id":1,"name":"UAT Residence Ouidah","slug":"uat-residence-ouidah","currency":"XOF","secondary_currency":"EUR","secondary_currency_rate":"655.957000","features":["Garden","Wi-Fi"],"is_active":true,"vat_percent":"18.00","vat_included":true,"city_tax_type":"percent","city_tax_amount":"5.00","service_fee_percent":"10.00","cancellation_fee_percent":"0.00","cancellation_fee_days":0,"latitude":"6.3600000","longitude":"2.0800000"}
+public GET /establishments/uat-residence-ouidah (fr) -> 200 title:  UAT Residence Ouidah | Afrik Appart A Afrik Appart Accueil Propriétés Expérienc
+public (en) -> 200 lang attr: <html lang="en"
+flash after create: (not found: tablissement cr)
+flash after create: tres du site Journaux Entités Succès : Établissement créé avec succès. Établissements Gérez l’identi

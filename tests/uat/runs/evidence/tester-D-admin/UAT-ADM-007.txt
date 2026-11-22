@@ -1,0 +1,6 @@
+﻿setup d-del id 17: favorite POST -> 302; public reserve -> 302; reservation 231; before: res(user_id)=1 fav=1 audit=4
+step1 delete -> 302 Loc=http://127.0.0.1:8104/admin/users | ateur et données personnelles associées supprimés. L’historique des réservations et paiements est co | listed: False
+step2 reservation 231 after: {"id":231,"email":"d-del@example.test","user_id":null}
+step3 audit rows formerly by user: with user_id=17: 0 ; favorites left: 0
+step4 DELETE own account -> 422 { "message": "Vous ne pouvez pas d\u00e9sactiver votre propre compte." }
+step3 recheck: audit rows for reservation 231: [{"action":"created","user_id":null}] ; favorite-model audit rows with null user: 0 ; d-feat tenant_id=1

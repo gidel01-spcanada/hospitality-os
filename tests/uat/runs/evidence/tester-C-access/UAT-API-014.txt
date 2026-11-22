@@ -1,0 +1,1 @@
+﻿Tenant 6 suspended by platform admin. Concierge B token: GET /staff/reservations -> 403 {message:'This workspace has been suspended.'}; GET /me -> 403; POST /auth/login as concierge B -> 201 (new token also 403 on /me); customer token /me and /customer/reservations -> 200. After activation: same token /staff/reservations -> 200 and /me -> 200.

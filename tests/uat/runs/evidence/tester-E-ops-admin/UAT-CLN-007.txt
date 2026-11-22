@@ -1,0 +1,16 @@
+﻿S1 share week, 7 days, Awa => 302 | flash: Success: Schedule link created for this period. | URL shown: /cleaning-schedule/<token> (token length 64, hex: True) | WhatsApp link: True | copy button: True
+S2 expires_in_days=5 => 302 -> http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week ; share created: False
+S2 expires_in_days=0 => 302 -> http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week ; share created: False
+S2 expires_in_days=365 => 302 -> http://127.0.0.1:8105/admin/cleaning?date=2026-11-27&mode=week ; share created: False
+S2 expires_in_days=30 => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27 ; share created: True
+S2 expires_in_days=90 => 302 -> http://127.0.0.1:8105/admin/cleaning?mode=week&date=2026-11-27 ; share created: True
+S3 assignee Nobody => 302 ; created: False ; error text displayed: False
+S4 host share with property=5 (inaccessible) => 403 ; created: False
+S5 recent share list: 3 'Expires ...' entries shown (shares in DB: 3); sample: Expires 20/02/2027 Expires 22/12/2026
+host share list shows only own shares: host sees 1 entries; host-created shares in DB: 1
+S6 before revoke: public GET => 200
+S6 revoke => 302 | Success: Schedule link revoked. ; confirm attr: data-confirm-message="Revoke this public link?" ; public GET after => 404
+S7 host revokes admin-created share #5 => 403; still exists: 1
+S7 concierge revokes host-created share #4 => 0; still exists: 1
+S8 tenant-2 admin revokes tenant-1 share #5 => 404; still exists: 1
+S7 (re-run; previous concierge line invalid due to tester-script variable clash) concierge revokes host-created share #4 => 302 -> http://127.0.0.1:8105/admin/cleaning; still exists: 0

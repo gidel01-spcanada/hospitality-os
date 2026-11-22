@@ -1,0 +1,6 @@
+﻿S1 host page => 200; establishment options: Afrik Appart Cotonou,=SUM(1+1),Appartement 401,Appartement 402,Appartement 403,Appartement 404
+S1/S3 host CSV June: res=3 occN=3 sell=150 blocked=0 occ%=2 arr=2 dep=2 canc=1 canc%=33.3 bookedXOF=100000 bookedEUR=(none) outXOF=30000 collXOF=100000 collEUR=(none) attempts=2 succ%=50 reviews=1 avgRating=4 ; property rows: "Appartement 401",=SUM(1+1),"Appartement 402","Appartement 403","Appartement 404"
+S2 host ?establishment=2 => 403; ?property=5 => 403; CSV ?property=5 => 403
+S4 concierge page => 403; csv => 403
+S5 customer => 403; anonymous => 302 -> http://127.0.0.1:8105/login
+S6 reconcile reservations: admin all=5 = host(E1) 3 + E2 1 + E3 1; occupied nights all=7 = 3+2+2

@@ -1,0 +1,4 @@
+﻿DB audit rows for Tenant 2 : [["created",1,"{\"old\":[],\"new\":{\"name\":\"UAT Tenant B\",\"slug\":\"uat-tenant-b\",\"contact_email\":\"contact-b@example.test\",\"status\":\"active\",\"updated_at\":\"2026-11-22 22:31:56\",\"crea"],["updated",1,"{\"old\":{\"status\":\"active\",\"updated_at\":\"2026-11-22 22:31:56\"},\"new\":{\"status\":\"suspended\",\"updated_at\":\"2026-11-22 22:33:47\"},\"url\":\"http:\\\/\\\/127.0.0.1:8104\\\/pl"],["updated",1,"{\"old\":{\"status\":\"suspended\",\"updated_at\":\"2026-11-22 22:33:47\"},\"new\":{\"status\":\"active\",\"updated_at\":\"2026-11-22 22:33:49\"},\"url\":\"http:\\\/\\\/127.0.0.1:8104\\\/pl"]]
+step1 /admin/audit-logs -> 200; filter fields: viewport,description,_token,event,type,date_from,date_to
+step2 filtered pages: model_type=Tenant -> 200 mentions 'suspended': True; search=Tenant -> 200 mentions 'suspended': True
+step4 tenant B admin user creation audit row contains password: 0 of 1

@@ -1,0 +1,5 @@
+﻿Repository inspection only.
+Step1: docs/runbook.md not found; docs/bluehost-deployment.md not found.
+Step2: README has no rollback section (no 'rollback' string).
+Step5: searched README, docs, scripts for the ten scenarios (expired SSL, failed calendar feeds, failed email, stuck queue, payment provider outage, invalid/missed webhook, late payment, full disk, compromised credentials, staff offboarding): no procedure found for any; keyword hits are incidental (README webhook configuration lines 31/34, calendar feed mention README:101, TLS flag in deploy script).
+Steps 3-4 (redeploy older build, DB rollback) need a staging deployment: not executed. Locally migrate:rollback --step=3 worked on a scratch SQLite copy (no documented procedure).

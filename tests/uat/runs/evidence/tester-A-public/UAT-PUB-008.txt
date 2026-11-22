@@ -1,0 +1,10 @@
+﻿<form id="compare-form" method="GET" action="http://127.0.0.1:8101/properties/compare" class="compare-toolbar">
+<span data-compare-count>
+<label class="compare-toggle">
+<input type="checkbox" name="properties[]" value="12" form="compare-form" data-compare-option>
+<label class="compare-toggle">
+<input type="checkbox" name="properties[]" value="13" form="compare-form" data-compare-option>
+<label class="compare-toggle">
+<input type="checkbox" name="properties[]" value="1" form="compare-form" data-compare-option>
+compare ids 6,5,7 dates D+20..23 guests 2: 200; positions Uat apt b=6206; Uat apt a=6556; Uat villa c=6907
+list with dates: compare form hidden inputs: <input type="hidden" name="check_in" value="2026-12-12"> <input type="hidden" name="check_out" value="2026-12-15"> <input type="hidden" name="guests" value="2">; compare without dates: 200 totals-for-nights present=False; JS (resources/js/app.js:895-915) disables submit when <2 selected; no max-3 enforcement in JS (only server max:3).

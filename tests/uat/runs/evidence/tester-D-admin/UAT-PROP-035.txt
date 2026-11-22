@@ -1,0 +1,4 @@
+﻿step1 delete Sauna (assigned to property 5) -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/11 | nts Paramètres du site Journaux Entités Succès : Équipement 
+step2 editor -> 200, public -> 200, public shows 'Sauna finlandais': False
+step3 pivot rows for amenity 73 before/after: 1 / 0
+step4 delete again -> 404

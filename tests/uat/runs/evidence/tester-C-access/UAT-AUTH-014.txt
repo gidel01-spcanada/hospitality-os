@@ -1,0 +1,9 @@
+1 GET / lang=fr; switch links: en
+2 GET /language/en (Referer /faq) -> 302 http://127.0.0.1:8103/faq; cookies: locale exp Mon, 22 Nov 2027 20:49:32 GMT | XSRF-TOKEN exp Sun, 22 Nov 2026 22:49:32 GMT | afrik-appart-session exp Sun, 22 Nov 2026 22:49:32 GMT
+3 persisted: GET / lang=en; switch links: fr
+4 GET /language/de -> 302 http://127.0.0.1:8103
+   then lang=fr
+5 /login?lang=en -> 200 lang=en
+   /register next lang=en
+6 /login?lang=zz -> 200 lang=fr
+   after en then zz: lang=en

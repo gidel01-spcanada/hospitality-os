@@ -1,0 +1,12 @@
+﻿POST reserve new guest =>  HTTP 302 -> http://127.0.0.1:8101/properties/uat-apt-a
+status message on property page: Un compte existe déjà avec cet email mais n’a jamais été confirmé. Nous venons de vous envoyer un nouvel email : confirmez votre adresse et créez votre mot de passe avant de finaliser cette réservation. Nom complet Email Arrivée / Départ 2027-04-26 → 2027-04-29 Adultes Pays E
+Flow B (same session, email a.guest.new1b@example.test): POST reserve =>  HTTP 302 -> http://127.0.0.1:8101/properties/uat-apt-a
+GET reset-password/<token> =>  HTTP 200
+POST reset-password =>  HTTP 302 -> http://127.0.0.1:8101/login
+after reset follow: 200  Connectez-vous A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Bienvenue Connectez-vous Accédez à votre compte Afrik Appart et 
+login =>  HTTP 302 -> http://127.0.0.1:8101/reservation/resume
+GET /reservation/resume => 302 http://127.0.0.1:8101/reservations/16/checkout?token=<token>
+checkout => 200: Votre demande de réservation a bien été enregistrée. Total 138 000 XOF Continuer vers le paiement Référence AFK-SPRFNO-261122 En attente Établissement Afrik Appart Cotonou Logement Uat apt a Dates 26/
+resume again => 404
+resume from fresh session after login => 404
+Flow A (a.guest.new1): POST reserve -> 302 back to property page with flash 'Un compte existe déjà ... jamais été confirmé' (same wording for brand-new email); DB: user created role=customer tenant=1 locale=fr verified=n; reservations=0; reservation_guests=0; password reset token row=1; email 'Suivez votre réservation' with 'Créer votre mot de passe' link in storage/logs/laravel.log (token redacted).

@@ -1,0 +1,9 @@
+﻿GET /calendar/uat-apt-a/<token>.ics => 200; Content-Type: text/calendar; charset=UTF-8; Content-Disposition: attachment; filename="uat-apt-a-calendar.ics"; Cache-Control: no-cache, private
+CRLF line endings: True; bare LF only lines: False
+first lines: BEGIN:VCALENDAR | VERSION:2.0 | PRODID:-//Afrik Appart//Calendar//EN | CALSCALE:GREGORIAN | BEGIN:VEVENT ; last: END:VCALENDAR
+VEVENT count: 6; UIDs: UID:reservation-1, UID:reservation-3, UID:reservation-9, UID:reservation-10, UID:block-2, UID:block-3
+SUMMARY values: SUMMARY:Unavailable
+DTSTART/DTEND: DTSTART:20261202 ; DTEND:20261205 ; DTSTART:20270101 ; DTEND:20270104 ; DTSTART:20270327 ; DTEND:20270329 ; DTSTART:20270401 ; DTEND:20270403 ; DTSTART:20270111 ; DTEND:20270114 ; DTSTART:20270610 ; DTEND:20270612
+DTSTAMP present: False; VALUE=DATE present: False
+5 after setting reservation 5 to confirmed (DB), refetch => 200; events: 7; contains reservation-5: True
+5b reverted to pending, refetch => events: 6; contains reservation-5: False

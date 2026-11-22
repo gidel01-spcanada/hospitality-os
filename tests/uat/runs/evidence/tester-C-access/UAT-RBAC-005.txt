@@ -1,0 +1,9 @@
+setup: reserve 302; favorite toggle 302; api login 201 (token held, not logged); uid=23
+   before: reservations user_id={"id":3,"user_id":23,"status":"pending"}; favorites={"c":1}; mobile tokens={"c":1}; reset tokens={"c":1}
+   delete control on edit page: True
+   delete control on list page: True
+1 DELETE -> 302 /admin/users; flash: Succès : Utilisateur et données personnelles associées supprimés. L’historique des réservations et paiements est conservé.; still listed: False
+2 DB after: reservation rows (by ref) user_id={"id":3,"user_id":null,"status":"pending","email":"uat-delete@example.test"}; users={"c":0}; favorites={"c":0}; tokens={"c":0}; reset tokens={"c":0}
+3 old token GET /api/v1/me -> 401 {"message":"Unauthenticated."}
+4 login deleted user -> 302 err=[Adresse e-mail ou mot de passe invalide.]
+5 admin deletes self -> 422; body: Données invalides | Afrik Appart A Afrik Appart Erreur 422 Données invalides Le formulaire contient ; admin still exists: {"c":1}

@@ -1,0 +1,7 @@
+﻿Repository inspection (names/shapes only, no values reproduced).
+Step1: git ls-files .env .bluehost-credentials.json afrik-appart-mysql-seed-export.sql afrik-appart-mysql-export.sql => no output.
+Step2: tracked: afrikappart_db.txt, test-failure-full.txt; .phpunit.result.cache not tracked. afrikappart_db.txt = 16 bytes, one line, token-like (only [A-Za-z0-9_-+/=] characters). Value not printed.
+Step3: .bluehost-credentials.template.json (tracked): host value is IPv4-shaped, username is 8 lowercase letters, password is a ${...}-style token. They are not obvious placeholders (no REPLACE_/example/your). Owner must confirm whether they are real.
+Step4: .env.example names 95; env() names read in app/config/routes/bootstrap/database 170. Used by code but absent from .env.example include CHECKOUT_COMPLETION_GRACE_HOURS, HELP_CHAT_MODEL, LOG_DAILY_DAYS (plus framework-default names). In .env.example but not read via env(): APP_PAYMENT_CANCEL_URL, APP_PAYMENT_RETURN_URL, APP_PAYMENT_WEBHOOK_URL, BCRYPT_ROUNDS, BROADCAST_CONNECTION, MOBILE_MONEY_PROVIDER, PHP_CLI_SERVER_WORKERS, VITE_APP_NAME.
+Step5 .env.example defaults: APP_ENV=local, APP_DEBUG=true, LOG_LEVEL=debug, QUEUE_CONNECTION=database, MAIL_MAILER=log, PAYMENT_PROVIDER=pay_later, PAYPAL_ENVIRONMENT=sandbox with PAYPAL_BASE_URL=https://api-m.paypal.com (live host). SESSION_SECURE_COOKIE absent.
+Not executed: steps 6-7 on staging (a local config probe errored on config key names), step 8.

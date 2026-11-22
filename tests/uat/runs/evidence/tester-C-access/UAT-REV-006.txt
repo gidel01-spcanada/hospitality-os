@@ -1,0 +1,4 @@
+1 link after status cancelled -> GET 404
+2 POST -> 404; reviews for res 11: {"c":0}
+   status confirmed -> GET 404
+3 restored completed -> GET 200

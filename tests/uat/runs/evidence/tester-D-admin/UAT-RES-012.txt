@@ -1,0 +1,12 @@
+﻿step1 proof.jpg -> 302 | ée Arrivée enregistrée Terminée Annulée Preuve de paiement E | attempts [{"id":3,"provider":"offline","status":"created","amount":"115000.00","provider_reference":"offline-u34e2ep4au6f","proof":null,"confirmed_by":null,"confirmed_at":null}] | disk: 20261122214559708-t5cruspupsbx.jpg
+step2 proof.pdf -> 302 | attempts [{"id":3,"provider":"offline","status":"created","amount":"115000.00","provider_reference":"offline-u34e2ep4au6f","proof":null,"confirmed_by":null,"confirmed_at":null}] | disk: 20261122214601042-ghujyr6klfxg.pdf
+step3 proof-big 5,244,895 B -> 302 |  | disk: 20261122214601042-ghujyr6klfxg.pdf
+step3 proof-exact 5,242,875 B (<5120 KB) -> 302 | proof=[{"id":3,"provider":"offline","status":"created","amount":"115000.00","provider_reference":"offline-u34e2ep4au6f","proof":null,"confirmed_by":null,"confirmed_at":null}] | disk: 20261122214603330-2bjr235lb4dw.pdf
+step4 proof.gif -> 302 | proof now: proof-exact.pdf
+step4 proof.exe -> 302 | proof now: proof-exact.pdf
+step4 proof.png -> 302 | proof now: proof.png
+step4 proof.webp -> 302 | proof now: proof.webp
+step5 no file -> 302 | 
+step6 status form pending_validation + proof -> 302 | status=pending_validation proof=proof.jpg
+step7 proof link attempt 3 -> 200 (body bytes 1678)
+step8 other reservation's attempt 1 -> 404

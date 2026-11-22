@@ -1,0 +1,29 @@
+﻿host logged in: /admin -> 200
+deactivate (is_active omitted) -> 302 http://127.0.0.1:8104/admin/users
+flash:  Entités Succès : Utilisateur mis à jour avec succès. Gestio
+host reload /admin -> 200 Loc=
+re-login: POST /login -> 302 Loc=http://127.0.0.1:8104/admin; then /admin -> 200 Loc=
+after reactivation login -> 302 /admin -> 200
+edit form is_active inputs: <input type="checkbox" name="is_active" value="1" checked>
+DB after checkbox-unticked submit: is_active=1
+--- retry with explicit is_active=0 (not what a browser sends for an unticked box)
+host session /admin -> 200
+PUT is_active=0 -> 302 http://127.0.0.1:8104/admin/users; DB is_active=0
+host reload /admin -> 302 Loc=http://127.0.0.1:8104/login
+login page error: none found
+re-login POST /login -> 302 Loc=http://127.0.0.1:8104/login
+follow -> 200 Loc=
+reactivated: login -> 302 http://127.0.0.1:8104/admin; /admin -> 200
+edit form is_active inputs: <input type="checkbox" name="is_active" value="1" checked>
+DB after checkbox-unticked submit: is_active=1
+--- retry with explicit is_active=0 (not what a browser sends for an unticked box)
+host session /admin -> 200
+PUT is_active=0 -> 302 http://127.0.0.1:8104/admin/users; DB is_active=0
+host reload /admin -> 302 Loc=http://127.0.0.1:8104/login
+login page error: none found
+re-login POST /login -> 302 Loc=http://127.0.0.1:8104/login
+follow -> 200 Loc=
+reactivated: login -> 302 http://127.0.0.1:8104/admin; /admin -> 200
+host redirected to /login, error text: ce réservé. Adresse email Ce compte est inactif. Mot de passe Mot de passe oublié ? Se souvenir de moi Se connecter Pas encore membre ? Crée
+login attempt while inactive -> 302 Loc=http://127.0.0.1:8104/login; error text: (not found: inactif) / (not found: identifiants)
+reactivated (is_active=1) DB=1

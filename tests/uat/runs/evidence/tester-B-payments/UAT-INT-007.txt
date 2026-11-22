@@ -1,0 +1,5 @@
+﻿[workaround] S1 unknown ref -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}
+[workaround] S2 no reference -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}
+[workaround] S3 invalid JSON (signed raw) -> 200 {"ok":true,"provider":"fedapay","status":"ignored"}
+as provider (no session/CSRF) unknown ref -> 419
+S4 counts before: {"attempts":24,"reservations":92,"receipts":6,"outbox":24} ; after: {"attempts":24,"reservations":92,"receipts":6,"outbox":24}

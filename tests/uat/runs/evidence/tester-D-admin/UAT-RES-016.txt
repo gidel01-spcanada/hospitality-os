@@ -1,0 +1,7 @@
+﻿setup R13=45 (guest@) with a paid attempt via DB: paid attempt inserted (simulated provider payment); R14=46 no paid attempt
+step1 generate -> 302 |  er le paiement hors ligne et envoyer le reçu Reçu de paiement Télécharger le reç | receipts [{"receipt_number":"RC-20261122-J4H78R2Y","amount":"115000.00","payment_attempt_id":6}] | receipt_issued rows 2 -> 3
+step2 again -> 302 | receipts [{"receipt_number":"RC-20261122-J4H78R2Y","amount":"115000.00","payment_attempt_id":6}] | receipt_issued rows 3
+step3 R14 generate (JSON) -> 422 { "message": "Aucun paiement valid\u00e9 n\u2019a \u00e9t\u00e9 trouv\u00e9 pour cette r\u00e9servation." }
+step4 download as admin -> 500; as owner guest@ -> 500 (laravel.log: Class Barryvdh\DomPDF\Facade\Pdf not found; package missing from vendor/)
+step5 other customer dcustomer-1 -> 403
+step6 reservation without receipt (admin) -> 404

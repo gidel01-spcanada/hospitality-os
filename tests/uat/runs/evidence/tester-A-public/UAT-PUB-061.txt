@@ -1,0 +1,10 @@
+﻿419 FR => 419  Session expirée | Afrik Appart A Afrik Appart Erreur 419 Session expirée Votre session a expiré. Merci de rafraîchir la page et de réessayer. Retour à l’accueil 
+422 FR => 422 Erreur 422 Données invalides Le formulaire contient des informations incorrectes ou incomplètes. Retour à l’accueil 
+checkout bad token => 302 http://127.0.0.1:8101/reservations/access
+403 FR => 403 Erreur 403 Accès refusé Vous n’avez pas les permissions nécessaires pour accéder à cette page. Retour à l’accueil 
+419 EN => 419 
+422 EN => 422 Error 422 Invalid data The form contains incorrect or incomplete information. Back to home 
+403 EN => 403 Error 403 Access denied You do not have permission to access this page. Back to home 
+429 (from FEED-005, FR): 'Trop de demandes / Vous avez envoyé trop de requêtes. Merci de patienter avant de réessayer.' + 'Retour à l'accueil'; help-chat XHR 429 JSON 'Too Many Attempts.' (HELP-006).
+419 with EN locale cookie/session => 419 page rendered in FRENCH ('Session expirée ...'); exception rendered before the route 'locale' middleware runs.
+429 EN (6th invalid feedback POST within a minute) => 429 Erreur 429 Trop de demandes Vous avez envoyé trop de requêtes. Merci de patienter avant de réessayer. Retour à l’accueil 

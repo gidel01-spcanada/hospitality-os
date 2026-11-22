@@ -1,0 +1,10 @@
+﻿S1 GET checkout (unknown account) -> 200; identity page: True; payment options hidden: True; h1: Sécurisez votre compte client
+  buttons: Définir ou réinitialiser mon mot de passe Passer et continuer vers le paiement Annuler Confirmer
+S2 POST password-setup -> 302 http://127.0.0.1:8102/reservations/29/checkout?token=<token>
+  flash after redirect: 
+DB S4: {"user_id_linked":true,"role":"customer","tenant":1,"verified":false}
+S5 second quick POST -> 302 (no throttle observed if 302)
+laravel.log mentions of recipient: 2
+log excerpt: To: b-unver1@example.test Subject: Suivez votre =?utf-8?Q?r=C3=A9servation?= MIME-Version: 1.0 Date: Sun, 22 Nov 2026 20:44:23 +0000 Message-ID: <149ad25d4d6fb7c982361b513fa955ce@example.com> Content-Type: multipart/alternative; boundary=LLF3CC0d --LLF3CC0d Content-Type: text/plain; charset=utf-8 Co
+S3 followed reset link from laravel.log mail (token redacted): GET -> 200 form fields _token,checkout_return,email,password,password_confirmation,token; POST /reset-password -> 302 to checkout?token=<token>; page 200 with flash 'Votre e-mail est confirmé et votre mot de passe a été mis à jour.' and payment options visible; DB email_verified_at set.
+Note: flash after password-setup (FR): 'Un lien de création de mot de passe a été envoyé à l’adresse e-mail de réservation.'; mail logged to storage/logs/laravel.log with link /reset-password/<token>?email=...&checkout_return=...; step 4: account created role=customer tenant_id=1 linked to reservation (user_id).

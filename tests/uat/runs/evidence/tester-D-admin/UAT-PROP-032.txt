@@ -1,0 +1,4 @@
+﻿step1 rename -> 302 Loc=http://127.0.0.1:8104/admin/amenities | nts Paramètres du site Journaux Entités Succès : Catégorie d’équipemen | DB [{"id":8,"name_en":"UAT Wellness Plus","name_fr":"UAT Bien-etre Plus","slug":"uat-wellness","sort_order":80}] | list shows new name: True
+step2 empty name_en -> 302 Loc=http://127.0.0.1:8104/admin/amenities/categories/8/edit | obligatoire.
+step3 slug after rename: [{"id":8,"name_en":"UAT Wellness Plus","name_fr":"UAT Bien-etre Plus","slug":"uat-wellness","sort_order":80}]
+step4 edit id 999999 -> 404

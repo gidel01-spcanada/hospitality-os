@@ -1,0 +1,11 @@
+1 /account: name input editable=True email input editable=False shows email=True role/status text: Role Customer Status Verified Personal information Full name Save Back to dashboard A Afrik Appart Séjours premium pour des escapades sereines en Afrique de l
+2 rename: 302 /account err=[] flash=[Your profile has been updated.] name in DB={"name":"Amina UAT Renamed"}
+   dashboard greeting: Hello, Amina UAT Renamed.
+3 empty: 302 /account err=[] flash=[] name in DB={"name":"Amina UAT Renamed"}
+4a 256 chars: 
+4b 255 chars: 302 /account err=[] flash=[Your profile has been updated.] n...
+5 script name: 302 /account err=[] flash=[Your profile has been updated.] name in DB={"name":"<
+   dashboard: raw <script>alert present=False ; escaped present=True
+   admin user list: raw script tag=False escaped=True
+6 tamper email/role: 302; DB: {"email":"uat-acct@example.test","role":"customer"}
+recheck: /account has no @error/\ output (resources/views/account/profile.blade.php); empty and 256-char names are rejected (DB name unchanged, length 17) but no error message is rendered.

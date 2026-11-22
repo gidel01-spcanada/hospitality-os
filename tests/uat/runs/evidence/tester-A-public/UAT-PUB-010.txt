@@ -1,0 +1,3 @@
+﻿anon: heart is link to /login with title 'Connectez-vous pour enregistrer ce logement'; anon favorites=1 => 200 with full list (10 cards)
+customer login  HTTP 200; POST /properties/6/favorite =>  HTTP 302 -> http://127.0.0.1:8101/properties; first card after fav=uat-apt-b; favorites=1 => uat-apt-b
+toggle off =>  HTTP 302 -> http://127.0.0.1:8101/properties?favorites=1; favorites=1 cards after=0

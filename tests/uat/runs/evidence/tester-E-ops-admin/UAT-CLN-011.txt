@@ -1,0 +1,6 @@
+﻿now(app)=2026-11-22 21:32:26 ; label def: 'cleaning.overdue' => 'Overdue',
+S1/S2 past scheduled #35 row has 'Overdue': True ; row: <tr class="cleaning-visit cleaning-status-scheduled"> <td> <time datetime="2026-11-22T19:32:27+00:00">Sun 22 Nov · 19:32</time> </td> <td>Appartement 404</td> <td>Overdue Person</td> <td>30 min</td> <td><span class="cleaning-overdue-badge">Overdue</span></td> 
+S1/S2 past completed #36 row has 'Overdue': False ; row: <tr class="cleaning-visit cleaning-status-completed"> <td> <time datetime="2026-11-22T19:32:28+00:00">Sun 22 Nov · 19:32</time> </td> <td>Appartement 404</td> <td>Done Person</td> <td>30 min</td> <td><span class="">Completed</span></td> <td style="text-align: 
+S1/S2 future #37 row has 'Overdue': False ; row: (row not found)
+S3 after setting overdue visit to in_progress: row has 'Overdue': True
+S2 future visit #37 (now+3h, falls in next week) viewed in week of 2026-11-23: row has 'Overdue': False ; row: <tr class="cleaning-visit cleaning-status-scheduled"> <td> <time datetime="2026-11-23T00:32:29+00:00">Mon 23 Nov · 00:32</time> </td> <td>Appartement 404</td> <td>Future Person</td> <td>30 min</td> <td><span class="">Scheduled</span></td> <

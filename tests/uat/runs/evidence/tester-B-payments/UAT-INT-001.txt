@@ -1,0 +1,3 @@
+﻿As provider (no session/CSRF): no signature -> 419; empty signature -> 419
+[workaround: session cookie + X-CSRF-TOKEN] S1 no signature -> 403; S2 empty signature -> 403; S3 DB unchanged: {"status":"pending_payment","attempts":[{"id":22,"provider":"fedapay","provider_reference":"fedapay-sandbox-NJCEOXEDDDPW","status":"created","amount":"138000.00","currency":"XOF"}],"lines":[],"receipts":0,"outbox":[]}
+Webhook secret present on server: yes (value not recorded)

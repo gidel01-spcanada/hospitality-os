@@ -1,0 +1,7 @@
+﻿S1 GET / -> 200; __ANALYTICS_CONFIG__ value: null; consent banner markup present: False; googletagmanager/google-analytics refs: False
+  /properties -> 200; config null: True; google refs: False
+  /properties/appartement-401 -> 200; config null: True; google refs: False
+  /login -> 200; config null: True; google refs: False
+  /reviews -> 200; config null: True; google refs: False
+  /cookies -> 200; config null: True; google refs: False
+S2 (ANALYTICS_ENABLED=true with empty IDs) not executed: needs server env change/config cache rebuild on the instance.

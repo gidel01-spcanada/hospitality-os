@@ -1,0 +1,12 @@
+﻿step1 upload uat-a.jpg -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#photos flash: ètres du site Journaux Entités Succès : Photos de la propriété téléver
+step2 upload png+webp -> 302 Loc=http://127.0.0.1:8104/admin/properties/5/edit#photos
+step5 same file again -> 302
+{"id":61,"file_path":"uploads\/properties\/d-uat-loft-01\/20261122205954510-zihtmbf1d4ms.jpg","mime_type":"image\/jpeg","width":300,"height":200,"sort_order":1,"is_cover":true}
+{"id":62,"file_path":"uploads\/properties\/d-uat-loft-01\/20261122205955099-gsln0qe16jpl.png","mime_type":"image\/png","width":300,"height":200,"sort_order":2,"is_cover":false}
+{"id":63,"file_path":"uploads\/properties\/d-uat-loft-01\/20261122205955120-ofc9uufh7uci.webp","mime_type":"image\/webp","width":300,"height":200,"sort_order":3,"is_cover":false}
+{"id":64,"file_path":"uploads\/properties\/d-uat-loft-01\/20261122205955640-w8vxqitnk49c.jpg","mime_type":"image\/jpeg","width":300,"height":200,"sort_order":4,"is_cover":false}
+cover_image=uploads/properties/d-uat-loft-01/20261122205954510-zihtmbf1d4ms.jpg
+files on disk: 20261122205954510-zihtmbf1d4ms.jpg, 20261122205955099-gsln0qe16jpl.png, 20261122205955120-ofc9uufh7uci.webp, 20261122205955640-w8vxqitnk49c.jpg
+public page refs: uploads/properties/d-uat-loft-01/20261122205954510-zihtmbf1d4ms.jpg, uploads/properties/d-uat-loft-01/20261122205955099-gsln0qe16jpl.png, uploads/properties/d-uat-loft-01/20261122205955120-ofc9uufh7uci.webp, uploads/properties/d-uat-loft-01/20261122205955640-w8vxqitnk49c.jpg
+GET /uploads/properties/d-uat-loft-01/20261122205954510-zihtmbf1d4ms.jpg -> 200
+GET /uploads/properties/d-uat-loft-01/20261122205955099-gsln0qe16jpl.png -> 200

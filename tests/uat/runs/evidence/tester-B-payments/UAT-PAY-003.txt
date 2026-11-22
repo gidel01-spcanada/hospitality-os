@@ -1,0 +1,8 @@
+﻿POST /reservations/R/checkout?token=wrong -> 403
+POST /reservations/R/checkout/cancel?token=wrong -> 403
+POST /reservations/R/checkout/offline-proof?token=wrong -> 403
+POST /reservations/R/checkout/paypal/create?token=wrong -> 403
+POST /reservations/R/checkout/paypal/capture?token=wrong -> 403
+POST /reservations/R/checkout/complete?token=wrong -> 403
+S6 POST cancel (valid token) without CSRF -> 419
+DB: pending attempts=0

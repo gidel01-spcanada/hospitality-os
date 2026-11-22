@@ -1,0 +1,10 @@
+1 login has forgot link: True
+   /forgot-password -> 200 h1=Mot de passe oublié email field=True
+2 submit known -> 302 http://127.0.0.1:8103/forgot-password; page msg: [Mot de passe oublié A Afrik Appart Accueil Propriétés Expérience Contact Accueil Propriétés Expérience Contact EN Connexion Créer un compte Compte Mot de passe oublié Recevez un lien sécurisé pour réinitialiser votre mot de passe. We have emailed your password reset link. Adresse email Envoyer le li] err=[]
+   outbox rows: PHP Fatal error:  Uncaught PDOException: SQLSTATE[HY000]: General error: 1 no such column: type in C:\Users\gfoumbi\AppData\Local\Temp\uat-run\c-db.php:4 Stack trace: #0 C:\Users\gfoumbi\AppData\Local\Temp\uat-run\c-db.php(4): PDO->query() #1 {main}   thrown in C:\Users\gfoumbi\AppData\Local\Temp\uat-run\c-db.php on line 4
+   password_reset_tokens: {"email":"uat-reset@example.test","created_at":"2026-11-22 20:51:04"}
+3 unknown email -> 302; flash=[] err=[We can&#039;t find a user with that email address.]
+4a malformed -> 302; flash=[] err=[Le champ adresse email doit être une adresse email valide.]
+4b empty -> 302; err=[Le champ adresse email est obligatoire.]
+   outbox password_reset_requested rows so far: 1 (expected 1: no rows for unknown/malformed)
+5 FR submit known (within throttle window of step 2) -> 302; flash=[We have emailed your password reset link.] err=[]; page lang=fr
