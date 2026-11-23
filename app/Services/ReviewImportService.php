@@ -95,7 +95,15 @@ class ReviewImportService
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, preg_replace('/^\xEF\xBB\xBF/', '', $csv));
         rewind($stream);
-        $header = fgetcsv($stream, null, ',', '"', '');
+        $firstLine = fgets($stream);
+        if ($firstLine === false) {
+            fclose($stream);
+
+            return ['inserted' => 0, 'updated' => 0, 'skipped' => 0];
+        }
+        $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
+        rewind($stream);
+        $header = fgetcsv($stream, null, $delimiter, '"', '');
         if ($header === false) {
             fclose($stream);
 
@@ -104,12 +112,12 @@ class ReviewImportService
 
         $normalizedHeader = array_map(fn ($value) => $this->normalizeCsvValue((string) $value), $header);
         $columns = [
-            'date' => $this->headerColumn($normalizedHeader, ['date', 'review date', 'reviewed at', 'date du commentaire'], 0),
-            'reviewer' => $this->headerColumn($normalizedHeader, ['reviewer name', 'reviewer', 'guest name', 'nom du client'], 1),
-            'title' => $this->headerColumn($normalizedHeader, ['title', 'review title', 'titre du commentaire'], 3),
-            'positive' => $this->headerColumn($normalizedHeader, ['positive', 'positive comments', 'commentaire positif'], 4),
-            'negative' => $this->headerColumn($normalizedHeader, ['negative', 'negative comments', 'commentaire negatif', 'commentaire n gatif'], 5),
-            'score' => $this->headerColumn($normalizedHeader, ['score', 'review score', 'rating', 'note', 'note des commentaires'], 6),
+            'date' => $this->headerColumn($normalizedHeader, ['date', 'review date', 'reviewed at', 'date du commentaire', 'date de l avis'], 0),
+            'reviewer' => $this->headerColumn($normalizedHeader, ['reviewer name', 'reviewer', 'guest name', 'guest', 'nom du client'], 1),
+            'title' => $this->headerColumn($normalizedHeader, ['title', 'review title', 'subject', 'titre du commentaire'], null),
+            'positive' => $this->headerColumn($normalizedHeader, ['positive', 'positive review', 'positive comments', 'liked', 'what did you like', 'commentaire positif', 'commentaires positifs'], null),
+            'negative' => $this->headerColumn($normalizedHeader, ['negative', 'negative review', 'negative comments', 'disliked', 'what did you not like', 'what didn t you like', 'commentaire negatif', 'commentaires negatifs', 'commentaire n gatif'], null),
+            'score' => $this->headerColumn($normalizedHeader, ['score', 'review score', 'overall score', 'rating', 'review rating', 'note', 'note des commentaires'], 6),
             'property' => $this->propertyHeaderColumn($normalizedHeader),
         ];
 
@@ -135,24 +143,24 @@ class ReviewImportService
             ->keyBy(fn ($pair) => $pair[0]) ?? collect();
 
         try {
-            DB::transaction(function () use ($stream, $columns, $propertyColumn, $propertyMap, $tenantId, $establishmentId, $dryRun, &$inserted, &$updated, &$skipped): void {
+            DB::transaction(function () use ($stream, $delimiter, $columns, $propertyColumn, $propertyMap, $tenantId, $establishmentId, $dryRun, &$inserted, &$updated, &$skipped): void {
                 $record = 1;
-                while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+                while (($row = fgetcsv($stream, null, $delimiter, '"', '')) !== false) {
                     $record++;
                     if (count($row) === 1 && trim((string) $row[0]) === '') {
                         continue;
                     }
 
-                    if (count($row) < 7) {
+                    if (count($row) <= max($columns['date'], $columns['reviewer'], $columns['score'])) {
                         $skipped++;
                         continue;
                     }
 
                     $reviewedAtText = trim((string) ($row[$columns['date']] ?? ''));
                     $reviewerName = trim((string) ($row[$columns['reviewer']] ?? ''));
-                    $title = trim((string) ($row[$columns['title']] ?? ''));
-                    $positive = trim((string) ($row[$columns['positive']] ?? ''));
-                    $negative = trim((string) ($row[$columns['negative']] ?? ''));
+                    $title = $columns['title'] !== null ? trim((string) ($row[$columns['title']] ?? '')) : '';
+                    $positive = $columns['positive'] !== null ? trim((string) ($row[$columns['positive']] ?? '')) : '';
+                    $negative = $columns['negative'] !== null ? trim((string) ($row[$columns['negative']] ?? '')) : '';
                     $score = (float) str_replace(',', '.', trim((string) ($row[$columns['score']] ?? '0')));
 
                     if ($reviewedAtText === '' || $reviewerName === '' || $score <= 0) {
@@ -204,7 +212,7 @@ class ReviewImportService
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
     }
 
-    private function headerColumn(array $header, array $aliases, int $fallback): int
+    private function headerColumn(array $header, array $aliases, ?int $fallback): ?int
     {
         foreach ($header as $index => $value) {
             if (in_array($value, $aliases, true)) {
@@ -358,10 +366,14 @@ class ReviewImportService
 
     private function bookingReviewText(string $title, string $positive, string $negative): string
     {
-        $parts = array_values(array_filter([$title, $positive], fn (string $value): bool => $value !== ''));
+        $parts = array_values(array_filter([$title], fn (string $value): bool => $value !== ''));
+
+        if ($positive !== '') {
+            $parts[] = 'Pros: ' . $positive;
+        }
 
         if ($negative !== '') {
-            $parts[] = __('messages.reviews.negative_note', ['comment' => $negative]);
+            $parts[] = 'Cons: ' . $negative;
         }
 
         return trim(implode("\n\n", $parts));

@@ -435,11 +435,42 @@ class CustomerDashboardTest extends TestCase
             'source' => 'booking',
             'reviewer_name' => 'KOFFI',
             'rating' => 5,
-            'review_text' => 'Très propre',
+            'review_text' => 'Pros: Très propre',
             'source_url' => null,
             'is_active' => true,
         ]);
         $this->assertSame(2, SiteReview::query()->where('source', 'booking')->count());
+
+        @unlink($path);
+    }
+
+    public function test_booking_import_preserves_negative_feedback_from_reordered_semicolon_csv(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $csv = implode("\n", [
+            'Review Date;Guest Name;Negative Review;Review Score',
+            '2026-09-08;Akissi;The room was noisy at night.;8',
+        ]);
+        $path = storage_path('framework/testing-booking-negative-review.csv');
+        file_put_contents($path, $csv);
+
+        $this->artisan('reviews:import-booking-csv', ['path' => $path])
+            ->expectsOutput('Import complete. Inserted: 1; updated: 0; skipped: 0.')
+            ->assertExitCode(0);
+
+        $review = SiteReview::query()->where('reviewer_name', 'Akissi')->firstOrFail();
+        $this->assertSame(4, $review->rating);
+        $this->assertSame('Cons: The room was noisy at night.', $review->review_text);
+
+        app(\App\Services\ReviewImportService::class)->importBookingCsv(
+            "Review Date;Guest Name;Positive Review;Negative Review;Review Score\n2026-09-09;Ama;Friendly host;No hot water;6",
+            null,
+            null,
+        );
+
+        $both = SiteReview::query()->where('reviewer_name', 'Ama')->firstOrFail();
+        $this->assertSame("Pros: Friendly host\n\nCons: No hot water", $both->review_text);
 
         @unlink($path);
     }
