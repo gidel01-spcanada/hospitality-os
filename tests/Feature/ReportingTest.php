@@ -206,4 +206,17 @@ class ReportingTest extends TestCase
             ->get(route('admin.reports.export'))
             ->assertForbidden();
     }
+
+    public function test_future_start_date_without_end_date_is_rejected(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.reports.index', ['date_from' => '2028-06-01']))
+            ->assertRedirect()
+            ->assertSessionHasErrors([
+                'date_to' => __('messages.reports.invalid_period'),
+            ]);
+    }
 }

@@ -227,7 +227,7 @@ class CalendarFeedSyncService
             $part = rtrim($match[0], "\r\n");
             if (($part[0] ?? '') === ' ' || ($part[0] ?? '') === "\t") {
                 if ($line !== null) {
-                    $line .= ltrim($part);
+                    $line .= substr($part, 1);
                 }
             } else {
                 if ($line !== null) {

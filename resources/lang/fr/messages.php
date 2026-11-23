@@ -1500,6 +1500,7 @@ return [
     'reports.from' => 'Du',
     'reports.to' => 'Au',
     'reports.period_too_long' => 'La période du rapport ne peut pas dépasser 366 jours.',
+    'reports.invalid_period' => 'La date de fin du rapport doit être égale ou postérieure à la date de début.',
     'reports.all_establishments' => 'Tous les établissements',
     'reports.all_properties' => 'Tous les logements',
     'reports.apply' => 'Actualiser',

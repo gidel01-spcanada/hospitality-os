@@ -63,7 +63,7 @@ class PlatformAdminTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_duplicate_derived_tenant_slug_gets_a_unique_suffix(): void
+    public function test_duplicate_tenant_name_is_rejected_with_a_validation_error(): void
     {
         config(['platform.mode' => 'cloud']);
         $this->seed(DatabaseSeeder::class);
@@ -74,17 +74,36 @@ class PlatformAdminTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($platformAdmin)->post(route('platform.tenants.store'), [
+        $this->actingAs($platformAdmin)->from(route('platform.tenants.create'))->post(route('platform.tenants.store'), [
             'name' => 'Repeated Generated Tenant',
-            'slug' => '',
+            'slug' => 'another-valid-slug',
             'admin_name' => 'Second Tenant Admin',
             'admin_email' => 'second-tenant-admin@example.com',
-        ])->assertRedirect(route('platform.tenants.index'));
+        ])->assertRedirect()->assertSessionHasErrors('name');
 
-        $this->assertDatabaseHas('tenants', [
-            'name' => 'Repeated Generated Tenant',
-            'slug' => 'repeated-generated-tenant-2',
+        $this->assertDatabaseMissing('tenants', ['slug' => 'another-valid-slug']);
+        $this->assertDatabaseMissing('users', ['email' => 'second-tenant-admin@example.com']);
+    }
+
+    public function test_duplicate_derived_tenant_slug_is_rejected_with_a_validation_error(): void
+    {
+        config(['platform.mode' => 'cloud']);
+        $this->seed(DatabaseSeeder::class);
+        $platformAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        Tenant::query()->create([
+            'name' => 'Existing',
+            'slug' => 'repeated-generated-tenant',
+            'status' => 'active',
         ]);
+
+        $this->actingAs($platformAdmin)->from(route('platform.tenants.create'))->post(route('platform.tenants.store'), [
+            'name' => 'Repeated Generated Tenant',
+            'admin_name' => 'Second Tenant Admin',
+            'admin_email' => 'second-tenant-admin@example.com',
+        ])->assertRedirect(route('platform.tenants.create'))->assertSessionHasErrors('slug');
+
+        $this->assertDatabaseMissing('users', ['email' => 'second-tenant-admin@example.com']);
+        $this->assertDatabaseCount('tenants', 2);
     }
 
     public function test_tenant_creation_is_unavailable_outside_cloud_mode(): void

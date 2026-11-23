@@ -16,15 +16,15 @@ class CustomerDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_dashboard_ignores_array_valued_status_filter(): void
+    public function test_dashboard_validates_array_valued_status_filter_without_a_server_error(): void
     {
         $this->seed(DatabaseSeeder::class);
         $customer = User::factory()->create(['role' => 'customer']);
 
-        $this->actingAs($customer)
+        $this->actingAs($customer)->from(route('dashboard'))
             ->get(route('dashboard', ['status' => ['x']]))
-            ->assertOk()
-            ->assertViewHas('statusFilter', 'all');
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHasErrors('status');
     }
 
     public function test_customer_dashboard_lists_and_shows_their_reservations(): void
@@ -572,5 +572,127 @@ class CustomerDashboardTest extends TestCase
             ->assertRedirect('/account/security');
 
         $this->assertTrue(Hash::check('newPassword123', $user->fresh()->password));
+    }
+
+    public function test_account_profile_preferences_and_security_show_validation_and_flash_feedback(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'customer',
+            'locale' => 'en',
+            'password' => Hash::make('Current123!'),
+        ]);
+        $this->actingAs($user);
+
+        $this->from(route('account.profile'))
+            ->post(route('account.profile.update'), ['name' => ''])
+            ->assertRedirect(route('account.profile'))
+            ->assertSessionHasErrors(['name']);
+
+        $this->get(route('account.profile'))
+            ->assertOk()
+            ->assertSee('id="validation-errors"', false)
+            ->assertSee('The name field is required.')
+            ->assertSee('id="name-error"', false);
+
+        $this->from(route('account.profile'))
+            ->post(route('account.profile.update'), ['name' => str_repeat('N', 256)])
+            ->assertRedirect(route('account.profile'))
+            ->assertSessionHasErrors(['name']);
+
+        $this->get(route('account.profile'))
+            ->assertSee('The name may not be greater than 255 characters.');
+
+        $profileUpdate = $this->post(route('account.profile.update'), ['name' => 'Updated Customer']);
+        $profileUpdate->assertRedirect(route('account.profile'))
+            ->assertSessionHas('status', __('messages.profile.updated'));
+
+        $this->get(route('account.profile'))
+            ->assertOk()
+            ->assertSee(__('messages.profile.updated'))
+            ->assertDontSee('id="validation-errors"', false);
+
+        $this->from(route('account.preferences'))
+            ->post(route('dashboard.preferences.update'), ['locale' => 'de'])
+            ->assertRedirect(route('account.preferences'))
+            ->assertSessionHasErrors(['locale']);
+
+        $this->get(route('account.preferences'))
+            ->assertOk()
+            ->assertSee('The selected language is invalid.')
+            ->assertSee('id="locale-error"', false)
+            ->assertSee('aria-invalid="true"', false);
+        $this->assertSame('en', $user->fresh()->locale);
+
+        $this->post(route('dashboard.preferences.update'), [
+            'locale' => 'en',
+            'email_booking_updates' => '1',
+        ])->assertRedirect(route('dashboard'))
+            ->assertSessionHas('status', __('messages.profile.saved'));
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(__('messages.profile.saved'))
+            ->assertDontSee('id="validation-errors"', false);
+
+        $this->from(route('account.security'))
+            ->post(route('account.security.update'), [
+                'current_password' => 'incorrect',
+                'password' => 'Newpass8',
+                'password_confirmation' => 'Newpass8',
+            ])
+            ->assertRedirect(route('account.security'))
+            ->assertSessionHasErrors(['current_password']);
+
+        $this->get(route('account.security'))
+            ->assertOk()
+            ->assertSee('The password is incorrect.')
+            ->assertSee('id="validation-errors"', false);
+
+        $this->from(route('account.security'))
+            ->post(route('account.security.update'), [
+                'current_password' => 'Current123!',
+                'password' => 'short12',
+                'password_confirmation' => 'short12',
+            ])
+            ->assertRedirect(route('account.security'))
+            ->assertSessionHasErrors(['password']);
+
+        $this->get(route('account.security'))
+            ->assertSee('The password must be at least 8 characters.');
+
+        $this->from(route('account.security'))
+            ->post(route('account.security.update'), [
+                'current_password' => 'Current123!',
+                'password' => 'Newpass8',
+                'password_confirmation' => 'does-not-match',
+            ])
+            ->assertRedirect(route('account.security'))
+            ->assertSessionHasErrors(['password']);
+
+        $this->get(route('account.security'))
+            ->assertSee('The password confirmation does not match.');
+
+        $this->from(route('account.security'))
+            ->post(route('account.security.update'), [])
+            ->assertRedirect(route('account.security'))
+            ->assertSessionHasErrors(['current_password', 'password']);
+
+        $this->get(route('account.security'))
+            ->assertSee('The current password field is required.')
+            ->assertSee('The password field is required.');
+
+        $this->post(route('account.security.update'), [
+            'current_password' => 'Current123!',
+            'password' => 'Newpass8',
+            'password_confirmation' => 'Newpass8',
+        ])->assertRedirect(route('account.security'))
+            ->assertSessionHas('status', __('messages.security.updated'));
+
+        $this->get(route('account.security'))
+            ->assertOk()
+            ->assertSee(__('messages.security.updated'))
+            ->assertDontSee('id="validation-errors"', false);
+
+        $this->assertTrue(Hash::check('Newpass8', $user->fresh()->password));
     }
 }

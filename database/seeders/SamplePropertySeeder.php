@@ -7,7 +7,6 @@ use App\Models\Establishment;
 use App\Models\Property;
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class SamplePropertySeeder extends Seeder
@@ -151,13 +150,5 @@ class SamplePropertySeeder extends Seeder
             ['name' => 'Euro', 'xof_per_eur' => 655.957000, 'is_enabled' => true, 'effective_at' => now()]
         );
 
-        // Real apartment photos are optional local seed assets and may be absent in CI/deploy builds.
-        $photoSource = base_path('photo');
-        if (app()->environment('local') && is_dir($photoSource)) {
-            Artisan::call('property:sync-media', [
-                '--source' => $photoSource,
-                '--manifest' => base_path('seed-assets/properties/manifest.json'),
-            ]);
-        }
     }
 }

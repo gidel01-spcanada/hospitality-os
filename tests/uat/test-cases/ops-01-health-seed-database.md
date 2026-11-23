@@ -134,7 +134,8 @@ Common test data: seeded users `admin@afrikappart.test`, `concierge@afrikappart.
   | 6 | Remove one photo from a folder and run. | Record the result (expected count check should fail or warn; the master prompt requires exact mapping). |
   | 7 | Open a property page. | Gallery shows the images in order; the cover is the first; images are WebP/JPEG variants; no broken images. |
   | 8 | Inspect uploaded files for EXIF location data (use any metadata viewer on three sample files). | Record whether GPS metadata remains in public images. |
-- **Acceptance criteria:** 58 images mapped correctly and the process is repeatable.
+  | 9 | Record the tracked media manifest hash, run `php artisan db:seed` in a local environment, then check the manifest and media target. | Seeding does not invoke media generation or rewrite tracked files; image synchronization remains an explicit `property:sync-media` operation. |
+- **Acceptance criteria:** 58 images mapped correctly and the process is repeatable; dry run is side-effect free; seeding does not rewrite tracked media files.
 - **Evidence to capture:** Command output; SQL counts; gallery screenshots.
 - **Notes / assumptions / open questions:** `photo/` is excluded from the release bundle (`scripts/build-release.ps1`), so production relies on `scripts/upload-seed-media-bluehost.ps1`. The media upload scripts (`scripts/upload-seed-media-bluehost.ps1`) are not covered by a dedicated case; run them against staging after UAT-OPS-013 and record the result under that case. Test duration is long (58 images).
 

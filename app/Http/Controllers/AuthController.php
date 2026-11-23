@@ -114,8 +114,9 @@ class AuthController extends Controller
         }
 
         $statuses = ['pending', 'pending_payment', 'pending_validation', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
-        $statusInput = $request->input('status');
-        $statusFilter = is_string($statusInput) ? $statusInput : '';
+        $statusFilter = $request->validate([
+            'status' => ['nullable', 'string'],
+        ])['status'] ?? '';
 
         if (! in_array($statusFilter, [...$statuses, 'active', 'all'], true)) {
             $statusFilter = 'all';

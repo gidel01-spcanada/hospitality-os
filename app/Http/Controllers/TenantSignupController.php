@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +28,7 @@ class TenantSignupController extends Controller
         abort_unless(config('platform.mode') === 'cloud', 404);
 
         $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255', 'unique:tenants,name'],
             'contact_email' => ['required', 'email', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -39,6 +40,9 @@ class TenantSignupController extends Controller
         if ($slug === '') {
             throw ValidationException::withMessages(['company_name' => __('messages.auth.company_name_slug_invalid')]);
         }
+        Validator::make(['company_name' => $slug], [
+            'company_name' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:tenants,slug'],
+        ])->validate();
 
         if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
             throw ValidationException::withMessages(['email' => __('messages.security.captcha_failed')]);
@@ -49,7 +53,7 @@ class TenantSignupController extends Controller
         $user = DB::transaction(function () use ($validated, $locale, $slug): User {
             $tenant = Tenant::query()->create([
                 'name' => $validated['company_name'],
-                'slug' => $this->uniqueTenantSlug($slug),
+                'slug' => $slug,
                 'contact_email' => $validated['contact_email'],
                 'status' => 'active',
             ]);
@@ -84,15 +88,4 @@ class TenantSignupController extends Controller
         return redirect()->route('admin.dashboard')->with('success', __('messages.auth.host_welcome'));
     }
 
-    private function uniqueTenantSlug(string $base): string
-    {
-        $slug = $base;
-        $suffix = 2;
-
-        while (Tenant::query()->where('slug', $slug)->exists()) {
-            $slug = $base . '-' . $suffix++;
-        }
-
-        return $slug;
-    }
 }

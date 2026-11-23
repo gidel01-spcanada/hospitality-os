@@ -12,6 +12,7 @@ use App\Services\MessageEmailService;
 use App\Services\ReservationEmailService;
 use App\Support\BrandSettings;
 use App\Support\CurrentTenant;
+use App\Support\ReservationSummary;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -77,6 +78,35 @@ class TransactionalEmailUatRegressionTest extends TestCase
         ])->render();
         $this->assertStringContainsString('Tue 11 Feb 2031', $html);
         $this->assertStringContainsString('Fri 14 Feb 2031', $html);
+    }
+
+    public function test_confirmation_email_handles_missing_stay_dates_in_a_legacy_summary(): void
+    {
+        $reservation = $this->reservation('missing-dates', 'EUR');
+        $summary = ReservationSummary::make($reservation, 'en');
+        $summary['check_in'] = null;
+        $summary['check_out'] = null;
+        $summary['nights'] = 0;
+        $notification = EmailOutbox::create([
+            'template' => 'reservation_created',
+            'recipient_email' => $reservation->email,
+            'status' => 'queued',
+            'payload' => [
+                'locale' => 'en',
+                'reservation_summary' => $summary,
+                'reservation_ref' => $reservation->reservation_ref,
+                'property_name' => 'Suite',
+                'subject' => 'Reservation confirmation',
+            ],
+        ]);
+
+        $this->artisan('messages:send-email-notifications')->assertExitCode(0);
+
+        $this->assertSame('sent', $notification->fresh()->status);
+        $mail = Mail::mailer()->getSymfonyTransport()->messages()->first()->getOriginalMessage();
+        $html = $mail->getHtmlBody();
+        $this->assertSame(2, substr_count($html, '<strong>—</strong>'));
+        $this->assertStringContainsString(__('messages.properties.night_count', [], 'en'), $html);
     }
 
     public function test_fractional_amounts_are_preserved_in_delivered_payment_and_receipt_emails(): void

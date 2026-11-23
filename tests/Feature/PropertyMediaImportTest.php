@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Property;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -52,19 +53,71 @@ class PropertyMediaImportTest extends TestCase
     public function test_dry_run_does_not_create_files_or_change_database_records(): void
     {
         $sourceDir = base_path('photo');
-        $targetDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-media-dry-run-' . uniqid('', true);
-        $manifestPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-manifest-dry-run-' . uniqid('', true) . '.json';
+        $targetDir = storage_path('framework/testing/media-dry-run-' . uniqid('', true));
+        $manifestPath = $targetDir . '-manifest.json';
 
-        Artisan::call('property:sync-media', [
+        $establishmentId = DB::table('establishments')->insertGetId([
+            'name' => 'Existing establishment',
+            'slug' => 'existing-establishment',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $propertyId = DB::table('properties')->insertGetId([
+            'establishment_id' => $establishmentId,
+            'name' => 'Existing apartment',
+            'slug' => 'appartement-401',
+            'status' => 'published',
+            'is_published' => true,
+            'cover_image' => 'uploads/properties/appartement-401/existing.webp',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('property_images')->insert([
+            'property_id' => $propertyId,
+            'file_path' => 'uploads/properties/appartement-401/existing.webp',
+            'file_name' => 'existing.webp',
+            'mime_type' => 'image/webp',
+            'sort_order' => 1,
+            'is_cover' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $propertiesBefore = DB::table('properties')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
+        $imagesBefore = DB::table('property_images')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
+
+        $exitCode = Artisan::call('property:sync-media', [
             '--source' => $sourceDir,
             '--target' => $targetDir,
             '--manifest' => $manifestPath,
             '--dry-run' => true,
         ]);
 
+        $this->assertSame(0, $exitCode);
         $this->assertDirectoryDoesNotExist($targetDir);
         $this->assertFileDoesNotExist($manifestPath);
-        $this->assertSame(0, DB::table('properties')->count());
-        $this->assertSame(0, DB::table('property_images')->count());
+        $propertiesAfter = DB::table('properties')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
+        $imagesAfter = DB::table('property_images')->orderBy('id')->get()->map(fn ($row) => (array) $row)->all();
+        $this->assertSame($propertiesBefore, $propertiesAfter);
+        $this->assertSame($imagesBefore, $imagesAfter);
+    }
+
+    public function test_database_seeding_does_not_run_media_sync_or_rewrite_manifest(): void
+    {
+        $manifestPath = base_path('seed-assets/properties/manifest.json');
+        $manifestBefore = file_get_contents($manifestPath);
+        $originalEnvironment = $this->app->environment();
+        $this->app['env'] = 'local';
+
+        $this->assertTrue($this->app->environment('local'));
+        Artisan::shouldReceive('call')->never();
+
+        try {
+            app(DatabaseSeeder::class)->run();
+        } finally {
+            $this->app['env'] = $originalEnvironment;
+        }
+
+        $this->assertSame($manifestBefore, file_get_contents($manifestPath));
     }
 }

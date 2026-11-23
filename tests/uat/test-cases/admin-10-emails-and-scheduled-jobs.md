@@ -84,10 +84,10 @@ Test setup: use a mail capture (log mailer, Mailpit or similar) in the test envi
   | 2 | Open the checkout link while logged out | Checkout works for the reservation. |
   | 3 | Deliver the receipt email of `M5` | Subject "Your receipt for reservation <ref>", amount line with currency, "Download my PDF receipt" link to `/reservations/{id}/receipt?lang=..`. |
   | 4 | Click the receipt link while logged out | Redirect to login (receipt download needs authentication; no token) - record. After login as the owner: PDF downloads. |
-  | 5 | Check amounts in decimal currencies (e.g. EUR 199.50) | Email displays with 0 decimals (`number_format(..., 0, ',', ' ')`): record rounding shown (199.50 appears as 200). |
+  | 5 | Check amounts in decimal currencies (e.g. EUR 199.50) | Preserve the fractional amount (e.g. `199.50 EUR`); zero-decimal currencies such as XOF omit unnecessary decimals. |
 - **Acceptance criteria:** Links work and amounts match the reservation, noting any rounding.
 - **Evidence to capture:** Mail captures, PDF.
-- **Notes / assumptions / open questions:** DEFECT CANDIDATE: email amounts drop decimals, which can misstate non-XOF totals.
+- **Notes / assumptions / open questions:** Regression coverage verifies that delivered payment and receipt emails preserve fractional amounts.
 
 ## UAT-MAIL-005: Payment proof submitted: notification to staff
 - **Feature / journey:** Staff notification after customer uploads offline proof
@@ -258,11 +258,11 @@ Test setup: use a mail capture (log mailer, Mailpit or similar) in the test envi
   |---|--------|-----------------|
   | 1 | Run with a missing `--source` | "Source photo directory not found: <path>" exit 1. |
   | 2 | Remove one image from a folder, run | "Folder appartement 40X expected N images but found M." exit 1. |
-  | 3 | Restore the folder, run with `--dry-run` | Record what is written: per code review `--dry-run` only skips writing the manifest file; resized files and `property_images` rows are still created. |
+  | 3 | Restore the folder, record the existing target/manifest and DB rows, then run with `--dry-run` | Reports the expected properties and image counts; creates no target files or manifest and leaves existing properties and `property_images` rows unchanged. |
   | 4 | Run without `--dry-run` | "Processed 4 properties into <target>." Each image yields `-full`, `-large`, `-card`, `-thumb` variants in `.webp` and `.jpg`; DB has 58 images in total; first image per property is cover; manifest file generated. |
   | 5 | Run again | Rows updated (no duplicates); previous rows for the four slugs are deleted and recreated. |
   | 6 | Include a corrupt image | Command throws "Unable to read image: <path>". |
   | 7 | Check the property pages | Images load from `uploads/properties/<slug>/`. |
-- **Acceptance criteria:** Counts and variants match; behavior of `--dry-run` is recorded.
+- **Acceptance criteria:** Counts and variants match; `--dry-run` performs no filesystem or database writes.
 - **Evidence to capture:** Console output, directory listing, DB counts.
-- **Notes / assumptions / open questions:** DEFECT CANDIDATE: `--dry-run` has side effects (files, database). Command is hard-coded to four apartment folders and creates missing properties as `draft`.
+- **Notes / assumptions / open questions:** The command is hard-coded to four apartment folders and creates missing properties as `draft` during a real import. Seeders do not run the media import; run it explicitly when file generation is intended.

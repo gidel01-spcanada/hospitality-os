@@ -379,7 +379,7 @@ class AdminEstablishmentController extends Controller
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'google_maps_url' => ['nullable', 'url', 'max:2048'],
-            'google_reviews_import_url' => ['nullable', 'url', 'max:2048'],
+            'google_reviews_import_url' => ['nullable', 'url', 'regex:/^https?:\/\//i', 'max:2048'],
             'review_channel' => ['nullable', 'in:internal,google,both'],
             'google_review_url' => ['nullable', 'url', 'max:2048'],
             'payment_methods' => ['nullable', 'array'],

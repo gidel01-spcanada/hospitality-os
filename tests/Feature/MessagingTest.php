@@ -167,4 +167,94 @@ class MessagingTest extends TestCase
             ->get(route('messages.show', $thread))
             ->assertForbidden();
     }
+
+    public function test_customer_message_forms_show_validation_and_flash_feedback(): void
+    {
+        $tenant = \App\Models\Tenant::create(['name' => 'Messaging Tenant', 'slug' => 'messaging-tenant', 'status' => 'active']);
+        $establishment = Establishment::create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Message Residence',
+            'slug' => 'message-residence',
+        ]);
+        $customer = User::factory()->create(['role' => 'customer', 'locale' => 'en']);
+        $this->actingAs($customer);
+
+        $this->from(route('messages.index'))
+            ->post(route('messages.store'), [
+                'establishment_id' => $establishment->id,
+                'body' => '',
+            ])
+            ->assertRedirect(route('messages.index'))
+            ->assertSessionHasErrors(['body']);
+
+        $this->get(route('messages.index'))
+            ->assertOk()
+            ->assertSee('id="validation-errors"', false)
+            ->assertSee('The body field is required.')
+            ->assertSee('id="new-message-error"', false)
+            ->assertSee('value="' . $establishment->id . '" selected', false);
+
+        $this->from(route('messages.index'))
+            ->post(route('messages.store'), ['body' => 'Missing establishment'])
+            ->assertRedirect(route('messages.index'))
+            ->assertSessionHasErrors(['establishment_id']);
+
+        $this->get(route('messages.index'))
+            ->assertOk()
+            ->assertSee('The establishment field is required.')
+            ->assertSee('id="establishment-error"', false)
+            ->assertSee('aria-invalid="true"', false);
+
+        $this->from(route('messages.index'))
+            ->post(route('messages.store'), [
+                'establishment_id' => $establishment->id,
+                'body' => str_repeat('a', 5001),
+            ])
+            ->assertRedirect(route('messages.index'))
+            ->assertSessionHasErrors(['body']);
+
+        $this->get(route('messages.index'))
+            ->assertSee('The body may not be greater than 5000 characters.');
+
+        $this->post(route('messages.store'), [
+            'establishment_id' => $establishment->id,
+            'body' => 'A question for the host',
+        ])->assertRedirect(route('messages.index'))
+            ->assertSessionHas('status', __('messages.messages.sent'));
+
+        $inbox = $this->get(route('messages.index'))
+            ->assertOk()
+            ->assertSee(__('messages.messages.sent'))
+            ->assertSee('A question for the host');
+        $this->assertSame(1, substr_count($inbox->getContent(), __('messages.messages.sent')));
+
+        $thread = MessageThread::query()->where('customer_id', $customer->id)->firstOrFail();
+        $this->from(route('messages.show', $thread))
+            ->post(route('messages.reply', $thread), ['body' => ''])
+            ->assertRedirect(route('messages.show', $thread))
+            ->assertSessionHasErrors(['body']);
+
+        $this->get(route('messages.show', $thread))
+            ->assertOk()
+            ->assertSee('The body field is required.')
+            ->assertSee('id="reply-message-error"', false);
+
+        $this->from(route('messages.show', $thread))
+            ->post(route('messages.reply', $thread), ['body' => str_repeat('a', 5001)])
+            ->assertRedirect(route('messages.show', $thread))
+            ->assertSessionHasErrors(['body']);
+
+        $this->get(route('messages.show', $thread))
+            ->assertSee('The body may not be greater than 5000 characters.');
+
+        $this->post(route('messages.reply', $thread), ['body' => 'Thank you'])
+            ->assertRedirect(route('messages.show', $thread))
+            ->assertSessionHas('status', __('messages.messages.sent'));
+
+        $threadPage = $this->get(route('messages.show', $thread))
+            ->assertOk()
+            ->assertSee('Thank you')
+            ->assertSee(__('messages.messages.sent'));
+        $this->assertSame(1, substr_count($threadPage->getContent(), __('messages.messages.sent')));
+    }
 }

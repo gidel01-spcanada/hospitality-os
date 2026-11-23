@@ -1499,6 +1499,7 @@ return [
     'reports.from' => 'From',
     'reports.to' => 'To',
     'reports.period_too_long' => 'The report period cannot exceed 366 days.',
+    'reports.invalid_period' => 'The report end date must be on or after the start date.',
     'reports.all_establishments' => 'All establishments',
     'reports.all_properties' => 'All properties',
     'reports.apply' => 'Refresh',

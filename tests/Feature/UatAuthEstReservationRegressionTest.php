@@ -34,24 +34,33 @@ class UatAuthEstReservationRegressionTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_host_signup_still_transliterates_names_and_deduplicates_slugs(): void
+    public function test_host_signup_rejects_duplicate_tenant_names_and_transliterates_new_slugs(): void
     {
         config(['platform.mode' => 'cloud', 'services.recaptcha.enabled' => false]);
 
-        foreach (['first@example.com', 'second@example.com'] as $email) {
-            $this->post('/host/register', [
-                'company_name' => 'Résidence UAT',
-                'contact_email' => 'contact@example.com',
-                'name' => 'Host',
-                'email' => $email,
-                'password' => 'Password123!',
-                'password_confirmation' => 'Password123!',
-            ])->assertRedirect(route('admin.dashboard'))->assertSessionHasNoErrors();
-            auth()->logout();
-        }
+        $payload = [
+            'company_name' => 'Résidence UAT',
+            'contact_email' => 'contact@example.com',
+            'name' => 'Host',
+            'email' => 'first@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ];
+        $this->post('/host/register', $payload)
+            ->assertRedirect(route('admin.dashboard'))->assertSessionHasNoErrors();
+        auth()->logout();
+
+        $this->from('/host/register')->post('/host/register', array_merge($payload, ['email' => 'second@example.com']))
+            ->assertRedirect('/host/register')->assertSessionHasErrors('company_name');
+        $this->from('/host/register')->post('/host/register', array_merge($payload, [
+            'company_name' => 'Résidence-UAT',
+            'email' => 'third@example.com',
+        ]))->assertRedirect('/host/register')->assertSessionHasErrors('company_name');
 
         $this->assertDatabaseHas('tenants', ['name' => 'Résidence UAT', 'slug' => 'residence-uat']);
-        $this->assertDatabaseHas('tenants', ['name' => 'Résidence UAT', 'slug' => 'residence-uat-2']);
+        $this->assertDatabaseMissing('tenants', ['name' => 'Résidence UAT', 'slug' => 'residence-uat-2']);
+        $this->assertDatabaseMissing('users', ['email' => 'second@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'third@example.com']);
     }
 
     public function test_platform_tenant_creation_validates_derived_slug_and_allows_explicit_slug(): void
@@ -72,7 +81,7 @@ class UatAuthEstReservationRegressionTest extends TestCase
         $this->assertDatabaseHas('tenants', ['name' => '!!!', 'slug' => 'valid-company']);
     }
 
-    public function test_platform_tenant_creation_deduplicates_derived_slugs(): void
+    public function test_platform_tenant_creation_rejects_a_duplicate_derived_slug(): void
     {
         config(['platform.mode' => 'cloud']);
         $this->seed(DatabaseSeeder::class);
@@ -81,8 +90,8 @@ class UatAuthEstReservationRegressionTest extends TestCase
 
         $this->actingAs($admin)->post(route('platform.tenants.store'), [
             'name' => 'Existing Company', 'admin_name' => 'Owner', 'admin_email' => 'owner@example.com',
-        ])->assertRedirect(route('platform.tenants.index'))->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('tenants', ['name' => 'Existing Company', 'slug' => 'existing-company-2']);
+        ])->assertSessionHasErrors('slug');
+        $this->assertDatabaseMissing('users', ['email' => 'owner@example.com']);
     }
 
     public function test_establishment_form_and_store_allow_blank_or_omitted_slug(): void

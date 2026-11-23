@@ -18,6 +18,11 @@ class MobileApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_mobile_login_get_returns_method_not_allowed(): void
+    {
+        $this->getJson('/api/v1/auth/login')->assertMethodNotAllowed();
+    }
+
     public function test_customer_can_authenticate_and_access_the_mobile_catalog_and_reservations(): void
     {
         $this->seed(DatabaseSeeder::class);

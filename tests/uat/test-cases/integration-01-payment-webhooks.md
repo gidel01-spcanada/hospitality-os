@@ -130,10 +130,10 @@ Property: seeded `appartement-401` (currency XOF). Establishment payment methods
   | 1 | Replay the identical request 3 more times (S1). | Each returns HTTP 200 with status `paid`. |
   | 2 | SQL: count receipts for the reservation. | Still exactly 1. |
   | 3 | SQL: count outbox rows with template `receipt_issued` for the recipient. | Still exactly 1. |
-  | 4 | SQL: count outbox rows with template `reservation_status_updated`. | Record the count. Expected by the code: one extra row per replay (the handler queues a status email every time the attempt is paid). |
+  | 4 | SQL: count outbox rows with template `reservation_status_updated`. | The count remains unchanged across all replays; replaying a paid callback does not send another status email. |
   | 5 | SQL: reservation count for the property and dates. | Still 1 reservation; status `confirmed`; no new reservations. |
   | 6 | Two replays sent concurrently (two shells at once). | Still 1 receipt; record any 500 response or duplicate rows. |
-- **Acceptance criteria:** No duplicate receipt, reservation or payment attempt. Duplicate "reservation confirmed" status emails (step 4) are recorded as a defect candidate against the master-prompt requirement; the product owner decides severity.
+- **Acceptance criteria:** Replays do not duplicate receipts, reservations, payment attempts, or status emails.
 - **Evidence to capture:** SQL counts before and after; captured emails count.
 - **Notes / assumptions / open questions:** No webhook event/ID deduplication table exists. Step 6 may race on `firstOrCreate` because `receipts.payment_attempt_id` may not be unique (check schema); record the outcome.
 
@@ -152,7 +152,7 @@ Property: seeded `appartement-401` (currency XOF). Establishment payment methods
   | 1 | Send the `failed` webhook (S1). | HTTP 200. |
   | 2 | SQL: attempt and reservation. | Attempt remains `paid`; reservation remains `confirmed`. |
   | 3 | Repeat with `cancelled` and `pending`. | Same result. |
-  | 4 | Check the outbox. | No "payment failed" email created. Record whether further "confirmed" status emails were created (the controller re-processes any attempt that is still `paid`). |
+  | 4 | Check the outbox. | No "payment failed" email or duplicate "confirmed" status email is created by the late event. |
 - **Acceptance criteria:** A paid and confirmed booking never moves to `payment_failed` or `cancelled` because of a later webhook.
 - **Evidence to capture:** SQL; outbox rows.
 - **Notes / assumptions / open questions:** Real provider events can arrive out of order; the live gateways only set `paid` and never downgrade. The sandbox behavior is what this test exercises.

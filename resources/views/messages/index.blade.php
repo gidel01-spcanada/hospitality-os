@@ -33,12 +33,13 @@
                 <form method="POST" action="{{ route('messages.store') }}" class="message-form">
                     @csrf
                     <label for="establishment_id">{{ __('messages.messages.send_to') }}</label>
-                    <select id="establishment_id" name="establishment_id" required>
+                    <select id="establishment_id" name="establishment_id" required @error('establishment_id') aria-invalid="true" aria-describedby="establishment-error" @enderror>
                         <option value="">{{ __('messages.messages.select_establishment') }}</option>
                         @foreach ($establishments as $establishment)
-                            <option value="{{ $establishment->id }}">{{ $establishment->name }}</option>
+                            <option value="{{ $establishment->id }}" @selected((string) old('establishment_id') === (string) $establishment->id)>{{ $establishment->name }}</option>
                         @endforeach
                     </select>
+                    @error('establishment_id')<p class="portal-field-error" id="establishment-error" role="alert">{{ $message }}</p>@enderror
                     <label for="body">{{ __('messages.messages.message') }}</label>
                     <textarea id="body" name="body" rows="4" maxlength="5000" required @error('body') aria-invalid="true" aria-describedby="new-message-error" @enderror>{{ old('body') }}</textarea>
                     @error('body')<p class="portal-field-error" id="new-message-error" role="alert">{{ $message }}</p>@enderror

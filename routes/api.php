@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\MobileApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/auth/login', fn () => abort(405));
     Route::post('/auth/login', [MobileApiController::class, 'login'])->middleware('throttle:10,1');
 
     Route::get('/properties', [MobileApiController::class, 'properties']);

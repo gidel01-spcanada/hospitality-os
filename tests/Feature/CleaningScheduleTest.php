@@ -129,7 +129,9 @@ class CleaningScheduleTest extends TestCase
             ->get(route('admin.cleaning.index', ['mode' => 'month', 'date' => '2033-03-01']))
             ->assertOk()->assertSee('Awa Ménage')->assertSee($property->name);
 
-        $this->actingAs($admin)->get(route('admin.cleaning.edit', $visit))->assertOk();
+        $this->actingAs($admin)->get(route('admin.cleaning.edit', $visit))
+            ->assertOk()
+            ->assertSee('value="' . $reservation->id . '" selected', false);
 
         $this->actingAs($admin)
             ->put(route('admin.cleaning.update', $visit), [
@@ -152,6 +154,15 @@ class CleaningScheduleTest extends TestCase
         $share = CleaningScheduleShare::query()->firstOrFail();
         $this->assertEquals(7, now()->startOfDay()->diffInDays($share->expires_at->startOfDay()));
         $this->assertSame('Awa Ménage', $share->assignee_name);
+        auth()->logout();
+        $this->get(route('cleaning.public', ['token' => $share->token, 'lang' => 'en']))
+            ->assertOk()
+            ->assertSee('<html lang="en">', false)
+            ->assertSee('Cleaning visit schedule');
+        $this->get(route('cleaning.public', ['token' => $share->token, 'lang' => 'fr']))
+            ->assertOk()
+            ->assertSee('<html lang="fr">', false)
+            ->assertSee('Planning des visites de ménage');
         $otherAssigneeVisit = CleaningVisit::query()->create([
             'property_id' => $property->id, 'assignee_name' => 'Fatou Ménage',
             'scheduled_at' => '2033-03-06 14:00:00', 'duration_minutes' => 60, 'status' => 'scheduled',

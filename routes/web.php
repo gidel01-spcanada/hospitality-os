@@ -340,9 +340,9 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 
 Route::get('/calendar/{property:slug}/{token}.ics', [\App\Http\Controllers\AdminCalendarController::class, 'publicExport'])->middleware('throttle:30,1')->name('calendar.public-export');
-Route::get('/cleaning-schedule/{token}', [CleaningScheduleController::class, 'publicSchedule'])->name('cleaning.public');
-Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class, 'publicPdf'])->middleware('throttle:10,1')->name('cleaning.public.pdf');
-Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningScheduleController::class, 'publicStatus'])->middleware('throttle:30,1')->name('cleaning.public.status');
+Route::get('/cleaning-schedule/{token}', [CleaningScheduleController::class, 'publicSchedule'])->middleware('locale')->name('cleaning.public');
+Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class, 'publicPdf'])->middleware(['locale', 'throttle:10,1'])->name('cleaning.public.pdf');
+Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningScheduleController::class, 'publicStatus'])->middleware(['locale', 'throttle:30,1'])->name('cleaning.public.status');
 
 Route::middleware('locale')->group(function () {
     Route::get('/reservations/access', [\App\Http\Controllers\CheckoutController::class, 'accessHelp'])->name('reservation.access');
@@ -365,8 +365,6 @@ Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
         'application' => 'afrikappart',
-        'environment' => app()->environment(),
-        'php_version' => PHP_VERSION,
         'timestamp_utc' => now('UTC')->toIso8601String(),
     ]);
 })->name('health');

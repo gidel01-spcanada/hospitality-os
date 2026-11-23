@@ -89,6 +89,17 @@ class PublicPropertyBookingTest extends TestCase
         $this->assertSame($payload, $schema['name']);
     }
 
+    public function test_public_booking_phone_field_has_an_accessible_label(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+
+        $this->get(route('properties.show', $property))
+            ->assertOk()
+            ->assertSee('<label for="phone">' . __('messages.properties.phone_optional') . '</label>', false)
+            ->assertSee('<input id="phone" name="phone" type="tel"', false);
+    }
+
     public function test_property_detail_revalidates_search_dates_and_handles_expired_links(): void
     {
         $this->seed(DatabaseSeeder::class);
@@ -1221,7 +1232,13 @@ class PublicPropertyBookingTest extends TestCase
             'max_guests' => 4, 'bedrooms' => 2, 'beds' => 2, 'nightly_rate_xof' => 25000, 'currency' => 'XOF', 'minimum_stay' => 2,
         ]);
         $property->images()->create(['file_path' => 'uploads/properties/appartement-402/1-card.webp', 'file_name' => 'suite.webp', 'is_cover' => true]);
-        $amenity = Amenity::create(['tenant_id' => $tenant->id, 'slug' => 'wireless', 'name_fr' => 'Internet sans fil', 'name_en' => 'Wireless internet']);
+        $category = \App\Models\AmenityCategory::query()->create([
+            'tenant_id' => $tenant->id, 'slug' => 'comfort', 'name_fr' => 'Confort', 'name_en' => 'Comfort',
+        ]);
+        $amenity = Amenity::create([
+            'tenant_id' => $tenant->id, 'category_id' => $category->id, 'slug' => 'wireless',
+            'name_fr' => 'Internet sans fil', 'name_en' => 'Wireless internet',
+        ]);
         $property->amenities()->attach($amenity);
         $otherProperty = $establishment->properties()->create([
             'name' => 'Petite chambre', 'slug' => 'petite-chambre', 'status' => 'published', 'is_active' => true,
@@ -1237,6 +1254,7 @@ class PublicPropertyBookingTest extends TestCase
 
         $response = $this->withSession(['locale' => 'en'])->get($url)->assertOk()
             ->assertSee('Marina House')->assertSee('A seaside home.')->assertSee('Wireless internet')
+            ->assertSee('Comfort')
             ->assertSee('Reception')->assertSee('Marina market')->assertSee('Legacy guest')->assertSee('Suite guest')
             ->assertSee('4.5 / 5')->assertSee('data-gallery', false)
             ->assertSee('12 Marina')->assertSee('marina@example.com')

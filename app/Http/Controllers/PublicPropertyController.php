@@ -149,7 +149,7 @@ class PublicPropertyController extends Controller
         $bookingCheckIn = $dateFilters['check_in'] ?? '';
         $bookingCheckOut = $dateFilters['check_out'] ?? '';
         $bookingGuests = $dateFilters['guests'] ?? '';
-        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active()->orderByDesc('reviewed_at'), 'translations', 'establishment.translations', 'amenities', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
+        $property->load(['images' => fn ($query) => $query->orderBy('sort_order'), 'reviews' => fn ($query) => $query->active()->orderByDesc('reviewed_at'), 'translations', 'establishment.translations', 'amenities.category', 'features' => fn ($query) => $query->where('is_active', true), 'availabilityBlocks', 'calendarFeeds.events', 'reservations']);
         $bookingAvailability = null;
         $bookingPricing = null;
 

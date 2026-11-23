@@ -71,10 +71,11 @@ Common test data (synthetic): platform admin = seeded `admin@afrikappart.test` (
   | 4 | Submit slug `bad slug!`. | Error (alpha_dash rule). |
   | 5 | Submit `contact_email` = `not-an-email`. | Error on contact email. |
   | 6 | Submit a 300-character name. | Error (max 255). |
-  | 7 | Submit name `UAT Tenant B` (same name) with a different slug and admin email, slug empty. | Observe: the auto-generated slug equals `uat-tenant-b`, which already exists. Record what happens (validation error vs database error vs duplicate). |
-- **Acceptance criteria:** Steps 1-6 produce field-level errors and create nothing. Step 7 result is recorded; a 500 error is a defect.
+  | 7 | Submit name `UAT Tenant B` (same name) with a different slug and admin email. | Validation error on name; no tenant or admin user is created. |
+  | 8 | Submit a different name that derives to existing slug `uat-tenant-b`, leave slug blank, and use a new admin email. | Validation error on slug; no tenant or admin user is created. |
+- **Acceptance criteria:** Invalid and duplicate names/slugs produce field-level validation errors and create nothing; no 500 response.
 - **Evidence to capture:** Screenshot per error; for step 7 the page shown and any entry in `storage/logs/error-YYYY-MM-DD.log` (no stack traces shared outside the team).
-- **Notes / assumptions / open questions:** Step 7 is an exploratory case: the `unique:tenants,slug` rule runs only on the submitted slug, and the controller uses `Str::slug(name)` when the slug is blank without a uniqueness check (unlike `TenantSignupController::uniqueTenantSlug`). Behavior is not documented.
+- **Notes / assumptions / open questions:** Tenant names and slugs must be unique; a generated slug collision is reported against the slug field.: the `unique:tenants,slug` rule runs only on the submitted slug, and the controller uses `Str::slug(name)` when the slug is blank without a uniqueness check (unlike `TenantSignupController::uniqueTenantSlug`). Behavior is not documented.
 
 ---
 

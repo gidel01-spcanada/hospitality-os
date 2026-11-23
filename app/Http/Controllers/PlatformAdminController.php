@@ -42,7 +42,7 @@ class PlatformAdminController extends Controller
         abort_unless(config('platform.mode') === 'cloud', 404);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:tenants,name'],
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', 'unique:tenants,slug'],
             'contact_email' => ['nullable', 'email', 'max:255'],
             'admin_name' => ['required', 'string', 'max:255'],
@@ -51,7 +51,7 @@ class PlatformAdminController extends Controller
 
         $slug = filled($validated['slug'] ?? null)
             ? $validated['slug']
-            : $this->uniqueTenantSlug(Str::slug($validated['name']));
+            : Str::slug($validated['name']);
         Validator::make(['slug' => $slug], [
             'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:tenants,slug'],
         ])->validate();
@@ -78,18 +78,6 @@ class PlatformAdminController extends Controller
         $invitations->send($admin);
 
         return redirect()->route('platform.tenants.index')->with('success', __('messages.platform.tenant_created', ['name' => $tenant->name]));
-    }
-
-    private function uniqueTenantSlug(string $base): string
-    {
-        $slug = $base;
-        $suffix = 2;
-
-        while ($slug !== '' && Tenant::query()->where('slug', $slug)->exists()) {
-            $slug = $base . '-' . $suffix++;
-        }
-
-        return $slug;
     }
 
     public function suspend(Tenant $tenant): RedirectResponse

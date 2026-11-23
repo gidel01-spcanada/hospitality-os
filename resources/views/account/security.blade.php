@@ -13,12 +13,6 @@
 
     <section class="container dashboard-grid">
         <div class="summary-card full-width">
-            @if (session('status'))
-                <div class="alert success" role="status" aria-live="polite">
-                    {{ session('status') }}
-                </div>
-            @endif
-
             <form method="POST" action="{{ route('account.security.update') }}" class="portal-form" data-portal-form>
                 @csrf
 

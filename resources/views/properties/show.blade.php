@@ -254,7 +254,10 @@
                                     <input id="infants" name="infants" type="number" min="0" max="2" value="{{ old('infants', 0) }}">
                                 </div>
                             </div>
-                            <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="{{ __('messages.properties.phone_optional') }}">
+                            <div class="input-group">
+                                <label for="phone">{{ __('messages.properties.phone_optional') }}</label>
+                                <input id="phone" name="phone" type="tel" value="{{ old('phone') }}">
+                            </div>
 
                             <div class="input-group">
                                 <label for="customer_note">{{ __('messages.properties.customer_note') }}</label>
@@ -353,8 +356,18 @@
                         <details class="included-services-details">
                             <summary>{{ __('messages.properties.included_services') }}</summary>
                             <ul class="amenity-list">
-                                @foreach ($property->amenities as $amenity)
-                                    <li>{{ $amenity->name }}</li>
+                                @foreach ($property->amenities->groupBy(fn ($amenity) => $amenity->category?->id) as $groupedAmenities)
+                                    @php $category = $groupedAmenities->first()->category; @endphp
+                                    <li>
+                                        @if ($category)
+                                            <strong>{{ app()->getLocale() === 'fr' ? $category->name_fr : $category->name_en }}</strong>
+                                        @endif
+                                        <ul>
+                                            @foreach ($groupedAmenities as $amenity)
+                                                <li>{{ $amenity->name }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </li>
                                 @endforeach
                             </ul>
                         </details>

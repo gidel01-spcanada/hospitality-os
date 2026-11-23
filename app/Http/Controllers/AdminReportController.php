@@ -62,6 +62,12 @@ class AdminReportController extends Controller
         $from = CarbonImmutable::parse($filters['date_from'] ?? now()->startOfMonth()->toDateString())->startOfDay();
         $to = CarbonImmutable::parse($filters['date_to'] ?? now()->endOfMonth()->toDateString())->endOfDay();
 
+        if ($to->lt($from)) {
+            throw ValidationException::withMessages([
+                'date_to' => __('messages.reports.invalid_period'),
+            ]);
+        }
+
         if ($from->diffInDays($to) > 366) {
             throw ValidationException::withMessages([
                 'date_to' => __('messages.reports.period_too_long'),

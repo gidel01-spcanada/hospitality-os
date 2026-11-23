@@ -11,6 +11,7 @@ use App\Models\AdminAvailabilityBlock;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -64,6 +65,21 @@ class PropertyAdminControlsTest extends TestCase
         $this->actingAs($host)
             ->postJson(route('admin.properties.improve-copy', $property), ['description_fr' => 'Texte.'])
             ->assertForbidden();
+    }
+
+    public function test_copy_improver_timeout_returns_a_controlled_service_unavailable_response(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        config(['services.property_copy.api_key' => 'test-key']);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        Http::fake(fn () => throw new ConnectionException('cURL error 28: Operation timed out'));
+
+        $this->actingAs($admin)
+            ->postJson(route('admin.properties.improve-copy', $property), ['description_fr' => 'Texte original.'])
+            ->assertStatus(503)
+            ->assertJsonPath('message', __('messages.ai_copy.provider_unavailable'))
+            ->assertDontSee('cURL error 28');
     }
 
     public function test_admin_can_manage_property_pricing_and_availability(): void
@@ -539,6 +555,28 @@ class PropertyAdminControlsTest extends TestCase
         $this->assertSame('production', $establishment->payment_methods['cinetpay']['mode']);
         $this->assertTrue($establishment->payment_methods['mpesa']['enabled']);
         $this->assertSame('production', $establishment->payment_methods['mpesa']['mode']);
+    }
+
+    public function test_google_review_import_url_rejects_non_http_schemes(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = Establishment::firstOrFail();
+        $originalUrl = $establishment->google_reviews_import_url;
+
+        $this->actingAs($admin)
+            ->from(route('admin.establishments.edit', $establishment))
+            ->put(route('admin.establishments.update', $establishment), [
+                'name' => $establishment->name,
+                'slug' => $establishment->slug,
+                'country_code' => $establishment->country_code,
+                'currency' => $establishment->currency,
+                'google_reviews_import_url' => 'ftp://example.com/reviews.csv',
+            ])
+            ->assertRedirect(route('admin.establishments.edit', $establishment))
+            ->assertSessionHasErrors('google_reviews_import_url');
+
+        $this->assertSame($originalUrl, $establishment->fresh()->google_reviews_import_url);
     }
 
     public function test_establishment_editor_has_section_tabs_and_a_country_selector(): void

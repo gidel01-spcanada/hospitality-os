@@ -23,11 +23,6 @@
 
         <div class="summary-card portal-profile-form-card">
             <h2>{{ __('messages.profile.personal') }}</h2>
-            @if (session('status'))
-                <div class="alert success" role="status" aria-live="polite">
-                    {{ session('status') }}
-                </div>
-            @endif
 
             <form method="POST" action="{{ route('account.profile.update') }}" class="portal-form" data-portal-form>
                 @csrf

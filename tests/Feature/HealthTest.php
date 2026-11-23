@@ -21,5 +21,7 @@ class HealthTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('status', 'ok');
         $response->assertJsonPath('application', 'afrikappart');
+        $response->assertJsonMissingPath('environment');
+        $response->assertJsonMissingPath('php_version');
     }
 }

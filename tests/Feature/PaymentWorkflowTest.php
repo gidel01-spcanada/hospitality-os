@@ -352,25 +352,45 @@ class PaymentWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'pay_later', 'status' => 'paid']);
-        $statusEmails = EmailOutbox::query()->where('template', 'reservation_status_updated')->count();
-        $this->call('POST', '/webhooks/pay_later', [], [], [], [
-            'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $webhookBody, config('services.payments.webhook_secret')),
-        ], $webhookBody)->assertOk();
-        $this->assertSame($statusEmails, EmailOutbox::query()->where('template', 'reservation_status_updated')->count());
+        $statusEmails = EmailOutbox::query()
+            ->where('template', 'reservation_status_updated')
+            ->where('recipient_email', $reservation->email)
+            ->count();
+        $receiptEmails = EmailOutbox::query()
+            ->where('template', 'receipt_issued')
+            ->where('recipient_email', $reservation->email)
+            ->count();
+        $this->assertSame(1, $statusEmails);
+        $this->assertSame(1, $receiptEmails);
+        $this->assertSame(1, $reservation->receipts()->count());
 
-        $failureBody = json_encode([
-            'provider_reference' => $attempt->provider_reference,
-            'status' => 'failed',
-        ], JSON_THROW_ON_ERROR);
+        for ($replay = 0; $replay < 3; $replay++) {
+            $this->call('POST', '/webhooks/pay_later', [], [], [], [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $webhookBody, config('services.payments.webhook_secret')),
+            ], $webhookBody)->assertOk()->assertJsonPath('status', 'paid');
+        }
 
-        $this->call('POST', '/webhooks/pay_later', [], [], [], [
-            'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $failureBody, config('services.payments.webhook_secret')),
-        ], $failureBody)->assertOk();
+        $this->assertSame(1, $reservation->paymentAttempts()->count());
+        $this->assertSame(1, $reservation->receipts()->count());
+        $this->assertSame($statusEmails, EmailOutbox::query()->where('template', 'reservation_status_updated')->where('recipient_email', $reservation->email)->count());
+        $this->assertSame($receiptEmails, EmailOutbox::query()->where('template', 'receipt_issued')->where('recipient_email', $reservation->email)->count());
 
-        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
+        foreach (['failed', 'cancelled', 'pending'] as $lateStatus) {
+            $lateBody = json_encode([
+                'provider_reference' => $attempt->provider_reference,
+                'status' => $lateStatus,
+            ], JSON_THROW_ON_ERROR);
+
+            $this->call('POST', '/webhooks/pay_later', [], [], [], [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $lateBody, config('services.payments.webhook_secret')),
+            ], $lateBody)->assertOk();
+
+            $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
+            $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
+            $this->assertSame($statusEmails, EmailOutbox::query()->where('template', 'reservation_status_updated')->where('recipient_email', $reservation->email)->count());
+        }
 
         $unknownStatusBody = json_encode([
             'provider_reference' => $attempt->provider_reference,

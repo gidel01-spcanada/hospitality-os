@@ -13,12 +13,6 @@
 
     <section class="container dashboard-grid">
         <div class="summary-card full-width">
-            @if (session('status'))
-                <div class="alert success" role="status" aria-live="polite">
-                    {{ session('status') }}
-                </div>
-            @endif
-
             <form method="POST" action="{{ route('dashboard.preferences.update') }}" class="portal-form" data-portal-form>
                 @csrf
 
@@ -26,11 +20,11 @@
                     <legend>{{ __('messages.profile.language') }}</legend>
                     <p class="portal-form-help">{{ __('messages.profile.language_preference_help') }}</p>
                     <label for="locale">{{ __('messages.profile.language') }}</label>
-                    <select id="locale" name="locale" required>
+                    <select id="locale" name="locale" required @error('locale') aria-invalid="true" aria-describedby="locale-error" @enderror>
                         <option value="fr" @selected(old('locale', $user->locale ?? 'fr') === 'fr')>Français</option>
                         <option value="en" @selected(old('locale', $user->locale ?? 'fr') === 'en')>English</option>
                     </select>
-                    @error('locale')<p class="portal-field-error" role="alert">{{ $message }}</p>@enderror
+                    @error('locale')<p class="portal-field-error" id="locale-error" role="alert">{{ $message }}</p>@enderror
                 </fieldset>
 
                 <fieldset class="portal-preference-group">
