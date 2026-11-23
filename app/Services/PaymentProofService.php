@@ -19,6 +19,7 @@ class PaymentProofService
 
     /** Offline transfers need a staff-uploaded refund proof on cancellation; cash (pay_later) and online gateways do not. */
     public const REFUND_PROOF_PROVIDERS = ['interac', 'wise', 'revolut', 'offline'];
+    public const MANUAL_REFUND_PROVIDERS = ['interac', 'wise', 'revolut', 'offline', 'paypal'];
 
     public function attach(Reservation $reservation, PaymentAttempt $attempt, UploadedFile $file, int|string|null $uploadedBy, array $attributes = [], string $key = self::PAYMENT): PaymentAttempt
     {

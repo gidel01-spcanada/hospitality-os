@@ -69,14 +69,30 @@ class PayPalLiveGateway implements PaymentGateway
         if ($response->successful()) {
             $order = $response->json();
             $status = ($order['status'] ?? null) === 'COMPLETED' ? 'paid' : 'pending';
-            $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['capture' => $order])]);
+            if ($status === 'paid' && ! $this->capturedAmountMatchesAttempt($order, $attempt)) {
+                $status = 'pending_validation';
+                $attempt->update([
+                    'status' => $status,
+                    'payload' => array_merge((array) $attempt->payload, ['review_required_reason' => 'amount_currency_mismatch']),
+                ]);
+            } else {
+                $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['provider_status' => $order['status'] ?? null])]);
+            }
         } else {
             $checkResponse = Http::acceptJson()->withToken($this->accessToken())
                 ->get($this->baseUrl().'/v2/checkout/orders/'.$attempt->provider_reference);
             if ($checkResponse->successful()) {
                 $order = $checkResponse->json();
                 $status = ($order['status'] ?? null) === 'COMPLETED' ? 'paid' : $attempt->status;
-                $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['check' => $order])]);
+                if ($status === 'paid' && ! $this->capturedAmountMatchesAttempt($order, $attempt)) {
+                    $status = 'pending_validation';
+                    $attempt->update([
+                        'status' => $status,
+                        'payload' => array_merge((array) $attempt->payload, ['review_required_reason' => 'amount_currency_mismatch']),
+                    ]);
+                } else {
+                    $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['provider_status' => $order['status'] ?? null])]);
+                }
             }
         }
 
@@ -91,6 +107,27 @@ class PayPalLiveGateway implements PaymentGateway
             $attempt->update(['status' => data_get($request->json()->all(), 'event_type') === 'PAYMENT.CAPTURE.COMPLETED' ? 'paid' : $attempt->status]);
         }
         return $attempt;
+    }
+
+    private function capturedAmountMatchesAttempt(mixed $order, PaymentAttempt $attempt): bool
+    {
+        if (! is_array($order)) {
+            return false;
+        }
+
+        $captureAmount = data_get($order, 'purchase_units.0.payments.captures.0.amount.value');
+        $captureCurrency = data_get($order, 'purchase_units.0.payments.captures.0.amount.currency_code');
+        if (! is_scalar($captureAmount) || ! is_string($captureCurrency)) {
+            return false;
+        }
+
+        $actualAmount = trim((string) $captureAmount);
+        $expectedAmount = trim((string) $attempt->amount);
+
+        return preg_match('/^\d+(?:\.\d{1,2})?$/D', $actualAmount)
+            && preg_match('/^\d+(?:\.\d{1,2})?$/D', $expectedAmount)
+            && number_format((float) $actualAmount, 2, '.', '') === number_format((float) $expectedAmount, 2, '.', '')
+            && strtoupper($captureCurrency) === strtoupper((string) $attempt->currency);
     }
 
     public function cancel(PaymentAttempt $attempt, string $reason = 'cancelled'): PaymentAttempt { $attempt->update(['status' => 'cancelled']); return $attempt; }

@@ -67,6 +67,11 @@
                         {{ __('messages.checkout.awaiting_validation') }}
                     </div>
                 @endif
+                @if ($latestAttempt?->status === 'rejected' && data_get($latestAttempt->payload, 'proof_rejection.reason'))
+                    <div class="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        <strong>{{ __('messages.receipts.proof_rejection_reason') }}:</strong> {{ data_get($latestAttempt->payload, 'proof_rejection.reason') }}
+                    </div>
+                @endif
 
                 @if ($showPaymentOptions)
                     @php
@@ -114,7 +119,7 @@
                                 <li class="rounded-md bg-slate-50 px-3 py-2">
                                     <div class="flex items-center justify-between">
                                         <span class="font-medium">{{ __('messages.checkout.' . $attempt->provider) }}</span>
-                                        <span class="text-slate-500">{{ $attempt->status }}</span>
+                                        <span class="text-slate-500">{{ $attempt->status === 'rejected' ? __('messages.admin.payment_attempt_status_rejected') : $attempt->status }}</span>
                                     </div>
                                     <div class="mt-1 text-xs text-slate-500">{{ $attempt->provider_reference }}</div>
                                     @if (data_get($attempt->payload, 'payment_proof.path'))
@@ -127,14 +132,14 @@
                 @endif
 
                 @php $canSimulatePayment = $isDevEnvironment || auth()->user()?->canManageReservations(); @endphp
-                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && $canSimulatePayment)
+                @if ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && $latestAttempt->status !== 'rejected' && $canSimulatePayment)
                     <form action="{{ route('checkout.complete', ['reservation' => $reservation, 'token' => $token]) }}" method="POST" class="mt-6">
                         @csrf
                         <button type="submit" class="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50">
                             {{ __('messages.checkout.simulate') }}
                         </button>
                     </form>
-                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && ! $canSimulatePayment)
+                @elseif ($reservation->status !== 'cancelled' && $reservation->status !== 'confirmed' && $latestAttempt && $latestAttempt->status !== 'rejected' && ! $canSimulatePayment)
                     <p class="mt-6 text-center text-sm text-slate-500">{{ __('messages.checkout.simulate_unavailable') }}</p>
                 @endif
 

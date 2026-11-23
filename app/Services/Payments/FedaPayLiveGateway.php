@@ -56,7 +56,10 @@ class FedaPayLiveGateway implements PaymentGateway
         $response->throw();
         $transaction = $response->json();
         $status = in_array($transaction['status'] ?? '', ['approved', 'completed'], true) ? 'paid' : 'pending';
-        $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['transaction' => $transaction])]);
+        $attempt->update([
+            'status' => $status,
+            'payload' => array_merge((array) $attempt->payload, ['provider_status' => $transaction['status'] ?? null]),
+        ]);
         return $attempt->fresh();
     }
 

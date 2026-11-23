@@ -312,7 +312,7 @@ class AdminReservationController extends Controller
             'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
         ]);
 
-        $attempt = $reservation->paymentAttempts()->latest()->first();
+        $attempt = $reservation->paymentAttempts()->where('status', '!=', 'rejected')->latest('id')->first();
         if (! $attempt) {
             $attempt = $reservation->paymentAttempts()->create([
                 'provider' => 'offline',
@@ -320,7 +320,7 @@ class AdminReservationController extends Controller
                 'currency' => $reservation->currency,
                 'amount' => $reservation->total_amount,
                 'status' => 'created',
-                'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'idempotency_key' => 'offline-' . $reservation->id . '-' . Str::lower(Str::random(24)),
                 'payload' => [],
             ]);
         }
@@ -330,12 +330,57 @@ class AdminReservationController extends Controller
         return back()->with('status', __('messages.receipts.proof_uploaded'));
     }
 
-    public function updateStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): RedirectResponse
+    public function rejectPaymentProof(Request $request, Reservation $reservation, \App\Models\PaymentAttempt $attempt, ReservationEmailService $emailService): RedirectResponse
+    {
+        $this->ownedReservation($reservation);
+        abort_unless((int) $attempt->reservation_id === (int) $reservation->id, 404);
+        if (is_string($request->input('reason'))) {
+            $request->merge(['reason' => trim($request->input('reason'))]);
+        }
+        $validated = $request->validate(['reason' => ['required', 'string', 'max:1000']]);
+
+        DB::transaction(function () use ($reservation, $attempt, $validated, $emailService): void {
+            $reservation = Reservation::query()->lockForUpdate()->findOrFail($reservation->id);
+            $attempt = $reservation->paymentAttempts()->lockForUpdate()->findOrFail($attempt->id);
+            abort_unless(
+                $reservation->status === 'pending_validation'
+                && in_array($attempt->provider, PaymentProofService::REFUND_PROOF_PROVIDERS, true)
+                && in_array($attempt->status, ['awaiting_validation', 'pending_validation'], true)
+                && data_get($attempt->payload, 'payment_proof.path')
+                && ! data_get($attempt->payload, 'is_guarantee'),
+                409,
+                __('messages.receipts.proof_rejection_unavailable'),
+            );
+            $otherPendingProof = $reservation->paymentAttempts()->whereKeyNot($attempt->id)
+                ->whereIn('status', ['awaiting_validation', 'pending_validation'])->get()
+                ->contains(fn ($other) => data_get($other->payload, 'payment_proof.path') && ! data_get($other->payload, 'is_guarantee'));
+            abort_if($otherPendingProof, 409, __('messages.receipts.proof_rejection_multiple'));
+
+            $attempt->update([
+                'status' => 'rejected',
+                'payload' => array_merge((array) $attempt->payload, [
+                    'proof_rejection' => ['reason' => $validated['reason'], 'rejected_by' => auth()->id(), 'rejected_at' => now()->toIso8601String()],
+                ]),
+            ]);
+            $reservation->update(['status' => 'pending_payment']);
+            $emailService->queueProofRejected($reservation, $validated['reason']);
+        });
+
+        return redirect()->route('admin.reservations.show', $reservation)->with('status', __('messages.receipts.proof_rejected'));
+    }
+
+    public function updateStatus(
+        Request $request,
+        Reservation $reservation,
+        ReservationEmailService $emailService,
+        AvailabilityService $availabilityService,
+        \App\Services\ReservationLifecycle $reservationLifecycle,
+    ): RedirectResponse
     {
         $this->ownedReservation($reservation);
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'],
+            'status' => ['required', 'string', 'in:pending,pending_payment,pending_validation,payment_failed,confirmed,checked_in,completed,cancelled'],
             'notes' => ['nullable', 'string', 'max:500'],
             'payment_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
             'refund_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
@@ -344,10 +389,23 @@ class AdminReservationController extends Controller
 
         $oldStatus = $reservation->status;
         $newStatus = $validated['status'];
-        $refundableAttempts = $newStatus === 'cancelled' && $oldStatus !== 'cancelled' ? $this->refundableOfflineAttempts($reservation) : collect();
+        $reservationLifecycle->assertTransition($reservation, $newStatus, $availabilityService);
+        if ($oldStatus === 'pending_validation' && in_array($newStatus, ['pending', 'pending_payment'], true)
+            && $reservation->paymentAttempts()->whereIn('provider', PaymentProofService::REFUND_PROOF_PROVIDERS)
+                ->whereIn('status', ['awaiting_validation', 'pending_validation'])->get()
+                ->contains(fn ($attempt) => data_get($attempt->payload, 'payment_proof.path') && ! data_get($attempt->payload, 'is_guarantee'))) {
+            throw ValidationException::withMessages(['status' => __('messages.receipts.proof_rejection_required')]);
+        }
+        $refundableAttempts = $newStatus === 'cancelled' && $oldStatus !== 'cancelled' ? $this->refundableManualAttempts($reservation) : collect();
         if ($refundableAttempts->isNotEmpty() && ! isset($validated['refund_proof'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['refund_proof' => __('messages.receipts.refund_proof_required')]);
         }
+        $cancellationFee = $newStatus === 'cancelled'
+            ? ($reservation->property?->establishment?->cancellationFeeFor($reservation) ?? 0.0)
+            : 0.0;
+        $cancellationFeeRate = (float) $reservation->total_amount > 0
+            ? min(1, $cancellationFee / (float) $reservation->total_amount)
+            : 0.0;
 
         $reservation->update([
             'status' => $newStatus,
@@ -358,7 +416,7 @@ class AdminReservationController extends Controller
         }
 
         if (isset($validated['payment_proof'])) {
-            $attempt = $reservation->paymentAttempts()->latest()->first();
+            $attempt = $reservation->paymentAttempts()->where('status', '!=', 'rejected')->latest('id')->first();
             if (! $attempt) {
                 $attempt = $reservation->paymentAttempts()->create([
                     'provider' => 'offline',
@@ -366,7 +424,7 @@ class AdminReservationController extends Controller
                     'currency' => $reservation->currency,
                     'amount' => $reservation->total_amount,
                     'status' => 'created',
-                    'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                    'idempotency_key' => 'offline-' . $reservation->id . '-' . Str::lower(Str::random(24)),
                     'payload' => [],
                 ]);
             }
@@ -376,12 +434,18 @@ class AdminReservationController extends Controller
 
         foreach ($refundableAttempts as $attempt) {
             app(PaymentProofService::class)->attach($reservation, $attempt, $validated['refund_proof'], auth()->id(), [], PaymentProofService::REFUND);
+            $attemptCancellationFee = round((float) $attempt->amount * $cancellationFeeRate, 2);
+            $refundAmount = max(0, round((float) $attempt->amount - $attemptCancellationFee, 2));
             $attempt->update([
                 'status' => 'refunded',
                 'payload' => array_merge((array) $attempt->fresh()->payload, array_filter([
                     'refunded_by' => auth()->id(),
                     'refunded_at' => now()->toIso8601String(),
                     'refund_reference' => filled($validated['refund_reference'] ?? null) ? trim($validated['refund_reference']) : null,
+                    'refund_amount' => number_format($refundAmount, 2, '.', ''),
+                    'refund_currency' => $attempt->currency,
+                    'cancellation_fee_amount' => number_format($attemptCancellationFee, 2, '.', ''),
+                    'cancellation_fee_currency' => $attempt->currency,
                 ])),
             ]);
         }
@@ -464,10 +528,10 @@ class AdminReservationController extends Controller
             ->with('status', __('messages.receipts.reference_updated'));
     }
 
-    private function refundableOfflineAttempts(Reservation $reservation): \Illuminate\Support\Collection
+    private function refundableManualAttempts(Reservation $reservation): \Illuminate\Support\Collection
     {
         return $reservation->paymentAttempts()->whereIn('status', ['paid', 'completed'])
-            ->whereIn('provider', PaymentProofService::REFUND_PROOF_PROVIDERS)->get()
+            ->whereIn('provider', PaymentProofService::MANUAL_REFUND_PROVIDERS)->get()
             ->reject(fn ($attempt) => (bool) data_get($attempt->payload, 'is_guarantee'))
             ->values();
     }

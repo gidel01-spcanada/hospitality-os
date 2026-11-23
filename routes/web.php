@@ -123,15 +123,15 @@ Route::middleware(['auth', 'active', 'locale'])->get('/reservation/resume', [Pub
 
 Route::middleware(['guest', 'locale'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
     Route::get('/host/register', [\App\Http\Controllers\TenantSignupController::class, 'create'])->name('host.register');
-    Route::post('/host/register', [\App\Http\Controllers\TenantSignupController::class, 'store'])->name('host.register.store');
+    Route::post('/host/register', [\App\Http\Controllers\TenantSignupController::class, 'store'])->middleware('throttle:5,1')->name('host.register.store');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
-    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetLink'])->name('password.email');
+    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetLink'])->middleware('throttle:10,1')->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
-    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('password.update');
 });
 
 Route::middleware(['auth', 'active', 'locale'])->group(function () {
@@ -145,7 +145,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
     Route::post('/dashboard/preferences', [AuthController::class, 'updatePreferences'])->name('dashboard.preferences.update');
     Route::get('/dashboard/reservations/{reservation}', [AuthController::class, 'reservationDetail'])->name('dashboard.reservations.show');
     Route::put('/dashboard/reservations/{reservation}', [AuthController::class, 'updateReservation'])->name('dashboard.reservations.update');
-    Route::get('/reservations/{reservation}/receipt', [\App\Http\Controllers\ReceiptController::class, 'download'])->name('reservations.receipt');
+    Route::get('/reservations/{reservation}/receipt', [\App\Http\Controllers\ReceiptController::class, 'download'])->middleware('throttle:10,1')->name('reservations.receipt');
     Route::post('/properties/{property}/favorite', [\App\Http\Controllers\FavoriteController::class, 'toggle'])->name('properties.favorite.toggle');
     Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
     Route::post('/messages', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
@@ -169,6 +169,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::post('/admin/reservations/{reservation}/receipt', [AdminReservationController::class, 'generateReceipt'])->name('admin.reservations.receipt.generate');
         Route::patch('/admin/reservations/{reservation}/payment-attempts/{attempt}/reference', [AdminReservationController::class, 'updatePaymentReference'])->name('admin.reservations.payment-reference.update');
         Route::post('/admin/reservations/{reservation}/payment-attempts/{attempt}/validate', [AdminReservationController::class, 'validatePayment'])->name('admin.reservations.payment.validate');
+        Route::post('/admin/reservations/{reservation}/payment-attempts/{attempt}/reject-proof', [AdminReservationController::class, 'rejectPaymentProof'])->name('admin.reservations.payment-proof.reject');
         Route::post('/admin/reservations/{reservation}/internal-notes', [AdminReservationController::class, 'storeInternalNote'])->name('admin.reservations.internal-notes.store');
         Route::get('/admin/messages', [\App\Http\Controllers\AdminMessageController::class, 'index'])->name('admin.messages.index');
         Route::get('/admin/messages/{thread}', [\App\Http\Controllers\AdminMessageController::class, 'show'])->name('admin.messages.show');
@@ -193,7 +194,7 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
 
     Route::middleware('establishment-manager')->group(function () {
         Route::get('/admin/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
-        Route::get('/admin/reports/export.csv', [AdminReportController::class, 'exportCsv'])->name('admin.reports.export');
+        Route::get('/admin/reports/export.csv', [AdminReportController::class, 'exportCsv'])->middleware('throttle:10,1')->name('admin.reports.export');
         Route::get('/admin/profile', [AdminPreferencesController::class, 'index'])->name('admin.profile');
         Route::get('/admin/preferences', [AdminPreferencesController::class, 'index'])->name('admin.preferences');
         Route::put('/admin/preferences/profile', [AdminPreferencesController::class, 'updateProfile'])->name('admin.preferences.profile.update');
@@ -234,13 +235,14 @@ Route::middleware(['auth', 'active', 'locale'])->group(function () {
         Route::delete('/admin/properties/{property}/availability-blocks/{block}', [\App\Http\Controllers\AdminPropertyController::class, 'deleteAvailabilityBlock'])->name('admin.properties.availability.destroy');
         Route::get('/admin/properties/{property}/availability', [\App\Http\Controllers\AdminPropertyController::class, 'availabilityCheck'])->name('admin.properties.availability.check');
         Route::get('/admin/properties/{property}/calendar', [\App\Http\Controllers\AdminCalendarController::class, 'index'])->name('admin.properties.calendar');
+        Route::post('/admin/properties/{property}/calendar/export-token', [\App\Http\Controllers\AdminCalendarController::class, 'rotatePublicExportToken'])->name('admin.properties.calendar.rotate-token');
         Route::get('/admin/properties/{property}/calendar/feeds/create', [\App\Http\Controllers\AdminCalendarController::class, 'createFeed'])->name('admin.properties.calendar.create');
         Route::post('/admin/properties/{property}/calendar/feeds', [\App\Http\Controllers\AdminCalendarController::class, 'storeFeed'])->name('admin.properties.calendar.store');
         Route::get('/admin/properties/{property}/calendar/feeds/{feed}/edit', [\App\Http\Controllers\AdminCalendarController::class, 'editFeed'])->name('admin.properties.calendar.edit');
         Route::put('/admin/properties/{property}/calendar/feeds/{feed}', [\App\Http\Controllers\AdminCalendarController::class, 'updateFeed'])->name('admin.properties.calendar.update');
         Route::delete('/admin/properties/{property}/calendar/feeds/{feed}', [\App\Http\Controllers\AdminCalendarController::class, 'deleteFeed'])->name('admin.properties.calendar.destroy');
         Route::post('/admin/properties/{property}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\AdminCalendarController::class, 'syncFeed'])->name('admin.properties.calendar.sync');
-        Route::get('/admin/properties/{property}/calendar/export.ics', [\App\Http\Controllers\AdminCalendarController::class, 'export'])->name('admin.properties.calendar.export');
+        Route::get('/admin/properties/{property}/calendar/export.ics', [\App\Http\Controllers\AdminCalendarController::class, 'export'])->middleware('throttle:30,1')->name('admin.properties.calendar.export');
     });
 
     Route::middleware('admin')->group(function () {
@@ -288,8 +290,8 @@ Route::middleware('locale')->group(function () {
     Route::get('/properties', [PublicPropertyController::class, 'index'])->name('properties.index');
     Route::get('/properties/compare', [PublicPropertyController::class, 'compare'])->name('properties.compare');
     Route::get('/properties/{property:slug}', [PublicPropertyController::class, 'show'])->name('properties.show');
-    Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->name('properties.availability');
-    Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->name('properties.reserve');
+    Route::post('/properties/{property:slug}/availability', [PublicPropertyController::class, 'availability'])->middleware('throttle:30,1')->name('properties.availability');
+    Route::post('/properties/{property:slug}/reserve', [PublicPropertyController::class, 'reserve'])->middleware('throttle:10,1')->name('properties.reserve');
     Route::get('/contact', [\App\Http\Controllers\StaticPageController::class, 'contact'])->name('contact');
     Route::get('/about', [\App\Http\Controllers\StaticPageController::class, 'about'])->name('about');
     Route::get('/reviews', [\App\Http\Controllers\StaticPageController::class, 'reviews'])->name('reviews');
@@ -337,27 +339,27 @@ Route::get('/sitemap.xml', function () {
     return response($xml, 200)->header('Content-Type', 'application/xml');
 })->name('sitemap');
 
-Route::get('/calendar/{property:slug}/{token}.ics', [\App\Http\Controllers\AdminCalendarController::class, 'publicExport'])->name('calendar.public-export');
+Route::get('/calendar/{property:slug}/{token}.ics', [\App\Http\Controllers\AdminCalendarController::class, 'publicExport'])->middleware('throttle:30,1')->name('calendar.public-export');
 Route::get('/cleaning-schedule/{token}', [CleaningScheduleController::class, 'publicSchedule'])->name('cleaning.public');
-Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class, 'publicPdf'])->name('cleaning.public.pdf');
+Route::get('/cleaning-schedule/{token}/pdf', [CleaningScheduleController::class, 'publicPdf'])->middleware('throttle:10,1')->name('cleaning.public.pdf');
 Route::post('/cleaning-schedule/{token}/visits/{visit}/status', [CleaningScheduleController::class, 'publicStatus'])->middleware('throttle:30,1')->name('cleaning.public.status');
 
 Route::middleware('locale')->group(function () {
     Route::get('/reservations/access', [\App\Http\Controllers\CheckoutController::class, 'accessHelp'])->name('reservation.access');
     Route::get('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'show'])->name('checkout.show');
-    Route::get('/reservations/{reservation}/payment-proofs/{attempt}', [\App\Http\Controllers\ReceiptController::class, 'downloadProof'])->name('reservations.payment-proof.download');
-    Route::post('/reservations/{reservation}/checkout/password-setup', [\App\Http\Controllers\CheckoutController::class, 'requestIdentitySetup'])->name('checkout.password-setup');
-    Route::post('/reservations/{reservation}/checkout/skip-password-setup', [\App\Http\Controllers\CheckoutController::class, 'skipIdentitySetup'])->name('checkout.skip-password-setup');
-    Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->name('checkout.start');
-    Route::post('/reservations/{reservation}/checkout/paypal/create', [\App\Http\Controllers\CheckoutController::class, 'createPayPalOrder'])->name('checkout.paypal.create');
-    Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->name('checkout.paypal.capture');
-    Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->name('checkout.complete');
-    Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::get('/reservations/{reservation}/payment-proofs/{attempt}', [\App\Http\Controllers\ReceiptController::class, 'downloadProof'])->middleware('throttle:10,1')->name('reservations.payment-proof.download');
+    Route::post('/reservations/{reservation}/checkout/password-setup', [\App\Http\Controllers\CheckoutController::class, 'requestIdentitySetup'])->middleware('throttle:10,1')->name('checkout.password-setup');
+    Route::post('/reservations/{reservation}/checkout/skip-password-setup', [\App\Http\Controllers\CheckoutController::class, 'skipIdentitySetup'])->middleware('throttle:10,1')->name('checkout.skip-password-setup');
+    Route::post('/reservations/{reservation}/checkout', [\App\Http\Controllers\CheckoutController::class, 'start'])->middleware('throttle:10,1')->name('checkout.start');
+    Route::post('/reservations/{reservation}/checkout/paypal/create', [\App\Http\Controllers\CheckoutController::class, 'createPayPalOrder'])->middleware('throttle:10,1')->name('checkout.paypal.create');
+    Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:10,1')->name('checkout.paypal.capture');
+    Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->middleware('throttle:10,1')->name('checkout.complete');
+    Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->middleware('throttle:10,1')->name('checkout.cancel');
     Route::get('/reservations/{reservation}/checkout/{provider}/cancel', [\App\Http\Controllers\CheckoutController::class, 'providerCancel'])->name('checkout.provider-cancel');
-    Route::post('/reservations/{reservation}/checkout/offline-proof', [\App\Http\Controllers\CheckoutController::class, 'submitOfflineProof'])->name('checkout.offline-proof');
+    Route::post('/reservations/{reservation}/checkout/offline-proof', [\App\Http\Controllers\CheckoutController::class, 'submitOfflineProof'])->middleware('throttle:10,1')->name('checkout.offline-proof');
     Route::get('/reservations/{reservation}/checkout/{provider}/return', [\App\Http\Controllers\CheckoutController::class, 'return'])->name('checkout.return');
 });
-Route::post('/webhooks/{provider}', [\App\Http\Controllers\CheckoutController::class, 'webhook'])->name('checkout.webhook');
+Route::post('/webhooks/{provider}', [\App\Http\Controllers\CheckoutController::class, 'webhook'])->middleware('throttle:120,1')->name('checkout.webhook');
 
 Route::get('/health', function () {
     return response()->json([

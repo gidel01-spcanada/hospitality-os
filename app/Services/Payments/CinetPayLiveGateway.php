@@ -63,7 +63,7 @@ class CinetPayLiveGateway implements PaymentGateway
             'amount' => $reservation->total_amount,
             'status' => 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
-            'payload' => ['mode' => 'production', 'redirect_url' => $paymentUrl, 'create_response' => $payload],
+            'payload' => ['mode' => 'production', 'redirect_url' => $paymentUrl],
         ]);
     }
 
@@ -80,7 +80,7 @@ class CinetPayLiveGateway implements PaymentGateway
 
         $attempt->update([
             'status' => $status === 'ACCEPTED' ? 'paid' : (in_array($status, ['REFUSED', 'CANCELLED'], true) ? 'failed' : 'pending'),
-            'payload' => array_merge((array) $attempt->payload, ['check_response' => $payload]),
+            'payload' => array_merge((array) $attempt->payload, ['provider_status' => $status]),
         ]);
 
         return $attempt->fresh();

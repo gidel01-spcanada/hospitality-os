@@ -4,11 +4,11 @@ use App\Http\Controllers\Api\MobileApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
-    Route::post('/auth/login', [MobileApiController::class, 'login']);
+    Route::post('/auth/login', [MobileApiController::class, 'login'])->middleware('throttle:10,1');
 
     Route::get('/properties', [MobileApiController::class, 'properties']);
     Route::get('/properties/{property:slug}', [MobileApiController::class, 'property']);
-    Route::post('/properties/{property:slug}/availability', [MobileApiController::class, 'availability']);
+    Route::post('/properties/{property:slug}/availability', [MobileApiController::class, 'availability'])->middleware('throttle:30,1');
 
     Route::middleware('api-token')->group(function (): void {
         Route::post('/auth/logout', [MobileApiController::class, 'logout']);

@@ -53,6 +53,18 @@ class AvailabilityService
 
     public function hasExternalCalendarConflict(Property $property, Carbon $checkIn, Carbon $checkOut): bool
     {
+        $hasStaleFeed = $property->calendarFeeds()
+            ->where('is_enabled', true)
+            ->where(function ($query): void {
+                $query->whereNull('last_successful_sync_at')
+                    ->orWhere('last_successful_sync_at', '<=', now()->subHour());
+            })
+            ->exists();
+
+        if ($hasStaleFeed) {
+            return true;
+        }
+
         return ExternalCalendarEvent::query()
             ->whereHas('feed', fn ($query) => $query->where('property_id', $property->id)->where('is_enabled', true))
             ->whereDate('start_date', '<', $checkOut->toDateString())

@@ -322,7 +322,12 @@ class PublicPropertyBookingTest extends TestCase
         $this->post($checkoutUrl, ['provider' => 'pay_later'])->assertRedirect($checkoutUrl);
         $attempt = $reservation->paymentAttempts()->latest('id')->firstOrFail();
         $this->assertEquals((float) $reservation->total_amount, (float) $attempt->amount);
-        $body = json_encode(['provider_reference' => $attempt->provider_reference, 'status' => 'paid'], JSON_THROW_ON_ERROR);
+        $body = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+            'amount' => $attempt->amount,
+            'currency' => $attempt->currency,
+        ], JSON_THROW_ON_ERROR);
         $this->call('POST', route('checkout.webhook', ['provider' => 'pay_later']), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $body, config('services.payments.webhook_secret')),
@@ -655,6 +660,7 @@ class PublicPropertyBookingTest extends TestCase
             'name' => 'External booking calendar',
             'url' => 'https://example.com/external.ics',
             'is_enabled' => true,
+            'last_successful_sync_at' => now(),
         ]);
         ExternalCalendarEvent::query()->create([
             'feed_id' => $feed->id,
@@ -688,6 +694,7 @@ class PublicPropertyBookingTest extends TestCase
             'name' => 'External booking calendar',
             'url' => 'https://example.com/external.ics',
             'is_enabled' => true,
+            'last_successful_sync_at' => now(),
         ]);
         ExternalCalendarEvent::query()->create([
             'feed_id' => $feed->id,

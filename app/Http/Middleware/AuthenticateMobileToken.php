@@ -18,7 +18,7 @@ class AuthenticateMobileToken
             ->with('user.tenant')
             ->first() : null;
 
-        if (! $token || ! $token->user || ! $token->user->is_active || ($token->expires_at && $token->expires_at->isPast())) {
+        if (! $token || ! $token->user || ! $token->user->is_active || ! $token->expires_at || $token->expires_at->lte(now())) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 

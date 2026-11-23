@@ -29,6 +29,10 @@ class MobileApiController extends Controller
             return response()->json(['message' => 'Invalid credentials.'], 422);
         }
 
+        if (! $user->isPlatformAdmin() && $user->canManageReservations() && $user->tenant?->status === 'suspended') {
+            return response()->json(['message' => 'This workspace has been suspended.'], 403);
+        }
+
         $plainToken = Str::random(80);
         MobileAccessToken::query()->create([
             'user_id' => $user->id,
@@ -128,10 +132,17 @@ class MobileApiController extends Controller
         return response()->json(['data' => $this->reservationData($reservation, true)]);
     }
 
-    public function updateReservationStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): JsonResponse
+    public function updateReservationStatus(
+        Request $request,
+        Reservation $reservation,
+        ReservationEmailService $emailService,
+        \App\Services\AvailabilityService $availabilityService,
+        \App\Services\ReservationLifecycle $reservationLifecycle,
+    ): JsonResponse
     {
         $this->authorizeStaffReservation($request, $reservation);
-        $validated = $request->validate(['status' => ['required', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'], 'notes' => ['nullable', 'string', 'max:500']]);
+        $validated = $request->validate(['status' => ['required', 'in:pending,pending_payment,pending_validation,payment_failed,confirmed,checked_in,completed,cancelled'], 'notes' => ['nullable', 'string', 'max:500']]);
+        $reservationLifecycle->assertTransition($reservation, $validated['status'], $availabilityService);
         $changed = $reservation->status !== $validated['status'];
         $reservation->update(['status' => $validated['status'], 'notes' => $validated['notes'] ?? $reservation->notes]);
         if ($changed) {

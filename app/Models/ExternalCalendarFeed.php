@@ -62,6 +62,6 @@ class ExternalCalendarFeed extends Model
             return false;
         }
 
-        return $this->last_successful_sync_at->diffInHours(now()) <= max(12, (int) $this->sync_interval_minutes / 60);
+        return $this->last_successful_sync_at->greaterThanOrEqualTo(now()->subHour());
     }
 }

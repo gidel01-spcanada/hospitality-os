@@ -49,7 +49,7 @@ class AdminCalendarController extends Controller
             'url' => $validated['url'],
             'is_enabled' => $request->boolean('is_enabled'),
             'status' => 'stale',
-            'sync_interval_minutes' => 60,
+            'sync_interval_minutes' => 15,
         ]);
 
         $synced = $feed->is_enabled && $service->sync($feed);
@@ -128,6 +128,15 @@ class AdminCalendarController extends Controller
         $this->authorizeProperty($property);
 
         return $this->buildCalendarResponse($property);
+    }
+
+    public function rotatePublicExportToken(Property $property): RedirectResponse
+    {
+        $this->authorizeProperty($property);
+        $property->update(['calendar_export_token' => Str::random(64)]);
+
+        return redirect()->route('admin.properties.calendar', $property)
+            ->with('success', __('messages.flash.calendar_token_rotated'));
     }
 
     public function publicExport(Property $property, string $token)

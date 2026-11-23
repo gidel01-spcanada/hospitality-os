@@ -70,7 +70,9 @@ class PayLaterGateway implements PaymentGateway
         }
 
         $attempt->status = $status;
-        $attempt->payload = array_merge((array) $attempt->payload, $request->all());
+        $attempt->payload = array_merge((array) $attempt->payload, [
+            'webhook_received_at' => now()->toIso8601String(),
+        ]);
         $attempt->save();
 
         return $attempt;

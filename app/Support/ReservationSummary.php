@@ -103,7 +103,7 @@ class ReservationSummary
             'validating' => number_format(min($validatingMinor, $dueMinor) / 100, 2, '.', ''),
             'refunded' => number_format($reservation->paymentAttempts
                 ->filter(fn ($attempt) => $attempt->status === 'refunded' && $attempt->currency === $reservation->currency && ! data_get($attempt->payload, 'is_guarantee'))
-                ->sum(fn ($attempt) => (int) round((float) $attempt->amount * 100)) / 100, 2, '.', ''),
+                ->sum(fn ($attempt) => (int) round((float) data_get($attempt->payload, 'refund_amount', $attempt->amount) * 100)) / 100, 2, '.', ''),
             'foreign_payments' => $foreignPayments,
             'payment_status' => $paymentStatus,
             'stay_notes' => self::stayNotes($establishment, $locale),

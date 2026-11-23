@@ -114,6 +114,105 @@ class MobileApiTest extends TestCase
         $this->withToken($plainToken)->getJson('/api/v1/me')->assertUnauthorized();
     }
 
+    public function test_mobile_tokens_expire_thirty_days_after_issue(): void
+    {
+        $customer = User::factory()->create([
+            'email' => 'mobile-expiry@example.com',
+            'password' => Hash::make('Password123!'),
+            'role' => 'customer',
+            'is_active' => true,
+        ]);
+        $issuedAt = now()->startOfSecond();
+        $this->travelTo($issuedAt);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $customer->email,
+            'password' => 'Password123!',
+        ])->assertCreated();
+        $expiresAt = $issuedAt->copy()->addDays(30);
+        $token = MobileAccessToken::query()->where('user_id', $customer->id)->firstOrFail();
+
+        $this->assertTrue($token->expires_at->equalTo($expiresAt));
+        $this->travelTo($expiresAt);
+        $this->withToken($login->json('token'))->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_suspended_tenant_staff_cannot_obtain_mobile_tokens(): void
+    {
+        $tenant = Tenant::query()->create([
+            'name' => 'Suspended mobile tenant',
+            'slug' => 'suspended-mobile-login',
+            'status' => 'suspended',
+        ]);
+        $staff = User::factory()->create([
+            'email' => 'suspended-staff@example.com',
+            'password' => Hash::make('Password123!'),
+            'role' => 'concierge',
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $staff->email,
+            'password' => 'Password123!',
+        ])->assertForbidden()
+            ->assertJsonPath('message', 'This workspace has been suspended.');
+
+        $this->assertDatabaseMissing('mobile_access_tokens', ['user_id' => $staff->id]);
+    }
+
+    public function test_existing_staff_token_is_denied_during_suspension_and_works_after_reactivation(): void
+    {
+        $tenant = Tenant::query()->create([
+            'name' => 'Reactivatable mobile tenant',
+            'slug' => 'reactivatable-mobile',
+            'status' => 'active',
+        ]);
+        $staff = User::factory()->create([
+            'email' => 'reactivatable-staff@example.com',
+            'password' => Hash::make('Password123!'),
+            'role' => 'concierge',
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+        $token = $this->tokenFor($staff);
+
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk();
+
+        $tenant->update(['status' => 'suspended']);
+        $this->withToken($token)->getJson('/api/v1/me')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'This workspace has been suspended.');
+
+        $tenant->update(['status' => 'active']);
+        $this->withToken($token)->getJson('/api/v1/me')->assertOk();
+    }
+
+    public function test_platform_admin_can_still_authenticate_while_associated_tenant_is_suspended(): void
+    {
+        $tenant = Tenant::query()->create([
+            'name' => 'Platform admin suspended tenant',
+            'slug' => 'platform-admin-suspended',
+            'status' => 'suspended',
+        ]);
+        $platformAdmin = User::factory()->create([
+            'email' => 'platform-admin-suspended@example.com',
+            'password' => Hash::make('Password123!'),
+            'role' => 'admin',
+            'is_admin' => true,
+            'is_platform_admin' => true,
+            'tenant_id' => $tenant->id,
+            'is_active' => true,
+        ]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $platformAdmin->email,
+            'password' => 'Password123!',
+        ])->assertCreated();
+
+        $this->withToken($login->json('token'))->getJson('/api/v1/me')->assertOk();
+    }
+
     public function test_staff_api_rejects_reservations_from_another_tenant(): void
     {
         $this->seed(DatabaseSeeder::class);

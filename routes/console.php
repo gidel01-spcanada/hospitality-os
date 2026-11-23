@@ -20,7 +20,7 @@ Schedule::call(function () {
         }
         app(CalendarFeedSyncService::class)->sync($feed);
     }
-})->hourly();
+})->everyFifteenMinutes();
 
 Schedule::job(new \App\Jobs\CompletePastReservations())->hourly();
 

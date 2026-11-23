@@ -27,7 +27,8 @@ class ReceiptController extends Controller
             'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
         ]);
 
-        $attempt = $reservation->paymentAttempts()->whereIn('provider', ['interac', 'wise', 'revolut'])->latest()->first();
+        $attempt = $reservation->paymentAttempts()->whereIn('provider', ['interac', 'wise', 'revolut'])
+            ->where('status', '!=', 'rejected')->latest('id')->first();
         if ($attempt) {
             $attempt->update([
                 'provider_reference' => $validated['provider_reference'] ?: $attempt->provider_reference,
@@ -41,7 +42,7 @@ class ReceiptController extends Controller
                 'currency' => $reservation->currency,
                 'amount' => $reservation->total_amount,
                 'status' => 'paid',
-                'idempotency_key' => 'offline-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'idempotency_key' => 'offline-' . $reservation->id . '-' . Str::lower(Str::random(24)),
                 'payload' => ['confirmed_by' => auth()->id()],
             ]);
         }

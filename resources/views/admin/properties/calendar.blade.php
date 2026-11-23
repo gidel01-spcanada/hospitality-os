@@ -12,6 +12,19 @@
         @if (session('success'))
             <div class="reservation-success">{{ session('success') }}</div>
         @endif
+        @if (session('error'))
+            <div class="form-alert form-alert-error">{{ session('error') }}</div>
+        @endif
+
+        <div class="admin-panel">
+            <h2>{{ __('messages.admin.export_calendar') }}</h2>
+            <p>{{ __('messages.admin.calendar_token_instructions') }}</p>
+            <p><code>{{ route('calendar.public-export', [$property, 'token' => $property->calendar_export_token]) }}</code></p>
+            <form method="POST" action="{{ route('admin.properties.calendar.rotate-token', $property) }}">
+                @csrf
+                <button class="btn btn-ghost" type="submit">{{ __('messages.admin.rotate_calendar_token') }}</button>
+            </form>
+        </div>
 
         <div class="admin-two-column">
             <div class="admin-panel">

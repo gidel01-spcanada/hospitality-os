@@ -30,7 +30,7 @@ class CheckoutController extends Controller
         }
 
         $token = $this->authorizeCheckout($request, $reservation);
-        $reservation->load(['property.establishment.translations', 'property.translations', 'property.images' => fn ($query) => $query->orderBy('sort_order'), 'guest', 'paymentAttempts', 'priceLines']);
+        $reservation->load(['property.establishment.translations', 'property.translations', 'property.images' => fn ($query) => $query->orderBy('sort_order'), 'guest', 'paymentAttempts' => fn ($query) => $query->orderBy('id'), 'priceLines']);
         $customer = $reservation->user ?: User::query()->where('email', strtolower((string) $reservation->email))->first();
         $accountActivationRequired = $reservation->account_setup_deferred && $customer && ! $customer->email_verified_at;
         $requiresIdentitySetup = ! $request->user()?->canManageReservations()
@@ -248,7 +248,8 @@ class CheckoutController extends Controller
     public function complete(Request $request, Reservation $reservation, PaymentGatewayManager $manager, ReservationEmailService $emailService): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
-        $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
+        $attempt = $reservation->paymentAttempts()->latest('id')->firstOrFail();
+        abort_if($attempt->status === 'rejected', 409, __('messages.receipts.proof_rejection_unavailable'));
         // Payment confirmation is handled via PayPal, an offline transfer verified by staff, or admin-confirmed receipts; guests cannot self-confirm outside dev.
         abort_unless(app()->environment(['local', 'testing']) || $request->user()?->canManageReservations(), 403, __('messages.checkout.simulate_unavailable'));
         $gateway = $manager->resolve($attempt->provider, $attempt->payload['mode'] ?? 'sandbox');
@@ -286,7 +287,12 @@ class CheckoutController extends Controller
         $paymentMethods = $this->paymentMethods($reservation);
         abort_unless(isset($paymentMethods[$validated['provider']]), 422, __('messages.checkout.offline_proof_unavailable'));
 
-        $attempt = $reservation->paymentAttempts()->where('provider', $validated['provider'])->latest()->first();
+        $attempt = $reservation->paymentAttempts()->where('provider', $validated['provider'])->latest('id')->first();
+        abort_if($attempt && in_array($attempt->status, ['awaiting_validation', 'pending_validation'], true)
+            && data_get($attempt->payload, 'payment_proof.path'), 409, __('messages.checkout.offline_proof_unavailable'));
+        if ($attempt && in_array($attempt->status, ['rejected', 'paid', 'completed', 'refunded'], true)) {
+            $attempt = null;
+        }
         if (! $attempt) {
             $attempt = $reservation->paymentAttempts()->create([
                 'provider' => $validated['provider'],
@@ -294,7 +300,7 @@ class CheckoutController extends Controller
                 'currency' => $reservation->currency,
                 'amount' => $reservation->total_amount,
                 'status' => 'awaiting_validation',
-                'idempotency_key' => $validated['provider'] . '-' . $reservation->id . '-' . now()->format('YmdHis'),
+                'idempotency_key' => $validated['provider'] . '-' . $reservation->id . '-' . Str::lower(Str::random(24)),
                 'payload' => [],
             ]);
         }
@@ -362,6 +368,11 @@ class CheckoutController extends Controller
             if ($reservation->status === 'confirmed') {
                 return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
             }
+        }
+
+        if ($attempt->status === 'pending_validation' && in_array($reservation->status, self::PAYABLE_STATUSES, true)) {
+            $reservation->update(['status' => 'pending_validation']);
+            $emailService->queueStatusUpdate($reservation->fresh(), 'pending_validation');
         }
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('error', 'Payment is awaiting confirmation.');
@@ -464,6 +475,14 @@ class CheckoutController extends Controller
             ]);
         }
 
+        if ($attempt->status === 'pending_validation' && in_array($reservation->status, self::PAYABLE_STATUSES, true)) {
+            $statusChanged = $reservation->status !== 'pending_validation';
+            $reservation->update(['status' => 'pending_validation']);
+            if ($statusChanged) {
+                $emailService->queueStatusUpdate($reservation->fresh(), 'pending_validation');
+            }
+        }
+
         return response()->json(['status' => 'PENDING', 'message' => 'Payment awaiting confirmation.'], 400);
     }
 
@@ -483,8 +502,28 @@ class CheckoutController extends Controller
         $attempt = $manager->resolve($provider, $mode)->handleWebhook($request);
 
         if ($attempt && $attempt->reservation) {
-            if (in_array($attempt->status, ['paid', 'completed'], true)) {
-                $this->confirmPaidReservation($attempt->reservation, $attempt, $emailService);
+            if (in_array($attempt->status, ['paid', 'completed'], true) && $this->webhookIndicatesPayment($request, $provider)) {
+                [$callbackAmount, $callbackCurrency] = $this->webhookPaymentDetails($request, $provider);
+                if (! $this->webhookPaymentMatchesAttempt($callbackAmount, $callbackCurrency, $attempt)) {
+                    $attempt->update([
+                        'status' => 'pending_validation',
+                        'payload' => array_merge((array) $attempt->payload, [
+                            'review_required_reason' => 'amount_currency_mismatch',
+                            'callback_amount' => $this->safeCallbackAmount($callbackAmount),
+                            'callback_currency' => $this->safeCallbackCurrency($callbackCurrency),
+                        ]),
+                    ]);
+
+                    if (! in_array($attempt->reservation->status, ['cancelled', 'confirmed', 'checked_in', 'completed'], true)) {
+                        $statusChanged = $attempt->reservation->status !== 'pending_validation';
+                        $attempt->reservation->update(['status' => 'pending_validation']);
+                        if ($statusChanged) {
+                            $emailService->queueStatusUpdate($attempt->reservation->fresh(), 'pending_validation');
+                        }
+                    }
+                } else {
+                    $this->confirmPaidReservation($attempt->reservation, $attempt, $emailService);
+                }
             } elseif (in_array($attempt->status, ['failed', 'cancelled'], true)) {
                 if ($this->markReservationPaymentFailed($attempt->reservation)) {
                     $emailService->queueStatusUpdate($attempt->reservation->fresh(), 'payment_failed');
@@ -493,6 +532,99 @@ class CheckoutController extends Controller
         }
 
         return response()->json(['ok' => true, 'provider' => $provider, 'status' => $attempt?->status ?? 'ignored']);
+    }
+
+    private function webhookIndicatesPayment(Request $request, string $provider): bool
+    {
+        if ($provider === 'paypal') {
+            return data_get($request->json()->all(), 'event_type') === 'PAYMENT.CAPTURE.COMPLETED';
+        }
+
+        if ($provider === 'mpesa') {
+            return (int) data_get($request->all(), 'Body.stkCallback.ResultCode', -1) === 0;
+        }
+
+        $status = data_get($request->all(), 'status', data_get($request->all(), 'transaction.status'));
+
+        return in_array($status, ['paid', 'completed', 'approved'], true);
+    }
+
+    private function webhookPaymentDetails(Request $request, string $provider): array
+    {
+        if ($provider === 'paypal') {
+            return [
+                data_get($request->json()->all(), 'resource.amount.value'),
+                data_get($request->json()->all(), 'resource.amount.currency_code'),
+            ];
+        }
+
+        if ($provider === 'mpesa') {
+            $items = data_get($request->all(), 'Body.stkCallback.CallbackMetadata.Item', []);
+            $amount = collect($items)->firstWhere('Name', 'Amount')['Value'] ?? null;
+
+            return [$amount, is_numeric($amount) ? 'KES' : null];
+        }
+
+        $payload = $request->all();
+
+        return [
+            data_get($payload, 'amount', data_get($payload, 'resource.amount.value')),
+            data_get($payload, 'currency', data_get($payload, 'currency_code', data_get($payload, 'resource.amount.currency_code'))),
+        ];
+    }
+
+    private function safeCallbackAmount(mixed $amount): ?string
+    {
+        if (! is_scalar($amount)) {
+            return null;
+        }
+
+        $value = trim((string) $amount);
+
+        return preg_match('/^\d{1,12}(?:\.\d{1,2})?$/D', $value) ? $value : null;
+    }
+
+    private function safeCallbackCurrency(mixed $currency): ?string
+    {
+        if (! is_string($currency)) {
+            return null;
+        }
+
+        $value = strtoupper(trim($currency));
+
+        return preg_match('/^[A-Z]{3}$/D', $value) ? $value : null;
+    }
+
+    private function webhookPaymentMatchesAttempt(mixed $receivedAmount, mixed $receivedCurrency, \App\Models\PaymentAttempt $attempt): bool
+    {
+        if (! is_scalar($receivedAmount) || ! is_string($receivedCurrency)) {
+            return false;
+        }
+
+        $normalizeAmount = static function (mixed $amount): ?string {
+            if (! is_scalar($amount)) {
+                return null;
+            }
+
+            $value = trim((string) $amount);
+            if (! preg_match('/^\d+(?:\.\d{1,2})?$/D', $value)) {
+                return null;
+            }
+
+            [$whole, $fraction] = array_pad(explode('.', $value, 2), 2, '');
+            $whole = ltrim($whole, '0') ?: '0';
+            $fraction = rtrim($fraction, '0');
+
+            return $whole . ($fraction === '' ? '' : '.' . $fraction);
+        };
+
+        $expectedAmount = $normalizeAmount($attempt->amount);
+        $actualAmount = $normalizeAmount($receivedAmount);
+
+        return $expectedAmount !== null
+            && $actualAmount !== null
+            && $expectedAmount === $actualAmount
+            && strtoupper(trim($receivedCurrency)) === strtoupper((string) $attempt->currency);
     }
 
     private function canAccessCheckout(Request $request, Reservation $reservation): bool

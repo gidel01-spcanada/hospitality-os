@@ -1,5 +1,5 @@
 @php
-    $hasProof = (bool) data_get($providerAttempt?->payload, 'payment_proof.path');
+    $hasProof = $providerAttempt?->status !== 'rejected' && (bool) data_get($providerAttempt?->payload, 'payment_proof.path');
 @endphp
 
 @if ($provider === 'paypal')

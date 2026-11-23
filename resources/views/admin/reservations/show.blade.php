@@ -9,7 +9,7 @@
     $dateTime = fn ($value) => $value ? \Illuminate\Support\Carbon::parse($value)->locale($locale)->translatedFormat('d M Y · H:i') : '—';
     $statusTones = ['pending' => 'warning', 'pending_payment' => 'warning', 'pending_validation' => 'info', 'payment_failed' => 'error', 'confirmed' => 'success', 'checked_in' => 'success', 'completed' => 'neutral', 'cancelled' => 'error'];
     $paymentTones = ['paid' => 'success', 'confirmed' => 'success', 'partial' => 'warning', 'pending' => 'warning', 'pending_validation' => 'info', 'failed' => 'error', 'cancelled' => 'neutral', 'not_required' => 'neutral', 'unreconciled' => 'info'];
-    $statuses = ['pending', 'pending_payment', 'pending_validation', 'confirmed', 'checked_in', 'completed', 'cancelled'];
+    $statuses = ['pending', 'pending_payment', 'pending_validation', 'payment_failed', 'confirmed', 'checked_in', 'completed', 'cancelled'];
     $establishment = $reservation->property?->establishment;
     $authUser = auth()->user();
     $canOpenEstablishment = $establishment && $authUser->isEstablishmentManager() && $authUser->managesEstablishment($establishment->id);
@@ -19,7 +19,7 @@
     $remaining = $validating !== null ? number_format(max(0, (float) $summary['due'] - (float) $validating), 2, '.', '') : $summary['due'];
     $pendingValidation = $payments->where('needs_validation', true);
     $refundRequired = $reservation->status !== 'cancelled' && $reservation->paymentAttempts
-        ->filter(fn ($attempt) => in_array($attempt->status, ['paid', 'completed'], true) && in_array($attempt->provider, \App\Services\PaymentProofService::REFUND_PROOF_PROVIDERS, true) && ! data_get($attempt->payload, 'is_guarantee'))
+        ->filter(fn ($attempt) => in_array($attempt->status, ['paid', 'completed'], true) && in_array($attempt->provider, \App\Services\PaymentProofService::MANUAL_REFUND_PROVIDERS, true) && ! data_get($attempt->payload, 'is_guarantee'))
         ->isNotEmpty();
     $customerName = $summary['guest_name'];
     $customerAccount = $reservation->user;
@@ -282,6 +282,17 @@
                                 @csrf
                                 <button type="submit" class="btn btn-primary" data-confirm-message="{{ __('messages.admin.rsv_validate_confirm') }}">{{ __('messages.admin.rsv_validate_payment') }}</button>
                             </form>
+                            @if ($reservation->status === 'pending_validation' && in_array($attempt->provider, \App\Services\PaymentProofService::REFUND_PROOF_PROVIDERS, true))
+                                <form action="{{ route('admin.reservations.payment-proof.reject', ['reservation' => $reservation, 'attempt' => $attempt]) }}" method="POST" class="rsv-reference-form" data-reject-payment-proof>
+                                    @csrf
+                                    <label for="rejection_reason_{{ $attempt->id }}">{{ __('messages.receipts.proof_rejection_reason') }}</label>
+                                    <textarea id="rejection_reason_{{ $attempt->id }}" name="reason" rows="3" maxlength="1000" required>{{ old('reason') }}</textarea>
+                                    <button type="submit" class="btn btn-danger btn-small">{{ __('messages.receipts.reject_proof') }}</button>
+                                </form>
+                            @endif
+                        @endif
+                        @if ($attempt->status === 'rejected' && data_get($attempt->payload, 'proof_rejection.reason'))
+                            <p class="rsv-muted"><strong>{{ __('messages.receipts.proof_rejection_reason') }}:</strong> {{ data_get($attempt->payload, 'proof_rejection.reason') }}</p>
                         @endif
 
                         @if (! $payment['is_guarantee'] && in_array($attempt->status, ['paid', 'completed', 'awaiting_validation', 'pending_validation', 'refunded'], true))

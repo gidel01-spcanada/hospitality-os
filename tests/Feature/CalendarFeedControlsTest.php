@@ -350,6 +350,64 @@ class CalendarFeedControlsTest extends TestCase
         $this->get('/calendar/' . $property->slug . '/invalid-token.ics')->assertNotFound();
     }
 
+    public function test_admin_can_rotate_public_calendar_token_and_invalidate_previous_url(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::firstOrFail();
+        $oldToken = $property->calendar_export_token;
+        $oldUrl = route('calendar.public-export', [$property, 'token' => $oldToken]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.properties.calendar', $property))
+            ->assertOk()
+            ->assertSee(__('messages.admin.calendar_token_instructions'))
+            ->assertSee($oldUrl);
+
+        $this->actingAs($admin)
+            ->post(route('admin.properties.calendar.rotate-token', $property))
+            ->assertRedirect(route('admin.properties.calendar', $property))
+            ->assertSessionHas('success', __('messages.flash.calendar_token_rotated'));
+
+        $newToken = $property->fresh()->calendar_export_token;
+        $this->assertNotSame($oldToken, $newToken);
+        $this->get($oldUrl)->assertNotFound();
+        $this->get(route('calendar.public-export', [$property, 'token' => $newToken]))->assertOk();
+    }
+
+    public function test_enabled_stale_calendar_feed_blocks_booking_until_fresh_sync(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::firstOrFail();
+        $feed = $property->calendarFeeds()->create([
+            'name' => 'Stale feed',
+            'provider' => 'other',
+            'url' => 'https://example.com/stale.ics',
+            'is_enabled' => true,
+            'sync_interval_minutes' => 15,
+            'last_successful_sync_at' => now()->subMinutes(61),
+            'status' => 'stale',
+        ]);
+        $checkIn = Carbon::parse('2030-01-10');
+        $checkOut = Carbon::parse('2030-01-12');
+        $availability = app(AvailabilityService::class);
+
+        $this->assertFalse($feed->fresh()->isFresh());
+        $this->assertFalse($availability->isAvailable($property, $checkIn, $checkOut));
+
+        $feed->update(['last_successful_sync_at' => now(), 'status' => 'fresh']);
+        $this->assertTrue($feed->fresh()->isFresh());
+        $this->assertTrue($availability->isAvailable($property, $checkIn, $checkOut));
+
+        $feed->events()->create([
+            'uid' => 'fresh-feed-conflict',
+            'summary' => 'Booked externally',
+            'start_date' => '2030-01-10',
+            'end_date' => '2030-01-12',
+        ]);
+        $this->assertFalse($availability->isAvailable($property, $checkIn, $checkOut));
+    }
+
     public function test_customer_cannot_access_calendar_admin_routes(): void
     {
         $this->seed(DatabaseSeeder::class);

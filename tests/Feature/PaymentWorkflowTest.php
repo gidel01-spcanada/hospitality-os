@@ -325,6 +325,8 @@ class PaymentWorkflowTest extends TestCase
         $webhookPayload = [
             'provider_reference' => $attempt->provider_reference,
             'status' => 'paid',
+            'amount' => $attempt->amount,
+            'currency' => $attempt->currency,
         ];
         $webhookBody = json_encode($webhookPayload, JSON_THROW_ON_ERROR);
 
@@ -381,6 +383,120 @@ class PaymentWorkflowTest extends TestCase
         ], $unknownStatusBody)->assertOk();
 
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'status' => 'paid']);
+    }
+
+    public function test_paid_webhook_with_mismatched_amount_or_currency_requires_staff_review(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'Callback guest', 'email' => 'callback@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-CALLBACK-MISMATCH',
+            'status' => 'pending_payment',
+            'check_in' => now()->addDays(30)->toDateString(),
+            'check_out' => now()->addDays(32)->toDateString(),
+            'adults' => 1,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'total_amount' => 50000,
+        ]);
+        $attempt = $reservation->paymentAttempts()->create([
+            'provider' => 'pay_later',
+            'provider_reference' => 'callback-mismatch-ref',
+            'currency' => 'XOF',
+            'amount' => 50000,
+            'status' => 'created',
+            'idempotency_key' => 'callback-mismatch-idempotency',
+            'payload' => [],
+        ]);
+        $body = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+            'amount' => 49999,
+            'currency' => 'XOF',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $body, config('services.payments.webhook_secret')),
+        ], $body)->assertOk()->assertJsonPath('status', 'pending_validation');
+
+        $this->assertSame('pending_validation', $reservation->fresh()->status);
+        $this->assertSame('pending_validation', $attempt->fresh()->status);
+        $this->assertSame('amount_currency_mismatch', data_get($attempt->fresh()->payload, 'review_required_reason'));
+        $this->assertDatabaseMissing('receipts', ['reservation_id' => $reservation->id]);
+
+        $currencyMismatchBody = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+            'amount' => 50000,
+            'currency' => 'EUR',
+        ], JSON_THROW_ON_ERROR);
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $currencyMismatchBody, config('services.payments.webhook_secret')),
+        ], $currencyMismatchBody)->assertOk()->assertJsonPath('status', 'pending_validation');
+        $this->assertSame('EUR', data_get($attempt->fresh()->payload, 'callback_currency'));
+    }
+
+    public function test_reopening_cancelled_reservation_checks_availability_and_rejects_invalid_transitions(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $dates = [
+            'check_in' => now()->addDays(40)->toDateString(),
+            'check_out' => now()->addDays(42)->toDateString(),
+        ];
+        Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-REOPEN-CONFLICT',
+            'status' => 'confirmed',
+            ...$dates,
+            'email' => 'conflict@example.com',
+        ]);
+        $cancelled = Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-REOPEN-CANCELLED',
+            'status' => 'cancelled',
+            ...$dates,
+            'email' => 'reopen@example.com',
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('admin.reservations.show', $cancelled))
+            ->patch(route('admin.reservations.update-status', $cancelled), ['status' => 'confirmed'])
+            ->assertSessionHasErrors('status');
+        $this->assertSame('cancelled', $cancelled->fresh()->status);
+
+        $completed = Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-INVALID-TRANSITION',
+            'status' => 'completed',
+            'check_in' => now()->addDays(45)->toDateString(),
+            'check_out' => now()->addDays(47)->toDateString(),
+            'email' => 'completed@example.com',
+        ]);
+        $this->actingAs($admin)
+            ->from(route('admin.reservations.show', $completed))
+            ->patch(route('admin.reservations.update-status', $completed), ['status' => 'pending_payment'])
+            ->assertSessionHasErrors('status');
+        $this->assertSame('completed', $completed->fresh()->status);
+
+        $reopenable = Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-REOPEN-AVAILABLE',
+            'status' => 'cancelled',
+            'check_in' => now()->addDays(50)->toDateString(),
+            'check_out' => now()->addDays(52)->toDateString(),
+            'email' => 'available@example.com',
+        ]);
+        $this->actingAs($admin)
+            ->patch(route('admin.reservations.update-status', $reopenable), ['status' => 'confirmed'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('confirmed', $reopenable->fresh()->status);
     }
 
     public function test_customer_cannot_simulate_offline_payment_verification_outside_dev_environment(): void
@@ -820,7 +936,12 @@ class PaymentWorkflowTest extends TestCase
             'status' => 'created',
             'idempotency_key' => 'late-paid-reference',
         ]);
-        $body = json_encode(['provider_reference' => $attempt->provider_reference, 'status' => 'paid'], JSON_THROW_ON_ERROR);
+        $body = json_encode([
+            'provider_reference' => $attempt->provider_reference,
+            'status' => 'paid',
+            'amount' => $attempt->amount,
+            'currency' => $attempt->currency,
+        ], JSON_THROW_ON_ERROR);
 
         $this->call('POST', '/webhooks/pay_later', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -1064,5 +1185,47 @@ class PaymentWorkflowTest extends TestCase
             $payload['reservation_summary'] = $summary;
             $this->assertStringContainsString('data-email-refunded', view('emails.reservation-status-updated', $payload)->render());
         }
+    }
+
+    public function test_cancellation_records_the_cutoff_fee_and_net_manual_refund_amount(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $admin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $establishment = $property->establishment;
+        $establishment->update(['cancellation_fee_percent' => 20, 'cancellation_fee_days' => 7]);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-CANCEL-FEE',
+            'status' => 'confirmed',
+            'check_in' => now()->addDays(3)->toDateString(),
+            'check_out' => now()->addDays(5)->toDateString(),
+            'adults' => 1,
+            'currency' => 'XOF',
+            'email' => 'cancellation-fee@example.com',
+            'subtotal' => 50000,
+            'total_amount' => 50000,
+        ]);
+        $attempt = $reservation->paymentAttempts()->create([
+            'provider' => 'wise',
+            'provider_reference' => 'wise-cancel-fee',
+            'currency' => 'XOF',
+            'amount' => 50000,
+            'status' => 'paid',
+            'idempotency_key' => 'wise-cancel-fee',
+            'payload' => [],
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.reservations.update-status', $reservation), [
+            'status' => 'cancelled',
+            'refund_proof' => UploadedFile::fake()->create('refund.pdf', 10, 'application/pdf'),
+            'refund_reference' => 'REFUND-NET-40000',
+        ])->assertRedirect(route('admin.reservations.show', $reservation))->assertSessionHasNoErrors();
+
+        $payload = $attempt->fresh()->payload;
+        $this->assertSame('40000.00', data_get($payload, 'refund_amount'));
+        $this->assertSame('10000.00', data_get($payload, 'cancellation_fee_amount'));
+        $this->assertSame('XOF', data_get($payload, 'refund_currency'));
+        $this->assertSame('40000.00', \App\Support\ReservationSummary::make($reservation->fresh())['refunded']);
     }
 }

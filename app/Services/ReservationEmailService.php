@@ -107,6 +107,29 @@ class ReservationEmailService
     }
 
 
+    public function queueProofRejected(Reservation $reservation, string $reason): void
+    {
+        $locale = $reservation->locale ?: config('app.locale');
+        $previousLocale = app()->getLocale();
+        app()->setLocale($locale);
+        $subject = __('messages.receipts.proof_rejected_subject', ['reference' => $reservation->reservation_ref]);
+        app()->setLocale($previousLocale);
+
+        EmailOutbox::query()->create([
+            'template' => 'payment_proof_rejected',
+            'recipient_email' => $reservation->email,
+            'status' => 'queued',
+            'payload' => [
+                'locale' => $locale,
+                'reservation_id' => $reservation->id,
+                'reservation_ref' => $reservation->reservation_ref,
+                'reason' => $reason,
+                'subject' => $subject,
+                'checkout_url' => $this->localizedUrl(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $locale),
+            ],
+        ]);
+    }
+
     public function queuePaymentLink(Reservation $reservation): void
     {
         $reservation->loadMissing('priceLines');

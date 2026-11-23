@@ -43,6 +43,8 @@ For PayPal production webhooks, set `PAYPAL_WEBHOOK_ID`; the application verifie
 
 M-Pesa uses Daraja STK Push for KES payments. Configure `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, and `MPESA_PASSKEY`, then register `https://your-domain.example/webhooks/mpesa` as the callback URL. The application records the Daraja checkout request ID and processes only callbacks for a known payment attempt.
 
+For an offline payment proof awaiting validation, reservation staff can reject it from the reservation page with a required reason. The guest is emailed the reason and can submit a replacement while the original 48-hour hold (measured from reservation creation) remains valid; rejection does not extend it. Rejected proofs remain in the payment history. Refunds are performed manually in the provider dashboard, with applicable refund proof and reference recorded in the existing cancellation workflow.
+
 Set only the values for providers you have contracted and intend to enable:
 
 ```env

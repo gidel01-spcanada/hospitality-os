@@ -67,7 +67,7 @@ class MpesaLiveGateway implements PaymentGateway
     }
             'status' => 'pending',
             'idempotency_key' => $context['idempotency_key'] ?? Str::uuid()->toString(),
-            'payload' => ['mode' => 'production', 'merchant_request_id' => $payload['MerchantRequestID'] ?? null, 'phone' => $phone],
+            'payload' => ['mode' => 'production', 'merchant_request_id' => $payload['MerchantRequestID'] ?? null],
         ]);
     }
 
@@ -86,7 +86,12 @@ class MpesaLiveGateway implements PaymentGateway
         $payload = $response->json();
         $resultCode = (int) ($payload['ResultCode'] ?? -1);
         $status = $resultCode === 0 ? 'paid' : (in_array($resultCode, [1032, 1037], true) ? 'cancelled' : 'pending');
-        $attempt->update(['status' => $status, 'payload' => array_merge((array) $attempt->payload, ['query_response' => $payload])]);
+        $attempt->update([
+            'status' => $status,
+            'payload' => array_merge((array) $attempt->payload, [
+                'provider_result_code' => $payload['ResultCode'] ?? null,
+            ]),
+        ]);
 
         return $attempt->fresh();
     }
@@ -100,7 +105,14 @@ class MpesaLiveGateway implements PaymentGateway
             return null;
         }
 
-        $attempt->update(['payload' => array_merge((array) $attempt->payload, ['callback' => $callback])]);
+        $items = data_get($callback, 'CallbackMetadata.Item', []);
+        $amount = collect($items)->firstWhere('Name', 'Amount')['Value'] ?? null;
+        $attempt->update([
+            'payload' => array_merge((array) $attempt->payload, array_filter([
+                'callback_amount' => is_numeric($amount) ? (string) $amount : null,
+                'callback_currency' => is_numeric($amount) ? 'KES' : null,
+            ], static fn ($value) => $value !== null)),
+        ]);
 
         return $this->verifyStatus($attempt->fresh());
     }

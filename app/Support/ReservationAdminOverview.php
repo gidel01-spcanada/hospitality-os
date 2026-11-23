@@ -232,7 +232,7 @@ class ReservationAdminOverview
         return match ($status) {
             'paid', 'completed', 'verified' => 'success',
             'awaiting_validation', 'pending_validation', 'authorized', 'pending', 'created', 'processing' => 'warning',
-            'failed', 'cancelled' => 'error',
+            'failed', 'cancelled', 'rejected' => 'error',
             'refunded' => 'info',
             default => 'neutral',
         };
