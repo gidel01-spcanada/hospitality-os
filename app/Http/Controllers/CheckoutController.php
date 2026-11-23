@@ -340,6 +340,15 @@ class CheckoutController extends Controller
                 : __('messages.checkout.cancelled'));
     }
 
+    public function providerCancel(Request $request, Reservation $reservation, string $provider): RedirectResponse
+    {
+        abort_unless(in_array($provider, ['paypal', 'fedapay', 'cinetpay', 'mpesa'], true), 404);
+        $token = $this->authorizeCheckout($request, $reservation);
+
+        return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])
+            ->with('status', __('messages.checkout.payment_cancelled'));
+    }
+
     public function return(Request $request, Reservation $reservation, string $provider, PaymentGatewayManager $manager, ReservationEmailService $emailService): RedirectResponse
     {
         $token = $this->authorizeCheckout($request, $reservation);
@@ -385,7 +394,7 @@ class CheckoutController extends Controller
             'amount' => $amount,
             'currency' => $paypalCurrency,
             'return_url' => route('checkout.return', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
-            'cancel_url' => route('checkout.cancel', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
+            'cancel_url' => route('checkout.provider-cancel', ['reservation' => $reservation, 'provider' => 'paypal', 'token' => $token]),
         ]);
 
         $reservation->update(['status' => 'pending_payment']);

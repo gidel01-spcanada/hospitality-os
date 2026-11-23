@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Exceptions\InvalidBookingReviewDate;
 use App\Models\Establishment;
 use Illuminate\Console\Command;
 
@@ -30,7 +31,13 @@ class ImportBookingReviews extends Command
         }
         $tenantId = Establishment::query()->value('tenant_id');
         $dryRun = (bool) $this->option('dry-run');
-        $result = app(\App\Services\ReviewImportService::class)->importBookingCsv($csv, $tenantId, null, $dryRun);
+        try {
+            $result = app(\App\Services\ReviewImportService::class)->importBookingCsv($csv, $tenantId, null, $dryRun);
+        } catch (InvalidBookingReviewDate $exception) {
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
 
         $this->info(($dryRun ? 'Dry run complete.' : 'Import complete.') . " Inserted: {$result['inserted']}; updated: {$result['updated']}; skipped: {$result['skipped']}.");
 

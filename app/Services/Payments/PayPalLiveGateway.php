@@ -35,6 +35,10 @@ class PayPalLiveGateway implements PaymentGateway
                     'reference_id' => $reservation->reservation_ref,
                     'amount' => ['currency_code' => $paypalCurrency, 'value' => number_format($paypalAmount, 2, '.', '')],
                 ]],
+                'application_context' => array_filter([
+                    'return_url' => $context['return_url'] ?? null,
+                    'cancel_url' => $context['cancel_url'] ?? null,
+                ]),
             ]);
         $response->throw();
         $order = $response->json();

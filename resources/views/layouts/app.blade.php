@@ -94,6 +94,15 @@
             <div class="container portal-workspace">
                 @include('partials.portal-navigation')
                 <main id="main-content" class="portal-main" tabindex="-1">
+                    @if ($errors->any())
+                        <div class="alert error" id="validation-errors" role="alert" aria-live="assertive">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     @if ($message = session('success') ?? session('status'))
                         <div class="alert success" role="status" aria-live="polite">{{ $message }}</div>
                     @endif
@@ -177,6 +186,27 @@
         @endauth
 
         <main id="main-content" tabindex="-1">
+            @if ($errors->any())
+                <div class="container section" role="alert" aria-live="assertive">
+                    <div class="alert error" id="validation-errors">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
+            @if ($message = session('success') ?? session('status'))
+                <div class="container section">
+                    <div class="alert success" role="status" aria-live="polite">{{ $message }}</div>
+                </div>
+            @endif
+            @if ($message = session('error'))
+                <div class="container section">
+                    <div class="alert error" role="alert" aria-live="assertive">{{ $message }}</div>
+                </div>
+            @endif
             @yield('content')
         </main>
         @endif

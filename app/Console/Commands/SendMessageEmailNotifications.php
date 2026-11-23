@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Reservation;
 use App\Support\ReservationSummary;
+use App\Support\BrandSettings;
 
 class SendMessageEmailNotifications extends Command
 {
@@ -31,8 +32,15 @@ class SendMessageEmailNotifications extends Command
                 app()->setLocale($locale);
 
                 $payload = $notification->payload ?? [];
+                $sender = [];
+                if (isset($payload['reservation_id'])) {
+                    $reservation = Reservation::query()->with('property.establishment')->find($payload['reservation_id']);
+                    if ($reservation && ($notification->template === 'payment_proof_submitted'
+                        || strtolower((string) $reservation->email) === strtolower($notification->recipient_email))) {
+                        $sender = BrandSettings::configuredForTenant($reservation->property?->establishment?->tenant_id, ['email_sender_email', 'email_sender_name']);
+                    }
+                }
                 if (isset($payload['reservation_summary'], $payload['reservation_id'])) {
-                    $reservation = Reservation::query()->find($payload['reservation_id']);
                     if ($reservation && strtolower((string) $reservation->email) === strtolower($notification->recipient_email)) {
                         $payload['reservation_summary'] = ReservationSummary::make($reservation, $locale);
                         $payload['property_name'] = $payload['reservation_summary']['property']['name'];
@@ -45,7 +53,7 @@ class SendMessageEmailNotifications extends Command
                 }
 
                 // Mail::send() overwrites the `$message` view variable with the mail object.
-                if (isset($payload['message']) && is_string($payload['message'])) {
+                if (! isset($payload['message_body']) && isset($payload['message']) && is_string($payload['message'])) {
                     $payload['message_body'] = $payload['message'];
                 }
 
@@ -59,9 +67,15 @@ class SendMessageEmailNotifications extends Command
                     default => 'emails.message-received',
                 };
 
-                Mail::send($view, $payload, function ($mail) use ($notification): void {
+                Mail::send($view, $payload, function ($mail) use ($notification, $sender): void {
                     $mail->to($notification->recipient_email)
                         ->subject($notification->payload['subject'] ?? __('messages.messages.email_subject'));
+                    if (! empty($sender['email_sender_email']) || ! empty($sender['email_sender_name'])) {
+                        $mail->from(
+                            ($sender['email_sender_email'] ?? null) ?: config('mail.from.address'),
+                            ($sender['email_sender_name'] ?? null) ?: config('mail.from.name')
+                        );
+                    }
                 });
 
                 app()->setLocale($previousLocale);

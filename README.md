@@ -98,6 +98,8 @@ Reservation lifecycle automation is available with `php artisan reservations:com
 
 Google review imports can be synchronized manually with `php artisan reviews:sync-google` or for one establishment with `php artisan reviews:sync-google --establishment=12`. Each establishment can configure a CSV/JSON source URL in its Reviews tab; the Laravel scheduler checks configured sources every six hours and records the last success or error.
 
+Booking.com CSV imports match existing reviews by tenant, establishment, property, reviewer name, and review timestamp. Re-importing updates the matched review; reviews with identical matching fields cannot be distinguished without a source identifier. An invalid date rejects the entire import, including from `reviews:import-booking-csv` and its `--dry-run` mode; the error identifies the CSV record to correct.
+
 This single cron entry drives every scheduled task above (email queue, past-reservation completion, calendar feed sync, Google review sync). On Bluehost (or any host), add exactly one cron line running every minute:
 
 ```cron

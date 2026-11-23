@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
 use App\Support\CalendarFeedUrl;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class CalendarFeedSyncService
@@ -41,34 +43,36 @@ class CalendarFeedSyncService
                 throw new RuntimeException('Calendar feed contains no valid events; existing dates were retained.');
             }
 
-            $eventUids = collect($events)->pluck('uid')->all();
-            if ($eventUids === []) {
-                $feed->events()->delete();
-            } else {
+            DB::transaction(function () use ($feed, $events): void {
+                $eventUids = collect($events)->pluck('uid')->all();
                 $feed->events()->whereNotIn('uid', $eventUids)->delete();
-            }
 
-            foreach ($events as $event) {
-                ExternalCalendarEvent::query()->updateOrCreate(
-                    ['feed_id' => $feed->id, 'uid' => $event['uid']],
-                    [
-                        'summary' => $event['summary'],
-                        'start_date' => $event['start_date'],
-                        'end_date' => $event['end_date'],
-                    ]
-                );
-            }
+                foreach ($events as $event) {
+                    ExternalCalendarEvent::query()->updateOrCreate(
+                        ['feed_id' => $feed->id, 'uid' => $event['uid']],
+                        [
+                            'summary' => $event['summary'],
+                            'start_date' => $event['start_date'],
+                            'end_date' => $event['end_date'],
+                        ]
+                    );
+                }
 
-            $feed->update([
-                'last_successful_sync_at' => now(),
-                'last_sync_error' => null,
-                'status' => 'fresh',
-            ]);
+                $feed->update([
+                    'last_successful_sync_at' => now(),
+                    'last_sync_error' => null,
+                    'status' => 'fresh',
+                ]);
+            });
 
             return true;
         } catch (\Throwable $e) {
+            Log::warning('Calendar feed sync failed.', [
+                'feed_id' => $feed->id,
+                'exception_type' => get_class($e),
+            ]);
             $feed->update([
-                'last_sync_error' => $e->getMessage(),
+                'last_sync_error' => 'Calendar feed sync failed.',
                 'status' => 'stale',
             ]);
 

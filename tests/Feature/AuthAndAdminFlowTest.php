@@ -195,6 +195,11 @@ class AuthAndAdminFlowTest extends TestCase
         $customer = User::factory()->create(['email' => 'inactive@example.com', 'password' => 'Password123!', 'is_active' => true]);
 
         $this->actingAs($admin)
+            ->get('/admin/users/' . $customer->id . '/edit')
+            ->assertOk()
+            ->assertSee('<input type="hidden" name="is_active" value="0">', false);
+
+        $this->actingAs($admin)
             ->put('/admin/users/' . $customer->id, [
                 'name' => $customer->name,
                 'email' => $customer->email,
@@ -333,6 +338,37 @@ class AuthAndAdminFlowTest extends TestCase
             ->assertRedirect(route('admin.amenities.index'));
 
         $this->assertDatabaseHas('amenity_categories', ['id' => $category->id, 'name_en' => 'Bathroom updated']);
+    }
+
+    public function test_duplicate_amenity_category_name_is_rejected_without_a_server_error(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $seededAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_admin' => true,
+            'is_platform_admin' => false,
+            'tenant_id' => $seededAdmin->tenant_id,
+        ]);
+        \App\Models\AmenityCategory::query()->create([
+            'tenant_id' => $admin->tenant_id,
+            'name_en' => 'Wellness',
+            'name_fr' => 'Bien-être',
+            'slug' => 'wellness',
+            'sort_order' => 10,
+        ]);
+        $categoryCount = \App\Models\AmenityCategory::withoutGlobalScopes()->count();
+
+        $this->actingAs($admin)
+            ->from(route('admin.amenities.categories.create'))
+            ->post(route('admin.amenities.categories.store'), [
+                'name_en' => 'Wellness',
+                'name_fr' => 'Bien-être',
+            ])
+            ->assertRedirect(route('admin.amenities.categories.create'))
+            ->assertSessionHasErrors('slug');
+
+        $this->assertSame($categoryCount, \App\Models\AmenityCategory::withoutGlobalScopes()->count());
     }
 
     public function test_host_is_scoped_to_their_assigned_establishment_only(): void

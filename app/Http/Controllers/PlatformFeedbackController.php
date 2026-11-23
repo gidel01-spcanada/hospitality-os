@@ -6,7 +6,9 @@ use App\Mail\PlatformFeedbackReceived;
 use App\Models\PlatformFeedback;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Illuminate\View\View;
 
 class PlatformFeedbackController extends Controller
@@ -31,7 +33,17 @@ class PlatformFeedbackController extends Controller
         ]);
 
         $feedback = PlatformFeedback::query()->create($validated + ['user_id' => $request->user()?->id]);
-        Mail::to($recipient)->send(new PlatformFeedbackReceived($feedback));
+        try {
+            Mail::to($recipient)->send(new PlatformFeedbackReceived($feedback));
+        } catch (TransportExceptionInterface $exception) {
+            Log::warning('Platform feedback was saved but notification delivery failed.', [
+                'feedback_id' => $feedback->id,
+                'exception' => $exception,
+            ]);
+
+            return redirect()->route('feedback.create')
+                ->with('status', __('messages.feedback.saved_delivery_failed'));
+        }
 
         return redirect()->route('feedback.create')->with('status', __('messages.feedback.sent'));
     }

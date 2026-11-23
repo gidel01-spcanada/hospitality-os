@@ -35,14 +35,18 @@ class TenantSignupController extends Controller
             'locale' => ['sometimes', 'in:fr,en'],
             'g-recaptcha-response' => ['nullable', 'string'],
         ]);
+        $slug = Str::slug($validated['company_name']);
+        if ($slug === '') {
+            throw ValidationException::withMessages(['company_name' => __('messages.auth.company_name_slug_invalid')]);
+        }
+
         if (! $recaptcha->verify($request->input('g-recaptcha-response'), $request->ip())) {
             throw ValidationException::withMessages(['email' => __('messages.security.captcha_failed')]);
         }
 
         $locale = $validated['locale'] ?? session('locale', config('app.locale'));
 
-        $user = DB::transaction(function () use ($validated, $locale): User {
-            $slug = Str::slug($validated['company_name']);
+        $user = DB::transaction(function () use ($validated, $locale, $slug): User {
             $tenant = Tenant::query()->create([
                 'name' => $validated['company_name'],
                 'slug' => $this->uniqueTenantSlug($slug),

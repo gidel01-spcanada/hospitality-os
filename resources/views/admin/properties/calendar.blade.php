@@ -59,7 +59,7 @@
                             <li>
                                 <div>
                                     <strong>{{ $feed->name }} · {{ ucfirst($feed->provider) }}</strong>
-                                    <small>{{ $feed->status }} · {{ $feed->last_successful_sync_at?->format('d/m/Y H:i') ?? __('messages.admin.never_synced') }}{{ $feed->last_sync_error ? ' · '.$feed->last_sync_error : '' }}</small>
+                                    <small>{{ $feed->status }} · {{ $feed->last_successful_sync_at?->format('d/m/Y H:i') ?? __('messages.admin.never_synced') }}{{ $feed->last_sync_error ? ' · '.__('messages.flash.calendar_sync_failed') : '' }}</small>
                                 </div>
                                 <div class="feed-actions">
                                     <form method="POST" action="{{ route('admin.properties.calendar.sync', [$property, $feed]) }}">

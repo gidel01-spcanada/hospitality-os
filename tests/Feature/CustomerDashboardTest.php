@@ -16,6 +16,17 @@ class CustomerDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_dashboard_ignores_array_valued_status_filter(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        $this->actingAs($customer)
+            ->get(route('dashboard', ['status' => ['x']]))
+            ->assertOk()
+            ->assertViewHas('statusFilter', 'all');
+    }
+
     public function test_customer_dashboard_lists_and_shows_their_reservations(): void
     {
         $this->seed(DatabaseSeeder::class);

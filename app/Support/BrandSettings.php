@@ -93,6 +93,20 @@ class BrandSettings
         return self::all()[$key] ?? $default ?? (self::DEFAULTS[$key] ?? null);
     }
 
+    public static function configuredForTenant(?int $tenantId, array $keys): array
+    {
+        if ($tenantId === null) {
+            return [];
+        }
+
+        return DB::table('settings')
+            ->where('tenant_id', $tenantId)
+            ->whereIn('key', $keys)
+            ->whereNotNull('value')
+            ->pluck('value', 'key')
+            ->all();
+    }
+
     public static function set(array $values): void
     {
         $tenantId = self::tenantId();

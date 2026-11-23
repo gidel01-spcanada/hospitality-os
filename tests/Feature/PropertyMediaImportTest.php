@@ -48,4 +48,23 @@ class PropertyMediaImportTest extends TestCase
             $this->assertStringContainsString("uploads/properties/{$slug}/", $property->cover_image);
         }
     }
+
+    public function test_dry_run_does_not_create_files_or_change_database_records(): void
+    {
+        $sourceDir = base_path('photo');
+        $targetDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-media-dry-run-' . uniqid('', true);
+        $manifestPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'afrikappart-manifest-dry-run-' . uniqid('', true) . '.json';
+
+        Artisan::call('property:sync-media', [
+            '--source' => $sourceDir,
+            '--target' => $targetDir,
+            '--manifest' => $manifestPath,
+            '--dry-run' => true,
+        ]);
+
+        $this->assertDirectoryDoesNotExist($targetDir);
+        $this->assertFileDoesNotExist($manifestPath);
+        $this->assertSame(0, DB::table('properties')->count());
+        $this->assertSame(0, DB::table('property_images')->count());
+    }
 }

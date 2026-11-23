@@ -13,6 +13,14 @@
         @include('emails.partials.reservation-summary')
     @else
         <p>{{ __('messages.reservation_created.email_intro', ['reference' => $reservation_ref, 'property' => $property_name]) }}</p>
+        @if (!empty($check_in) || !empty($check_out))
+            <x-email.card :title="__('messages.checkout.order_summary')">
+                <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                    @if (!empty($check_in))<x-email.row :label="__('messages.properties.check_in')">{{ \Carbon\Carbon::parse($check_in)->locale(app()->getLocale())->translatedFormat('D d M Y') }}</x-email.row>@endif
+                    @if (!empty($check_out))<x-email.row :label="__('messages.properties.check_out')">{{ \Carbon\Carbon::parse($check_out)->locale(app()->getLocale())->translatedFormat('D d M Y') }}</x-email.row>@endif
+                </table>
+            </x-email.card>
+        @endif
         @include('emails.partials.legacy-price-lines')
     @endif
 

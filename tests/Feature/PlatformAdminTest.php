@@ -63,6 +63,30 @@ class PlatformAdminTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_duplicate_derived_tenant_slug_gets_a_unique_suffix(): void
+    {
+        config(['platform.mode' => 'cloud']);
+        $this->seed(DatabaseSeeder::class);
+        $platformAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        Tenant::query()->create([
+            'name' => 'Repeated Generated Tenant',
+            'slug' => 'repeated-generated-tenant',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($platformAdmin)->post(route('platform.tenants.store'), [
+            'name' => 'Repeated Generated Tenant',
+            'slug' => '',
+            'admin_name' => 'Second Tenant Admin',
+            'admin_email' => 'second-tenant-admin@example.com',
+        ])->assertRedirect(route('platform.tenants.index'));
+
+        $this->assertDatabaseHas('tenants', [
+            'name' => 'Repeated Generated Tenant',
+            'slug' => 'repeated-generated-tenant-2',
+        ]);
+    }
+
     public function test_tenant_creation_is_unavailable_outside_cloud_mode(): void
     {
         config(['platform.mode' => 'on_premise']);

@@ -353,6 +353,7 @@ Route::middleware('locale')->group(function () {
     Route::post('/reservations/{reservation}/checkout/paypal/capture', [\App\Http\Controllers\CheckoutController::class, 'capturePayPalOrder'])->name('checkout.paypal.capture');
     Route::post('/reservations/{reservation}/checkout/complete', [\App\Http\Controllers\CheckoutController::class, 'complete'])->name('checkout.complete');
     Route::post('/reservations/{reservation}/checkout/cancel', [\App\Http\Controllers\CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::get('/reservations/{reservation}/checkout/{provider}/cancel', [\App\Http\Controllers\CheckoutController::class, 'providerCancel'])->name('checkout.provider-cancel');
     Route::post('/reservations/{reservation}/checkout/offline-proof', [\App\Http\Controllers\CheckoutController::class, 'submitOfflineProof'])->name('checkout.offline-proof');
     Route::get('/reservations/{reservation}/checkout/{provider}/return', [\App\Http\Controllers\CheckoutController::class, 'return'])->name('checkout.return');
 });

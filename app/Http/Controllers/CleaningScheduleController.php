@@ -107,7 +107,8 @@ class CleaningScheduleController extends Controller
         $departures = Reservation::query()
             ->whereIn('property_id', $properties->pluck('id'))
             ->whereIn('status', ['confirmed', 'checked_in', 'completed'])
-            ->whereBetween('check_out', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('check_out', '>=', $from->toDateString())
+            ->whereDate('check_out', '<=', $to->toDateString())
             ->whereNotIn('id', $existingReservationIds)
             ->orderBy('check_out')->orderBy('property_id')
             ->get();
@@ -158,7 +159,7 @@ class CleaningScheduleController extends Controller
             ->where(function ($query) use ($visit): void {
                 $query->whereIn('status', ['confirmed', 'checked_in', 'completed']);
                 if ($visit->reservation_id) {
-                    $query->orWhereKey($visit->reservation_id);
+                    $query->orWhere('id', $visit->reservation_id);
                 }
             })
             ->with('property')->orderBy('check_out')->get();

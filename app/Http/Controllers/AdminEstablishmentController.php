@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InvalidBookingReviewDate;
 use App\Models\Establishment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use App\Models\SiteReview;
@@ -79,7 +81,6 @@ class AdminEstablishmentController extends Controller
         $validated['is_published'] = $request->boolean('is_published', true);
         $validated['secondary_currency'] = $validated['secondary_currency'] ?? null;
         $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? 1) : null;
-        $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
         $validated['cancellation_fee_percent'] = (float) ($validated['cancellation_fee_percent'] ?? 0);
         $validated['cancellation_fee_days'] = (int) ($validated['cancellation_fee_days'] ?? 0);
@@ -109,7 +110,6 @@ class AdminEstablishmentController extends Controller
         $validated['is_published'] = $request->boolean('is_published', (bool) $establishment->is_published);
         $validated['secondary_currency'] = $request->has('secondary_currency') ? ($validated['secondary_currency'] ?? null) : $establishment->secondary_currency;
         $validated['secondary_currency_rate'] = $validated['secondary_currency'] ? (float) ($validated['secondary_currency_rate'] ?? $establishment->secondary_currency_rate ?? 1) : null;
-        $validated['slug'] = Str::slug($validated['slug'] ?: $validated['name']);
         $validated['features'] = array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', implode(',', $validated['features'] ?? [])))));
         $validated['cancellation_fee_percent'] = $request->has('cancellation_fee_percent') ? (float) $validated['cancellation_fee_percent'] : (float) $establishment->cancellation_fee_percent;
         $validated['cancellation_fee_days'] = $request->has('cancellation_fee_days') ? (int) $validated['cancellation_fee_days'] : (int) $establishment->cancellation_fee_days;
@@ -247,7 +247,11 @@ class AdminEstablishmentController extends Controller
         $importer = app(ReviewImportService::class);
 
         if ($validated['format'] === 'booking') {
-            $result = $importer->importBookingCsv($csv, null, $establishment->id);
+            try {
+                $result = $importer->importBookingCsv($csv, null, $establishment->id);
+            } catch (InvalidBookingReviewDate $exception) {
+                return back()->withErrors(['import_file' => $exception->getMessage()])->withInput();
+            }
             $status = __('messages.flash.reviews_imported_detailed', $result);
         } else {
             $inserted = match ($validated['format']) {
@@ -356,9 +360,9 @@ class AdminEstablishmentController extends Controller
 
     private function validatedData(Request $request, ?Establishment $establishment = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:establishments,slug,' . ($establishment?->id ?? 'NULL')],
+            'slug' => ['nullable', 'string', 'max:255'],
             'country_code' => ['required', 'string', 'size:2'],
             'city' => ['nullable', 'string', 'max:120'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -407,6 +411,13 @@ class AdminEstablishmentController extends Controller
             'cover_image_upload.max' => __('messages.errors.image_file_too_large'),
             'cover_image_upload.uploaded' => __('messages.errors.image_upload_failed'),
         ]);
+
+        $validated['slug'] = Str::slug(($validated['slug'] ?? null) ?: $validated['name']);
+        Validator::make(['slug' => $validated['slug']], [
+            'slug' => ['required', 'string', 'max:255', 'unique:establishments,slug,' . ($establishment?->id ?? 'NULL')],
+        ])->validate();
+
+        return $validated;
     }
 
     private function storeCoverImage(Request $request, ?string $currentPath, ?Establishment $establishment): ?string

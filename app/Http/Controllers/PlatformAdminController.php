@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AccountInvitationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -48,9 +49,16 @@ class PlatformAdminController extends Controller
             'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
         ]);
 
+        $slug = filled($validated['slug'] ?? null)
+            ? $validated['slug']
+            : $this->uniqueTenantSlug(Str::slug($validated['name']));
+        Validator::make(['slug' => $slug], [
+            'slug' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:tenants,slug'],
+        ])->validate();
+
         $tenant = Tenant::query()->create([
             'name' => $validated['name'],
-            'slug' => ! empty($validated['slug']) ? $validated['slug'] : Str::slug($validated['name']),
+            'slug' => $slug,
             'contact_email' => $validated['contact_email'] ?? null,
             'status' => 'active',
         ]);
@@ -72,6 +80,18 @@ class PlatformAdminController extends Controller
         return redirect()->route('platform.tenants.index')->with('success', __('messages.platform.tenant_created', ['name' => $tenant->name]));
     }
 
+    private function uniqueTenantSlug(string $base): string
+    {
+        $slug = $base;
+        $suffix = 2;
+
+        while ($slug !== '' && Tenant::query()->where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $suffix++;
+        }
+
+        return $slug;
+    }
+
     public function suspend(Tenant $tenant): RedirectResponse
     {
         $tenant->update(['status' => 'suspended']);
@@ -86,4 +106,3 @@ class PlatformAdminController extends Controller
         return redirect()->route('platform.tenants.index')->with('success', __('messages.platform.tenant_activated', ['name' => $tenant->name]));
     }
 }
-

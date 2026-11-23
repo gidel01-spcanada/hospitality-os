@@ -498,6 +498,11 @@ class PropertyAdminControlsTest extends TestCase
         config()->set('services.mpesa.passkey', 'mpesa_passkey');
 
         $this->actingAs($admin)
+            ->get(route('admin.establishments.edit', $establishment))
+            ->assertOk()
+            ->assertSee('<input type="hidden" name="is_active" value="0">', false);
+
+        $this->actingAs($admin)
             ->put('/admin/establishments/' . $establishment->id, [
                 'name' => 'Afrik Appart Cotonou Centre',
                 'slug' => 'afrik-appart-cotonou-centre',
@@ -511,6 +516,7 @@ class PropertyAdminControlsTest extends TestCase
                 'latitude' => 6.3703,
                 'longitude' => 2.3912,
                 'google_maps_url' => 'https://maps.google.com/?q=6.3703,2.3912',
+                'is_active' => '0',
                 'active_tab' => 'online',
                 'payment_methods' => [
                     'pay_later' => ['enabled' => '1', 'instructions' => 'Pay on arrival'],
@@ -522,6 +528,7 @@ class PropertyAdminControlsTest extends TestCase
             ->assertRedirect(route('admin.establishments.edit', $establishment) . '#online');
 
         $establishment->refresh();
+        $this->assertFalse($establishment->is_active);
         $this->assertSame(['Wi-Fi', 'Pool', 'Parking'], $establishment->features);
         $this->assertSame('https://example.com/establishment.jpg', $establishment->cover_image);
         $this->assertSame('Rue 123, Cotonou', $establishment->address);

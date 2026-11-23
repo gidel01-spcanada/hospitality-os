@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
+use App\Models\PropertyFeature;
 use App\Models\User;
 use App\Models\PaymentAttempt;
 use App\Models\Receipt;
 use App\Jobs\CompletePastReservations;
+use App\Services\PricingCalculator;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -601,6 +603,58 @@ class ReservationWorkflowAndEmailTest extends TestCase
             'provider' => 'offline',
             'provider_reference' => 'manual-confirm-123',
             'status' => 'paid',
+        ]);
+    }
+
+    public function test_admin_edit_preserves_booked_add_ons_and_total(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $feature = PropertyFeature::query()->create([
+            'property_id' => $property->id,
+            'name' => 'Airport pickup',
+            'cost_xof' => 12500,
+            'is_active' => true,
+        ]);
+        $checkIn = now()->addDays(5);
+        $checkOut = now()->addDays(7);
+        $pricing = PricingCalculator::calculate($property, $checkIn, $checkOut, 1, 0, collect([$feature]));
+        $guest = ReservationGuest::query()->create(['full_name' => 'Add-on Guest', 'email' => 'addon@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-ADDON-001',
+            'status' => 'pending_payment',
+            'check_in' => $checkIn->toDateString(),
+            'check_out' => $checkOut->toDateString(),
+            'adults' => 1,
+            'currency' => $pricing['currency'],
+            'email' => $guest->email,
+            'subtotal' => $pricing['subtotal'],
+            'fees' => $pricing['fees'],
+            'taxes' => $pricing['taxes'],
+            'total_amount' => $pricing['total_amount'],
+        ]);
+        foreach ($pricing['price_lines'] as $line) {
+            $reservation->priceLines()->create($line);
+        }
+
+        $this->actingAs(User::query()->where('email', 'admin@afrikappart.test')->firstOrFail())
+            ->put(route('admin.reservations.update', $reservation), [
+                'property_id' => $property->id,
+                'full_name' => $guest->full_name,
+                'email' => $guest->email,
+                'check_in' => $checkIn->toDateString(),
+                'check_out' => $checkOut->toDateString(),
+                'adults' => 1,
+            ])
+            ->assertRedirect(route('admin.reservations.show', $reservation));
+
+        $this->assertSame((float) $pricing['total_amount'], (float) $reservation->fresh()->total_amount);
+        $this->assertDatabaseHas('reservation_price_lines', [
+            'reservation_id' => $reservation->id,
+            'label' => __('messages.pricing.extra_option', ['name' => 'Airport pickup']),
+            'amount' => 12500,
         ]);
     }
 

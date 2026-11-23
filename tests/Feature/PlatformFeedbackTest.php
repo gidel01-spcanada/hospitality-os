@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Mail\PlatformFeedbackReceived;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\PendingMail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Tests\TestCase;
 
 class PlatformFeedbackTest extends TestCase
@@ -52,5 +55,31 @@ class PlatformFeedbackTest extends TestCase
             ->assertOk()
             ->assertSee(__('messages.feedback.unavailable'))
             ->assertDontSee('action="' . route('feedback.store') . '"', false);
+    }
+
+    public function test_feedback_delivery_failure_does_not_return_a_500_or_require_a_duplicate_submission(): void
+    {
+        config()->set('services.sprintpay.feedback_email', 'feedback@sprintpay.example');
+        Log::spy();
+        $pendingMail = \Mockery::mock(PendingMail::class);
+        $pendingMail->shouldReceive('send')
+            ->once()
+            ->with(\Mockery::type(PlatformFeedbackReceived::class))
+            ->andThrow(new TransportException('SMTP unavailable'));
+        Mail::shouldReceive('to')
+            ->once()
+            ->with('feedback@sprintpay.example')
+            ->andReturn($pendingMail);
+
+        $this->post(route('feedback.store'), [
+            'name' => 'Amina Customer',
+            'email' => 'amina@example.com',
+            'category' => 'suggestion',
+            'message' => 'Please add a monthly reservation calendar.',
+        ])->assertRedirect(route('feedback.create'))
+            ->assertSessionHas('status', __('messages.feedback.saved_delivery_failed'));
+
+        $this->assertDatabaseCount('platform_feedback', 1);
+        Log::shouldHaveReceived('warning')->once();
     }
 }

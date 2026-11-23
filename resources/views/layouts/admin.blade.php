@@ -201,6 +201,15 @@
                 @endif
 
                 <!-- Flash Messages -->
+                @if ($errors->any())
+                    <div class="alert alert-error admin-flash" id="validation-errors" role="alert" aria-live="assertive">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 @if ($message = session('success') ?? session('status'))
                     <div class="alert alert-success admin-flash" role="status" aria-live="polite">
                         <strong>{{ __('messages.common.success') }}</strong> {{ $message }}

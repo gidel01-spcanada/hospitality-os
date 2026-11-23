@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidBookingReviewDate;
 use App\Models\SiteReview;
 use App\Models\Establishment;
 use App\Models\Property;
 use App\Support\CurrentTenant;
 use Carbon\Carbon;
+use Carbon\Exceptions\InvalidFormatException;
+use Illuminate\Support\Facades\DB;
 
 class ReviewImportService
 {
@@ -131,71 +134,72 @@ class ReviewImportService
             })
             ->keyBy(fn ($pair) => $pair[0]) ?? collect();
 
-        while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
-            if (count($row) === 1 && trim((string) $row[0]) === '') {
-                continue;
-            }
+        try {
+            DB::transaction(function () use ($stream, $columns, $propertyColumn, $propertyMap, $tenantId, $establishmentId, $dryRun, &$inserted, &$updated, &$skipped): void {
+                $record = 1;
+                while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+                    $record++;
+                    if (count($row) === 1 && trim((string) $row[0]) === '') {
+                        continue;
+                    }
 
-            if (count($row) < 7) {
-                $skipped++;
-                continue;
-            }
+                    if (count($row) < 7) {
+                        $skipped++;
+                        continue;
+                    }
 
-            $reviewedAtText = trim((string) ($row[$columns['date']] ?? ''));
-            $reviewerName = trim((string) ($row[$columns['reviewer']] ?? ''));
-            $title = trim((string) ($row[$columns['title']] ?? ''));
-            $positive = trim((string) ($row[$columns['positive']] ?? ''));
-            $negative = trim((string) ($row[$columns['negative']] ?? ''));
-            $score = (float) str_replace(',', '.', trim((string) ($row[$columns['score']] ?? '0')));
+                    $reviewedAtText = trim((string) ($row[$columns['date']] ?? ''));
+                    $reviewerName = trim((string) ($row[$columns['reviewer']] ?? ''));
+                    $title = trim((string) ($row[$columns['title']] ?? ''));
+                    $positive = trim((string) ($row[$columns['positive']] ?? ''));
+                    $negative = trim((string) ($row[$columns['negative']] ?? ''));
+                    $score = (float) str_replace(',', '.', trim((string) ($row[$columns['score']] ?? '0')));
 
-            if ($reviewedAtText === '' || $reviewerName === '' || $score <= 0) {
-                $skipped++;
-                continue;
-            }
+                    if ($reviewedAtText === '' || $reviewerName === '' || $score <= 0) {
+                        $skipped++;
+                        continue;
+                    }
 
-            try {
-                $reviewedAt = $this->parseBookingDate($reviewedAtText);
-            } catch (\Throwable) {
-                $skipped++;
-                continue;
-            }
+                    $reviewedAt = $this->parseBookingDate($reviewedAtText, $record);
 
-            $property = null;
-            if ($propertyColumn !== null) {
-                $propertyName = $this->normalizeCsvValue((string) ($row[$propertyColumn] ?? ''));
-                $property = $propertyName !== '' ? $propertyMap->get($propertyName)[1] ?? null : null;
-                if (! $property) {
-                    $skipped++;
-                    continue;
+                    $property = null;
+                    if ($propertyColumn !== null) {
+                        $propertyName = $this->normalizeCsvValue((string) ($row[$propertyColumn] ?? ''));
+                        $property = $propertyName !== '' ? $propertyMap->get($propertyName)[1] ?? null : null;
+                        if (! $property) {
+                            $skipped++;
+                            continue;
+                        }
+                    }
+
+                    $reviewText = $this->bookingReviewText($title, $positive, $negative);
+                    $rating = max(1, min(5, (int) round($score / 2)));
+                    $attributes = [
+                        'tenant_id' => $property?->establishment?->tenant_id ?? $tenantId,
+                        'establishment_id' => $property?->establishment_id ?? $establishmentId,
+                        'property_id' => $property?->id,
+                        'source' => 'booking',
+                        'reviewer_name' => $reviewerName,
+                        'reviewed_at' => $reviewedAt->format('Y-m-d H:i:s'),
+                    ];
+
+                    $review = SiteReview::withoutGlobalScopes()->firstOrNew($attributes);
+                    $review->exists ? $updated++ : $inserted++;
+
+                    $review->fill($attributes + [
+                        'rating' => $rating,
+                        'review_text' => $reviewText !== '' ? $reviewText : null,
+                        'source_url' => null,
+                        'is_active' => true,
+                    ]);
+                    if (! $dryRun) {
+                        $review->save();
+                    }
                 }
-            }
-
-            $reviewText = $this->bookingReviewText($title, $positive, $negative);
-            $rating = max(1, min(5, (int) round($score / 2)));
-            $attributes = [
-                'tenant_id' => $property?->establishment?->tenant_id ?? $tenantId,
-                'establishment_id' => $property?->establishment_id ?? $establishmentId,
-                'property_id' => $property?->id,
-                'source' => 'booking',
-                'reviewer_name' => $reviewerName,
-                'reviewed_at' => $reviewedAt,
-            ];
-
-            $review = SiteReview::withoutGlobalScopes()->firstOrNew($attributes);
-            $review->exists ? $updated++ : $inserted++;
-
-            $review->fill($attributes + [
-                'rating' => $rating,
-                'review_text' => $reviewText !== '' ? $reviewText : null,
-                'source_url' => null,
-                'is_active' => true,
-            ]);
-            if (! $dryRun) {
-                $review->save();
-            }
+            });
+        } finally {
+            fclose($stream);
         }
-
-        fclose($stream);
 
         return ['inserted' => $inserted, 'updated' => $updated, 'skipped' => $skipped];
     }
@@ -231,19 +235,35 @@ class ReviewImportService
         return trim(preg_replace('/[^a-z0-9]+/', ' ', $value));
     }
 
-    private function parseBookingDate(string $value): Carbon
+    private function parseBookingDate(string $value, int $record): Carbon
     {
+        if (str_contains($value, "\0")) {
+            throw new InvalidBookingReviewDate($record);
+        }
+
         foreach (['n-j-Y H:i', 'n-j-Y H:i:s', 'm-d-Y H:i', 'm-d-Y H:i:s', 'Y-m-d H:i', 'Y-m-d H:i:s', 'Y-m-d'] as $format) {
             try {
                 $date = Carbon::createFromFormat('!' . $format, $value);
-                if ($date !== false) {
+                $errors = Carbon::getLastErrors();
+                if ($date !== false && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
                     return $date;
                 }
-            } catch (\Throwable) {
+            } catch (InvalidFormatException) {
             }
         }
 
-        return Carbon::parse($value);
+        $parsed = date_parse($value);
+        if ($parsed['warning_count'] !== 0 || $parsed['error_count'] !== 0
+            || $parsed['year'] === false || $parsed['month'] === false || $parsed['day'] === false
+            || isset($parsed['relative'])) {
+            throw new InvalidBookingReviewDate($record);
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (InvalidFormatException) {
+            throw new InvalidBookingReviewDate($record);
+        }
     }
 
     /**

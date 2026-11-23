@@ -48,7 +48,7 @@ class MessageEmailService
                     'reservation_url' => $reservation ? route($sender->id === $thread->customer_id ? 'admin.reservations.show' : 'dashboard.reservations.show', $reservation) : null,
                     'sender_name' => $sender->name,
                     'establishment_name' => $thread->establishment->localized('name', $recipient->locale ?? 'fr'),
-                    'message' => $body,
+                    'message_body' => $body,
                     'thread_url' => $sender->id === $thread->customer_id
                         ? route('admin.messages.show', $thread)
                         : route('messages.show', $thread),

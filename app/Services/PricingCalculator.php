@@ -19,7 +19,27 @@ class PricingCalculator
         $establishment = $property->establishment;
         $nights = max(1, (int) $checkIn->diffInDays($checkOut));
         $baseRate = (float) $property->nightly_rate_xof;
-        $roomSubtotal = round($baseRate * $nights, 2);
+        $firstNight = $checkIn->copy()->startOfDay();
+        $lastNight = $firstNight->copy()->addDays($nights - 1);
+        $rateRules = $property->rateRules()
+            ->whereDate('effective_from', '<=', $lastNight->toDateString())
+            ->where(function ($query) use ($firstNight) {
+                $query->whereNull('effective_to')
+                    ->orWhereDate('effective_to', '>=', $firstNight->toDateString());
+            })
+            ->orderByDesc('effective_from')
+            ->orderByDesc('id')
+            ->get();
+
+        $roomSubtotal = 0.0;
+        for ($night = $firstNight->copy(); $night->lte($lastNight); $night->addDay()) {
+            // End dates are inclusive; latest start, then newest ID, wins overlaps.
+            $rule = $rateRules->first(fn ($rule) => $rule->effective_from->lte($night)
+                && ($rule->effective_to === null || $rule->effective_to->gte($night)));
+            $roomSubtotal += $rule ? (float) $rule->nightly_rate_xof : $baseRate;
+        }
+        $roomSubtotal = round($roomSubtotal, 2);
+        $nightlyRate = round($roomSubtotal / $nights, 2);
 
         $extrasCollection = is_array($selectedFeatures) ? collect($selectedFeatures) : $selectedFeatures;
         $extrasSubtotal = round((float) $extrasCollection->sum('cost_xof'), 2);
@@ -128,7 +148,7 @@ class PricingCalculator
 
         return [
             'nights' => $nights,
-            'nightly_rate' => $baseRate,
+            'nightly_rate' => $nightlyRate,
             'guests' => $totalGuests,
             'room_subtotal' => $roomSubtotal,
             'extras_subtotal' => $extrasSubtotal,

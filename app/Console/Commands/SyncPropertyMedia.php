@@ -40,8 +40,10 @@ class SyncPropertyMedia extends Command
             return self::FAILURE;
         }
 
-        $this->ensureDirectory($target);
-        $this->ensureDirectory(dirname($manifestPath));
+        if (! $this->option('dry-run')) {
+            $this->ensureDirectory($target);
+            $this->ensureDirectory(dirname($manifestPath));
+        }
 
         $manifest = [
             'generated_at' => now()->toIso8601String(),
@@ -77,13 +79,15 @@ class SyncPropertyMedia extends Command
 
             $propertySlug = $this->propertyMap[$folderName];
             $propertyPath = $target . DIRECTORY_SEPARATOR . $propertySlug;
-            $this->ensureDirectory($propertyPath);
-
-            $property = Property::query()->firstOrCreate(
-                ['slug' => $propertySlug],
-                ['name' => ucfirst($propertySlug), 'status' => 'draft', 'is_published' => false]
-            );
-            PropertyImage::query()->where('property_id', $property->id)->delete();
+            $property = null;
+            if (! $this->option('dry-run')) {
+                $this->ensureDirectory($propertyPath);
+                $property = Property::query()->firstOrCreate(
+                    ['slug' => $propertySlug],
+                    ['name' => ucfirst($propertySlug), 'status' => 'draft', 'is_published' => false]
+                );
+                PropertyImage::query()->where('property_id', $property->id)->delete();
+            }
 
             $entries = [];
             $sortOrder = 1;
@@ -95,7 +99,9 @@ class SyncPropertyMedia extends Command
                 $primaryName = $safeBase . '-card.webp';
                 $primaryTarget = $propertyPath . DIRECTORY_SEPARATOR . $primaryName;
 
-                $this->generateVariantSet($sourcePath, $primaryTarget, $propertyPath, $safeBase);
+                if (! $this->option('dry-run')) {
+                    $this->generateVariantSet($sourcePath, $primaryTarget, $propertyPath, $safeBase);
+                }
 
                 $relativePrimary = 'uploads/properties/' . $propertySlug . '/' . $primaryName;
                 $variantPaths = [
@@ -119,26 +125,28 @@ class SyncPropertyMedia extends Command
                     'is_cover' => $sortOrder === 1,
                 ];
 
-                PropertyImage::query()->updateOrCreate(
-                    ['property_id' => $property->id, 'file_path' => $relativePrimary],
-                    [
-                        'file_name' => $primaryName,
-                        'mime_type' => 'image/webp',
-                        'width' => 800,
-                        'height' => 600,
-                        'sort_order' => $sortOrder,
-                        'is_cover' => $sortOrder === 1,
-                        'metadata' => [
-                            'source_folder' => $folderName,
-                            'source_file' => $fileName,
-                            'variants' => $variantPaths,
-                        ],
-                    ]
-                );
+                if (! $this->option('dry-run')) {
+                    PropertyImage::query()->updateOrCreate(
+                        ['property_id' => $property->id, 'file_path' => $relativePrimary],
+                        [
+                            'file_name' => $primaryName,
+                            'mime_type' => 'image/webp',
+                            'width' => 800,
+                            'height' => 600,
+                            'sort_order' => $sortOrder,
+                            'is_cover' => $sortOrder === 1,
+                            'metadata' => [
+                                'source_folder' => $folderName,
+                                'source_file' => $fileName,
+                                'variants' => $variantPaths,
+                            ],
+                        ]
+                    );
 
-                if ($sortOrder === 1) {
-                    $property->cover_image = $relativePrimary;
-                    $property->save();
+                    if ($sortOrder === 1) {
+                        $property->cover_image = $relativePrimary;
+                        $property->save();
+                    }
                 }
 
                 $sortOrder++;

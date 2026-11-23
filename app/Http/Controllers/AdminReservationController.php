@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\ReservationGuest;
 use App\Models\ReservationPriceLine;
 use App\Models\Property;
+use App\Models\PropertyFeature;
 use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
@@ -15,6 +16,7 @@ use App\Services\ReservationEmailService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
@@ -103,7 +105,17 @@ class AdminReservationController extends Controller
             'country' => $validated['country'] ?? null,
         ])->save();
 
-        $pricing = $this->calculatePricing($property, $checkIn, $checkOut, (int) $validated['adults'], (int) ($validated['children'] ?? 0));
+        $selectedFeatures = (int) $reservation->property_id === (int) $property->id
+            ? $this->existingReservationFeatures($reservation)
+            : collect();
+        $pricing = $this->calculatePricing(
+            $property,
+            $checkIn,
+            $checkOut,
+            (int) $validated['adults'],
+            (int) ($validated['children'] ?? 0),
+            $selectedFeatures,
+        );
 
         DB::transaction(function () use ($reservation, $property, $guest, $validated, $checkIn, $checkOut, $pricing): void {
             $reservation->update([
@@ -594,7 +606,6 @@ class AdminReservationController extends Controller
             $reservation = Reservation::query()->create([
                 'property_id' => $property->id,
                 'guest_id' => $guest->id,
-                'user_id' => auth()->id(),
                 'reservation_ref' => 'AFK-' . strtoupper(Str::random(6)) . '-' . now()->format('ymd'),
                 'status' => 'pending',
                 'check_in' => $checkIn->toDateString(),
@@ -620,9 +631,44 @@ class AdminReservationController extends Controller
         });
     }
 
-    private function calculatePricing(Property $property, Carbon $checkIn, Carbon $checkOut, int $adults = 1, int $children = 0): array
+    private function calculatePricing(
+        Property $property,
+        Carbon $checkIn,
+        Carbon $checkOut,
+        int $adults = 1,
+        int $children = 0,
+        Collection|array $features = [],
+    ): array
     {
-        return PricingCalculator::calculate($property, $checkIn, $checkOut, $adults, $children);
+        return PricingCalculator::calculate($property, $checkIn, $checkOut, $adults, $children, $features);
+    }
+
+    private function existingReservationFeatures(Reservation $reservation): Collection
+    {
+        $prefixes = collect(['en', 'fr'])->map(
+            fn (string $locale): string => rtrim(__('messages.pricing.extra_option', ['name' => ''], $locale)),
+        );
+
+        return $reservation->priceLines()
+            ->get()
+            ->map(function (ReservationPriceLine $line) use ($prefixes): ?PropertyFeature {
+                foreach ($prefixes as $prefix) {
+                    if (str_starts_with($line->label, $prefix)) {
+                        $name = trim(substr($line->label, strlen($prefix)), " :\t\n\r\0\x0B");
+
+                        if ($name !== '') {
+                            return new PropertyFeature([
+                                'name' => $name,
+                                'cost_xof' => $line->amount,
+                            ]);
+                        }
+                    }
+                }
+
+                return null;
+            })
+            ->filter()
+            ->values();
     }
 
     private function priceLines(Reservation $reservation, array $pricing): array

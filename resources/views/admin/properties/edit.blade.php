@@ -211,7 +211,7 @@
                                     <p class="calendar-feed-meta">
                                         {{ $feed->last_successful_sync_at ? __('messages.admin.calendar_last_sync', ['date' => $feed->last_successful_sync_at->format('d/m/Y H:i')]) : __('messages.admin.never_synced') }}
                                         @if ($feed->last_sync_error)
-                                            · <span class="calendar-feed-error">{{ __('messages.admin.calendar_last_error', ['message' => $feed->last_sync_error]) }}</span>
+                                            · <span class="calendar-feed-error">{{ __('messages.flash.calendar_sync_failed') }}</span>
                                         @endif
                                     </p>
                                 </div>

@@ -34,6 +34,7 @@
                     @else
                         <p class="form-help full-width">{{ __('messages.account_invitation.help') }}</p>
                     @endif
+                    <input type="hidden" name="is_active" value="0">
                     <label class="checkbox-field"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $managedUser->exists ? $managedUser->is_active : true))><span>{{ __('messages.admin.account_active') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="email_booking_updates" value="1" @checked(old('email_booking_updates', $managedUser->email_booking_updates))><span>{{ __('messages.admin.reservation_updates') }}</span></label>
                     <label class="checkbox-field"><input type="checkbox" name="email_message_updates" value="1" @checked(old('email_message_updates', $managedUser->email_message_updates ?? true))><span>{{ __('messages.profile.message_updates') }}</span></label>

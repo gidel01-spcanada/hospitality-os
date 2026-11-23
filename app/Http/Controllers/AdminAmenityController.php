@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class AdminAmenityController extends Controller
@@ -37,6 +38,16 @@ class AdminAmenityController extends Controller
         ]);
 
         $slug = Str::slug($validated['name_en']);
+        Validator::make(['slug' => $slug], [
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'alpha_dash',
+                Rule::unique('amenity_categories', 'slug')
+                    ->where(fn ($query) => $query->where('tenant_id', app(\App\Support\CurrentTenant::class)->id())),
+            ],
+        ])->validate();
 
         $category = AmenityCategory::query()->create([
             'slug' => $slug,

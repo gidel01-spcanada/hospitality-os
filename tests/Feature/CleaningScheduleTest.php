@@ -32,6 +32,11 @@ class CleaningScheduleTest extends TestCase
             'status' => 'checked_in', 'check_in' => '2034-05-03', 'check_out' => '2034-05-08',
             'adults' => 1, 'currency' => 'XOF', 'email' => 'generate-cleaning-2@example.com', 'total_amount' => 100,
         ]);
+        $lastDayEligible = Reservation::query()->create([
+            'property_id' => $property->id, 'reservation_ref' => 'CLEAN-GENERATE-LAST-DAY',
+            'status' => 'confirmed', 'check_in' => '2034-05-30', 'check_out' => '2034-05-31',
+            'adults' => 1, 'currency' => 'XOF', 'email' => 'generate-cleaning-last-day@example.com', 'total_amount' => 100,
+        ]);
         Reservation::query()->create([
             'property_id' => $property->id, 'reservation_ref' => 'CLEAN-PENDING-1',
             'status' => 'pending', 'check_in' => '2034-05-05', 'check_out' => '2034-05-09',
@@ -43,7 +48,7 @@ class CleaningScheduleTest extends TestCase
         ];
 
         $this->actingAs($admin)->post(route('admin.cleaning.generate'), $payload)
-            ->assertRedirect()->assertSessionHas('success', '2 visites créées depuis les départs.');
+            ->assertRedirect()->assertSessionHas('success', '3 visites créées depuis les départs.');
         $this->assertDatabaseHas('cleaning_visits', [
             'reservation_id' => $eligible->id, 'assignee_name' => 'Équipe A',
             'scheduled_at' => '2034-05-08 11:30:00', 'duration_minutes' => 90,
@@ -52,11 +57,15 @@ class CleaningScheduleTest extends TestCase
             'reservation_id' => $secondEligible->id, 'assignee_name' => 'Équipe A',
             'scheduled_at' => '2034-05-08 13:00:00', 'duration_minutes' => 90,
         ]);
-        $this->assertDatabaseCount('cleaning_visits', 2);
+        $this->assertDatabaseHas('cleaning_visits', [
+            'reservation_id' => $lastDayEligible->id, 'assignee_name' => 'Équipe A',
+            'scheduled_at' => '2034-05-31 11:30:00', 'duration_minutes' => 90,
+        ]);
+        $this->assertDatabaseCount('cleaning_visits', 3);
 
         $this->actingAs($admin)->post(route('admin.cleaning.generate'), $payload)
             ->assertRedirect()->assertSessionHas('success', 'Aucun nouveau départ à planifier.');
-        $this->assertDatabaseCount('cleaning_visits', 2);
+        $this->assertDatabaseCount('cleaning_visits', 3);
     }
 
     public function test_manual_visit_rejects_an_overlapping_assignment(): void
@@ -119,6 +128,8 @@ class CleaningScheduleTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.cleaning.index', ['mode' => 'month', 'date' => '2033-03-01']))
             ->assertOk()->assertSee('Awa Ménage')->assertSee($property->name);
+
+        $this->actingAs($admin)->get(route('admin.cleaning.edit', $visit))->assertOk();
 
         $this->actingAs($admin)
             ->put(route('admin.cleaning.update', $visit), [

@@ -73,9 +73,12 @@ class AdminCalendarController extends Controller
         $this->authorizeProperty($property);
         abort_unless($feed->property_id === $property->id, 404);
 
-        $service->sync($feed);
+        $synced = $service->sync($feed);
 
-        return redirect()->to(route('admin.properties.edit', $property) . '#calendars')->with('success', __('messages.flash.calendar_synced'));
+        return redirect()->to(route('admin.properties.edit', $property) . '#calendars')->with(
+            $synced ? 'success' : 'error',
+            $synced ? __('messages.flash.calendar_synced') : __('messages.flash.calendar_sync_failed'),
+        );
     }
 
     public function editFeed(Property $property, ExternalCalendarFeed $feed): \Illuminate\View\View

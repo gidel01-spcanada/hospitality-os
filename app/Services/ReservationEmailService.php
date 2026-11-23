@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use App\Support\ReservationSummary;
+use App\Support\BrandSettings;
 
 class ReservationEmailService
 {
@@ -47,6 +48,10 @@ class ReservationEmailService
         }
         $locale = $reservation->locale ?: config('app.locale');
         $summary = ReservationSummary::make($reservation, $locale);
+        $settings = BrandSettings::configuredForTenant($reservation->property?->establishment?->tenant_id, ['customer_confirmation_subject']);
+        $configuredSubject = in_array($template, ['reservation_created', 'reservation_received'], true)
+            ? ($settings['customer_confirmation_subject'] ?? null)
+            : null;
 
         EmailOutbox::query()->create([
             'template' => $template,
@@ -58,7 +63,7 @@ class ReservationEmailService
                 'reservation_summary' => $summary,
                 'reservation_ref' => $reservation->reservation_ref,
                 'property_name' => $summary['property']['name'],
-                'subject' => $subject ?? $this->subjectFor($template, $reservation, $locale),
+                'subject' => $subject ?? ($configuredSubject ?: $this->subjectFor($template, $reservation, $locale)),
                 'checkout_url' => $this->localizedUrl(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]), $locale),
                 'check_in' => $reservation->check_in?->toDateString(),
                 'check_out' => $reservation->check_out?->toDateString(),
@@ -227,6 +232,7 @@ class ReservationEmailService
                 'payload' => [
                     'locale' => $locale,
                     'recipient_name' => $recipient->name,
+                    'reservation_id' => $reservation->id,
                     'subject' => __('messages.receipts.proof_notification_subject', ['reference' => $reservation->reservation_ref], $locale),
                     'reservation_ref' => $reservation->reservation_ref,
                     'property_name' => $reservation->property?->localized('name', $locale) ?? __('messages.checkout.property', [], $locale),

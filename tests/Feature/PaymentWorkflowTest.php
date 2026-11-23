@@ -770,6 +770,15 @@ class PaymentWorkflowTest extends TestCase
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'provider_reference' => $orderID]);
 
+        $this->get(route('checkout.provider-cancel', [
+            'reservation' => $reservation,
+            'provider' => 'paypal',
+            'token' => $reservation->checkout_token,
+        ]))
+            ->assertRedirect(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
+            ->assertSessionHas('status', __('messages.checkout.payment_cancelled'));
+        $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'pending_payment']);
+
         $captureResponse = $this->postJson($captureUrl, ['orderID' => $orderID]);
         $captureResponse->assertOk()->assertJson(['status' => 'COMPLETED']);
 

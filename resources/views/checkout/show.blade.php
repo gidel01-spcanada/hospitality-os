@@ -3,6 +3,13 @@
 @section('title', __('messages.checkout.badge') . ' | ' . \App\Support\PlatformBrand::name())
 
 @section('content')
+@php
+    $paypalCancelUrl = route('checkout.provider-cancel', [
+        'reservation' => $reservation,
+        'provider' => 'paypal',
+        'token' => $token,
+    ]);
+@endphp
 <section class="checkout-page">
     <div class="mx-auto max-w-5xl px-4 py-10">
         <div class="mb-6">
@@ -210,6 +217,9 @@
                                     window.location.reload();
                                 }
                             });
+                        },
+                        onCancel: function () {
+                            window.location.href = @json($paypalCancelUrl);
                         },
                         onError: function (err) {
                             console.error('PayPal SDK error:', err);
