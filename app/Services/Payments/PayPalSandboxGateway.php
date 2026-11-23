@@ -41,6 +41,19 @@ class PayPalSandboxGateway implements PaymentGateway
 
     public function verifyStatus(PaymentAttempt $attempt): PaymentAttempt
     {
+        if (! app()->environment('testing')) {
+            if (in_array($attempt->status, ['created', 'pending'], true)) {
+                $attempt->update([
+                    'status' => 'pending_validation',
+                    'payload' => array_merge((array) $attempt->payload, [
+                        'review_required_reason' => 'sandbox_payment_not_verifiable',
+                    ]),
+                ]);
+            }
+
+            return $attempt->fresh();
+        }
+
         $attempt->status = 'paid';
         $attempt->save();
 

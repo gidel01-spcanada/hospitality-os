@@ -902,6 +902,53 @@ class PaymentWorkflowTest extends TestCase
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'status' => 'paid']);
     }
 
+    public function test_paypal_sandbox_capture_requires_review_outside_automated_tests(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->update([
+            'payment_methods' => ['paypal' => ['enabled' => true, 'mode' => 'sandbox']],
+        ]);
+        $guest = ReservationGuest::create(['full_name' => 'Sandbox Guest', 'email' => 'sandbox@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-PAYPAL-SANDBOX-REVIEW',
+            'status' => 'pending',
+            'check_in' => now()->addDays(5)->toDateString(),
+            'check_out' => now()->addDays(8)->toDateString(),
+            'adults' => 2,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'subtotal' => 100000,
+            'fees' => 10000,
+            'taxes' => 5000,
+            'total_amount' => 115000,
+            'source' => 'website',
+        ]);
+        $token = $reservation->checkout_token;
+        $createUrl = route('checkout.paypal.create', ['reservation' => $reservation, 'token' => $token]);
+        $captureUrl = route('checkout.paypal.capture', ['reservation' => $reservation, 'token' => $token]);
+        $orderId = $this->postJson($createUrl)->assertOk()->json('orderID');
+
+        $this->app['env'] = 'local';
+        $this->postJson($captureUrl, ['orderID' => $orderId])
+            ->assertStatus(400)
+            ->assertJsonPath('status', 'PENDING');
+
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'pending_validation',
+        ]);
+        $this->assertDatabaseHas('payment_attempts', [
+            'reservation_id' => $reservation->id,
+            'provider' => 'paypal',
+            'status' => 'pending_validation',
+        ]);
+    }
+
     public function test_late_paid_webhook_does_not_reopen_cancelled_reservation(): void
     {
         $this->seed(DatabaseSeeder::class);

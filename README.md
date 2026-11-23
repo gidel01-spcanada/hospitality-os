@@ -39,6 +39,8 @@ https://your-domain.example/webhooks/mpesa
 
 PayPal returns buyers to the checkout return route after approval, where the order is captured. FedaPay sends transaction updates to its webhook endpoint and provides a hosted payment URL for the buyer redirect.
 
+PayPal sandbox attempts are not proof of settlement: outside the automated test environment, they remain pending validation for staff review. Configure PayPal production credentials and mode before accepting PayPal payments from guests.
+
 For PayPal production webhooks, set `PAYPAL_WEBHOOK_ID`; the application verifies incoming events through PayPal's `verify-webhook-signature` endpoint before processing them. FedaPay webhooks currently require the `X-Webhook-Signature` HMAC generated with `PAYMENT_WEBHOOK_SECRET`; confirm FedaPay's signing header in your account before enabling live FedaPay webhooks. CinetPay IPNs must target `/webhooks/cinetpay`; each received `transaction_id` is verified against CinetPay's payment-check API before payment status is updated.
 
 M-Pesa uses Daraja STK Push for KES payments. Configure `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, and `MPESA_PASSKEY`, then register `https://your-domain.example/webhooks/mpesa` as the callback URL. The application records the Daraja checkout request ID and processes only callbacks for a known payment attempt.

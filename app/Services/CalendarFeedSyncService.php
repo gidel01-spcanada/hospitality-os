@@ -5,13 +5,20 @@ namespace App\Services;
 use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
 use App\Support\CalendarFeedUrl;
+use GuzzleHttp\Handler\StreamHandler;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Psr\Http\Message\RequestInterface;
 use RuntimeException;
 
 class CalendarFeedSyncService
 {
+    private const MAX_BYTES = 2 * 1024 * 1024;
+    private const MAX_REDIRECTS = 5;
+
     public function sync(ExternalCalendarFeed $feed): bool
     {
         $feed->update([
@@ -20,25 +27,7 @@ class CalendarFeedSyncService
         ]);
 
         try {
-            CalendarFeedUrl::assertPublic((string) $feed->url);
-            $response = Http::timeout(15)->withOptions([
-                'allow_redirects' => false,
-                'connect_timeout' => 5,
-                'progress' => static function (int $downloadTotal, int $downloadedBytes, int $uploadTotal, int $uploadedBytes): void {
-                    if ($downloadedBytes > 2 * 1024 * 1024) {
-                        throw new RuntimeException('Calendar feed exceeds the 2 MB size limit.');
-                    }
-                },
-            ])->get($feed->url);
-
-            if (! $response->successful()) {
-                throw new \RuntimeException('Calendar feed request failed with status ' . $response->status());
-            }
-
-            $events = $this->parse($response->body());
-            if (strlen($response->body()) > 2 * 1024 * 1024) {
-                throw new RuntimeException('Calendar feed exceeds the 2 MB size limit.');
-            }
+            $events = $this->parse($this->fetch((string) $feed->url));
             if ($events === []) {
                 throw new RuntimeException('Calendar feed contains no valid events; existing dates were retained.');
             }
@@ -80,27 +69,111 @@ class CalendarFeedSyncService
         }
     }
 
+    private function fetch(string $url): string
+    {
+        $deadline = microtime(true) + 15;
+        for ($redirects = 0; $redirects <= self::MAX_REDIRECTS; $redirects++) {
+            $addresses = app(CalendarFeedUrl::class)->assertPublic($url);
+            $uri = new Uri($url);
+            $host = trim($uri->getHost(), '[]');
+            $address = $addresses[0];
+            $remaining = $deadline - microtime(true);
+            if ($remaining <= 0) {
+                throw new RuntimeException('Calendar feed request timed out.');
+            }
+
+            $request = Http::withHeaders(['Accept-Encoding' => 'identity'])->withOptions([
+                'allow_redirects' => false,
+                'proxy' => '',
+                'stream' => true,
+                'decode_content' => true,
+                'timeout' => $remaining,
+                'read_timeout' => min(5, $remaining),
+            ]);
+            if ($uri->getUserInfo() !== '') {
+                [$username, $password] = array_pad(explode(':', $uri->getUserInfo(), 2), 2, '');
+                $request = $request->withBasicAuth(rawurldecode($username), rawurldecode($password));
+            }
+            $transport = $this->streamHandler();
+            // The handler connects to the validated IP, but retains the original Host and TLS name.
+            $request->setHandler(static function (RequestInterface $request, array $options) use ($host, $address, $transport) {
+                $options['stream_context']['ssl']['peer_name'] = $host;
+                $options['stream_context']['ssl']['SNI_server_name'] = $host;
+                $ipHost = str_contains($address, ':') ? '[' . $address . ']' : $address;
+                $request = $request->withUri($request->getUri()->withHost($ipHost), true);
+
+                return $transport($request, $options);
+            });
+            $response = $request->get((string) $uri->withUserInfo(''));
+            $body = $response->toPsrResponse()->getBody();
+
+            try {
+                if (in_array($response->status(), [301, 302, 303, 307, 308], true)) {
+                    $location = $response->header('Location');
+                    if ($redirects === self::MAX_REDIRECTS || ! is_string($location) || $location === '') {
+                        throw new RuntimeException('Calendar feed redirect is invalid or exceeds the limit.');
+                    }
+                    $next = UriResolver::resolve($uri, new Uri($location));
+                    if ($next->getHost() !== $uri->getHost() || $next->getPort() !== $uri->getPort() || $next->getScheme() !== $uri->getScheme()) {
+                        $next = $next->withUserInfo('');
+                    }
+                    $url = (string) $next;
+                    continue;
+                }
+
+                if (! $response->successful()) {
+                    throw new RuntimeException('Calendar feed request failed with status ' . $response->status());
+                }
+                $encoding = strtolower(trim($response->header('Content-Encoding') ?? ''));
+                if ($encoding !== '' && $encoding !== 'identity') {
+                    throw new RuntimeException('Calendar feed content encoding is not supported.');
+                }
+                $contentLength = $response->header('Content-Length');
+                if ($contentLength !== '' && (! ctype_digit($contentLength) || (float) $contentLength > self::MAX_BYTES)) {
+                    throw new RuntimeException('Calendar feed response has an invalid or oversized content length.');
+                }
+                $content = '';
+                while (! $body->eof()) {
+                    if (microtime(true) >= $deadline) {
+                        throw new RuntimeException('Calendar feed request timed out.');
+                    }
+                    $chunk = $body->read(min(8192, self::MAX_BYTES + 1 - strlen($content)));
+                    if ($chunk === '' && ! $body->eof()) {
+                        throw new RuntimeException('Calendar feed response could not be read.');
+                    }
+                    $content .= $chunk;
+                    if (strlen($content) > self::MAX_BYTES) {
+                        throw new RuntimeException('Calendar feed exceeds the 2 MB size limit.');
+                    }
+                }
+                if ($contentLength !== '' && strlen($content) !== (int) $contentLength) {
+                    throw new RuntimeException('Calendar feed response was incomplete.');
+                }
+
+                return $content;
+            } finally {
+                $body->close();
+            }
+        }
+
+        throw new RuntimeException('Calendar feed redirect limit exceeded.');
+    }
+
+    protected function streamHandler(): callable
+    {
+        return new StreamHandler;
+    }
+
     protected function parse(string $calendar): array
     {
         if (! str_contains($calendar, 'BEGIN:VCALENDAR') || ! str_contains($calendar, 'END:VCALENDAR')) {
             throw new RuntimeException('Calendar feed is malformed; existing dates were retained.');
         }
 
-        $rawLines = preg_split('/\r\n|\n|\r/', trim($calendar)) ?: [];
-        $lines = [];
-        foreach ($rawLines as $line) {
-            if (($line[0] ?? '') === ' ' || ($line[0] ?? '') === "\t") {
-                if ($lines !== []) {
-                    $lines[array_key_last($lines)] .= ltrim($line);
-                }
-            } else {
-                $lines[] = $line;
-            }
-        }
         $events = [];
         $current = [];
 
-        foreach ($lines as $line) {
+        foreach ($this->unfoldLines($calendar) as $line) {
             if ($line === 'BEGIN:VEVENT') {
                 $current = [];
                 continue;
@@ -142,6 +215,31 @@ class CalendarFeedSyncService
         }
 
         return $events;
+    }
+
+    private function unfoldLines(string $calendar): \Generator
+    {
+        $offset = 0;
+        $line = null;
+        $length = strlen($calendar);
+        while ($offset < $length && preg_match('/[^\r\n]*(?:\r\n|\r|\n|$)/', $calendar, $match, 0, $offset)) {
+            $offset += strlen($match[0]);
+            $part = rtrim($match[0], "\r\n");
+            if (($part[0] ?? '') === ' ' || ($part[0] ?? '') === "\t") {
+                if ($line !== null) {
+                    $line .= ltrim($part);
+                }
+            } else {
+                if ($line !== null) {
+                    yield $line;
+                }
+                $line = $part;
+            }
+        }
+
+        if ($line !== null) {
+            yield $line;
+        }
     }
 
     protected function normalizeDate(?string $value): ?string

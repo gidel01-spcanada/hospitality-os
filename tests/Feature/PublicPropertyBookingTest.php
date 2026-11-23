@@ -83,6 +83,10 @@ class PublicPropertyBookingTest extends TestCase
 
         $this->assertStringContainsString('\u003C/script\u003E\u003Cscript\u003Ealert(1)\u003C/script\u003E', $content);
         $this->assertStringNotContainsString($payload, $content);
+        preg_match('/<script type="application\/ld\+json">\s*(.*?)\s*<\/script>/s', $content, $match);
+        $schema = json_decode($match[1], true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame('https://schema.org', $schema['@context']);
+        $this->assertSame($payload, $schema['name']);
     }
 
     public function test_property_detail_revalidates_search_dates_and_handles_expired_links(): void

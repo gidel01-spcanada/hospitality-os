@@ -19,8 +19,7 @@ class ReceiptController extends Controller
     public function confirmOfflinePayment(Request $request, Reservation $reservation, ReservationEmailService $emailService, PaymentProofService $proofs): RedirectResponse
     {
         $user = $request->user();
-        $establishment = $reservation->property?->establishment;
-        abort_unless($user && $establishment && $user->managesEstablishment($establishment->id), 403);
+        abort_unless($user && $user->canManageReservations() && $this->staffCanAccess($user, $reservation), 403);
 
         $validated = $request->validate([
             'provider_reference' => ['nullable', 'string', 'max:120'],
@@ -149,7 +148,8 @@ class ReceiptController extends Controller
     private function staffCanAccess(\App\Models\User $user, Reservation $reservation): bool
     {
         $establishment = $reservation->property?->establishment;
-        if (! $establishment || ($user->tenant_id && $establishment->tenant_id !== $user->tenant_id)) {
+        if (! $establishment || (! $user->isPlatformAdmin()
+            && ($user->tenant_id === null || $establishment->tenant_id !== $user->tenant_id))) {
             return false;
         }
 

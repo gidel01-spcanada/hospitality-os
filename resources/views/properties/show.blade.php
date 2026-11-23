@@ -22,7 +22,7 @@
     <meta name="twitter:image" content="{{ $shareImageUrl }}">
     <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@@context' => 'https://schema.org',
             '@type' => 'LodgingBusiness',
             'name' => $shareTitle,
             'description' => $shareDescription,

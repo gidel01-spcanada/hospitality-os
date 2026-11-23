@@ -35,13 +35,7 @@ class AdminCalendarController extends Controller
     {
         $this->authorizeProperty($property);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'provider' => ['required', 'in:booking,airbnb,vrbo,other'],
-            'url' => ['required', 'url', 'max:2048'],
-            'is_enabled' => ['sometimes', 'boolean'],
-        ]);
-        $this->validateFeedUrl($validated['url']);
+        $validated = $this->validateFeed($request);
 
         $feed = $property->calendarFeeds()->create([
             'name' => $validated['name'],
@@ -94,13 +88,7 @@ class AdminCalendarController extends Controller
         $this->authorizeProperty($property);
         abort_unless($feed->property_id === $property->id, 404);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'provider' => ['required', 'in:booking,airbnb,vrbo,other'],
-            'url' => ['required', 'url', 'max:2048'],
-            'is_enabled' => ['sometimes', 'boolean'],
-        ]);
-        $this->validateFeedUrl($validated['url']);
+        $validated = $this->validateFeed($request);
 
         $feed->update([
             'name' => $validated['name'],
@@ -185,10 +173,30 @@ class AdminCalendarController extends Controller
         abort_unless(auth()->user()?->managesEstablishment($property->establishment_id), 403, __('messages.errors.establishment_manager_required'));
     }
 
+    private function validateFeed(Request $request): array
+    {
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'provider' => ['required', 'in:booking,airbnb,vrbo,other'],
+                'url' => ['required', 'url', 'max:2048'],
+                'is_enabled' => ['sometimes', 'boolean'],
+            ]);
+            $this->validateFeedUrl($validated['url']);
+
+            return $validated;
+        } catch (ValidationException $exception) {
+            // Validation errors flash old input to the session, which may be unencrypted.
+            $request->replace($request->except('url'));
+            $request->query->remove('url');
+            throw $exception;
+        }
+    }
+
     private function validateFeedUrl(string $url): void
     {
         try {
-            CalendarFeedUrl::assertPublic($url);
+            app(CalendarFeedUrl::class)->assertPublic($url);
         } catch (RuntimeException $exception) {
             throw ValidationException::withMessages(['url' => $exception->getMessage()]);
         }
