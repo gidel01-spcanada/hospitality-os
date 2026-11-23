@@ -34,6 +34,7 @@ class MobileApiController extends Controller
             'user_id' => $user->id,
             'name' => $credentials['device_name'] ?? 'mobile-app',
             'token' => hash('sha256', $plainToken),
+            'expires_at' => now()->addDays(30),
         ]);
 
         return response()->json(['token' => $plainToken, 'user' => $this->userData($user)], 201);
@@ -114,13 +115,14 @@ class MobileApiController extends Controller
 
     public function staffReservations(Request $request): JsonResponse
     {
-        $reservations = $this->tenantReservations()->with(['property', 'guest'])->latest()->get();
+        $reservations = $this->tenantReservations($request->user())->with(['property', 'guest'])->latest()->get();
 
         return response()->json(['data' => $reservations->map(fn (Reservation $reservation) => $this->reservationData($reservation))]);
     }
 
-    public function staffReservation(Reservation $reservation): JsonResponse
+    public function staffReservation(Request $request, Reservation $reservation): JsonResponse
     {
+        $this->authorizeStaffReservation($request, $reservation);
         $reservation->load(['property', 'guest', 'priceLines', 'paymentAttempts']);
 
         return response()->json(['data' => $this->reservationData($reservation, true)]);
@@ -128,6 +130,7 @@ class MobileApiController extends Controller
 
     public function updateReservationStatus(Request $request, Reservation $reservation, ReservationEmailService $emailService): JsonResponse
     {
+        $this->authorizeStaffReservation($request, $reservation);
         $validated = $request->validate(['status' => ['required', 'in:pending,pending_payment,pending_validation,confirmed,checked_in,completed,cancelled'], 'notes' => ['nullable', 'string', 'max:500']]);
         $changed = $reservation->status !== $validated['status'];
         $reservation->update(['status' => $validated['status'], 'notes' => $validated['notes'] ?? $reservation->notes]);
@@ -138,18 +141,22 @@ class MobileApiController extends Controller
         return response()->json(['data' => $this->reservationData($reservation)]);
     }
 
-    public function sendPaymentLink(Reservation $reservation, ReservationEmailService $emailService): JsonResponse
+    public function sendPaymentLink(Request $request, Reservation $reservation, ReservationEmailService $emailService): JsonResponse
     {
+        $this->authorizeStaffReservation($request, $reservation);
         abort_unless($reservation->canSendPaymentLink(), 403);
         $emailService->queuePaymentLink($reservation);
 
         return response()->json(['message' => 'Payment link queued.', 'checkout_url' => route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token])], 202);
     }
 
-    public function adminProperties(): JsonResponse
+    public function adminProperties(Request $request): JsonResponse
     {
+        $user = $request->user();
         $properties = Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(\App\Support\CurrentTenant::class)->id()))
+            ->whereHas('establishment', fn ($query) => $query
+                ->when(! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
+                ->when($user->isHost(), fn ($query) => $query->whereIn('establishments.id', $user->establishments()->pluck('establishments.id'))))
             ->with('establishment')
             ->latest()
             ->get();
@@ -157,9 +164,24 @@ class MobileApiController extends Controller
         return response()->json(['data' => $properties->map(fn (Property $property) => $this->propertyData($property))]);
     }
 
-    private function tenantReservations()
+    private function tenantReservations(\App\Models\User $user)
     {
-        return Reservation::query()->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(\App\Support\CurrentTenant::class)->id()));
+        return Reservation::query()->whereHas('property.establishment', fn ($query) => $query
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
+            ->when($user->isHost(), fn ($query) => $query->whereIn('establishments.id', $user->establishments()->pluck('establishments.id'))));
+    }
+
+    private function authorizeStaffReservation(Request $request, Reservation $reservation): void
+    {
+        $user = $request->user();
+        $establishment = $reservation->property?->establishment;
+
+        abort_unless($user && $establishment, 404);
+        abort_unless($user->isPlatformAdmin() || ($user->tenant_id !== null && $establishment->tenant_id === $user->tenant_id), 404);
+
+        if ($user->isHost()) {
+            abort_unless($user->managesEstablishment($establishment->id), 404);
+        }
     }
 
     private function userData($user): array

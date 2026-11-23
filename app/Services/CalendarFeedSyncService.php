@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
+use App\Support\CalendarFeedUrl;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class CalendarFeedSyncService
 {
@@ -16,13 +18,28 @@ class CalendarFeedSyncService
         ]);
 
         try {
-            $response = Http::timeout(15)->get($feed->url);
+            CalendarFeedUrl::assertPublic((string) $feed->url);
+            $response = Http::timeout(15)->withOptions([
+                'allow_redirects' => false,
+                'connect_timeout' => 5,
+                'progress' => static function (int $downloadTotal, int $downloadedBytes, int $uploadTotal, int $uploadedBytes): void {
+                    if ($downloadedBytes > 2 * 1024 * 1024) {
+                        throw new RuntimeException('Calendar feed exceeds the 2 MB size limit.');
+                    }
+                },
+            ])->get($feed->url);
 
             if (! $response->successful()) {
                 throw new \RuntimeException('Calendar feed request failed with status ' . $response->status());
             }
 
             $events = $this->parse($response->body());
+            if (strlen($response->body()) > 2 * 1024 * 1024) {
+                throw new RuntimeException('Calendar feed exceeds the 2 MB size limit.');
+            }
+            if ($events === []) {
+                throw new RuntimeException('Calendar feed contains no valid events; existing dates were retained.');
+            }
 
             $eventUids = collect($events)->pluck('uid')->all();
             if ($eventUids === []) {
@@ -46,7 +63,6 @@ class CalendarFeedSyncService
                 'last_successful_sync_at' => now(),
                 'last_sync_error' => null,
                 'status' => 'fresh',
-                'is_enabled' => true,
             ]);
 
             return true;
@@ -62,6 +78,10 @@ class CalendarFeedSyncService
 
     protected function parse(string $calendar): array
     {
+        if (! str_contains($calendar, 'BEGIN:VCALENDAR') || ! str_contains($calendar, 'END:VCALENDAR')) {
+            throw new RuntimeException('Calendar feed is malformed; existing dates were retained.');
+        }
+
         $rawLines = preg_split('/\r\n|\n|\r/', trim($calendar)) ?: [];
         $lines = [];
         foreach ($rawLines as $line) {

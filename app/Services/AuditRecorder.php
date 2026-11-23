@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Support\SensitiveDataRedactor;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditRecorder
@@ -13,9 +14,7 @@ class AuditRecorder
             return;
         }
 
-        $redacted = collect($details)
-            ->except(['password', 'password_confirmation', 'remember_token', 'api_token', 'token'])
-            ->all();
+        $redacted = SensitiveDataRedactor::redactArray($details);
 
         AuditLog::query()->create([
             'user_id' => auth()->id(),
@@ -24,7 +23,7 @@ class AuditRecorder
             'action' => $action,
             'details' => json_encode([
                 ...$redacted,
-                'url' => request()->fullUrl(),
+                'url' => request()->url(),
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ], JSON_UNESCAPED_UNICODE),

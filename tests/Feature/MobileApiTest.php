@@ -5,6 +5,9 @@ namespace Tests\Feature;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\ReservationGuest;
+use App\Models\Establishment;
+use App\Models\MobileAccessToken;
+use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,6 +46,9 @@ class MobileApiTest extends TestCase
         $login = $this->postJson('/api/v1/auth/login', ['email' => $customer->email, 'password' => 'Password123!', 'device_name' => 'PHPUnit']);
         $login->assertCreated()->assertJsonPath('user.role', 'customer');
         $token = $login->json('token');
+        $storedToken = MobileAccessToken::query()->where('user_id', $customer->id)->firstOrFail();
+        $this->assertTrue($storedToken->expires_at->isFuture());
+        $this->assertTrue($storedToken->expires_at->isSameDay(now()->addDays(30)));
 
         $this->getJson('/api/v1/properties')
             ->assertOk()
@@ -83,6 +89,76 @@ class MobileApiTest extends TestCase
             ->assertStatus(202)
             ->assertJsonPath('checkout_url', route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]));
         $this->assertDatabaseHas('email_outbox', ['recipient_email' => $guest->email, 'template' => 'payment_link', 'status' => 'queued']);
+    }
+
+    public function test_mobile_logout_revokes_the_current_bearer_token(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'is_active' => true]);
+        $token = $this->tokenFor($customer);
+
+        $this->withToken($token)->postJson('/api/v1/auth/logout')->assertNoContent();
+        $this->withToken($token)->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_expired_mobile_access_tokens_are_rejected(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'is_active' => true]);
+        $plainToken = 'expired-mobile-token';
+        MobileAccessToken::query()->create([
+            'user_id' => $customer->id,
+            'name' => 'Expired device',
+            'token' => hash('sha256', $plainToken),
+            'expires_at' => now()->subMinute(),
+        ]);
+
+        $this->withToken($plainToken)->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_staff_api_rejects_reservations_from_another_tenant(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $tenantAdmin = User::where('email', 'admin@afrikappart.test')->firstOrFail();
+        $foreignTenant = Tenant::query()->create(['name' => 'Mobile foreign tenant', 'slug' => 'mobile-foreign', 'status' => 'active']);
+        $foreignEstablishment = Establishment::query()->create([
+            'tenant_id' => $foreignTenant->id,
+            'name' => 'Mobile foreign establishment',
+            'slug' => 'mobile-foreign-establishment',
+            'currency' => 'XOF',
+        ]);
+        $property = $foreignEstablishment->properties()->create([
+            'name' => 'Mobile foreign property',
+            'slug' => 'mobile-foreign-property',
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $guest = ReservationGuest::query()->create(['full_name' => 'Foreign guest', 'email' => 'mobile-foreign@example.com']);
+        $reservation = Reservation::query()->create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-MOBILE-FOREIGN',
+            'status' => 'pending',
+            'check_in' => now()->addDays(12)->toDateString(),
+            'check_out' => now()->addDays(14)->toDateString(),
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'total_amount' => 50000,
+        ]);
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_admin' => true,
+            'tenant_id' => $tenantAdmin->tenant_id,
+            'is_active' => true,
+        ]);
+        $token = $this->tokenFor($admin);
+
+        $this->withToken($token)->getJson('/api/v1/staff/reservations')
+            ->assertOk()
+            ->assertJsonMissing(['id' => $reservation->id]);
+        $this->withToken($token)->getJson('/api/v1/staff/reservations/' . $reservation->id)->assertNotFound();
+        $this->withToken($token)->patchJson('/api/v1/staff/reservations/' . $reservation->id . '/status', ['status' => 'confirmed'])->assertNotFound();
+        $this->withToken($token)->postJson('/api/v1/staff/reservations/' . $reservation->id . '/payment-link')->assertNotFound();
+
+        $this->assertSame('pending', $reservation->fresh()->status);
     }
 
     private function tokenFor(User $user): string

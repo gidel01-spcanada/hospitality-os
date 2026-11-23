@@ -18,6 +18,10 @@ class ReceiptController extends Controller
 {
     public function confirmOfflinePayment(Request $request, Reservation $reservation, ReservationEmailService $emailService, PaymentProofService $proofs): RedirectResponse
     {
+        $user = $request->user();
+        $establishment = $reservation->property?->establishment;
+        abort_unless($user && $establishment && $user->managesEstablishment($establishment->id), 403);
+
         $validated = $request->validate([
             'provider_reference' => ['nullable', 'string', 'max:120'],
             'payment_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],

@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -350,6 +351,11 @@ class PublicPropertyController extends Controller
                 'check_in' => __('messages.properties.minimum_stay_error', ['nights' => (int) $property->minimum_stay]),
             ]);
         }
+        if ((int) $validated['adults'] + (int) ($validated['children'] ?? 0) > (int) $property->max_guests) {
+            return back()->withInput()->withErrors([
+                'adults' => __('messages.properties.guest_capacity_exceeded'),
+            ]);
+        }
         if (! $availabilityService->isAvailable($property, $checkIn, $checkOut)) {
             return back()->withInput()->withErrors([
                 'check_in' => __('messages.properties.availability_unavailable'),
@@ -454,7 +460,31 @@ class PublicPropertyController extends Controller
             );
             $createdGuestAccount = $reservationUser->wasRecentlyCreated;
         }
-        $reservation = Reservation::query()->create([
+        $reservation = DB::transaction(function () use ($property, $validated, $checkIn, $checkOut, $email, $reservationUser, $deferAccountSetup, $pricing, $selectedFeatures, $guest): Reservation {
+            $lockedProperty = Property::query()
+                ->with('establishment')
+                ->whereKey($property->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            abort_unless(
+                $lockedProperty->status === 'published'
+                    && $lockedProperty->is_active
+                    && $lockedProperty->establishment?->is_active
+                    && $lockedProperty->establishment?->is_published,
+                404
+            );
+            if ((int) $validated['adults'] + (int) ($validated['children'] ?? 0) > (int) $lockedProperty->max_guests) {
+                throw ValidationException::withMessages([
+                    'adults' => __('messages.properties.guest_capacity_exceeded'),
+                ]);
+            }
+            if (! app(AvailabilityService::class)->isAvailable($lockedProperty, $checkIn, $checkOut)) {
+                throw ValidationException::withMessages([
+                    'check_in' => __('messages.properties.availability_unavailable'),
+                ]);
+            }
+
+            return Reservation::query()->create([
             'property_id' => $property->id,
             'guest_id' => $guest->id,
             'user_id' => $reservationUser?->id,
@@ -476,7 +506,8 @@ class PublicPropertyController extends Controller
             'source' => 'website',
             'notes' => 'Reservation placed from public booking form.' . ($selectedFeatures->isNotEmpty() ? ' Extras: ' . $selectedFeatures->pluck('name')->implode(', ') : ''),
             'customer_note' => $validated['customer_note'] ?? null,
-        ]);
+            ]);
+        });
 
         $priceLines = array_map(function (array $line) use ($reservation): array {
             return array_merge($line, [

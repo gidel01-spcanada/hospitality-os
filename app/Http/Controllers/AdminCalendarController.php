@@ -6,9 +6,12 @@ use App\Models\ExternalCalendarEvent;
 use App\Models\ExternalCalendarFeed;
 use App\Models\Property;
 use App\Services\CalendarFeedSyncService;
+use App\Support\CalendarFeedUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class AdminCalendarController extends Controller
 {
@@ -38,6 +41,7 @@ class AdminCalendarController extends Controller
             'url' => ['required', 'url', 'max:2048'],
             'is_enabled' => ['sometimes', 'boolean'],
         ]);
+        $this->validateFeedUrl($validated['url']);
 
         $feed = $property->calendarFeeds()->create([
             'name' => $validated['name'],
@@ -93,6 +97,7 @@ class AdminCalendarController extends Controller
             'url' => ['required', 'url', 'max:2048'],
             'is_enabled' => ['sometimes', 'boolean'],
         ]);
+        $this->validateFeedUrl($validated['url']);
 
         $feed->update([
             'name' => $validated['name'],
@@ -166,5 +171,14 @@ class AdminCalendarController extends Controller
     private function authorizeProperty(Property $property): void
     {
         abort_unless(auth()->user()?->managesEstablishment($property->establishment_id), 403, __('messages.errors.establishment_manager_required'));
+    }
+
+    private function validateFeedUrl(string $url): void
+    {
+        try {
+            CalendarFeedUrl::assertPublic($url);
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages(['url' => $exception->getMessage()]);
+        }
     }
 }

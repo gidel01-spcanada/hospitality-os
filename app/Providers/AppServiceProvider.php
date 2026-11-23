@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Support\BrandSettings;
 use App\Support\CurrentTenant;
 use Illuminate\Support\Facades\URL;
+use App\Support\SensitiveDataRedactor;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -85,23 +86,16 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $redact = static function (array $values): array {
-            return collect($values)
-                ->except(['password', 'remember_token', 'api_token', 'token'])
-                ->map(fn ($value) => is_object($value) ? (string) $value : $value)
-                ->all();
-        };
         $user = auth()->user();
-        $attributes = $model->getAttributes();
         \App\Models\AuditLog::query()->create([
             'user_id' => $user?->id,
             'model_type' => $model::class,
             'model_id' => $model->getKey(),
             'action' => $event,
             'details' => json_encode([
-                'old' => $redact($oldValues),
-                'new' => $redact($newValues),
-                'url' => request()->fullUrl(),
+                'old' => SensitiveDataRedactor::redactArray($oldValues),
+                'new' => SensitiveDataRedactor::redactArray($newValues),
+                'url' => request()->url(),
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ], JSON_UNESCAPED_UNICODE),

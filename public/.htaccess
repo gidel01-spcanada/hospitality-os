@@ -5,6 +5,7 @@
 
     RewriteEngine On
 
+    RewriteRule ^uploads/reservations/ - [F,NC,L]
     RewriteRule ^sitemap\.xml$ index.php [L]
 
     # Handle Authorization Header

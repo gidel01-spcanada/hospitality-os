@@ -314,6 +314,14 @@ class PaymentWorkflowTest extends TestCase
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'pay_later', 'status' => 'created']);
 
         $attempt = $reservation->paymentAttempts()->latest()->firstOrFail();
+        $missingStatusBody = json_encode(['provider_reference' => $attempt->provider_reference], JSON_THROW_ON_ERROR);
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $missingStatusBody, config('services.payments.webhook_secret')),
+        ], $missingStatusBody)->assertOk();
+        $this->assertSame('pending_payment', $reservation->fresh()->status);
+        $this->assertSame('created', $attempt->fresh()->status);
+
         $webhookPayload = [
             'provider_reference' => $attempt->provider_reference,
             'status' => 'paid',
@@ -342,6 +350,12 @@ class PaymentWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'pay_later', 'status' => 'paid']);
+        $statusEmails = EmailOutbox::query()->where('template', 'reservation_status_updated')->count();
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $webhookBody, config('services.payments.webhook_secret')),
+        ], $webhookBody)->assertOk();
+        $this->assertSame($statusEmails, EmailOutbox::query()->where('template', 'reservation_status_updated')->count());
 
         $failureBody = json_encode([
             'provider_reference' => $attempt->provider_reference,
@@ -745,6 +759,10 @@ class PaymentWorkflowTest extends TestCase
         $createUrl = route('checkout.paypal.create', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
         $captureUrl = route('checkout.paypal.capture', ['reservation' => $reservation, 'token' => $reservation->checkout_token]);
 
+        $this->postJson($captureUrl, ['orderID' => 'arbitrary-sandbox-order'])->assertNotFound();
+        $this->assertSame('pending', $reservation->fresh()->status);
+        $this->assertSame(0, $reservation->paymentAttempts()->where('provider', 'paypal')->count());
+
         $response = $this->postJson($createUrl);
         $response->assertOk()->assertJsonStructure(['orderID', 'attempt_id']);
         $orderID = $response->json('orderID');
@@ -757,6 +775,88 @@ class PaymentWorkflowTest extends TestCase
 
         $this->assertDatabaseHas('reservations', ['id' => $reservation->id, 'status' => 'confirmed']);
         $this->assertDatabaseHas('payment_attempts', ['reservation_id' => $reservation->id, 'provider' => 'paypal', 'status' => 'paid']);
+    }
+
+    public function test_late_paid_webhook_does_not_reopen_cancelled_reservation(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $guest = ReservationGuest::create(['full_name' => 'Late payment guest', 'email' => 'late-payment@example.com']);
+        Reservation::create([
+            'property_id' => $property->id,
+            'reservation_ref' => 'AFK-OVERLAPPING-CONFIRMED',
+            'status' => 'confirmed',
+            'check_in' => now()->addDays(18)->toDateString(),
+            'check_out' => now()->addDays(20)->toDateString(),
+            'currency' => 'XOF',
+            'email' => 'already-confirmed@example.com',
+            'total_amount' => 50000,
+        ]);
+        $cancelled = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-LATE-CANCELLED',
+            'status' => 'cancelled',
+            'check_in' => now()->addDays(18)->toDateString(),
+            'check_out' => now()->addDays(20)->toDateString(),
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'total_amount' => 50000,
+        ]);
+        $attempt = $cancelled->paymentAttempts()->create([
+            'provider' => 'pay_later',
+            'provider_reference' => 'late-paid-reference',
+            'currency' => 'XOF',
+            'amount' => 50000,
+            'status' => 'created',
+            'idempotency_key' => 'late-paid-reference',
+        ]);
+        $body = json_encode(['provider_reference' => $attempt->provider_reference, 'status' => 'paid'], JSON_THROW_ON_ERROR);
+
+        $this->call('POST', '/webhooks/pay_later', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $body, config('services.payments.webhook_secret')),
+        ], $body)->assertOk();
+
+        $this->assertSame('cancelled', $cancelled->fresh()->status);
+        $this->assertSame('paid', $attempt->fresh()->status);
+        $this->assertDatabaseMissing('receipts', ['reservation_id' => $cancelled->id]);
+    }
+
+    public function test_checkout_does_not_render_interac_security_answer(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::where('slug', 'appartement-401')->firstOrFail();
+        $property->establishment->update([
+            'secondary_currency' => 'CAD',
+            'secondary_currency_rate' => 1.0,
+            'payment_methods' => [
+                'interac' => [
+                    'enabled' => true,
+                    'security_question' => 'What is the code?',
+                    'security_answer' => 'answer-must-stay-private',
+                    'email' => 'payments@example.com',
+                ],
+            ],
+        ]);
+        $guest = ReservationGuest::create(['full_name' => 'Interac guest', 'email' => 'interac@example.com']);
+        $reservation = Reservation::create([
+            'property_id' => $property->id,
+            'guest_id' => $guest->id,
+            'reservation_ref' => 'AFK-INTERAC-PRIVATE',
+            'status' => 'pending',
+            'check_in' => now()->addDays(25)->toDateString(),
+            'check_out' => now()->addDays(27)->toDateString(),
+            'currency' => 'XOF',
+            'email' => $guest->email,
+            'total_amount' => 50000,
+        ]);
+
+        $this->withSession(['checkout_identity_skipped' => [$reservation->id]])
+            ->get(route('checkout.show', ['reservation' => $reservation, 'token' => $reservation->checkout_token]))
+            ->assertOk()
+            ->assertSee('What is the code?')
+            ->assertDontSee('answer-must-stay-private');
     }
 
     public function test_pay_later_requires_and_creates_guarantee_hold_when_cancellation_fee_configured(): void

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Establishment;
 use App\Models\Property;
 use App\Services\ReportingService;
-use App\Support\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -38,11 +37,17 @@ class AdminReportController extends Controller
             ], ';');
 
             foreach ($this->csvRows($report) as $row) {
+                $row = array_map(fn ($value) => $this->neutralizeSpreadsheetFormula((string) $value), $row);
                 fputcsv($output, $row, ';');
             }
 
             fclose($output);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function neutralizeSpreadsheetFormula(string $value): string
+    {
+        return preg_match('/^[\s\x00-\x1F]*[=+\-@]/u', $value) ? "'" . $value : $value;
     }
 
     private function reportContext(Request $request, ReportingService $reporting): array
@@ -76,7 +81,10 @@ class AdminReportController extends Controller
         }
 
         $properties = Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user->tenant_id),
+            ))
             ->when($user->isHost(), fn ($query) => $query->whereIn('establishment_id', $allowedEstablishmentIds))
             ->when($selectedEstablishmentId, fn ($query) => $query->where('establishment_id', $selectedEstablishmentId))
             ->with(['establishment', 'availabilityBlocks', 'calendarFeeds.events'])

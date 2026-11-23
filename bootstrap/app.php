@@ -22,6 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 \Illuminate\Cookie\Middleware\EncryptCookies::class => \App\Http\Middleware\EncryptCookies::class,
             ],
         );
+        $middleware->prependToPriorityList(
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\ResolveTenant::class,
+        );
+        $middleware->prependToPriorityList(
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\AuthenticateMobileToken::class,
+        );
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'establishment-manager' => \App\Http\Middleware\EnsureUserIsEstablishmentManager::class,

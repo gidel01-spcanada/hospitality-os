@@ -121,7 +121,24 @@ class User extends Authenticatable implements HasLocalePreference
             return false;
         }
 
-        return $this->isAdmin() || ($this->isHost() && $this->establishments()->whereKey($establishmentId)->exists());
+        if ($this->isPlatformAdmin()) {
+            return Establishment::query()->whereKey($establishmentId)->exists();
+        }
+
+        if ($this->isAdmin()) {
+            return $this->tenant_id !== null
+                && Establishment::query()
+                    ->whereKey($establishmentId)
+                    ->where('tenant_id', $this->tenant_id)
+                    ->exists();
+        }
+
+        return $this->isHost()
+            && $this->tenant_id !== null
+            && $this->establishments()
+                ->whereKey($establishmentId)
+                ->where('establishments.tenant_id', $this->tenant_id)
+                ->exists();
     }
 
     public function canManageReservations(): bool
@@ -136,8 +153,13 @@ class User extends Authenticatable implements HasLocalePreference
     public function resolveRouteBinding($value, $field = null): ?self
     {
         $user = parent::resolveRouteBinding($value, $field);
+        $currentUser = request()->user();
 
-        if ($user && $user->tenant_id && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $user->tenant_id !== $tenantId) {
+        if ($user
+            && $user->tenant_id !== null
+            && $currentUser
+            && ! $currentUser->isPlatformAdmin()
+            && $user->tenant_id !== $currentUser->tenant_id) {
             return null;
         }
 

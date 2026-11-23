@@ -13,9 +13,9 @@ class ResolveTenant
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        app(CurrentTenant::class)->set($user?->tenant_id);
+        app(CurrentTenant::class)->set($user && ! $user->isPlatformAdmin() ? $user->tenant_id : null);
 
-        if ($user?->tenant_id && $user->tenant?->status === 'suspended') {
+        if ($user && ! $user->isPlatformAdmin() && $user->tenant_id && $user->tenant?->status === 'suspended') {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

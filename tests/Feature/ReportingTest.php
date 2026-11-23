@@ -177,6 +177,22 @@ class ReportingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_csv_export_neutralizes_spreadsheet_formulas_in_property_names(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::query()->where('email', 'admin@afrikappart.test')->firstOrFail();
+        $property = Property::query()->firstOrFail();
+        $property->update(['name' => '=HYPERLINK("https://example.com","click")']);
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.export', [
+            'date_from' => now()->startOfMonth()->toDateString(),
+            'date_to' => now()->endOfMonth()->toDateString(),
+            'property' => $property->id,
+        ]))->assertOk();
+
+        $this->assertStringContainsString("'=HYPERLINK", $response->streamedContent());
+    }
+
     public function test_customer_cannot_access_reporting(): void
     {
         $this->seed(DatabaseSeeder::class);

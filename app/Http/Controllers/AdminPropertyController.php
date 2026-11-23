@@ -56,7 +56,7 @@ class AdminPropertyController extends Controller
             'status' => ['required', 'in:draft,published,archived'],
             'is_active' => ['sometimes', 'boolean'],
             'amenity_ids' => ['nullable', 'array'],
-            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
+            'amenity_ids.*' => ['integer', $this->amenityExistsRule()],
         ]);
 
         $amenityIds = $validated['amenity_ids'] ?? [];
@@ -85,7 +85,7 @@ class AdminPropertyController extends Controller
 
         // Property has no tenant_id of its own, so it's scoped here through its establishment.
         $properties = Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when($user && ! $user->isPlatformAdmin(), fn ($query) => $query->whereHas('establishment', fn ($query) => $query->where('tenant_id', $user->tenant_id)))
             ->when($user && $user->isHost(), fn ($query) => $query->whereIn('establishment_id', $establishments->pluck('id')))
             ->when($establishmentId, fn ($query) => $query->where('establishment_id', $establishmentId))
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
@@ -129,7 +129,7 @@ class AdminPropertyController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'establishment_id' => ['sometimes', 'integer', $this->establishmentExistsRule()],
             'amenity_ids' => ['nullable', 'array'],
-            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
+            'amenity_ids.*' => ['integer', $this->amenityExistsRule()],
             'translations' => ['nullable', 'array'],
             'translations.fr.name' => ['nullable', 'string', 'max:255'],
             'translations.en.name' => ['nullable', 'string', 'max:255'],
@@ -140,6 +140,9 @@ class AdminPropertyController extends Controller
         ]);
 
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        if (isset($validated['establishment_id'])) {
+            abort_unless(auth()->user()?->managesEstablishment((int) $validated['establishment_id']), 403, __('messages.errors.establishment_manager_required'));
+        }
         $amenityIds = $validated['amenity_ids'] ?? [];
         unset($validated['amenity_ids']);
         if ($request->has('is_active')) {
@@ -212,10 +215,14 @@ class AdminPropertyController extends Controller
     public function updateAmenities(Request $request, Property $property): RedirectResponse
     {
         $this->authorizeProperty($property);
+        $user = $request->user();
 
         $validated = $request->validate([
             'amenity_ids' => ['nullable', 'array'],
-            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))],
+            'amenity_ids.*' => ['integer', Rule::exists('amenities', 'id')->when(
+                ! $user?->isPlatformAdmin(),
+                fn ($rule) => $rule->where(fn ($query) => $query->where('tenant_id', $user?->tenant_id)),
+            )],
         ]);
 
         $property->amenities()->sync($validated['amenity_ids'] ?? []);
@@ -540,7 +547,22 @@ class AdminPropertyController extends Controller
      */
     private function establishmentExistsRule(): \Illuminate\Validation\Rules\Exists
     {
-        return Rule::exists('establishments', 'id')->where(fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()));
+        $user = auth()->user();
+
+        return Rule::exists('establishments', 'id')->when(
+            $user && ! $user->isPlatformAdmin(),
+            fn ($rule) => $rule->where('tenant_id', $user->tenant_id),
+        );
+    }
+
+    private function amenityExistsRule(): \Illuminate\Validation\Rules\Exists
+    {
+        $user = auth()->user();
+
+        return Rule::exists('amenities', 'id')->when(
+            $user && ! $user->isPlatformAdmin(),
+            fn ($rule) => $rule->where('tenant_id', $user->tenant_id),
+        );
     }
 
     private function authorizeProperty(Property $property): void
@@ -555,6 +577,8 @@ class AdminPropertyController extends Controller
 
         return $user && $user->isHost()
             ? $user->establishments()->orderBy('name')->get()
-            : Establishment::query()->orderBy('name')->get();
+            : Establishment::query()
+                ->when($user && ! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
+                ->orderBy('name')->get();
     }
 }

@@ -12,7 +12,6 @@ use App\Services\AvailabilityService;
 use App\Services\PricingCalculator;
 use App\Services\PaymentProofService;
 use App\Services\ReservationEmailService;
-use App\Support\CurrentTenant;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -146,7 +145,10 @@ class AdminReservationController extends Controller
         $calendarEnd = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
 
         $reservationQuery = Reservation::query()
-            ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user?->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'property.establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user?->tenant_id),
+            ))
             ->when($user && $user->isHost(), fn ($query) => $query->whereHas('property', fn ($q) => $q->whereIn('establishment_id', $user->establishments()->pluck('establishments.id'))))
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
@@ -198,7 +200,10 @@ class AdminReservationController extends Controller
             ->with('property')
             ->whereKeyNot($reservation->id)
             ->where(fn ($query) => $query->where('email', $reservation->email)->when($reservation->user_id, fn ($inner) => $inner->orWhere('user_id', $reservation->user_id)))
-            ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'property.establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user->tenant_id),
+            ))
             ->when($user->isHost(), fn ($query) => $query->whereHas('property', fn ($inner) => $inner->whereIn('establishment_id', $user->establishments()->pluck('establishments.id'))))
             ->latest('check_in')
             ->get();
@@ -476,7 +481,10 @@ class AdminReservationController extends Controller
         $user = auth()->user();
 
         return Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user?->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user?->tenant_id),
+            ))
             ->when($user && $user->isHost(), fn ($query) => $query->whereIn('establishment_id', $user->establishments()->pluck('establishments.id')))
             ->orderBy('name')
             ->get();
@@ -488,9 +496,13 @@ class AdminReservationController extends Controller
      */
     private function ownedProperty(int $propertyId): Property
     {
+        $user = auth()->user();
         $property = Property::query()
             ->whereKey($propertyId)
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user?->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user?->tenant_id),
+            ))
             ->firstOrFail();
 
         $user = auth()->user();
@@ -503,9 +515,13 @@ class AdminReservationController extends Controller
 
     private function ownedReservation(Reservation $reservation): Reservation
     {
-        abort_unless($reservation->property?->establishment?->tenant_id === app(CurrentTenant::class)->id(), 404);
-
         $user = auth()->user();
+        abort_unless(
+            $user?->isPlatformAdmin()
+                || $reservation->property?->establishment?->tenant_id === $user?->tenant_id,
+            404,
+        );
+
         if ($user && $user->isHost()) {
             abort_unless($user->managesEstablishment($reservation->property?->establishment_id), 403, __('messages.errors.establishment_manager_required'));
         }

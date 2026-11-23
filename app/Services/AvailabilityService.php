@@ -10,6 +10,8 @@ use Carbon\Carbon;
 
 class AvailabilityService
 {
+    private const PENDING_HOLD_HOURS = 48;
+
     public function isAvailable(
         Property $property,
         Carbon $checkIn,
@@ -25,6 +27,10 @@ class AvailabilityService
         $conflicts = Reservation::query()
             ->where('property_id', $property->id)
             ->where('status', '!=', 'cancelled')
+            ->where(function ($query): void {
+                $query->whereNotIn('status', ['pending', 'pending_payment', 'payment_failed'])
+                    ->orWhere('created_at', '>=', now()->subHours(self::PENDING_HOLD_HOURS));
+            })
             ->when($ignoreReservationId, fn ($query) => $query->where('id', '!=', $ignoreReservationId))
             ->whereDate('check_in', '<', $checkOut->toDateString())
             ->whereDate('check_out', '>', $checkIn->toDateString())

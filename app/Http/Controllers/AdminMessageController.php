@@ -6,7 +6,6 @@ use App\Models\Establishment;
 use App\Models\MessageThread;
 use App\Models\Reservation;
 use App\Services\MessageEmailService;
-use App\Support\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -55,17 +54,21 @@ class AdminMessageController extends Controller
         $user = auth()->user();
 
         return MessageThread::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user?->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user?->tenant_id),
+            ))
             ->when($user && $user->isHost(), fn ($query) => $query->whereHas('establishment', fn ($q) => $q->whereIn('establishments.id', $user->establishments()->pluck('establishments.id'))));
     }
 
     private function belongsToCurrentTenant(MessageThread $thread): bool
     {
-        if (! $thread->establishment()->where('tenant_id', app(CurrentTenant::class)->id())->exists()) {
+        $user = auth()->user();
+
+        if (! $user?->isPlatformAdmin()
+            && ! $thread->establishment()->where('tenant_id', $user?->tenant_id)->exists()) {
             return false;
         }
-
-        $user = auth()->user();
 
         return ! ($user && $user->isHost()) || $user->managesEstablishment($thread->establishment_id);
     }

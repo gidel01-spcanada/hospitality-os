@@ -67,8 +67,11 @@ class Reservation extends Model
     {
         $reservation = parent::resolveRouteBinding($value, $field);
 
-        if ($reservation && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $reservation->property->establishment->tenant_id !== $tenantId) {
-            return null;
+        if ($reservation && ($tenantId = app(\App\Support\CurrentTenant::class)->id())) {
+            $establishment = $reservation->property?->establishment;
+            if (! $establishment || $establishment->tenant_id !== $tenantId) {
+                return null;
+            }
         }
 
         return $reservation;

@@ -22,13 +22,14 @@ class AuthenticateMobileToken
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($token->user->tenant?->status === 'suspended') {
+        if (! $token->user->isPlatformAdmin() && $token->user->tenant?->status === 'suspended') {
             return response()->json(['message' => 'This workspace has been suspended.'], 403);
         }
 
         $token->forceFill(['last_used_at' => now()])->save();
+        $request->attributes->set('mobile_access_token', $token);
         $request->setUserResolver(fn () => $token->user);
-        app(CurrentTenant::class)->set($token->user->tenant_id);
+        app(CurrentTenant::class)->set($token->user->isPlatformAdmin() ? null : $token->user->tenant_id);
 
         return $next($request);
     }

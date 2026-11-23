@@ -50,16 +50,16 @@ class PayPalSandboxGateway implements PaymentGateway
     public function handleWebhook(Request $request): ?PaymentAttempt
     {
         $reference = (string) ($request->input('resource.id') ?? $request->input('provider_reference') ?? $request->input('reference') ?? '');
-        if ($reference === '') {
+        $status = $request->input('status');
+        if ($reference === '' || ! is_string($status)) {
             return null;
         }
 
-        $attempt = PaymentAttempt::query()->where('provider_reference', $reference)->first();
+        $attempt = PaymentAttempt::query()->where('provider', $this->name())->where('provider_reference', $reference)->first();
         if (! $attempt) {
             return null;
         }
 
-        $status = $request->input('event', 'paid');
         if (! in_array($status, ['paid', 'completed', 'failed', 'cancelled', 'pending'], true)) {
             return null;
         }

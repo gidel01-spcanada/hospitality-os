@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Notifications\GuestAccountSetupNotification;
+use App\Services\AvailabilityService;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\ReservationEmailService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -262,13 +264,9 @@ class CheckoutController extends Controller
             'payload' => array_merge((array) $attempt->payload, ['verified_at' => now()->toIso8601String()]),
         ]);
 
-        $reservation->update([
-            'status' => 'confirmed',
-            'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified and reservation confirmed.'),
-        ]);
-
-        $emailService->queueStatusUpdate($reservation, 'confirmed');
-        $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
+        $this->confirmPaidReservation($reservation, $attempt, $emailService);
+        $reservation->refresh();
+        abort_unless($reservation->status === 'confirmed', 409, __('messages.checkout.payment_no_longer_available'));
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
     }
@@ -349,11 +347,12 @@ class CheckoutController extends Controller
         $attempt = $manager->resolve($provider, $attempt->payload['mode'] ?? 'sandbox')->verifyStatus($attempt);
 
         if (in_array($attempt->status, ['paid', 'completed'], true)) {
-            $reservation->update(['status' => 'confirmed']);
-            $emailService->queueStatusUpdate($reservation, 'confirmed');
-            $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
+            $this->confirmPaidReservation($reservation, $attempt, $emailService);
+            $reservation->refresh();
 
-            return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
+            if ($reservation->status === 'confirmed') {
+                return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('status', __('messages.flash.payment_verified'));
+            }
         }
 
         return redirect()->route('checkout.show', ['reservation' => $reservation, 'token' => $token])->with('error', 'Payment is awaiting confirmation.');
@@ -409,17 +408,12 @@ class CheckoutController extends Controller
         $orderID = (string) $request->input('orderID');
         $attempt = $reservation->paymentAttempts()
             ->where('provider', 'paypal')
-            ->when($orderID !== '', fn ($query) => $query->where('provider_reference', $orderID))
+            ->where('provider_reference', $orderID)
             ->latest()
             ->first();
 
-        if (! $attempt) {
-            $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
-            $attempt = $gateway->createIntent($reservation, [
-                'idempotency_key' => $reservation->reservation_ref . '-paypal-' . time(),
-                'mode' => $paymentMethods['paypal']['mode'],
-            ]);
-        }
+        abort_unless($orderID !== '' && $attempt, 404, 'Unknown PayPal order.');
+        abort_unless(in_array($attempt->status, ['created', 'pending'], true), 409, 'PayPal order cannot be captured.');
 
         $gateway = $manager->resolve('paypal', $paymentMethods['paypal']['mode']);
         $attempt = $gateway->verifyStatus($attempt);
@@ -447,13 +441,12 @@ class CheckoutController extends Controller
                     'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Cancellation guarantee hold authorized via PayPal Smart Buttons.'),
                 ]);
             } else {
-                $reservation->update([
-                    'status' => 'confirmed',
-                    'notes' => trim(($reservation->notes ?? '') . PHP_EOL . 'Payment verified via PayPal Smart Buttons.'),
-                ]);
+                $this->confirmPaidReservation($reservation, $attempt, $emailService);
+                $reservation->refresh();
+            }
 
-                $emailService->queueStatusUpdate($reservation, 'confirmed');
-                $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
+            if (! $isGuarantee && $reservation->status !== 'confirmed') {
+                return response()->json(['status' => 'FAILED', 'message' => __('messages.checkout.payment_no_longer_available')], 409);
             }
 
             return response()->json([
@@ -482,12 +475,11 @@ class CheckoutController extends Controller
 
         if ($attempt && $attempt->reservation) {
             if (in_array($attempt->status, ['paid', 'completed'], true)) {
-                $attempt->reservation->update(['status' => 'confirmed']);
-                $emailService->queueStatusUpdate($attempt->reservation, 'confirmed');
-                $emailService->issueReceiptAndQueueEmail($attempt->reservation, $attempt);
-            } elseif (in_array($attempt->status, ['failed', 'cancelled'], true) && $attempt->reservation->status !== 'confirmed') {
-                $attempt->reservation->update(['status' => 'payment_failed']);
-                $emailService->queueStatusUpdate($attempt->reservation, 'payment_failed');
+                $this->confirmPaidReservation($attempt->reservation, $attempt, $emailService);
+            } elseif (in_array($attempt->status, ['failed', 'cancelled'], true)) {
+                if ($this->markReservationPaymentFailed($attempt->reservation)) {
+                    $emailService->queueStatusUpdate($attempt->reservation->fresh(), 'payment_failed');
+                }
             }
         }
 
@@ -568,5 +560,76 @@ class CheckoutController extends Controller
         return filled($secret)
             && filled($signature)
             && hash_equals(hash_hmac('sha256', $request->getContent(), $secret), $signature);
+    }
+
+    private function confirmPaidReservation(Reservation $reservation, \App\Models\PaymentAttempt $attempt, ReservationEmailService $emailService): bool
+    {
+        $confirmedNow = \Illuminate\Support\Facades\DB::transaction(function () use ($reservation): bool {
+            $property = \App\Models\Property::query()
+                ->with('establishment')
+                ->whereKey($reservation->property_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $lockedReservation = Reservation::query()
+                ->whereKey($reservation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedReservation->status === 'confirmed' || ! in_array($lockedReservation->status, self::PAYABLE_STATUSES, true)) {
+                return false;
+            }
+
+            abort_unless(
+                $property->status === 'published'
+                    && $property->is_active
+                    && $property->establishment?->is_active
+                    && $property->establishment?->is_published,
+                409,
+                __('messages.checkout.payment_no_longer_available')
+            );
+
+            $available = app(AvailabilityService::class)->isAvailable(
+                $property,
+                Carbon::parse($lockedReservation->check_in),
+                Carbon::parse($lockedReservation->check_out),
+                $lockedReservation->id
+            );
+            abort_unless($available, 409, __('messages.checkout.payment_no_longer_available'));
+
+            $lockedReservation->update(['status' => 'confirmed']);
+
+            return true;
+        });
+
+        if ($confirmedNow) {
+            $reservation->refresh();
+            $emailService->queueStatusUpdate($reservation, 'confirmed');
+            $emailService->issueReceiptAndQueueEmail($reservation, $attempt);
+        }
+
+        return $confirmedNow;
+    }
+
+    private function markReservationPaymentFailed(Reservation $reservation): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($reservation): bool {
+            \App\Models\Property::query()
+                ->whereKey($reservation->property_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $lockedReservation = Reservation::query()
+                ->whereKey($reservation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedReservation->status === 'payment_failed'
+                || ! in_array($lockedReservation->status, self::PAYABLE_STATUSES, true)) {
+                return false;
+            }
+
+            $lockedReservation->update(['status' => 'payment_failed']);
+
+            return true;
+        });
     }
 }

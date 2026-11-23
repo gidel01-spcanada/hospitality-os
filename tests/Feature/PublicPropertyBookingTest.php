@@ -51,6 +51,40 @@ class PublicPropertyBookingTest extends TestCase
         $this->assertSame('XOF', $breakdown['currency']);
     }
 
+    public function test_reservation_rejects_guest_count_above_property_capacity(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $property->update(['max_guests' => 2]);
+        $customer = User::factory()->create([
+            'role' => 'customer',
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($customer)->post(route('properties.reserve', $property), [
+            'check_in' => now()->addDays(20)->toDateString(),
+            'check_out' => now()->addDays(22)->toDateString(),
+            'adults' => 2,
+            'children' => 1,
+            'infants' => 0,
+        ])->assertSessionHasErrors('adults');
+
+        $this->assertDatabaseMissing('reservations', ['email' => $customer->email]);
+    }
+
+    public function test_property_name_is_encoded_inside_json_ld_script_data(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::query()->where('slug', 'appartement-401')->firstOrFail();
+        $payload = '</script><script>alert(1)</script>';
+        $property->update(['name' => $payload]);
+
+        $content = $this->get(route('properties.show', $property))->assertOk()->getContent();
+
+        $this->assertStringContainsString('\u003C/script\u003E\u003Cscript\u003Ealert(1)\u003C/script\u003E', $content);
+        $this->assertStringNotContainsString($payload, $content);
+    }
+
     public function test_property_detail_revalidates_search_dates_and_handles_expired_links(): void
     {
         $this->seed(DatabaseSeeder::class);

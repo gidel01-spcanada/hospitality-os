@@ -7,13 +7,16 @@ use App\Models\AmenityCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminAmenityController extends Controller
 {
     public function index(): View
     {
+        $user = auth()->user();
         $categories = AmenityCategory::query()
+            ->when($user && ! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
             ->withCount('amenities')
             ->orderBy('sort_order')
             ->get();
@@ -47,6 +50,7 @@ class AdminAmenityController extends Controller
 
     public function showCategory(AmenityCategory $amenityCategory): View
     {
+        $this->authorizeCategory($amenityCategory);
         $amenityCategory->load(['amenities' => fn ($query) => $query->ordered()]);
 
         return view('admin.amenities.category-show', ['category' => $amenityCategory]);
@@ -54,11 +58,15 @@ class AdminAmenityController extends Controller
 
     public function editCategory(AmenityCategory $amenityCategory): View
     {
+        $this->authorizeCategory($amenityCategory);
+
         return view('admin.amenities.category-edit', ['category' => $amenityCategory]);
     }
 
     public function updateCategory(Request $request, AmenityCategory $amenityCategory): RedirectResponse
     {
+        $this->authorizeCategory($amenityCategory);
+
         $validated = $request->validate([
             'name_en' => ['required', 'string', 'max:100'],
             'name_fr' => ['required', 'string', 'max:100'],
@@ -71,6 +79,8 @@ class AdminAmenityController extends Controller
 
     public function destroyCategory(AmenityCategory $amenityCategory): RedirectResponse
     {
+        $this->authorizeCategory($amenityCategory);
+
         if ($amenityCategory->amenities()->exists()) {
             return $this->toCategory($amenityCategory)->withErrors(['category' => __('messages.errors.amenity_category_in_use')]);
         }
@@ -82,11 +92,15 @@ class AdminAmenityController extends Controller
 
     public function createAmenity(AmenityCategory $amenityCategory): View
     {
+        $this->authorizeCategory($amenityCategory);
+
         return view('admin.amenities.amenity-create', ['category' => $amenityCategory]);
     }
 
     public function storeAmenity(Request $request, AmenityCategory $amenityCategory): RedirectResponse
     {
+        $this->authorizeCategory($amenityCategory);
+
         $validated = $request->validate([
             'name_en' => ['required', 'string', 'max:100'],
             'name_fr' => ['required', 'string', 'max:100'],
@@ -104,17 +118,30 @@ class AdminAmenityController extends Controller
 
     public function editAmenity(Amenity $amenity): View
     {
-        $categories = AmenityCategory::query()->orderBy('sort_order')->get();
+        $this->authorizeAmenity($amenity);
+        $user = auth()->user();
+        $categories = AmenityCategory::query()
+            ->when($user && ! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
+            ->orderBy('sort_order')->get();
 
         return view('admin.amenities.amenity-edit', ['amenity' => $amenity, 'categories' => $categories]);
     }
 
     public function updateAmenity(Request $request, Amenity $amenity): RedirectResponse
     {
+        $this->authorizeAmenity($amenity);
+        $user = auth()->user();
         $validated = $request->validate([
             'name_en' => ['required', 'string', 'max:100'],
             'name_fr' => ['required', 'string', 'max:100'],
-            'category_id' => ['required', 'integer', 'exists:amenity_categories,id'],
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::exists('amenity_categories', 'id')->when(
+                    $user && ! $user->isPlatformAdmin(),
+                    fn ($rule) => $rule->where('tenant_id', $user->tenant_id),
+                ),
+            ],
         ]);
 
         $amenity->update($validated);
@@ -124,6 +151,8 @@ class AdminAmenityController extends Controller
 
     public function destroyAmenity(Amenity $amenity): RedirectResponse
     {
+        $this->authorizeAmenity($amenity);
+
         $categoryId = $amenity->category_id;
         $amenity->delete();
 
@@ -148,5 +177,19 @@ class AdminAmenityController extends Controller
         }
 
         return $slug;
+    }
+
+    private function authorizeCategory(AmenityCategory $category): void
+    {
+        $user = auth()->user();
+        abort_unless($user && $user->isAdmin(), 403, __('messages.errors.admin_required'));
+        abort_unless($user->isPlatformAdmin() || $category->tenant_id === $user->tenant_id, 404);
+    }
+
+    private function authorizeAmenity(Amenity $amenity): void
+    {
+        $user = auth()->user();
+        abort_unless($user && $user->isAdmin(), 403, __('messages.errors.admin_required'));
+        abort_unless($user->isPlatformAdmin() || $amenity->tenant_id === $user->tenant_id, 404);
     }
 }

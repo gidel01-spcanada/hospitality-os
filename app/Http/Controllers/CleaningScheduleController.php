@@ -39,8 +39,9 @@ class CleaningScheduleController extends Controller
 
         abort_unless($status === null || in_array($status, ['scheduled', 'in_progress', 'completed', 'cancelled'], true), 422);
         $visits = $this->visitQuery($properties, $from, $to, $propertyId, $assignee, $status)->get();
+        $user = auth()->user();
         $shares = CleaningScheduleShare::query()
-            ->where('tenant_id', app(CurrentTenant::class)->id())
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
             ->when(auth()->user()->isHost(), fn ($query) => $query->where('created_by', auth()->id()))
             ->latest()->limit(10)->get();
 
@@ -196,14 +197,22 @@ class CleaningScheduleController extends Controller
             }
         }
 
+        $shareProperties = $properties;
+        $shareTenantId = app(CurrentTenant::class)->id()
+            ?? $shareProperties->first()?->establishment?->tenant_id;
+        $sharePropertyIds = $shareProperties
+            ->filter(fn (Property $property) => $property->establishment?->tenant_id === $shareTenantId)
+            ->pluck('id')
+            ->all();
+
         $share = CleaningScheduleShare::query()->create([
-            'tenant_id' => app(CurrentTenant::class)->id(),
+            'tenant_id' => $shareTenantId,
             'created_by' => auth()->id(),
             'token' => bin2hex(random_bytes(32)),
             'period_start' => $from,
             'period_end' => $to,
             'view_mode' => $mode,
-            'property_ids' => $properties->pluck('id')->all(),
+            'property_ids' => $sharePropertyIds,
             'assignee_name' => $assignee,
             'expires_at' => now()->addDays((int) $shareOptions['expires_in_days']),
         ]);
@@ -215,8 +224,9 @@ class CleaningScheduleController extends Controller
 
     public function revoke(CleaningScheduleShare $share): RedirectResponse
     {
-        abort_unless($share->tenant_id === app(CurrentTenant::class)->id(), 404);
-        abort_if(auth()->user()->isHost() && $share->created_by !== auth()->id(), 403);
+        $user = auth()->user();
+        abort_unless($user->isPlatformAdmin() || $share->tenant_id === $user->tenant_id, 404);
+        abort_if($user->isHost() && $share->created_by !== auth()->id(), 403);
         $share->delete();
 
         return back()->with('success', __('messages.cleaning.share_revoked'));
@@ -286,7 +296,10 @@ class CleaningScheduleController extends Controller
         $user = auth()->user();
 
         return Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user->tenant_id),
+            ))
             ->when($user->isHost(), fn ($query) => $query->whereIn('establishment_id', $user->establishments()->pluck('establishments.id')))
             ->with('establishment')->orderBy('name')->get();
     }
@@ -372,11 +385,16 @@ class CleaningScheduleController extends Controller
     {
         $normalizedAssignee = mb_strtolower(trim($assignee));
 
+        $user = auth()->user();
+
         return CleaningVisit::query()
             ->where('status', '!=', 'cancelled')
             ->when($ignoreVisitId, fn ($query) => $query->whereKeyNot($ignoreVisitId))
             ->whereBetween('scheduled_at', [$start->copy()->subDay(), $end])
-            ->whereHas('property.establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user?->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'property.establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user?->tenant_id),
+            ))
             ->get()
             ->filter(function (CleaningVisit $visit) use ($normalizedAssignee, $start, $end): bool {
                 $visitEnd = $visit->scheduled_at->copy()->addMinutes($visit->duration_minutes);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,21 @@ class ExternalCalendarFeed extends Model
         'last_sync_at' => 'datetime',
         'last_successful_sync_at' => 'datetime',
     ];
+
+    protected $hidden = ['url', 'encrypted_url'];
+
+    public function getUrlAttribute(?string $value): ?string
+    {
+        $encryptedUrl = $this->attributes['encrypted_url'] ?? null;
+
+        return filled($encryptedUrl) ? Crypt::decryptString($encryptedUrl) : $value;
+    }
+
+    public function setUrlAttribute(?string $value): void
+    {
+        $this->attributes['url'] = '';
+        $this->attributes['encrypted_url'] = filled($value) ? Crypt::encryptString($value) : null;
+    }
 
     public function property(): BelongsTo
     {

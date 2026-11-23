@@ -7,6 +7,7 @@ use App\Models\ExternalCalendarEvent;
 use App\Models\Property;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Services\CalendarFeedSyncService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -115,7 +116,8 @@ class CalendarFeedControlsTest extends TestCase
         $this->actingAs($admin)
             ->post('/admin/properties/' . $property->id . '/calendar/feeds/' . $feed->id . '/sync')
             ->assertRedirect();
-        $this->assertDatabaseMissing('external_calendar_events', ['feed_id' => $feed->id]);
+        $this->assertDatabaseHas('external_calendar_events', ['feed_id' => $feed->id, 'uid' => 'test-event-2']);
+        $this->assertSame('stale', $feed->fresh()->status);
         $export->assertDontSee('AFK-CALENDAR-PENDING');
 
         $this->actingAs($admin)
@@ -145,6 +147,52 @@ class CalendarFeedControlsTest extends TestCase
         $feed = ExternalCalendarFeed::firstOrFail();
         $this->assertNotNull($feed->last_sync_error);
         $this->assertNull($feed->last_successful_sync_at);
+    }
+
+    public function test_calendar_feed_credentials_are_encrypted_and_sync_failures_keep_existing_events(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $property = Property::firstOrFail();
+        $feedUrl = 'https://feed-user:feed-password@example.com/calendar.ics?api_token=query-token';
+        $feed = $property->calendarFeeds()->create([
+            'name' => 'Credentialed feed',
+            'provider' => 'other',
+            'url' => $feedUrl,
+            'is_enabled' => false,
+            'status' => 'stale',
+        ]);
+
+        $this->assertSame($feedUrl, $feed->url);
+        $this->assertSame('', $feed->getRawOriginal('url'));
+        $this->assertNotSame($feedUrl, $feed->getRawOriginal('encrypted_url'));
+        $this->assertStringNotContainsString('feed-password', json_encode($feed->getAttributes()));
+
+        $event = $feed->events()->create([
+            'uid' => 'keep-existing-event',
+            'summary' => 'Blocked dates',
+            'start_date' => '2026-09-10',
+            'end_date' => '2026-09-12',
+        ]);
+
+        $this->actingAs(User::where('email', 'admin@afrikappart.test')->firstOrFail())
+            ->post(route('admin.properties.calendar.store', $property), [
+                'name' => 'Loopback feed',
+                'provider' => 'other',
+                'url' => 'http://127.0.0.1/private.ics',
+                'is_enabled' => true,
+            ])
+            ->assertSessionHasErrors('url');
+
+        $feed->update(['url' => 'https://example.com/feed.ics']);
+        Http::fake(['https://example.com/feed.ics' => Http::response('', 302, ['Location' => 'http://127.0.0.1/private.ics'])]);
+        $this->assertFalse(app(CalendarFeedSyncService::class)->sync($feed->fresh()));
+        $this->assertDatabaseHas('external_calendar_events', ['id' => $event->id, 'feed_id' => $feed->id]);
+        $this->assertFalse($feed->fresh()->is_enabled);
+        $this->assertSame('stale', $feed->fresh()->status);
+
+        Http::fake(['https://example.com/feed.ics' => Http::response(str_repeat('x', 2 * 1024 * 1024 + 1))]);
+        $this->assertFalse(app(CalendarFeedSyncService::class)->sync($feed->fresh()));
+        $this->assertDatabaseHas('external_calendar_events', ['id' => $event->id, 'feed_id' => $feed->id]);
     }
 
     public function test_public_calendar_url_returns_ics_only_with_valid_token(): void

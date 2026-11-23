@@ -87,9 +87,6 @@
         @if ($provider === 'interac' && !empty($method['security_question']))
             <div>{{ __('messages.checkout.interac_question', ['question' => $method['security_question']]) }}</div>
         @endif
-        @if ($provider === 'interac' && !empty($method['security_answer']))
-            <div class="flex items-center gap-2"><span>{{ __('messages.checkout.interac_answer', ['answer' => $method['security_answer']]) }}</span><button type="button" class="rounded border border-slate-300 px-1.5 py-0.5 text-[10px]" data-copy-text="{{ $method['security_answer'] }}">{{ __('messages.checkout.copy') }}</button></div>
-        @endif
     </div>
 
     @if ($hasProof)

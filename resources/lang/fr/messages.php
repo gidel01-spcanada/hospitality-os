@@ -795,6 +795,7 @@ return [
     'properties.availability_available' => 'Ces dates sont disponibles.',
     'properties.availability_available_amount' => 'Ces dates sont disponibles. Montant estimé : :amount :currency.',
     'properties.availability_unavailable' => 'Ces dates ne sont pas disponibles.',
+    'properties.guest_capacity_exceeded' => 'Le nombre de voyageurs dépasse la capacité de ce logement.',
     'properties.availability_unavailable_reselect' => 'Ces dates ne sont plus disponibles. Choisissez de nouvelles dates pour vérifier la disponibilité et le tarif.',
     'properties.availability_dates_expired' => 'Ces dates sont déjà passées. Choisissez de nouvelles dates pour vérifier la disponibilité et le tarif.',
     'properties.availability_checking' => 'Vérification de la disponibilité et du tarif…',

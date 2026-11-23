@@ -49,12 +49,18 @@ class PayLaterGateway implements PaymentGateway
             return null;
         }
 
-        $attempt = PaymentAttempt::query()->where('provider_reference', $providerReference)->first();
+        $attempt = PaymentAttempt::query()
+            ->where('provider', $this->name())
+            ->where('provider_reference', $providerReference)
+            ->first();
         if (! $attempt) {
             return null;
         }
 
-        $status = $request->input('status', 'paid');
+        $status = $request->input('status');
+        if (! is_string($status)) {
+            return null;
+        }
         if (! in_array($status, ['paid', 'failed', 'cancelled', 'pending'], true)) {
             return null;
         }

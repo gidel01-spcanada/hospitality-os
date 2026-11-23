@@ -13,6 +13,7 @@ use App\Services\AccountInvitationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -56,10 +57,13 @@ class AdminController extends Controller
     public function users(Request $request): View
     {
         $tenantId = app(CurrentTenant::class)->id();
+        $user = $request->user();
 
         $users = User::query()
             // Staff belong to one tenant; customers (tenant_id null) are shared platform users.
-            ->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))
+            ->when($tenantId && ! ($user?->isPlatformAdmin() ?? false), fn ($query) => $query->where(function ($query) use ($tenantId): void {
+                $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id');
+            }))
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = '%' . $request->string('search')->trim() . '%';
                 $query->where(function ($query) use ($search): void {
@@ -78,18 +82,27 @@ class AdminController extends Controller
 
     public function editUser(User $managedUser): View
     {
+        $user = auth()->user();
+        $this->authorizeManagedUser($managedUser);
+
         return view('admin.users.edit', [
             'managedUser' => $managedUser,
-            'establishments' => Establishment::query()->orderBy('name')->get(),
+            'establishments' => Establishment::query()
+                ->when($user && ! $user->isPlatformAdmin() && $user->tenant_id, fn ($query) => $query->where('tenant_id', $user->tenant_id))
+                ->orderBy('name')->get(),
             'assignedEstablishmentIds' => $managedUser->exists ? $managedUser->establishments()->pluck('establishments.id')->all() : [],
         ]);
     }
 
     public function createUser(): View
     {
+        $user = auth()->user();
+
         return view('admin.users.edit', [
             'managedUser' => new User(['role' => 'customer', 'locale' => 'fr']),
-            'establishments' => Establishment::query()->orderBy('name')->get(),
+            'establishments' => Establishment::query()
+                ->when($user && ! $user->isPlatformAdmin() && $user->tenant_id, fn ($query) => $query->where('tenant_id', $user->tenant_id))
+                ->orderBy('name')->get(),
             'assignedEstablishmentIds' => [],
         ]);
     }
@@ -109,7 +122,10 @@ class AdminController extends Controller
             'email_verified' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'establishments' => ['nullable', 'array'],
-            'establishments.*' => ['integer', 'exists:establishments,id'],
+            'establishments.*' => [
+                'integer',
+                Rule::exists('establishments', 'id')->where(fn ($query) => $query->where('tenant_id', auth()->user()?->tenant_id)),
+            ],
         ]);
 
         $managedUser = User::create([
@@ -140,6 +156,8 @@ class AdminController extends Controller
 
     public function updateUser(Request $request, User $managedUser): RedirectResponse
     {
+        $this->authorizeManagedUser($managedUser);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $managedUser->id],
@@ -152,7 +170,10 @@ class AdminController extends Controller
             'email_verified' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'establishments' => ['nullable', 'array'],
-            'establishments.*' => ['integer', 'exists:establishments,id'],
+            'establishments.*' => [
+                'integer',
+                Rule::exists('establishments', 'id')->where(fn ($query) => $query->where('tenant_id', auth()->user()?->tenant_id)),
+            ],
         ]);
 
         if ($managedUser->is($request->user()) && $validated['role'] !== 'admin') {
@@ -188,6 +209,7 @@ class AdminController extends Controller
 
     public function deleteUser(User $managedUser): RedirectResponse
     {
+        $this->authorizeManagedUser($managedUser);
         abort_if($managedUser->is(auth()->user()), 422, __('messages.errors.self_deactivation'));
 
         DB::transaction(function () use ($managedUser): void {
@@ -297,6 +319,7 @@ class AdminController extends Controller
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
         $reviews = SiteReview::query()
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->where('tenant_id', $user->tenant_id))
             ->with(['property', 'establishment'])
             ->when($filters['property'] ?? null, fn ($query, $property) => $query->where('property_id', $property))
             ->when($filters['source'] ?? null, fn ($query, $source) => $query->where('source', $source))
@@ -305,7 +328,10 @@ class AdminController extends Controller
             ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('reviewed_at', '<=', $date))
             ->orderByDesc('reviewed_at')->get();
         $properties = Property::query()
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
+            ->when(! $user->isPlatformAdmin(), fn ($query) => $query->whereHas(
+                'establishment',
+                fn ($establishments) => $establishments->where('tenant_id', $user->tenant_id),
+            ))
             ->with('establishment')->orderBy('name')->get();
         $brand = BrandSettings::all();
 
@@ -345,9 +371,7 @@ class AdminController extends Controller
 
     public function updateReview(Request $request, SiteReview $review): RedirectResponse
     {
-        $user = auth()->user();
-
-        abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
+        $this->authorizeReview($review);
 
         $validated = $request->validate([
             'source' => ['required', 'in:booking,google,airbnb'],
@@ -376,9 +400,7 @@ class AdminController extends Controller
 
     public function deleteReview(SiteReview $review): RedirectResponse
     {
-        $user = auth()->user();
-
-        abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
+        $this->authorizeReview($review);
 
         $review->delete();
 
@@ -391,12 +413,36 @@ class AdminController extends Controller
             return null;
         }
 
-        abort_unless(Property::query()
-            ->whereKey($propertyId)
-            ->whereHas('establishment', fn ($query) => $query->where('tenant_id', app(CurrentTenant::class)->id()))
-            ->exists(), 422);
+        $user = auth()->user();
+        $propertyQuery = Property::query()->whereKey($propertyId);
+        if ($user && ! $user->isPlatformAdmin()) {
+            $propertyQuery->whereHas('establishment', fn ($query) => $query->where('tenant_id', $user->tenant_id));
+        }
+
+        abort_unless($propertyQuery->exists(), 422);
 
         return $propertyId;
+    }
+
+    private function authorizeReview(SiteReview $review): void
+    {
+        $user = auth()->user();
+
+        abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
+        abort_unless($user->isPlatformAdmin() || $review->tenant_id === $user->tenant_id, 404);
+    }
+
+    private function authorizeManagedUser(User $managedUser): void
+    {
+        $user = auth()->user();
+
+        abort_unless($user && $user->isAdmin(), 403, 'Admin access required.');
+        abort_unless(
+            $user->isPlatformAdmin()
+                || $managedUser->tenant_id === null
+                || $managedUser->tenant_id === $user->tenant_id,
+            404,
+        );
     }
 
     public function importReviews(Request $request): RedirectResponse

@@ -83,8 +83,11 @@ class Property extends Model
     {
         $property = parent::resolveRouteBinding($value, $field);
 
-        if ($property && ($tenantId = app(\App\Support\CurrentTenant::class)->id()) && $property->establishment->tenant_id !== $tenantId) {
-            return null;
+        if ($property && ($tenantId = app(\App\Support\CurrentTenant::class)->id())) {
+            $establishment = $property->establishment;
+            if (! $establishment || $establishment->tenant_id !== $tenantId) {
+                return null;
+            }
         }
 
         return $property;

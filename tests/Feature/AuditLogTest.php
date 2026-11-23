@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AuditRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -44,5 +45,22 @@ class AuditLogTest extends TestCase
 
         $host = User::factory()->create(['role' => 'host', 'is_active' => true]);
         $this->actingAs($host)->get(route('admin.audit-logs'))->assertForbidden();
+    }
+
+    public function test_sensitive_values_and_url_credentials_are_redacted_from_audit_details(): void
+    {
+        app(AuditRecorder::class)->action('sensitive_settings_updated', null, [
+            'payment_methods' => ['interac' => ['security_answer' => 'secret-answer-value']],
+            'checkout_token' => 'checkout-token-value',
+            'feed_url' => 'https://feed-user:feed-password@example.com/calendar?api_token=query-token',
+        ]);
+
+        $details = AuditLog::query()->where('action', 'sensitive_settings_updated')->latest()->firstOrFail()->details;
+        $this->assertStringNotContainsString('secret-answer-value', $details);
+        $this->assertStringNotContainsString('checkout-token-value', $details);
+        $this->assertStringNotContainsString('feed-user', $details);
+        $this->assertStringNotContainsString('feed-password', $details);
+        $this->assertStringNotContainsString('query-token', $details);
+
     }
 }
